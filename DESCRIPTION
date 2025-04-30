@@ -1,11 +1,26 @@
 Package: mcmodule
-Title: What the Package Does (One Line, Title Case)
+Title: Multivariate Modular Monte Carlo Risk Analysis
 Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+Authors@R: c(
+    person("Natalia", "Ciria", , "natalia.ciria@uab.cat", role = c("aut", "cre"),
+           comment = c(ORCID = "0009-0006-2669-6634")),
+    person("Alberto", "Allepuz", , "alberto.allepuz@uab.cat", role = c("ths"),
+           comment = c(ORCID = "0000-0003-3518-1991")),
+    person("Giovanna", "Ciaravino", , "giovanna.ciaravino@uab.cat", role = c("ths"),
+           comment = c(ORCID = "0000-0002-5796-8093"))
+           )
+Description: Tools to expand mc2d capabilities for multivariate and modular risk analysis.
+License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+URL: https://github.com/VetEpi-UAB/mcmodule
+BugReports: https://github.com/VetEpi-UAB/mcmodule/issues
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Imports: 
+    dplyr,
+    tidyr
+Depends:
+    mc2d
