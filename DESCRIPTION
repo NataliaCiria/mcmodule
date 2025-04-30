@@ -23,4 +23,6 @@ Imports:
     dplyr,
     tidyr
 Depends:
-    mc2d
+    mc2d,
+    R (>= 3.5)
+LazyData: true
