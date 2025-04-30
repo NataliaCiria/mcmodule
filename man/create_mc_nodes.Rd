@@ -4,7 +4,7 @@
 \alias{create_mc_nodes}
 \title{Create Monte Carlo Nodes from Data and Configuration Table}
 \usage{
-create_mc_nodes(data, mctable = mcnode_admin, envir = parent.frame(), ...)
+create_mc_nodes(data, mctable = mctable(), envir = parent.frame(), ...)
 }
 \arguments{
 \item{data}{A data frame containing the input variables for creating Monte Carlo nodes}
@@ -30,7 +30,7 @@ table and input variables from a dataframe. It supports various distributions an
 }
 \examples{
 \dontrun{
-  create_mc_nodes(data = pathogen_data, mctable = mcnode_config)
+  create_mc_nodes(data = imports_data, mctable = imports_mctable)
 }
 
 }
