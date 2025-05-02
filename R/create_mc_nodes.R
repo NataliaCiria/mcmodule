@@ -21,9 +21,10 @@
 #'   create_mc_nodes(data = imports_data, mctable = imports_mctable)
 #' }
 #'
-#' @importFrom stats setNames
 #' @export
 create_mc_nodes <- function(data, mctable = mctable(), envir = parent.frame(), ...) {
+  tryCatch(mctable, error = function(e) stop("mctable not defined"))
+
   # Validate that mctable has required columns
   valid_mctable <- all(c("mcnode", "mc_func") %in% names(mctable))
   if (!valid_mctable) stop("mctable must contain 'mcnode', 'mcreate' and 'mc_func' columns")
@@ -77,11 +78,6 @@ create_mc_nodes <- function(data, mctable = mctable(), envir = parent.frame(), .
           assign(mc_inputs[j], eval(parse(text = mcdata_exp)), envir = envir)
         }
 
-        #### APPLY SENSITIVITY ANALYSIS MODIFICATIONS ####
-        if (mc_name %in% alternative_params) {
-          assign(mc_inputs[j], alternative_formula(get(mc_inputs[j],envir=envir), mc_name=mc_name, envir=envir), envir = envir)
-          message("Alternative parameter: ", deparse(alternative_formula), " applied to ", mc_inputs[j])
-        }
       }
 
       #### CREATE DISTRIBUTION-BASED MONTE CARLO NODES ####
