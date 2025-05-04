@@ -1,37 +1,35 @@
-#' Get Monte Carlo Input Variables from CSV Files
+#' Get Monte Carlo Input Variables from Data List
 #'
-#' This function searches through CSV files in a specified directory to find variables
+#' This function searches through data frames in a provided data model to find variables
 #' that are inputs for Monte Carlo nodes (mcnodes) defined in a Monte Carlo table.
 #'
-#' @param path Character string specifying the path to input files. Default is "input_files/".
-#' @param mctable Data frame containing the list of Monte Carlo objects and their definitions.
-#'   Default is mcnode_admin.
+#' @param data_keys List of lists containing data frames to search through
+#' @param mctable Data frame containing Monte Carlo nodes definitions. Default is from set_mctable()
 #'
-#' @return Character vector of column names that are MC node inputs.
+#' @return Named list where each element contains column names that are MC node inputs
+#'         for the corresponding data frame
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#'   mc_inputs <- get_mc_inputs()
-#'   mc_inputs <- get_mc_inputs(path = "my_files/", mctable = my_mc_table)
-#' }
-get_mc_inputs <- function(path = input_path, mctable = mcnode_admin) {
-  # Load data files as list
-  suppressMessages(
-    data_list <- load_input_files(farm_id = farm_id,
-                                  path = path, 
-                                  create_df = FALSE)
-    
-  )
-  
-  # Get all column names from the data files
-  col_names <- unlist(lapply(data_list, colnames))
-  
-  # Check if mc_inputs exist in data columns
-  data_mc_inputs <- grepl(paste(paste0("\\<", mctable$mcnode, ".*"), 
-                                collapse = "|"), 
-                          col_names)
-  
-  # Return column names (of all files) that are mcnode inputs
-  return(col_names[data_mc_inputs])
+#' mc_inputs <- get_mc_inputs(data_keys)
+#' mc_inputs <- get_mc_inputs(data_keys, mctable = my_mc_table)
+get_mc_inputs <- function(data_keys=set_data_keys(), mctable = set_mctable()) {
+  # Get all column names from each data frame
+  col_names <- lapply(data_keys, function(x) {
+    if(!is.null(x$data) && is.data.frame(x$data)) {
+      return(colnames(x$data))
+    }
+    return(NULL)
+  })
+
+  # Filter for columns that match MC node patterns
+  mc_inputs<-list()
+  for(i in names(col_names)) {
+    data_mc_inputs_i <- grepl(paste(paste0("\\<", mctable$mcnode, ".*"),
+                                    collapse = "|"),
+                              col_names[[i]])
+    mc_inputs[[i]][["mc_inputs"]] <- col_names[[i]][data_mc_inputs_i]
+    mc_inputs[[i]][["keys"]]<-data_keys[[i]][["keys"]]
+  }
+  return(col_names)
 }

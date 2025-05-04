@@ -22,12 +22,13 @@
 #' }
 #'
 #' @export
-create_mc_nodes <- function(data, mctable = mctable(), envir = parent.frame(), ...) {
-  tryCatch(mctable, error = function(e) stop("mctable not defined"))
-
+create_mc_nodes <- function(data, mctable = set_mctable(), envir = parent.frame(), ...) {
   # Validate that mctable has required columns
   valid_mctable <- all(c("mcnode", "mc_func") %in% names(mctable))
   if (!valid_mctable) stop("mctable must contain 'mcnode', 'mcreate' and 'mc_func' columns")
+
+  # Validate that mctable is not empty
+  if(nrow(mctable)<1) stop ("mctable is empty")
 
   # Check if data contains any columns matching mcnode names
   data_mc_inputs <- grepl(paste(paste0("\\<", mctable$mcnode, ".*"), collapse = "|"), names(data))

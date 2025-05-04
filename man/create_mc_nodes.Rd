@@ -4,7 +4,7 @@
 \alias{create_mc_nodes}
 \title{Create Monte Carlo Nodes from Data and Configuration Table}
 \usage{
-create_mc_nodes(data, mctable = mctable(), envir = parent.frame(), ...)
+create_mc_nodes(data, mctable = set_mctable(), envir = parent.frame(), ...)
 }
 \arguments{
 \item{data}{A data frame containing the input variables for creating Monte Carlo nodes}

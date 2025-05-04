@@ -31,7 +31,7 @@
 
 .pkgglobalenv <- new.env(parent=emptyenv())
 
-mctable <- function(data = NULL) {
+set_mctable <- function(data = NULL) {
   # Check if mctable exists, if not create with default values
   if(!exists("mctable", envir=.pkgglobalenv)) {
     assign("mctable", data.frame(
@@ -42,7 +42,7 @@ mctable <- function(data = NULL) {
       transformation = character(),
       sensi_analysis = logical()
     ), envir=.pkgglobalenv)
-  }
+    }
 
   # Get current mctable
   mct <- get("mctable", envir=.pkgglobalenv)
@@ -80,5 +80,27 @@ mctable <- function(data = NULL) {
   }
 
   # Return current mctable
+  return(get("mctable", envir=.pkgglobalenv))
+}
+
+#' Reset Monte Carlo Inputs Table
+#'
+#' @description
+#' Resets the Monte Carlo inputs table
+#'
+#' @return An empty data frame with the standard mctable structure
+#'
+#' @export
+
+reset_mctable <- function() {
+  empty_mctable <- data.frame(
+    mcnode = character(),
+    description = character(),
+    mc_func = character(),
+    from_variable = character(),
+    transformation = character(),
+    sensi_analysis = logical()
+  )
+  assign("mctable", empty_mctable, envir=.pkgglobalenv)
   return(get("mctable", envir=.pkgglobalenv))
 }

@@ -28,5 +28,5 @@ automatically handles row matching.
 \examples{
 at_least_one(mcmodule = intro,
              mc_names = c("no_purchase_inf_agg", "b_entry_agg"))
-             
+
 }

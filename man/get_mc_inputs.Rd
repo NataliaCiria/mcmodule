@@ -2,26 +2,24 @@
 % Please edit documentation in R/get_mc_inputs.R
 \name{get_mc_inputs}
 \alias{get_mc_inputs}
-\title{Get Monte Carlo Input Variables from CSV Files}
+\title{Get Monte Carlo Input Variables from Data List}
 \usage{
-get_mc_inputs(path = input_path, mctable = mcnode_admin)
+get_mc_inputs(data_keys = set_data_keys(), mctable = set_mctable())
 }
 \arguments{
-\item{path}{Character string specifying the path to input files. Default is "input_files/".}
+\item{data_keys}{List of lists containing data frames to search through}
 
-\item{mctable}{Data frame containing the list of Monte Carlo objects and their definitions.
-Default is mcnode_admin.}
+\item{mctable}{Data frame containing Monte Carlo nodes definitions. Default is from set_mctable()}
 }
 \value{
-Character vector of column names that are MC node inputs.
+Named list where each element contains column names that are MC node inputs
+for the corresponding data frame
 }
 \description{
-This function searches through CSV files in a specified directory to find variables
+This function searches through data frames in a provided data model to find variables
 that are inputs for Monte Carlo nodes (mcnodes) defined in a Monte Carlo table.
 }
 \examples{
-\dontrun{
-  mc_inputs <- get_mc_inputs()
-  mc_inputs <- get_mc_inputs(path = "my_files/", mctable = my_mc_table)
-}
+mc_inputs <- get_mc_inputs(data_keys)
+mc_inputs <- get_mc_inputs(data_keys, mctable = my_mc_table)
 }

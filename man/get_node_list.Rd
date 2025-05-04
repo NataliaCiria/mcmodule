@@ -2,36 +2,31 @@
 % Please edit documentation in R/eval_model.R
 \name{get_node_list}
 \alias{get_node_list}
-\title{Match Data or Monte Carlo Nodes By Scenario or Groups}
+\title{Create Node List from Model Expression}
 \usage{
 get_node_list(
-  model_expression,
+  model_exp,
   param_names = NULL,
-  mctable = mcnode_admin,
-  path = "input_files/"
+  mctable = set_mctable(),
+  data_keys = set_data_keys()
 )
 }
 \arguments{
-\item{model_expression}{An R expression containing model calculations}
+\item{model_exp}{An R expression containing model calculations}
 
 \item{param_names}{Optional named vector for parameter renaming}
 
-\item{mctable}{Reference table for MC nodes, defaults to mcnode_admin}
+\item{mctable}{Reference table for  mcnodes, defaults to set_mctable()}
 
-\item{path}{Path to input files, defaults to "input_files/"}
+\item{data_keys}{Data structure and keys, defaults to set_data_keys()}
 }
 \value{
 A list of class "mcnode_list" containing node information
 }
 \description{
-Functions for managing Monte Carlo nodes in a modular simulation framework.
-}
-\details{
-Create Node List from Model Expression
-
-This function creates a list of nodes based on a given model expression, handling input,
-output, and previous nodes with their respective properties and relationships.
+Creates a list of nodes based on a given model expression, handling input,
+output, and previous nodes with their properties and relationships.
 }
 \examples{
-get_node_list(model_expression = indir_contact_expression)
+get_node_list(model_exp = imports_exp, mctable=imports_mctable, data_keys=imports_data_keys)
 }
