@@ -309,56 +309,62 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names=NULL) {
 
 #' Match Monte Carlo Datasets With Differing Scenarios
 #'
-#' @param x First dataset
-#' @param y Second dataset
-#' @param by Optional grouping variables
-#' @param cross_scenarios Cross join all scenarios
-#' @return Matched dataset
+#' Matches datasets by group and preserves baseline scenarios (scenario_id=0) when scenarios differ between them.
+#'
+#' @param x First dataset to match
+#' @param y Second dataset to match
+#' @param by Grouping variable(s) to match on, defaults to "hg" (homogeneous groups)
+#' @return List containing matched datasets with aligned scenario IDs:
+#'   - First element: matched version of dataset x
+#'   - Second element: matched version of dataset y
 #' @export
 #' @examples
-#' wif_match(dataset1, dataset2, by=c("category", "group"))
-wif_match <- function(x, y, by="hg", cross_scenarios=FALSE) {
+#' x <- data.frame(hg = 1:2, val = c("a","b"), scenario_id = c(0,1))
+#' y <- data.frame(hg = 1:2, val = c("c","d"), scenario_id = c(0,2))
+#' matched <- wif_match(x, y)
+wif_match <- function(x, y, by="hg") {
+  # Match keys between datasets
+  list_xy <- keys_match(x, y, by)
 
-  list_xy<-add_group_id(x,y,by)
+  # Find any unmatched groups in both datasets
+  null_x <- unlist(unique(list_xy$xy[is.na(list_xy$xy$g_row.x), by]))
+  null_y <- unlist(unique(list_xy$xy[is.na(list_xy$xy$g_row.y), by]))
 
-  list_xy$x
+  # Format error messages for unmatched groups
+  w_null_x <- paste(names(null_x), null_x, sep=" ", collapse=", ")
+  w_null_y <- paste(names(null_y), null_y, sep=" ", collapse=", ")
 
-  new_x<-y %>%
-    add_group_id(by=by) %>%
-    select(g_id, true_scenario=scenario_id, true_hg=hg) %>%
-    left_join(add_group_id(x=x, by=by)) %>%
-    mutate(both_current=(true_scenario=="0"&scenario_id=="0"),
-           any_current=(true_scenario=="0"|scenario_id=="0"),
-           same_scenario=true_scenario==scenario_id,
-           scenario_id=true_scenario,
-           hg=true_hg)%>%
-    relocate(hg, g_id, g_row, scenario_id)
-
-  if(cross_scenarios){
-    new_x<-new_x %>%
-      mutate(scenario_id=paste(scenario_id, " + ", true_scenario))
-    message("\nWIF scenarios combined")
-  }else{
-    # Keep rows where both scenarios have same value
-    new_x_same_scenarios<-new_x %>%
-      filter(same_scenario)
-
-    # Keep rows where values don't match and one is 0
-    new_x_current_scenarios <- new_x %>%
-      filter(!same_scenario&any_current&!true_scenario%in%new_x_same_scenarios$true_scenario)
-
-    new_x<-bind_rows(new_x_same_scenarios,
-                     new_x_current_scenarios)%>%
-      select(-any_current,-both_current,-true_hg,-true_scenario)
-
-    message("\nWIF scenarios matched with current scenarios")
+  # Stop if any groups couldn't be matched
+  if(any(is.na(list_xy$xy$g_row.x)) || any(is.na(list_xy$xy$g_row.y))) {
+    error_msg <- character()
+    if(any(is.na(list_xy$xy$g_row.x))) error_msg <- c(error_msg, paste("In x:", w_null_x))
+    if(any(is.na(list_xy$xy$g_row.y))) error_msg <- c(error_msg, paste("In y:", w_null_y))
+    stop(paste("Groups not found:", paste(error_msg, collapse="; ")))
   }
 
-  n_hg_x<-ifelse("hg"%in%names(x),max(x$hg),"no")
-  n_hg_y<-ifelse("hg"%in%names(y),max(y$hg),"no")
+  # Create matched versions of both datasets
+  new_x <- y[list_xy$xy$g_row.x,] %>%
+    mutate(scenario_id = list_xy$xy$scenario_id)
+  rownames(new_x)<-NULL
 
-  message("From ", nrow(x), " rows (",n_hg_x," hg) and ", nrow(y), " rows (",n_hg_y," hg), to ", nrow(new_x), " rows (", max(new_x$hg), " hg)\n")
-  return(new_x)
+  new_y <- y[list_xy$xy$g_row.y,] %>%
+    mutate(scenario_id = list_xy$xy$scenario_id)
+  rownames(new_y)<-NULL
+
+  # Count homogeneous groups for logging
+  n_hg_x <- ifelse("hg" %in% names(x), max(x$hg), "no")
+  n_hg_y <- ifelse("hg" %in% names(y), max(y$hg), "no")
+
+  # Log matching results
+  message("From ", nrow(x), " rows (", n_hg_x," hg) and ",
+          nrow(y), " rows (", n_hg_y," hg), to ",
+          nrow(new_x), " rows (", max(new_x$hg), " hg)\n")
+
+  # Return list with matched datasets
+  list_new_xy <- list(new_x, new_y)
+  names(list_new_xy) <- c(deparse(substitute(x)), deparse(substitute(y)))
+
+  return(list_new_xy)
 }
 
 

@@ -2,25 +2,29 @@
 % Please edit documentation in R/dim_match.R
 \name{wif_match}
 \alias{wif_match}
-\title{Match Monte Carlo Datasets With Differing Scenarios}
+\title{Match and align Monte Carlo datasets that have different scenarios}
 \usage{
-wif_match(x, y, by = "hg", cross_scenarios = FALSE)
+wif_match(x, y, by = "hg")
 }
 \arguments{
-\item{x}{First dataset}
+\item{x}{First dataset to match}
 
-\item{y}{Second dataset}
+\item{y}{Second dataset to match}
 
-\item{by}{Optional grouping variables}
-
-\item{cross_scenarios}{Cross join all scenarios}
+\item{by}{Grouping variable(s) to match on, defaults to "hg" (homogeneous groups)}
 }
 \value{
-Matched dataset
+List containing matched datasets with aligned scenario IDs:
+\itemize{
+\item First element: matched version of dataset x
+\item Second element: matched version of dataset y
+}
 }
 \description{
-Match Monte Carlo Datasets With Differing Scenarios
+Matches datasets by group and preserves baseline scenarios (scenario_id=0) when scenarios differ between them.
 }
 \examples{
-wif_match(dataset1, dataset2, by=c("category", "group"))
+x <- data.frame(hg = 1:2, val = c("a","b"), scenario_id = c(0,1))
+y <- data.frame(hg = 1:2, val = c("c","d"), scenario_id = c(0,2))
+matched <- wif_match(x, y)
 }

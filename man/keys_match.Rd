@@ -4,7 +4,7 @@
 \alias{keys_match}
 \title{Match and align keys between two datasets}
 \usage{
-keys_match(x, y, keys_names)
+keys_match(x, y, keys_names = NULL)
 }
 \arguments{
 \item{x}{First dataset containing keys to match}
