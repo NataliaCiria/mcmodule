@@ -11,7 +11,7 @@ mc_keys(mcmodule, mc_name, keys_names = NULL)
 
 \item{mc_name}{Name of the node to extract keys from}
 
-\item{keys_names}{Vector of column names to extract}
+\item{keys_names}{Vector of column names to extract (optional)}
 }
 \value{
 Dataframe with scenario_id and requested key columns

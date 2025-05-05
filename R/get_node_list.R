@@ -11,6 +11,7 @@
 #' @return A list of class "mcnode_list" containing node information
 #' @export
 #'
+#'
 #' @examples
 #' get_node_list(model_exp = imports_exp, mctable=imports_mctable, data_keys=imports_data_keys)
 get_node_list <- function(model_exp, param_names = NULL,
@@ -80,11 +81,7 @@ get_node_list <- function(model_exp, param_names = NULL,
   in_node_list <- list()
   input_nodes <- all_nodes[all_nodes %in% as.character(mctable$mcnode)]
 
-  if(!exists("all_inputs")) {
-    if(length(data_keys)>0){
-      assign("all_inputs",get_mc_inputs(data_keys),envir=parent.frame())
-    }
-  }
+  all_inputs<-get_mc_inputs(data_keys)
 
   if(length(input_nodes) > 0) {
     for(i in 1:length(input_nodes)) {

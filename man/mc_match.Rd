@@ -22,7 +22,7 @@ List containing matched nodes and index
 Matches two mc_nodes with differing dimensions, handling null values
 }
 \examples{
-mc_match(mcmodule = intro, 
-             mc_name_x="no_purchase_inf_agg", 
+mc_match(mcmodule = intro,
+             mc_name_x="no_purchase_inf_agg",
              mc_name_y="b_entry_agg")
 }
