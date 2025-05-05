@@ -137,6 +137,60 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
   data[unique(c("scenario_id", keys_names))]
 }
 
+
+#' Match and align keys between two datasets
+#'
+#' @param x First dataset containing keys to match
+#' @param y Second dataset containing keys to match
+#' @param keys_names Names of columns to use as matching keys. If NULL, uses common columns
+#' @return List containing:
+#'   \item{x}{First dataset with group IDs}
+#'   \item{y}{Second dataset with group IDs}
+#'   \item{xy}{Matched datasets with aligned group and scenario IDs}
+#' @examples
+#' x <- data.frame(id = 1:2, scenario_id = c(0,1))
+#' y <- data.frame(id = 1:2, scenario_id = c(0,2))
+#' keys_match(x, y, keys_names = "id")
+keys_match <- function(x, y, keys_names=NULL) {
+  # Add common group ids
+  keys_list <- add_group_id(x, y, keys_names)
+  keys_x <- keys_list$x
+  keys_y <- keys_list$y
+
+  # Define keys_names if not provided
+  if(is.null(keys_names)) {
+    keys_names <- unique(intersect(names(keys_x), names(keys_y)))
+    keys_names <- keys_names[!keys_names %in% c("g_id","g_row", "scenario_id")]
+  }
+
+  # Group and scenario matching
+  keys_xy <- keys_x %>%
+    full_join(keys_y, by = c("g_id", "scenario_id", keys_names)) %>%
+    relocate("g_id", "scenario_id", all_of(keys_names))
+
+  # Get group ids for baseline scenario (scenario_id = 0)
+  keys_xy_0 <- keys_xy %>%
+    full_join(keys_y, by = c("g_id", "scenario_id", keys_names)) %>%
+    filter(scenario_id == 0) %>%
+    transmute(
+      g_id,
+      g_row.x_0 = g_row.x,
+      g_row.y_0 = g_row.y)
+
+  # Fill in missing values using baseline scenario
+  keys_xy <- keys_xy %>%
+    left_join(keys_xy_0, by = "g_id") %>%
+    mutate(
+      g_row.x = ifelse(is.na(g_row.x), g_row.x_0, g_row.x),
+      g_row.x_0 = NULL,
+      g_row.y = ifelse(is.na(g_row.y), g_row.y_0, g_row.y),
+      g_row.y_0 = NULL)
+
+  return(list(x = keys_x,
+              y = keys_y,
+              xy = keys_xy))
+}
+
 #' Match Monte Carlo Nodes
 #'
 #' Matches two mc_nodes by:
@@ -173,14 +227,13 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names=NULL) {
   keys_x <- mc_keys (mcmodule, mc_name_x, keys_names)
   keys_y <- mc_keys (mcmodule, mc_name_y, keys_names)
 
-  # Add common group ids
-  keys_list <- add_group_id(x=keys_x, y=keys_y, by=keys_names)
+
+  # Match keys
+  keys_list <- keys_match(keys_x,keys_y,keys_names)
   keys_x <- keys_list$x
   keys_y <- keys_list$y
+  keys_xy <- keys_list$xy
 
-  # Define keys_names
-  keys_names<-unique(c(names(keys_x),names(keys_y)))
-  keys_names<-keys_names[!keys_names%in%c("g_id","g_row", "scenario_id")]
 
   # Return nodes as they are if they already match
   if (nrow(keys_x) == nrow(keys_y) &&
@@ -191,31 +244,9 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names=NULL) {
     return(list(
       mcnode_x_match = mcnode_x,
       mcnode_y_match = mcnode_y,
-      index = keys_x[c(keys_names, "scenario_id")]
+      keys_xy = keys_xy
     ))
   }
-
-  # Group and scenario matching
-  keys_xy<-keys_x%>%
-    full_join(keys_y, by=c("g_id", "scenario_id", keys_names))%>%
-    relocate("g_id", "scenario_id", all_of(keys_names))
-
-  keys_xy_0<-keys_xy%>%
-    full_join(keys_y, by=c("g_id", "scenario_id", keys_names))%>%
-    filter(scenario_id==0)%>%
-    transmute(
-      g_id,
-      g_row.x_0=g_row.x,
-      g_row.y_0=g_row.y)
-
-  keys_xy<-keys_xy%>%
-    left_join(keys_xy_0, by="g_id")%>%
-    mutate(
-      g_row.x=ifelse(is.na(g_row.x),g_row.x_0,g_row.x),
-      g_row.x_0=NULL,
-      g_row.y=ifelse(is.na(g_row.y),g_row.y_0,g_row.y),
-      g_row.y_0=NULL)
-
 
   # Match nodes
   null_x <- 0
@@ -286,37 +317,11 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names=NULL) {
 #' @export
 #' @examples
 #' wif_match(dataset1, dataset2, by=c("category", "group"))
-wif_match <- function(x, y, by=NULL, cross_scenarios=FALSE) {
-  if(is.null(by)) {
-    message("Match by homogeneous groups (hg)")
-    by<-"hg"
+wif_match <- function(x, y, by="hg", cross_scenarios=FALSE) {
 
-    if(!"hg" %in% names(y) & !"hg" %in% names(x)) {
-      stop("No homogeneous group index (hg) found and no match 'by' parameter specified")
-    }
+  list_xy<-add_group_id(x,y,by)
 
-    if("hg" %in% names(x)) message("- Using x ", max(x$hg)," hg")
-
-    if("hg" %in% names(y)) message("- Using y ", max(y$hg)," hg")
-
-
-    if((!"hg" %in% names(y) | !"hg" %in% names(x))&
-       !sum(x$scenario_id=="0")==sum(y$scenario_id=="0")) {
-      stop("Differing number of rows in x and y. Specify variables to match in 'by' parameter.")
-    }
-
-    if(!"hg" %in% names(x) & "hg" %in% names(y)) {
-      x$hg <- y$hg[y$scenario_id=="0"]
-      message("- x hg copied from y")
-    }
-    if(!"hg" %in% names(y) & "hg" %in% names(x)) {
-      y$hg <- x$hg[x$scenario_id=="0"]
-      message("- y hg copied from x")
-
-    }
-  }else{
-    message("Group id by ", paste0(by,collapse=", "))
-  }
+  list_xy$x
 
   new_x<-y %>%
     add_group_id(by=by) %>%

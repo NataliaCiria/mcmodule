@@ -4,7 +4,7 @@
 \alias{wif_match}
 \title{Match Monte Carlo Datasets With Differing Scenarios}
 \usage{
-wif_match(x, y, by = NULL, cross_scenarios = FALSE)
+wif_match(x, y, by = "hg", cross_scenarios = FALSE)
 }
 \arguments{
 \item{x}{First dataset}

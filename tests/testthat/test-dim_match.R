@@ -108,6 +108,33 @@ suppressMessages({
     expect_true(all(c("scenario_id", "group") %in% names(result)))
   })
 
+  test_that("keys_match works", {
+    # Test data
+    x <- data.frame(
+      type = c("1", "2"),
+      category = c("a","b"),
+      scenario_id = c(0,1)
+    )
+
+    y <- data.frame(
+      type = c("1", "2"),
+      category = c("c","d"),
+      scenario_id = c(0,2)
+    )
+
+    # Automatic matching
+    expect_message(
+      result <- keys_match(x, y),
+      "Group by: type, category")
+
+    expect_equal(result$xy$scenario_id, c("0","1","0","2"))
+
+    # Match by type
+    result_type <- keys_match(x, y, "type")
+    expect_equal(result_type$xy$g_id, c(1,2,2))
+
+  })
+
   test_that("mc_match group matching works", {
     mock_module <- list(
       node_list = list(
@@ -240,4 +267,8 @@ suppressMessages({
     expect_equal(result$keys_xy$category, c("A","B","C","B","B"))
     expect_equal(result$keys_xy$scenario_id, c("0","0","0","1","2"))
   })
+
+
 })
+
+
