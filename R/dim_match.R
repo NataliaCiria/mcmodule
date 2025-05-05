@@ -139,13 +139,16 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
 
 #' Match Monte Carlo Nodes
 #'
-#' Matches two mc_nodes with differing dimensions, handling null values
+#' Matches two mc_nodes by:
+#' 1. Group matching - Align nodes with same scenarios but different group order
+#' 2. Scenario matching - Align nodes with same groups but different scenarios
+#' 3. Null matching - Add missing groups across different scenarios
 #'
 #' @param mcmodule Monte Carlo module
 #' @param mc_name_x First node name
 #' @param mc_name_y Second node name
 #' @param keys_names Names of key columns
-#' @return List containing matched nodes and index
+#' @return List containing matched nodes and combined keys (keys_xy)
 #' @export
 #' @examples
 #' mc_match(mcmodule = intro,
@@ -176,7 +179,8 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names=NULL) {
   keys_y <- keys_list$y
 
   # Return nodes as they are if they already match
-  if (nrow(keys_x) == nrow(keys_y) && all(keys_x[keys_names] == keys_y[keys_names])) {
+  if (nrow(keys_x) == nrow(keys_y) &&
+      all(keys_x[c(keys_names, "scenario_id")] == keys_y[c(keys_names, "scenario_id")])) {
     message(mc_name_x, " and ", mc_name_y, " already match, dim: [",
             paste(dim(mcnode_x), collapse=", "), "]")
 
@@ -187,70 +191,44 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names=NULL) {
     ))
   }
 
-  # Create cross join
-  raw_cross_xy <- cross_join(
-    keys_x[c("g_id","g_row", "scenario_id")],
-    keys_y[c("g_id","g_row", "scenario_id")])
+  # Group and scenario matching
+  keys_xy<-keys_x%>%
+    full_join(keys_y, by=c("g_id", "scenario_id", keys_names))%>%
+    relocate("g_id", "scenario_id", all_of(keys_names))
 
-  # Find null groups
-  g_null <- c(
-    unique(raw_cross_xy$g_id.x[!raw_cross_xy$g_id.x %in% raw_cross_xy$g_id.y]),
-    unique(raw_cross_xy$g_id.y[!raw_cross_xy$g_id.y %in% raw_cross_xy$g_id.x]))
+  keys_xy_0<-keys_xy%>%
+    full_join(keys_y, by=c("g_id", "scenario_id", keys_names))%>%
+    filter(scenario_id==0)%>%
+    transmute(
+      g_id,
+      g_row.x_0=g_row.x,
+      g_row.y_0=g_row.y)
 
-  anti_filter_x <- raw_cross_xy$g_id.x %in% g_null
-  anti_filter_y <- raw_cross_xy$g_id.y %in% g_null
+  keys_xy<-keys_xy%>%
+    left_join(keys_xy_0, by="g_id")%>%
+    mutate(
+      g_row.x=ifelse(is.na(g_row.x),g_row.x_0,g_row.x),
+      g_row.x_0=NULL,
+      g_row.y=ifelse(is.na(g_row.y),g_row.y_0,g_row.y),
+      g_row.y_0=NULL)
 
-  # Handle null scenarios
-  anti_index_xy <- raw_cross_xy[anti_filter_x|anti_filter_y,] %>%
-    filter(scenario_id.x==0|scenario_id.y==0) %>%
-    filter((scenario_id.y==0 & !duplicated(paste(g_id.x, scenario_id.x))) |
-             (scenario_id.x==0 & !duplicated(paste(g_id.y, scenario_id.y))) &
-             !(scenario_id.y==0 & scenario_id.x==0 &
-                 ((duplicated(paste(g_id.x, scenario_id.x))) |
-                 duplicated(paste(g_id.y, scenario_id.y))))) %>%
-    distinct()
-
-  # Check if one node has only scenario 0
-  x_all_null<-all(anti_index_xy$scenario_id.x=="0")
-  y_all_null<-all(anti_index_xy$scenario_id.y=="0")
-
-  if(x_all_null){
-    anti_index_xy <- anti_index_xy %>%
-      filter(scenario_id.y==0)
-  }else if(y_all_null){
-    anti_index_xy <- anti_index_xy %>%
-      filter(scenario_id.x==0)
-  }
-
-  index_xy <- raw_cross_xy%>%
-    filter(g_id.x==g_id.y & (scenario_id.x==0|scenario_id.y==0))%>%
-    rowwise()%>%
-    mutate(scenario_xy=paste(min(scenario_id.x,scenario_id.y),
-                             max(scenario_id.x,scenario_id.y),
-                             "-",
-                             min(g_id.x,g_id.y),
-                             max(g_id.x,g_id.y)))%>%
-    distinct(scenario_xy, .keep_all = TRUE)
-
-  index_xy <- bind_rows(index_xy,anti_index_xy) %>%
-    distinct()
 
   # Match nodes
   null_x <- 0
   null_y <- 0
 
   # Process X node
-  for(i in 1:nrow(index_xy)) {
-    g_row_x_i <- index_xy$g_row.x[i]
+  for(i in 1:nrow(keys_xy)) {
+    g_row_x_i <- keys_xy$g_row.x[i]
 
-    if(index_xy$g_id.y[i] %in% keys_x$g_id) {
+    if(keys_xy$g_id[i] %in% keys_x$g_id) {
       mc_i <- extractvar(mcnode_x,g_row_x_i)
     } else {
       mc_i <- extractvar(mcnode_x, 1)-extractvar(mcnode_x, 1)
       null_x <- null_x+1
     }
 
-    if(!exists("mcnode_x_match")) {
+    if(i==1) {
       mcnode_x_match <- mc_i
     } else {
       mcnode_x_match <- addvar(mcnode_x_match,mc_i)
@@ -259,17 +237,17 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names=NULL) {
   }
 
   # Process Y node
-  for(i in 1:nrow(index_xy)) {
-    g_row_y_i <- index_xy$g_row.y[i]
+  for(i in 1:nrow(keys_xy)) {
+    g_row_y_i <- keys_xy$g_row.y[i]
 
-    if(index_xy$g_id.x[i] %in% keys_y$g_id) {
+    if(keys_xy$g_id[i] %in% keys_y$g_id) {
       mc_i <- extractvar(mcnode_y,g_row_y_i)
     } else {
       mc_i <- extractvar(mcnode_y, 1)-extractvar(mcnode_y, 1)
       null_y <- null_y+1
     }
 
-    if(!exists("mcnode_y_match")) {
+    if(i==1) {
       mcnode_y_match <- mc_i
     } else {
       mcnode_y_match <- addvar(mcnode_y_match,mc_i)
@@ -285,29 +263,14 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names=NULL) {
           "], new dim: [", paste(dim(mcnode_y_match), collapse=", "),
           "], ", null_y, " null matches")
 
-  # Create index
-  index <- keys_x[ifelse(index_xy$g_id.x %in% keys_x$g_id,
-                            index_xy$g_row.x,
-                            index_xy$g_row.y),
-                     c(keys_names)]
-
-  scenario <- ifelse(
-    keys_x[index_xy$g_row.x,]$scenario_id=="0",
-    ifelse(keys_y[index_xy$g_row.y,]$scenario_id=="0","0",
-           keys_y[index_xy$g_row.y,]$scenario_id),
-    keys_x[index_xy$g_row.x,]$scenario_id)
-
-  index$scenario_id <- scenario
-
   # Return results
-  result <- list(mcnode_x_match, mcnode_y_match, index)
+  result <- list(mcnode_x_match, mcnode_y_match, keys_xy)
   names(result) <- c(paste0(mc_name_x,"_match"),
                      paste0(mc_name_y,"_match"),
-                     "index")
+                     "keys_xy")
 
   return(result)
 }
-
 
 #' Match Monte Carlo Datasets With Differing Scenarios
 #'

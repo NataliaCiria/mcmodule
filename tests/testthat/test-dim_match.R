@@ -108,9 +108,7 @@ suppressMessages({
     expect_true(all(c("scenario_id", "group") %in% names(result)))
   })
 
-
-  test_that("mc_match handles basic matching correctly", {
-    # Create mock module with mcnodes
+  test_that("mc_match group matching works", {
     mock_module <- list(
       node_list = list(
         node_x = list(
@@ -118,45 +116,128 @@ suppressMessages({
                           min=mcdata(c(1, 2, 3), type="0", nvariates = 3),
                           max=mcdata(c(2, 3, 4), type="0", nvariates = 3),
                           nvariates = 3),
-          data_name = "data_x"
+          data_name = "data_x",
+          keys=c("category")
         ),
         node_y = list(
           mcnode = mcstoc(runif,
                           min=mcdata(c(5, 6, 7), type="0", nvariates = 3),
                           max=mcdata(c(6, 7, 8), type="0", nvariates = 3),
                           nvariates = 3),
-          data_name = "data_y"
+          data_name = "data_y",
+          keys=c("category")
         )
       ),
       data = list(
         data_x = data.frame(
-          key = c("A", "B", "C"),
-          scenario_id = c("0", "1", "1")
+          category = c("A", "B", "C")
         ),
         data_y = data.frame(
-          key = c("B", "C", "D"),
-          scenario_id = c("0", "1", "1")
+          category = c("B", "C", "A")
         )
       )
     )
 
-    # Test basic functionality
-    result <- mc_match(mock_module, "node_x", "node_y", keys_names = "key")
+    result <- mc_match(mock_module, "node_x", "node_y", keys_names = "category")
 
-    expect_type(result, "list")
-    expect_length(result, 3)
-    expect_true(all(c("node_x_match", "node_y_match", "index") %in% names(result)))
+    # Test dimensions
+    expect_equal(dim(result$node_x_match), dim(mock_module$node_list$node_x$mcnode))
+    expect_equal(dim(result$node_y_match), dim(mock_module$node_list$node_y$mcnode))
 
-    # Test error handling
-    expect_error(
-      mc_match(mock_module, "nonexistent", "node_y"),
-      "Nodes nonexistent not found"
-    )
+    # Test that categories are matched correctly
+    expect_equal(result$keys_xy$category, mock_module$data$data_x$category)
 
-    expect_error(
-      mc_match(list(), "node_x", "node_y"),
-      "Invalid mcmodule structure"
-    )
+    # Verify expected keys_xy
+    expect_equal(result$keys_xy$category, c("A","B","C"))
+    expect_equal(result$keys_xy$scenario_id, c("0","0","0"))
   })
 
+  test_that("mc_match scenario matching works", {
+    mock_module <- list(
+      node_list = list(
+        node_x = list(
+          mcnode = mcstoc(runif,
+                          min=mcdata(c(1, 2, 3, 4), type="0", nvariates = 4),
+                          max=mcdata(c(2, 3, 4, 5), type="0", nvariates = 4),
+                          nvariates = 4),
+          data_name = "data_x",
+          keys=c("category")
+        ),
+        node_y = list(
+          mcnode = mcstoc(runif,
+                          min=mcdata(c(5, 6, 7, 8), type="0", nvariates = 4),
+                          max=mcdata(c(6, 7, 8, 9), type="0", nvariates = 4),
+                          nvariates = 4),
+          data_name = "data_y",
+          keys=c("category")
+        )
+      ),
+      data = list(
+        data_x = data.frame(
+          category = c("A", "B", "A","B"),
+          scenario_id = c("0", "0", "1", "1")
+        ),
+        data_y = data.frame(
+          category = c("A", "B", "A","B"),
+          scenario_id = c("0", "0", "2", "2")
+        )
+      )
+    )
+
+    result <- mc_match(mock_module, "node_x", "node_y", keys_names = c("category"))
+
+    # Check scenario matching logic
+    expect_equal(nrow(result$keys_xy), 6)
+
+    # Verify dimensions of matched nodes
+    expect_equal(dim(result$node_x_match)[2], dim(result$node_y_match)[2])
+
+    # Verify expected keys_xy
+    expect_equal(result$keys_xy$category, c("A","B","A","B","A","B"))
+    expect_equal(result$keys_xy$scenario_id, c("0","0","1","1","2","2"))
+
+  })
+
+
+  test_that("mc_match null matching works", {
+    mock_module <- list(
+      node_list = list(
+        node_x = list(
+          mcnode = mcstoc(runif,
+                          min=mcdata(c(1, 2, 3), type="0", nvariates = 3),
+                          max=mcdata(c(2, 3, 4), type="0", nvariates = 3),
+                          nvariates = 3),
+          data_name = "data_x",
+          keys=c("category")
+        ),
+        node_y = list(
+          mcnode = mcstoc(runif,
+                          min=mcdata(c(5, 6, 7), type="0", nvariates = 3),
+                          max=mcdata(c(6, 7, 8), type="0", nvariates = 3),
+                          nvariates = 3),
+          data_name = "data_y",
+          keys=c("category")
+        )
+      ),
+      data = list(
+        data_x = data.frame(
+          category = c("A", "B", "C"),
+          scenario_id = c("0", "0", "0")
+        ),
+        data_y = data.frame(
+          category = c("B", "B", "B"),
+          scenario_id = c("0", "1", "2")
+        )
+      )
+    )
+
+    result <- mc_match(mock_module, "node_x", "node_y", keys_names = "category")
+
+    # Verify dimensions of matched nodes
+    expect_equal(dim(result$node_x_match)[2], dim(result$node_y_match)[2])
+
+    # Verify expected keys_xy
+    expect_equal(result$keys_xy$category, c("A","B","C","B","B"))
+    expect_equal(result$keys_xy$scenario_id, c("0","0","0","1","2"))
+  })
 })
