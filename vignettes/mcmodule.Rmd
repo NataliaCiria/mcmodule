@@ -1,0 +1,225 @@
+---
+title: "mcmodule"
+subtitle: "Modular Monte-Carlo Risk Analysis"
+author: "Natalia Ciria"
+output: 
+    bookdown::html_document2:
+        base_format: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{mcmodule-vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: references.bib
+number-sections: true
+number-equations: true
+crossref:
+  chapters: true
+link-citations: true
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, include = FALSE}
+#library(mcmodule)
+```
+
+> *This document is intended for intermediate R programmers who are familiar with Monte Carlo simulation and quantitative risk assessment. For an introduction to quantitative risk assessment, please refer to:*
+
+# Introduction
+
+This guide presents a flexible approach for building risk assessment models with Monte Carlo simulations in R. The framework is **multivariate**, allowing simultaneous analysis of multiple variates (different categories or groups), and **modular,** breaking complex systems into manageable components.
+
+The `mc2d` R package [@mc2d] provides tools to build and analyse models involving multiple variables and uncertainties based on Monte Carlo simulations. However, these tools are limited when handling multiple variates, and complex models can be difficult to analyse and interpret. The `mcmodule` package builds on the R package mc2d to enhance model flexibility. This new package provides:
+
+1.  Tools to add metadata to model elements for better traceability and debugging
+2.  Tools to handle complex multivariate variables
+3.  A framework to break down Monte Carlo models into smaller, reusable components (modules) that can be analysed independently before integration
+
+For an application of this risk assessment approach to on-farm biosecurity, see the [model description](https://github.com/NataliaCiria/biosecurity_model/blob/main/DOCUMENTATION/model_description.pdf) file. Details of the functions that are part of the `mcmodule` package can be found in the package documentation.
+
+# Multivariate Monte-Carlo simulations
+
+*The following section is based primarily on the mc2d package [vignette](https://cran.r-project.org/web/packages/mc2d/vignettes/docmcEnglish.pdf), adapted and expanded specifically for the context of modular, flexible Monte Carlo simulations.*
+
+Quantitative risk analysis is the numerical assessment of risk to facilitate decision making in the face of uncertainty. Monte Carlo simulation is a technique used to model and analyse uncertainty [@Vose2008]. In typical two-dimensional Monte Carlo simulation, one dimension represents variability and the other represents uncertainty. However, in this framework, we take a different approach where:
+
+-   We combine **variability** and **uncertainty** into one dimension (***u***)
+
+-   We use **variates** (representing different groups or categories) in the other dimension (***i***)
+
+This approach enables us to track multiple values across groups simultaneously using variates and to handle cases where values must be aggregated by animal movements, farms, or other grouped entities. Although it would be technically possible to separate variability and uncertainty, the exponential increase in computational and programming requirements would make it impractical in models of this size.
+
+In this framework, an mcnode is an array of **dimensions (*u* × 1 × *i*)**, where u is the dimension of variability and uncertainty combined, and i is the number of variates. As most of the input parameters are uncertain, we will use the term "uncertainty dimension" throughout this document to refer to the combined dimension of variability and uncertainty.
+
+![Structure of an mcnode containing u uncertainty iterations and i variates.](images/mcmodule_mcnode_definition.png){alt="Structure of an mcnode containing u uncertainty iterations and i variates." fig-align="center" width="40%"}
+
+For example, if we are buying a number of cows and heifers from a specific region, a mcnode for herd prevalence would have:
+
+-   Multiple variates (rows), each representing a specific animal category-disease combination. The variables that define and distinguish these variates are called **keys**.
+
+-   Probability values generated through a PERT distribution (rpert), using minimum, mode, and maximum parameters across *u* iterations (columns) to model the uncertainty in these estimates.
+
+![An mcnode representing herd prevalence of three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR), and bovine viral diarrhea (BVD), and two animal categories (cows and heifers). The herd prevalence is the same for both animal categories, but values differ due to the stochastic nature of random sampling from the PERT distribution.](images/mcmodule_mcnode_example.png){alt="An mcnode representing herd prevalence of three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR), and bovine viral diarrhea (BVD), and two animal categories (cows and heifers). The herd prevalence is the same for both animal categories, but values differ due to the stochastic nature of random sampling from the PERT distribution." fig-align="center" width="85%"}
+
+## Scenarios
+
+This framework enables the creation and comparison of scenarios. For comparisons, you need a baseline scenario (scenario "0") and one or more alternative scenarios. Variates within a scenario are called "groups." While not every scenario needs to contain all baseline groups, any groups present in alternative scenarios must exist in the baseline.
+
+The scenario id, group id, and row number are the three mcnode properties that enable row matching and row aggregation operations (see @sec-row-matching-operations).
+
+![An mcnode representing the probability of a farm being infected in a baseline scenario ("0", in blue) and in a what-if scenario where there is a control plan implemented ("a", in green).](images/mcmodule_mcnode_scenarios.png){alt="An mcnode representing the probability of a farm being infected in a baseline scenario (\"0\", in blue) and in a what-if scenario where there is a control plan implemented (\"a\", in green)." fig-align="center" width="70%"}
+
+## Multivariate nodes operations
+
+### Element-wise operations {#sec-element-wise-operations}
+
+Most operations in this model are element-wise, meaning each calculation occurs independently on matching elements across nodes. These operations preserve node dimensions while applying functions (such as multiplication or addition) to corresponding elements, allowing uncertainties and variates to propagate through the calculations.
+
+![](images/mcmodule_mcnode_element-wise_operation.png){fig-align="center" width="100%"}
+
+### Row matching {#sec-row-matching-operations}
+
+Row matching operations align nodes to ensure they have compatible dimensions and properly matched rows for element-wise calculations. This is especially important when working with nodes containing different scenarios. The matching process may require reordering, duplicating, or adding rows to either or both nodes.
+
+Row matching between nodes is needed in the following cases and their combinations:
+
+#### Group matching
+
+Nodes with same scenarios/dimensions but different group order
+
+1.  Check if keys that define groups are in a different order
+
+![](images/mcmodule_group_match_1.png){fig-align="center" width="100%"}
+
+2.  Assign common group ids, based on keys
+
+![](images/mcmodule_group_match_2.png){fig-align="center" width="100%"}
+
+3.  Reorder rows to align group ids. This is similar to dplyr `left_join`
+
+![](images/mcmodule_group_match_3.png){fig-align="center" width="100%"}
+
+#### Scenario matching
+
+Nodes with same groups but different scenarios. The general rule for these operations is that when no scenario is specified, it is assumed that a variable takes the values from the baseline scenario.
+
+1.  Check if scenarios are different
+
+![](images/mcmodule_scenario_match_1.png){fig-align="center" width="100%"}
+
+2.  For missing scenarios, duplicate the baseline scenario (scenario "0")
+
+![](images/mcmodule_scenario_match_2.png){fig-align="center" width="100%"}
+
+3.  When nodes matched by scenario are used in an element-wise operation, the resulting node will contain all scenarios from both input nodes. This is conceptually similar to a dplyr `full_join`, except that any unmatched rows use values from the baseline scenario.
+
+![](images/mcmodule_scenario_match_3.png){fig-align="center" width="100%"}
+
+#### Null matching
+
+When nodes contain different scenarios and groups, some groups may be missing from certain nodes. These missing groups (called "null" variates) are assigned a probability of 0. This operation typically complements scenario matching.
+
+1.  Check for missing groups
+
+![](images/mcmodule_null_matching_1.png){fig-align="center" width="100%"}
+
+2.  Add null variates with probability 0 for any missing groups (and apply scenario matching)
+
+![](images/mcmodule_null_matching_2.png){fig-align="center" width="100%"}
+
+1.  When nodes are matched by scenario in an element-wise operation, the resulting node will contain all groups from both input nodes
+
+![](images/mcmodule_null_matching_3.png){fig-align="center" width="100%"}
+
+### Row aggregation {#row-aggregation-operations}
+
+Row aggregation operations combine values across multiple rows (variates) in an mcnode using specific criteria. These operations calculate overall probabilities or sum quantities across groups.
+
+#### Probabilities
+
+Some events can occur independently across multiple variates of the same node. For example, a disease might be present in animals from different regions or farms. To calculate the probability of an **event occurring in at least one variate** within a subset, we first group the data by aggregation keys (*agg_keys*). Then, for each subset, we use the standard probability formula for independent trials to find the probability of the event occurring in at least one variate.
+
+$$
+p\_{agg}=1-\prod_{p\subseteq S}(1-p)
+$$
+
+Where:
+
+-   *S* represents the subset of variates included in the aggregation
+
+-   *p* represents the probability of an event occurring
+
+-   *p_agg* represents the probability of occurrence in at least one variate of S
+
+![Row aggregation by pathogen. The calculation is performed element-wise across subset variates to maintain uncertainty propagation.](images/mcmodule_row_aggregation_p.png){alt="Row aggregation by pathogen. The calculation is performed element-wise across subset variates to maintain uncertainty propagation." fig-align="center" width="100%"}
+
+If scenarios are being simulated, scenario id must always be included as an aggregation key, as probabilities are not calculated across different what-if scenarios.
+
+#### Quantities
+
+When working with quantities (such as number of animals or farms), we calculate totals by summing values across variates within each subset.
+
+$$ n\_{agg}=\sum_{n\subseteq S} n $$
+
+Where:
+
+-   *S* represents the subset of variates included in the aggregation
+
+-   *n* represents the quantity value
+
+-   *n_agg* represents the sum of quantities across all variates in *S*
+
+### Trials
+
+In this framework, nodes typically represent the probability of **success for a** **single trial with a binary outcome** (success/failure). A trial is one instance where an event might occur, for example, an animal, farm, batch, animal movement, or farm visit. Each trial has two possible outcomes, such as whether an animal is infected or not, or whether a test is positive or negative. In **single-level** trials, all trials are independent and have the same probability of success[^1].
+
+[^1]: In this context, a "success" refers to the occurrence of an event of interest, which may actually represent an undesirable outcome such as the presence of a disease or a positive test result for a pathogen.
+
+Some probability processes follow a hierarchical structure where events occur at different levels. For example, when animals are purchased from multiple farms, we must consider both the probability of a farm being infected and the probability of an individual animal within that farm being infected. This means infection probabilities for animals from the same farm are not independent. In **multilevel** trials, trials are organized into subsets, with each subset having its own selection probability. A subset represents a group sharing specific characteristics, for example, animals from the same farm or with the same health status.
+
+Most of the following probability processes and calculations are based on Chapter 5 of the *Handbook on Import Risk Analysis for Animals and Animal Products Volume 2. Quantitative risk assessment* [@Murray2004].
+
+#### Single-level trials
+
+In single-level trials, each trial is independent with the same probability of success ($trial\_p$). For a set of $trials\_n$ trials, the probability of at least one success is:
+
+$$ set\_p= 1-(1-trial\_p)^{trials\_n} $$
+
+#### Multilevel trials
+
+**Simple multilevel**
+
+In multilevel trials, we account for hierarchical structures where trials are organized into subsets. For example, when considering animals ($trials\_n$) from different farms ($subset\_n$), we must account for both the farm's selection probability ($subset\_p$) and the individual animal's probability of success ($trial\_p$).
+
+The probability of at least one success in this hierarchical structure is given by:
+
+$$ set\_p= 1-(1-subset\_p(1-(1-trial\_p)^{trial\_n}))^{subset\_n}  $$
+
+**Multiple group multilevel trials**
+
+### At least one
+
+A special type of element-wise operation that automatically deals with row matching.
+
+# Model elements
+
+## Expressions
+
+## Data
+
+## Nodes
+
+### Input nodes
+
+### Nodes metadata
+
+## Modules
+
+### Estructure
+
+### Modules metadata
