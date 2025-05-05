@@ -138,7 +138,7 @@ suppressMessages({
       )
     )
 
-    result <- mc_match(mock_module, "node_x", "node_y", keys_names = "category")
+    result <- mc_match(mock_module, "node_x", "node_y")
 
     # Test dimensions
     expect_equal(dim(result$node_x_match), dim(mock_module$node_list$node_x$mcnode))
@@ -184,7 +184,7 @@ suppressMessages({
       )
     )
 
-    result <- mc_match(mock_module, "node_x", "node_y", keys_names = c("category"))
+    result <- mc_match(mock_module, "node_x", "node_y")
 
     # Check scenario matching logic
     expect_equal(nrow(result$keys_xy), 6)
@@ -231,7 +231,7 @@ suppressMessages({
       )
     )
 
-    result <- mc_match(mock_module, "node_x", "node_y", keys_names = "category")
+    result <- mc_match(mock_module, "node_x", "node_y")
 
     # Verify dimensions of matched nodes
     expect_equal(dim(result$node_x_match)[2], dim(result$node_y_match)[2])

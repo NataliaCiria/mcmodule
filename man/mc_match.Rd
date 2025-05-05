@@ -16,10 +16,15 @@ mc_match(mcmodule, mc_name_x, mc_name_y, keys_names = NULL)
 \item{keys_names}{Names of key columns}
 }
 \value{
-List containing matched nodes and index
+List containing matched nodes and combined keys (keys_xy)
 }
 \description{
-Matches two mc_nodes with differing dimensions, handling null values
+Matches two mc_nodes by:
+\enumerate{
+\item Group matching - Align nodes with same scenarios but different group order
+\item Scenario matching - Align nodes with same groups but different scenarios
+\item Null matching - Add missing groups across different scenarios
+}
 }
 \examples{
 mc_match(mcmodule = intro,

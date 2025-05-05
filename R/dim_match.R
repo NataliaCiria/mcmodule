@@ -178,9 +178,13 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names=NULL) {
   keys_x <- keys_list$x
   keys_y <- keys_list$y
 
+  # Define keys_names
+  keys_names<-unique(c(names(keys_x),names(keys_y)))
+  keys_names<-keys_names[!keys_names%in%c("g_id","g_row", "scenario_id")]
+
   # Return nodes as they are if they already match
   if (nrow(keys_x) == nrow(keys_y) &&
-      all(keys_x[c(keys_names, "scenario_id")] == keys_y[c(keys_names, "scenario_id")])) {
+      all(keys_x[c("g_id", "scenario_id")] == keys_y[c("g_id", "scenario_id")])) {
     message(mc_name_x, " and ", mc_name_y, " already match, dim: [",
             paste(dim(mcnode_x), collapse=", "), "]")
 
