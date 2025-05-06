@@ -133,6 +133,136 @@ generate_all_name <- function(mc_names) {
   paste(c(common_parts, "all"), collapse = "_")
 }
 
+
+#' Aggregate Node Values Across Groups
+#'
+#' Combines values across specified grouping variables using different aggregation methods.
+#' The aggregation method can be specified via agg_func parameter:
+#' - "prob": Combined probability assuming independence
+#' - "sum": Sum of values
+#' - "avg": Average of values
+#' - NULL: defaults to "sum" if mc_name ends in "_n", else defaults to "prob"
+#' @param mcmodule mcmodule object containing nodes and data
+#' @param mc_name name of node to aggregate
+#' @param keys_names grouping variables for aggregation
+#' @param suffix suffix for output node name (default: "agg")
+#' @param summary whether to include summary statistics (default: TRUE)
+#' @param keep_variates whether to preserve individual values (default: FALSE)
+#' @param agg_func aggregation method ("prob", "sum", "avg", or NULL)
+#'
+#'
+#' @return mcmodule with new aggregated node added
+#' @export
+get_agg_totals <- function(mcmodule, mc_name,
+                           keys_names=c("scenario_id"),
+                           suffix = "agg",
+                           summary = TRUE,
+                           keep_variates = FALSE,
+                           agg_func=NULL) {
+
+  if(!(is.null(agg_func)||agg_func%in%c("prob","avg","sum"))) stop("Aggregation function must be prob, avg, sum or NULL")
+
+  # Extract module name and node data
+  module_name <- deparse(substitute(mcmodule))
+  mcnode <- mcmodule$node_list[[mc_name]][["mcnode"]]
+  key_col <- mc_keys(mcmodule, mc_name)[keys_names]
+  data_name <- mcmodule$node_list[[mc_name]][["data_name"]]
+
+  agg_total_mc_name <- paste0(mc_name, "_", suffix)
+
+  # Extract variates
+  variates_list <- list()
+  inv_variates_list <- list()
+  for (i in 1:dim(mcnode)[3]) {
+    variates_list[[i]] <- extractvar(mcnode, i)
+    inv_variates_list[[i]] <- 1 - extractvar(mcnode, i)
+  }
+
+  # Create grouping index
+  key_col$key <- do.call(paste, c(key_col, sep=", "))
+  key_levels <- unique(key_col$key)
+
+  # Process each group
+  for (i in 1:length(key_levels)) {
+    index <- key_col$key %in% key_levels[i]
+
+    if(!is.null(agg_func)&&agg_func=="avg"){
+      # Calculate average value
+      total_lev <- Reduce("+", variates_list[index])/sum(index)
+      mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
+        paste("Average value by:",
+              paste(keys_names, collapse = ", "))
+      mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
+        paste0("Average ", mc_name," by: ",
+               paste(keys_names, collapse = ", "))
+    }else if ((is.null(agg_func)&&grepl("_n$", mc_name))||(!is.null(agg_func)&&agg_func=="sum")) {
+      # Sum for counts
+      total_lev <- Reduce("+", variates_list[index])
+      mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
+        paste("Sum by:",
+              paste(keys_names, collapse = ", "))
+      mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
+        paste0(mc_name, "_1+", mc_name, "_2+... by:",
+               paste(keys_names, collapse = ", "))
+    } else {
+      # Combine probabilities
+      total_lev <- 1 - Reduce("*", inv_variates_list[index])
+      mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
+        paste("Combined probability assuming independence by:",
+              paste(keys_names, collapse = ", "))
+      mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
+        paste0("1-((1-", mc_name, "_1)*(1-", mc_name, "_2)...) by:",
+               paste(keys_names, collapse = ", "))
+    }
+
+    # Aggregate results
+    if (keep_variates) {
+      # One row per original variate
+      agg_index <- mcdata(index, type = "0", nvariates = length(index))
+
+      if (!i==1) {
+        total_agg <- total_agg + agg_index * total_lev
+      } else {
+        total_agg <- agg_index * total_lev
+      }
+
+      new_keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
+      key_data <- key_col
+    } else {
+      # One row per result
+      if (!i==1) {
+        total_agg <- addvar(total_agg, total_lev)
+      } else {
+        total_agg <- total_lev
+      }
+      new_keys_names <- keys_names
+      key_data <- unique(key_col)
+    }
+  }
+
+  # Add aggregated node to module
+  mcmodule$node_list[[agg_total_mc_name]][["mcnode"]] <- total_agg
+  mcmodule$node_list[[agg_total_mc_name]][["type"]] <- "agg_total"
+  mcmodule$node_list[[agg_total_mc_name]][["module"]] <- module_name
+  mcmodule$node_list[[agg_total_mc_name]][["agg_data"]] <- key_levels
+  mcmodule$node_list[[agg_total_mc_name]][["agg_keys"]] <- new_keys_names
+  mcmodule$node_list[[agg_total_mc_name]][["keys"]] <-
+    mcmodule$node_list[[mc_name]][["keys"]]
+  mcmodule$node_list[[agg_total_mc_name]][["inputs"]] <- mc_name
+  mcmodule$node_list[[agg_total_mc_name]][["data_name"]] <- data_name
+
+  if (summary) {
+    mcmodule$node_list[[agg_total_mc_name]][["summary"]] <-
+      mc_summary(data = key_data,
+                 mcnode = total_agg,
+                 mc_name = agg_total_mc_name,
+                 keys_names = new_keys_names)
+  }
+
+  mcmodule$modules <- unique(c(mcmodule$modules, module_name))
+  return(mcmodule)
+}
+
 #' Calculate Multi-Level Total Probabilities and Expected Counts
 #'
 #' @description
@@ -454,144 +584,3 @@ get_totals <- function(mcmodule, mc_names, trials_n = "animals_n",
   return(mcmodule)
 }
 
-
-#' Calculate Aggregated Totals Across Groups
-#'
-#' Aggregates node values across specified grouping variables
-#'
-#' @param mcmodule mcmodule object containing the data
-#' @param mcnode name of node to aggregate
-#' @param keys_names grouping variables for aggregation
-#' @param suffix suffix for output node name
-#' @param data_name name/index of data to use
-#' @param summary logical, whether to calculate summaries
-#' @param keep_variates logical, whether to keep all variates
-#' @param agg_avg Logical; if TRUE, calculates average values instead of totals or combined probabilities (default: FALSE)
-#'
-#' @return Updated mcmodule with new aggregated nodes
-#' @export
-#'
-#' @examples
-#' get_agg_totals(mcmodule = purchase_origin,
-#'                mcnode = "a_inf_all")
-get_agg_totals <- function(mcmodule, mc_name,
-                           keys_names = c("pathogen", "farm_id", "scenario_id"),
-                           suffix = "agg",
-                           summary = TRUE,
-                           keep_variates = FALSE,
-                           agg_avg=FALSE) {
-
-  module_name <- deparse(substitute(mcmodule))
-  mcnode <- mcmodule$node_list[[mc_name]][["mcnode"]]
-
-  # Get appropriate data
-  data_name <- mcmodule$node_list[[mc_name]][["data_name"]]
-  data <- mcmodule$data[[data_name]]
-
-  if(!is.null(mcmodule$node_list[[mc_name]][["summary"]])){
-    summary_df<-mcmodule$node_list[[mc_name]][["summary"]]
-    if(nrow(data)>nrow(summary_df)) data<-summary_df
-  }
-
-  # Match dimensions if needed
-  if (dim(mcnode)[3] < nrow(data)) {
-    mcnode <- mc_match_data(mcmodule, mc_name, data)
-  }
-
-  agg_total_mc_name <- paste0(mc_name, "_", suffix)
-
-  # Extract variates
-  variates_list <- list()
-  inv_variates_list <- list()
-  for (i in 1:dim(mcnode)[3]) {
-    variates_list[[i]] <- extractvar(mcnode, i)
-    inv_variates_list[[i]] <- 1 - extractvar(mcnode, i)
-  }
-
-  # Create grouping index
-  key_col <- data %>%
-    select(all_of(keys_names)) %>%
-    unite(everything(), col = "key", sep = ", ", remove = FALSE)
-
-  key_levels <- unique(key_col$key)
-
-  # Process each group
-  for (i in 1:length(key_levels)) {
-    index <- key_col$key %in% key_levels[i]
-
-    if(agg_avg){
-      # Calculate average value
-      total_lev <- Reduce("+", variates_list[index])/sum(index)
-      mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
-        paste("Average value:",
-              paste(keys_names, collapse = ", "))
-      mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
-        paste0("Average ", mc_name," by: ",
-               paste(keys_names, collapse = ", "))
-    }else if (grepl("_n$", mc_name)) {
-      # Sum for counts
-      total_lev <- Reduce("+", variates_list[index])
-      mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
-        paste("Number expected events by:",
-              paste(keys_names, collapse = ", "))
-      mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
-        paste0(mc_name, "_1+", mc_name, "_2+... by:",
-               paste(keys_names, collapse = ", "))
-    } else {
-      # Combine probabilities
-      total_lev <- 1 - Reduce("*", inv_variates_list[index])
-      mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
-        paste("Probability at least one of the events happening by:",
-              paste(keys_names, collapse = ", "))
-      mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
-        paste0("1-((1-", mc_name, "_1)*(1-", mc_name, "_2)...) by:",
-               paste(keys_names, collapse = ", "))
-    }
-
-    # Aggregate results
-    if (keep_variates) {
-      # One row per original variate
-      agg_index <- mcdata(index, type = "0", nvariates = length(index))
-
-      if (exists("total_agg")) {
-        total_agg <- total_agg + agg_index * total_lev
-      } else {
-        total_agg <- agg_index * total_lev
-      }
-
-      new_keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
-      key_data <- data
-    } else {
-      # One row per result
-      if (exists("total_agg")) {
-        total_agg <- addvar(total_agg, total_lev)
-      } else {
-        total_agg <- total_lev
-      }
-      new_keys_names <- keys_names
-      key_data <- unique(key_col)
-    }
-  }
-
-  # Add aggregated node to module
-  mcmodule$node_list[[agg_total_mc_name]][["mcnode"]] <- total_agg
-  mcmodule$node_list[[agg_total_mc_name]][["type"]] <- "agg_total"
-  mcmodule$node_list[[agg_total_mc_name]][["module"]] <- module_name
-  mcmodule$node_list[[agg_total_mc_name]][["agg_data"]] <- key_levels
-  mcmodule$node_list[[agg_total_mc_name]][["agg_keys"]] <- new_keys_names
-  mcmodule$node_list[[agg_total_mc_name]][["keys"]] <-
-  mcmodule$node_list[[mc_name]][["keys"]]
-  mcmodule$node_list[[agg_total_mc_name]][["inputs"]] <- mc_name
-  mcmodule$node_list[[agg_total_mc_name]][["data_name"]] <- data_name
-
-  if (summary) {
-    mcmodule$node_list[[agg_total_mc_name]][["summary"]] <-
-      mc_summary(data = key_data,
-                 mcnode = total_agg,
-                 mc_name = agg_total_mc_name,
-                 keys_names = new_keys_names)
-  }
-
-  mcmodule$modules <- unique(c(mcmodule$modules, module_name))
-  return(mcmodule)
-}
