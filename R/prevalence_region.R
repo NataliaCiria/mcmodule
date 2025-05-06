@@ -13,4 +13,6 @@
 #'   \item{w_prev_max}{Maximum within-herd prevalence value}
 #'   \item{test_origin}{Test used to detect infected animals at origin}
 #' }
+#'
+#' @source Simulated data for demonstration purposes
 "prevalence_region"

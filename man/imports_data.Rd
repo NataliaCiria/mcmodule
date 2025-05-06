@@ -25,6 +25,9 @@ A data frame with 6 rows and 12 columns:
 }
 }
 }
+\source{
+Simulated data for demonstration purposes
+}
 \usage{
 imports_data
 }

@@ -1,4 +1,4 @@
-#' Monte Carlo Input Table for Import Risk Assessment
+#' Example Monte Carlo Input Table for Import Risk Assessment
 #'
 #' A configured table of Monte Carlo nodes used for modeling import risk scenarios,
 #' particularly focused on animal disease transmission pathways.
@@ -13,4 +13,6 @@
 #'   \item{transformation}{Mathematical transformations applied to the node values}
 #'   \item{sensi_analysis}{Logical flag indicating if node is included in sensitivity analysis}
 #' }
+#'
+#' @source Simulated data for demonstration purposes
 "imports_mctable"

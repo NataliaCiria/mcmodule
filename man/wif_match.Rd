@@ -2,7 +2,7 @@
 % Please edit documentation in R/dim_match.R
 \name{wif_match}
 \alias{wif_match}
-\title{Match and align Monte Carlo datasets that have different scenarios}
+\title{Match Monte Carlo Datasets With Differing Scenarios}
 \usage{
 wif_match(x, y, by = "hg")
 }

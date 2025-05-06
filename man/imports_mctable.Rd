@@ -3,7 +3,7 @@
 \docType{data}
 \name{imports_mctable}
 \alias{imports_mctable}
-\title{Monte Carlo Input Table for Import Risk Assessment}
+\title{Example Monte Carlo Input Table for Import Risk Assessment}
 \format{
 \subsection{imports_mctable}{
 
@@ -17,6 +17,9 @@ A data frame with 7 rows and 6 columns:
 \item{sensi_analysis}{Logical flag indicating if node is included in sensitivity analysis}
 }
 }
+}
+\source{
+Simulated data for demonstration purposes
 }
 \usage{
 imports_mctable

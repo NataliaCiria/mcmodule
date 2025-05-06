@@ -19,6 +19,9 @@ A data frame with 6 rows and 4 columns:
 }
 }
 }
+\source{
+Simulated data for demonstration purposes
+}
 \usage{
 prevalence_region
 }

@@ -52,7 +52,7 @@ suppressMessages({
 
   test_that("mc_keys for keys works", {
     # Create mock module
-    mock_module <- list(
+    test_module <- list(
       node_list = list(
         test_node = list(
           data_name = "test_data",
@@ -69,7 +69,7 @@ suppressMessages({
     )
 
     # Test with specified keys
-    result <- mc_keys(mock_module, "test_node", c("key1", "key2"))
+    result <- mc_keys(test_module, "test_node", c("key1", "key2"))
     expect_equal(ncol(result), 3)  # scenario_id + 2 keys
     expect_true(all(c("scenario_id", "key1", "key2") %in% names(result)))
 
@@ -78,13 +78,13 @@ suppressMessages({
 
     # Test with missing keys
     expect_error(
-      mc_keys(mock_module, "test_node", c("key1", "nonexistent")),
+      mc_keys(test_module, "test_node", c("key1", "nonexistent")),
       "Columns nonexistent not found"
     )
 
     # Test with invalid node name
     expect_error(
-      mc_keys(mock_module, "nonexistent_node"),
+      mc_keys(test_module, "nonexistent_node"),
       "Node not found in module"
     )
   })
@@ -136,7 +136,7 @@ suppressMessages({
   })
 
   test_that("mc_match group matching works", {
-    mock_module <- list(
+    test_module <- list(
       node_list = list(
         node_x = list(
           mcnode = mcstoc(runif,
@@ -165,14 +165,14 @@ suppressMessages({
       )
     )
 
-    result <- mc_match(mock_module, "node_x", "node_y")
+    result <- mc_match(test_module, "node_x", "node_y")
 
     # Test dimensions
-    expect_equal(dim(result$node_x_match), dim(mock_module$node_list$node_x$mcnode))
-    expect_equal(dim(result$node_y_match), dim(mock_module$node_list$node_y$mcnode))
+    expect_equal(dim(result$node_x_match), dim(test_module$node_list$node_x$mcnode))
+    expect_equal(dim(result$node_y_match), dim(test_module$node_list$node_y$mcnode))
 
     # Test that categories are matched correctly
-    expect_equal(result$keys_xy$category, mock_module$data$data_x$category)
+    expect_equal(result$keys_xy$category, test_module$data$data_x$category)
 
     # Verify expected keys_xy
     expect_equal(result$keys_xy$category, c("A","B","C"))
@@ -180,7 +180,7 @@ suppressMessages({
   })
 
   test_that("mc_match scenario matching works", {
-    mock_module <- list(
+    test_module <- list(
       node_list = list(
         node_x = list(
           mcnode = mcstoc(runif,
@@ -211,7 +211,7 @@ suppressMessages({
       )
     )
 
-    result <- mc_match(mock_module, "node_x", "node_y")
+    result <- mc_match(test_module, "node_x", "node_y")
 
     # Check scenario matching logic
     expect_equal(nrow(result$keys_xy), 6)
@@ -227,7 +227,7 @@ suppressMessages({
 
 
   test_that("mc_match null matching works", {
-    mock_module <- list(
+    test_module <- list(
       node_list = list(
         node_x = list(
           mcnode = mcstoc(runif,
@@ -258,7 +258,7 @@ suppressMessages({
       )
     )
 
-    result <- mc_match(mock_module, "node_x", "node_y")
+    result <- mc_match(test_module, "node_x", "node_y")
 
     # Verify dimensions of matched nodes
     expect_equal(dim(result$node_x_match)[2], dim(result$node_y_match)[2])

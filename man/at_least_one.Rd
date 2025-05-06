@@ -7,26 +7,24 @@
 at_least_one(mcmodule, mc_names, name = NULL, prefix = NULL, summary = TRUE)
 }
 \arguments{
-\item{mcmodule}{mcmodule object containing node list and input data frames}
+\item{mcmodule}{Module containing node list and input data frames}
 
-\item{mc_names}{character vector of node names to combine}
+\item{mc_names}{Vector of node names to combine}
 
-\item{name}{optional custom name for output node}
+\item{name}{Optional custom name for output node (default: NULL)}
 
-\item{prefix}{optional prefix for output node name}
+\item{prefix}{Optional prefix for output node name (default: NULL)}
 
-\item{summary}{logical, whether to calculate summary statistics}
+\item{summary}{Whether to calculate summary statistics (default: TRUE)}
 }
 \value{
 Updated mcmodule with new combined probability node
 }
 \description{
-Calculates the probability of at least one event occurring from a list of events,
-assuming independence between events. This is an element-wise operation between mc_names that
-automatically handles row matching.
+This function combines probabilities of multiple events assuming independence,
 }
 \examples{
-at_least_one(mcmodule = intro,
+at_least_one(mcmodule = imports_mcmodule,
              mc_names = c("no_purchase_inf_agg", "b_entry_agg"))
 
 }

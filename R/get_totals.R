@@ -1,117 +1,93 @@
 #' Calculate Combined Probability of Events (At least one)
 #'
-#' @description Calculates the probability of at least one event occurring from a list of events,
-#' assuming independence between events. This is an element-wise operation between mc_names that
-#' automatically handles row matching.
+#' @description This function combines probabilities of multiple events assuming independence,
+# using the formula P(A or B) = 1 - (1-P(A))*(1-P(B)). It macthes dimensions automatically.
 #'
-#' @param mcmodule mcmodule object containing node list and input data frames
-#' @param mc_names character vector of node names to combine
-#' @param name optional custom name for output node
-#' @param prefix optional prefix for output node name
-#' @param summary logical, whether to calculate summary statistics
+#' @param mcmodule Module containing node list and input data frames
+#' @param mc_names Vector of node names to combine
+#' @param name Optional custom name for output node (default: NULL)
+#' @param prefix Optional prefix for output node name (default: NULL)
+#' @param summary Whether to calculate summary statistics (default: TRUE)
 #'
 #' @return Updated mcmodule with new combined probability node
 #' @export
 #'
 #' @examples
-#' at_least_one(mcmodule = intro,
+#' at_least_one(mcmodule = imports_mcmodule,
 #'              mc_names = c("no_purchase_inf_agg", "b_entry_agg"))
 #'
 at_least_one <- function(mcmodule, mc_names, name = NULL, prefix = NULL, summary = TRUE) {
-
-  if(!all(mc_names%in%names(mcmodule$node_list))){
-    stop(paste(mc_names[!mc_names%in%names(mcmodule$node_list)],collapse = ", "), " not found in mcmodule")
+  # Validate inputs exist
+  if(!all(mc_names %in% names(mcmodule$node_list))) {
+    stop(paste(mc_names[!mc_names %in% names(mcmodule$node_list)], collapse=", "),
+         " not found in mcmodule")
   }
 
   module_name <- deparse(substitute(mcmodule))
 
-  # Find largest node
-  node_dim<-sapply(mc_names, function(x) dim(mcmodule$node_list[[x]][["mcnode"]])[3])
-  mode_dim_max<-names(node_dim)[which.max(node_dim)]
-  # Order by size
-  mc_names<-mc_names[order(node_dim, decreasing=TRUE)]
-  # Get data from largest mcnode
-  data_name <- mcmodule$node_list[[mode_dim_max]][["data_name"]]
-  data <- mcmodule$data[[data_name]]
-  if(!is.null(mcmodule$node_list[[mode_dim_max]][["summary"]])){
-    summary_df<-mcmodule$node_list[[mode_dim_max]][["summary"]]
-    if(nrow(data)>nrow(summary_df)) data<-summary_df
-  }
+  nodes_data_name <- sapply(mc_names, function(x) mcmodule$node_list[[x]][["data_name"]])
+  nodes_dim <- sapply(mc_names, function(x) dim(mcmodule$node_list[[x]][["mcnode"]])[3])
+  nodes_agg <- sapply(mc_names, function(x) !is.null(mcmodule$node_list[[x]][["agg_keys"]]))
+  nodes_keys <- lapply(mc_names, function(x) mc_keys(mcmodule,x))
+  names(nodes_keys)<-mc_names
 
   p_all <- 0
   keys_names <- c()
 
-  # Handle nodes with homogenous groups
-  if (length(mcmodule$node_list[[mc_names[1]]][["hg"]]) > 0) {
+  if(length(unique(nodes_data_name))==1&&length(unique(nodes_dim))==1&&all(!nodes_agg)){
     for (i in 1:length(mc_names)) {
       mc_name <- mc_names[i]
-      keys_type <- ifelse("agg_keys" %in% names(mcmodule$node_list[[mc_name]]),
-                          "agg_keys", "keys")
-
-      keys_names <- unique(c(keys_names,
-                             mcmodule$node_list[[mc_name]][[keys_type]]))
       p_i <- mcmodule$node_list[[mc_name]][["mcnode"]]
 
-      # Match dimensions if needed
-      if (dim(p_i)[3] < nrow(data)) {
-        p_i <- mc_match_data(mcmodule, mc_name, data)
-        }
+      keys_names <- unique(c(keys_names,names(nodes_keys[[i]])))
+
+      # Update combined probability
       p_all <- 1 - ((1 - p_all) * (1 - p_i))
-
-      hg_index <- data$hg
     }
-
-  } else {
-    # Handle nodes without homogenous groups
+  }else {
     if (!length(mc_names) == 2) {
       stop("To aggregate mc_names without hg index provide exactly two mc_nodes")
     }
+
+    # Get keys for both nodes
     mc_name_x <- mc_names[1]
     mc_name_y <- mc_names[2]
 
-    keys_type_x <- ifelse("agg_keys" %in% names(mcmodule$node_list[[mc_name_x]]),
-                          "agg_keys", "keys")
-    keys_type_y <- ifelse("agg_keys" %in% names(mcmodule$node_list[[mc_name_y]]),
-                          "agg_keys", "keys")
-
-    keys_names_x <- unique(c(keys_names,
-                             mcmodule$node_list[[mc_name_x]][[keys_type_x]]))
-    keys_names_y <- unique(c(keys_names,
-                             mcmodule$node_list[[mc_name_y]][[keys_type_y]]))
+    keys_names_x <- unique(c(keys_names,names(nodes_keys[[mc_name_x]])))
+    keys_names_y <- unique(c(keys_names,names(nodes_keys[[mc_name_y]])))
 
     keys_names <- unique(intersect(keys_names_x, keys_names_y))
 
+    # Match and combine probabilities
     p_xy <- mc_match(mcmodule, mc_name_x, mc_name_y, keys_names)
     p_all <- 1 - ((1 - p_xy[[1]]) * (1 - p_xy[[2]]))
-    data <- p_xy$index
-    hg_index <- NULL
+    data <- p_xy$keys_xy
   }
 
-  # Create new node name
+  # Create output node name
   p_all_a_mc_name <- ifelse(is.null(name),
-                            unique(paste0(prefix, gsub("_tr$|_pi$", "", mc_name), "_all")),
+                            generate_all_name(mc_names),
                             name)
 
-  if(length(p_all_a_mc_name)>1){
-    stop("If suffixes are not _tr or _pi, name for totals node must be provided")
-  }
 
-  # Add node to module
-  mcmodule$node_list[[p_all_a_mc_name]][["mcnode"]] <- p_all
-  mcmodule$node_list[[p_all_a_mc_name]][["type"]] <- "total"
-  mcmodule$node_list[[p_all_a_mc_name]][["param"]] <- c(mc_names)
-  mcmodule$node_list[[p_all_a_mc_name]][["inputs"]] <- c(mc_names)
-  mcmodule$node_list[[p_all_a_mc_name]][["description"]] <-
-    paste("Probability at least one of", mc_names, "(assuming independence)")
-  mcmodule$node_list[[p_all_a_mc_name]][["module"]] <- module_name
-  mcmodule$node_list[[p_all_a_mc_name]][["keys"]] <- keys_names
-  mcmodule$node_list[[p_all_a_mc_name]][["node_expression"]] <-
-    paste0("1-(", paste(paste("(1-", mc_names, ")", sep = ""), collapse = "*"), ")")
-  mcmodule$node_list[[p_all_a_mc_name]][["scenario"]] <- data$scenario_id
-  mcmodule$node_list[[p_all_a_mc_name]][["hg"]] <- hg_index
-  mcmodule$node_list[[p_all_a_mc_name]][["data_name"]] <- data_name
-  mcmodule$node_list[[p_all_a_mc_name]][["prefix"]] <- prefix
+  # Add new node to module
+  mcmodule$node_list[[p_all_a_mc_name]] <- list(
+    mcnode = p_all,
+    type = "total",
+    param = mc_names,
+    inputs = mc_names,
+    description = paste("Probability at least one of", mc_names, "(assuming independence)"),
+    module = module_name,
+    keys = keys_names,
+    node_expression = paste0("1-(", paste(paste("(1-", mc_names, ")", sep=""),
+                                          collapse="*"), ")"),
+    scenario = data$scenario_id,
+    hg = hg_index,
+    data_name = data_name,
+    prefix = prefix
+  )
 
+  # Add summary if requested
   if (summary) {
     mcmodule$node_list[[p_all_a_mc_name]][["summary"]] <-
       mc_summary(data = data,
@@ -121,6 +97,40 @@ at_least_one <- function(mcmodule, mc_names, name = NULL, prefix = NULL, summary
   }
 
   return(mcmodule)
+}
+
+# Function to generate a consistent name with _all suffix
+generate_all_name <- function(mc_names) {
+  # Check if "all" is already in any input
+  if(any(grepl("_all$", mc_names))) {
+    stop("One of the mc_names already contains '_all' suffix")
+  }
+
+  # Remove common suffixes by finding the common prefix
+  # Split strings into parts
+  parts_list <- strsplit(mc_names, "_")
+
+  # Find the minimum length to compare
+  min_length <- min(sapply(parts_list, length))
+
+  # Compare parts until they differ
+  common_parts <- c()
+  for(i in 1:min_length) {
+    current_parts <- sapply(parts_list, `[`, i)
+    if(length(unique(current_parts)) == 1) {
+      common_parts <- c(common_parts, current_parts[1])
+    } else {
+      break
+    }
+  }
+
+  # If no common parts found, throw error
+  if(length(common_parts) == 0) {
+    stop("Input strings do not share a common prefix")
+  }
+
+  # Generate final name
+  paste(c(common_parts, "all"), collapse = "_")
 }
 
 #' Calculate Multi-Level Total Probabilities and Expected Counts

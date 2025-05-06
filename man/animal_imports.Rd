@@ -16,6 +16,9 @@ A data frame with 3 rows and 4 columns:
 }
 }
 }
+\source{
+Simulated data for demonstration purposes
+}
 \usage{
 animal_imports
 }

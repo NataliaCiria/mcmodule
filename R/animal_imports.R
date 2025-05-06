@@ -10,4 +10,6 @@
 #'   \item{animals_n_mean}{Mean number of animals exported per farm}
 #'   \item{animals_n_sd}{Standard deviation of animals exported per farm}
 #' }
+#'
+#' @source Simulated data for demonstration purposes
 "animal_imports"

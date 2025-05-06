@@ -19,4 +19,6 @@
 #'   \item{test_sensi_mode}{Most likely test sensitivity value}
 #'   \item{test_sensi_max}{Maximum test sensitivity value}
 #' }
+#'
+#' @source Simulated data for demonstration purposes
 "imports_data"
