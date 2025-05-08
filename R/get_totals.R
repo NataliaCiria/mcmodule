@@ -97,8 +97,8 @@ at_least_one <- function(mcmodule, mc_names, name = NULL, prefix = NULL, summary
   # Add summary if requested
   if (summary) {
     mcmodule$node_list[[p_all_a_mc_name]][["summary"]] <-
-      mc_summary(data = data,
-                 mcnode = p_all,
+      mc_summary(mcmodule = mcmodule,
+                 data = data,
                  mc_name = p_all_a_mc_name,
                  keys_names = keys_names)
   }
@@ -260,10 +260,11 @@ agg_totals <- function(mcmodule, mc_name,
 
   if (summary) {
     mcmodule$node_list[[agg_total_mc_name]][["summary"]] <-
-      mc_summary(data = key_data,
-                 mcnode = total_agg,
+      mc_summary(mcmodule = mcmodule,
+                 data = key_data,
                  mc_name = agg_total_mc_name,
                  keys_names = new_keys_names)
+
   }
 
   mcmodule$modules <- unique(c(mcmodule$modules, module_name))
@@ -574,15 +575,17 @@ trial_totals <- function(mcmodule, mc_names,
         if (summary) {
           if(!is.null(agg_keys)){
             mcmodule$node_list[[new_mc_name]][["summary"]] <- mc_summary(
+              mcmodule = mcmodule,
               data = mcmodule$node_list[[mc_name]][["summary"]],
-              mcnode = mcmodule$node_list[[new_mc_name]][["mcnode"]],
               mc_name = new_mc_name,
               keys_names = agg_keys
             )
+
+
           }else{
             mcmodule$node_list[[new_mc_name]][["summary"]] <- mc_summary(
+              mcmodule = mcmodule,
               data = data,
-              mcnode = mcmodule$node_list[[new_mc_name]][["mcnode"]],
               mc_name = new_mc_name,
               keys_names = keys_names)
           }

@@ -2,39 +2,69 @@
 % Please edit documentation in R/mc_summary.R
 \name{mc_summary}
 \alias{mc_summary}
-\title{Get mcnode summary statistics}
+\title{Compute summary statistics for an mcnode object}
 \usage{
 mc_summary(
-  data,
-  mcnode,
-  sep_keys = TRUE,
-  na_value = NA,
-  keys_names = NULL,
+  mcmodule = NULL,
   mc_name = NULL,
-  by_keys = FALSE
+  keys_names = NULL,
+  data = NULL,
+  mcnode = NULL,
+  sep_keys = TRUE,
+  digits = NULL
 )
 }
 \arguments{
-\item{data}{data frame containing mnode inputs}
+\item{mcmodule}{An mcmodule object containing the node to summarize}
 
-\item{mcnode}{mcnode object}
+\item{mc_name}{Character string specifying the name of the mcnode in the module}
 
-\item{sep_keys}{logical, separate keys in different columns}
+\item{keys_names}{Vector of column names to use as keys for grouping (default: NULL)}
 
-\item{na_value}{value to exclude from summary}
+\item{data}{Optional data frame containing the input data (default: NULL)}
 
-\item{keys_names}{vector of key names for grouping}
+\item{mcnode}{Optional mcnode object to summarize directly (default: NULL)}
 
-\item{mc_name}{character, name of mcnode}
+\item{sep_keys}{Logical; if TRUE, keeps keys in separate columns (default: TRUE)}
 
-\item{by_keys}{logical, whether to summarize by keys}
+\item{digits}{Integer indicating number of significant digits for rounding (default: NULL)}
 }
 \value{
-summary data frame
+A data frame containing summary statistics with columns:
+\itemize{
+\item mc_name: Name of the mcnode
+\item keys: Grouping variables (if sep_keys=FALSE) or individual key columns (if sep_keys=TRUE)
+\item Summary statistics including:
+\itemize{
+\item mean: Average value
+\item sd: Standard deviation
+\item Various quantiles (2.5\%, 25\%, 50\%, 75\%, 97.5\%)
+}
+}
 }
 \description{
-Get mcnode summary statistics
+Compute summary statistics for an mcnode object
+}
+\details{
+This function can be called in two ways:
+\enumerate{
+\item By providing an mcmodule and mc_name
+\item By providing data and mcnode directly
+}
 }
 \examples{
-mc_summary(mcnode = h_prev)
+\dontrun{
+# Basic usage with mcmodule
+summary_basic <- mc_summary(imports_mcmodule, "h_prev")
+
+# Using custom keys and rounding
+summary_custom <- mc_summary(imports_mcmodule, "h_prev",
+                           keys_names = c("origin"),
+                           digits = 3)
+
+# Direct usage with data and mcnode
+summary_direct <- mc_summary(data = imports_data,
+                           mcnode = h_prev,
+                           sep_keys = FALSE)
+}
 }

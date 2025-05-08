@@ -151,7 +151,7 @@ suppressMessages({
     expect_error(agg_totals(test_module, "nonexistent_node"))
   })
 
-  test_that("trial_totals works correctly", {
+  test_that("trial_totals works", {
     # Create test data
     test_module <- list(
       node_list = list(
