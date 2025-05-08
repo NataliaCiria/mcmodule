@@ -17,9 +17,7 @@
 #' @return No return value, creates MC nodes in the specified environment
 #'
 #' @examples
-#' \dontrun{
 #'   create_mc_nodes(data = imports_data, mctable = imports_mctable)
-#' }
 #'
 #' @export
 create_mc_nodes <- function(data, mctable = set_mctable(), envir = parent.frame(), ...) {

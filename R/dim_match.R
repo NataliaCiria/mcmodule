@@ -5,10 +5,9 @@
 #' @param y Optional second dataset
 #' @return Dataframe or list of dataframes with added group IDs
 #' @import dplyr
-#' @importFrom dplyr mutate filter group_by_at ungroup cur_group_id cur_group_rows relocate vars any_of
 #' @export
 #' @examples
-#' add_group_id(purchase_data, by=c("animal_category", "pathogen", "mov_id", "farm_id"))
+#' add_group_id(imports_data, by=c("pathogen ", "origin"))
 add_group_id <- function(x, y=NULL, by=NULL) {
   if(!is.null(y)) {
     if(is.null(by)) {
@@ -31,37 +30,37 @@ add_group_id <- function(x, y=NULL, by=NULL) {
     x$df <- "x"
     y$df <- "y"
 
-    xy <- rbind(x[c(by,"df")], y[c(by,"df")]) %>%
-      mutate(g_id=NULL,
-             g_row=NULL) %>%
-      group_by_at(vars(any_of(by))) %>%
-      mutate(g_id=cur_group_id())
+    xy <- dplyr::bind_rows(x[c(by,"df")], y[c(by,"df")]) %>%
+      dplyr::mutate(g_id=NULL,
+                    g_row=NULL) %>%
+      dplyr::group_by(dplyr::across(dplyr::all_of(by))) %>%
+      dplyr::mutate(g_id=dplyr::cur_group_id())
 
     x <- xy %>%
-      filter(df=="x") %>%
-      cbind(x[!names(x) %in% c(by,"df","g_id","g_row")]) %>%
-      mutate(df=NULL,
-             g_row=cur_group_rows()) %>%
-      relocate(g_id, g_row) %>%
-      ungroup()
+      dplyr::filter(df=="x") %>%
+      dplyr::bind_cols(x[!names(x) %in% c(by,"df","g_id","g_row")]) %>%
+      dplyr::mutate(df=NULL,
+                    g_row=dplyr::cur_group_rows()) %>%
+      dplyr::relocate(g_id, g_row) %>%
+      dplyr::ungroup()
 
     y <- xy %>%
-      filter(df=="y") %>%
-      cbind(y[!names(y) %in% c(by,"df","g_id","g_row")]) %>%
-      mutate(df=NULL,
-             g_row=cur_group_rows()) %>%
-      relocate(g_id, g_row) %>%
-      ungroup()
+      dplyr::filter(df=="y") %>%
+      dplyr::bind_cols(y[!names(y) %in% c(by,"df","g_id","g_row")]) %>%
+      dplyr::mutate(df=NULL,
+                    g_row=dplyr::cur_group_rows()) %>%
+      dplyr::relocate(g_id, g_row) %>%
+      dplyr::ungroup()
 
     return(list(x=x, y=y))
 
   } else {
     x <- x %>%
-      group_by_at(vars(any_of(by))) %>%
-      mutate(g_id=cur_group_id(),
-             g_row=cur_group_rows()) %>%
-      relocate(g_id,g_row) %>%
-      ungroup()
+      dplyr::group_by(dplyr::across(dplyr::all_of(by))) %>%
+      dplyr::mutate(g_id=dplyr::cur_group_id(),
+                    g_row=dplyr::cur_group_rows()) %>%
+      dplyr::relocate(g_id,g_row) %>%
+      dplyr::ungroup()
 
     return(x)
   }
@@ -76,12 +75,9 @@ add_group_id <- function(x, y=NULL, by=NULL) {
 #' @param keys_names Vector of column names to extract (optional)
 #'
 #' @return Dataframe with scenario_id and requested key columns
-
 #'
 #' @examples
-#' \dontrun{
-#' keys_df <- mc_keys(mc_module, "node1", c("key1", "key2"))
-#' }
+#' keys_df <- mc_keys(imports_mcmodule, "w_prev")
 #'
 #' @export
 mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
@@ -147,10 +143,11 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
 #'   \item{x}{First dataset with group IDs}
 #'   \item{y}{Second dataset with group IDs}
 #'   \item{xy}{Matched datasets with aligned group and scenario IDs}
+#' @import dplyr
 #' @examples
-#' x <- data.frame(id = 1:2, scenario_id = c(0,1))
-#' y <- data.frame(id = 1:2, scenario_id = c(0,2))
-#' keys_match(x, y, keys_names = "id")
+#' x <- data.frame(type = 1:2, scenario_id = c(0,1))
+#' y <- data.frame(type = 1:2, scenario_id = c(0,2))
+#' keys_match(x, y, keys_names = "type")
 keys_match <- function(x, y, keys_names=NULL) {
   # Add common group ids
   keys_list <- add_group_id(x, y, keys_names)
@@ -165,22 +162,22 @@ keys_match <- function(x, y, keys_names=NULL) {
 
   # Group and scenario matching
   keys_xy <- keys_x %>%
-    full_join(keys_y, by = c("g_id", "scenario_id", keys_names)) %>%
-    relocate("g_id", "scenario_id", all_of(keys_names))
+    dplyr::full_join(keys_y, by = c("g_id", "scenario_id", keys_names)) %>%
+    dplyr::relocate("g_id", "scenario_id", dplyr::all_of(keys_names))
 
   # Get group ids for baseline scenario (scenario_id = 0)
   keys_xy_0 <- keys_xy %>%
-    full_join(keys_y, by = c("g_id", "scenario_id", keys_names)) %>%
-    filter(scenario_id == 0) %>%
-    transmute(
+    dplyr::full_join(keys_y, by = c("g_id", "scenario_id", keys_names)) %>%
+    dplyr::filter(scenario_id == 0) %>%
+    dplyr::transmute(
       g_id,
       g_row.x_0 = g_row.x,
       g_row.y_0 = g_row.y)
 
   # Fill in missing values using baseline scenario
   keys_xy <- keys_xy %>%
-    left_join(keys_xy_0, by = "g_id") %>%
-    mutate(
+    dplyr::left_join(keys_xy_0, by = "g_id") %>%
+    dplyr::mutate(
       g_row.x = ifelse(is.na(g_row.x), g_row.x_0, g_row.x),
       g_row.x_0 = NULL,
       g_row.y = ifelse(is.na(g_row.y), g_row.y_0, g_row.y),
@@ -204,10 +201,6 @@ keys_match <- function(x, y, keys_names=NULL) {
 #' @param keys_names Names of key columns
 #' @return List containing matched nodes and combined keys (keys_xy)
 #' @export
-#' @examples
-#' mc_match(mcmodule = intro,
-#'              mc_name_x="no_purchase_inf_agg",
-#'              mc_name_y="b_entry_agg")
 mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names=NULL) {
 
   # Check if mcnodes are in mcmodule
@@ -365,60 +358,4 @@ wif_match <- function(x, y, by="hg") {
   names(list_new_xy) <- c(deparse(substitute(x)), deparse(substitute(y)))
 
   return(list_new_xy)
-}
-
-
-#' Match Monte Carlo Nodes
-#'
-#' Matches monte carlo nodes with differing dimensions assuming the new variates
-#' are equal for scenario 0 for the smallest node
-#'
-#' @param mcmodule Monte Carlo module
-#' @param mc_name Name of the Monte Carlo node
-#' @param data Input data
-#' @return Modified Monte Carlo node
-#' @export
-#' @examples
-#' mc_match_data(mcmodule = purchase, mc_name="fattening_b_indir_contact_all", data=quarantine_data)
-mc_match_data <- function(mcmodule, mc_name, data) {
-  # Get previous node data
-  prenode_hg <- mcmodule$node_list[[mc_name]][["hg"]]
-  prenode_scenario <- mcmodule$node_list[[mc_name]][["scenario"]]
-  match_prev_mcnode <- mcmodule$node_list[[mc_name]][["mcnode"]]
-
-  if(is.null(match_prev_mcnode)) {
-    stop(mc_name, " is null")
-  }
-
-  # Handle scalar to mcnode conversion
-  if(!is.mcnode(match_prev_mcnode) & is.numeric(match_prev_mcnode)) {
-    message(paste0(mc_name," to mcnode ", paste0(dim(match_prev_mcnode),collapse=", "), "\n"))
-    match_prev_mcnode <- mcdata(match_prev_mcnode, type="0", nvariates=length(prenode_hg))
-  }
-
-  prev_dim <- dim(match_prev_mcnode)
-
-  # Get current data
-  data_hg <- data$hg
-  data_scenario <- data$scenario_id
-
-  message("Matching dimensions by homogeneous groups provided (node ",
-          max(prenode_hg)," hg, data ", max(data_hg)," hg). From: ",
-          length(unique(prenode_scenario)), " scenarios to ",
-          length(unique(data_scenario))," scenarios.")
-
-  # Handle new scenarios
-  new_scenario_hg <- data_hg[!data_scenario %in% prenode_scenario]
-
-  for(i in new_scenario_hg) {
-    mc_i <- extractvar(match_prev_mcnode,i)
-    match_prev_mcnode <- addvar(match_prev_mcnode,mc_i)
-  }
-
-  new_dim <- dim(match_prev_mcnode)
-
-  message(mc_name, " prev dim: [", paste(prev_dim, collapse=", "),
-          "], new dim: [", paste(new_dim, collapse=", "),"]")
-
-  return(match_prev_mcnode)
 }
