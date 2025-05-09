@@ -1,4 +1,4 @@
-#' Animal Import Data
+#' Example Animal Import Data
 #'
 #' A dataset containing information about animal imports from three different regions
 #'

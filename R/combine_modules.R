@@ -1,12 +1,11 @@
 #' Combine Two Modules
 #'
-#' This function combines two mcmodules into a single mcmodule, merging their data,
-#' model expressions, node lists, and other components.
+#' Combines two mcmodules into a single mcmodule, merging their data and components
 #'
 #' @param mcmodule_x First module to combine
 #' @param mcmodule_y Second module to combine
 #'
-#' @return A combined mcmodule object containing the elements elements from both input modules
+#' @return Combined mcmodule object
 #'
 #' @export
 combine_modules <- function(mcmodule_x, mcmodule_y) {

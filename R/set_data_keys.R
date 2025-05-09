@@ -37,7 +37,7 @@ set_data_keys <- function(data_keys = NULL) {
   return(get("data_keys", envir = .pkgglobalenv))
 }
 
-#' Reset Data Model
+#' Reset Data Keys
 #'
 #' @description
 #' Resets the data model to an empty list

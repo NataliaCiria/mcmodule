@@ -1,7 +1,7 @@
 #' Calculate Combined Probability of Events (At least one)
 #'
 #' @description This function combines probabilities of multiple events assuming independence,
-# using the formula P(A or B) = 1 - (1-P(A))*(1-P(B)). It macthes dimensions automatically.
+#' using the formula P(A or B) = 1 - (1-P(A))*(1-P(B)). It macthes dimensions automatically.
 #'
 #' @param mcmodule Module containing node list and input data frames
 #' @param mc_names Vector of node names to combine
@@ -290,7 +290,6 @@ agg_totals <- function(mcmodule, mc_name,
   mcmodule$modules <- unique(c(mcmodule$modules, module_name))
   return(mcmodule)
 }
-
 
 
 #' Calculate Probabilities and Expected Counts Across Hierarchical Levels

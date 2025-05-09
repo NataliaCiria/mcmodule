@@ -1,7 +1,7 @@
 #' Create Monte Carlo Nodes from Data and Configuration Table
 #'
-#' This function creates Monte Carlo nodes (mcnodes) based on instructions provided in a configuration
-#' table and input variables from a dataframe. It supports various distributions and transformations.
+#' Creates Monte Carlo nodes (mcnodes) based on instructions provided in a configuration
+#' table (mctable) and input variables from a dataframe.
 #'
 #' @param data A data frame containing the input variables for creating Monte Carlo nodes
 #' @param mctable A configuration table specifying MC node definitions. Must contain columns:
@@ -12,7 +12,6 @@
 #'     \item from_variable: Optional source variable name for transformation
 #'   }
 #' @param envir Environment where MC nodes will be created (default: parent.frame())
-#' @param ... Additional arguments (currently unused)
 #'
 #' @return No return value, creates MC nodes in the specified environment
 #'
@@ -20,7 +19,7 @@
 #' create_mc_nodes(data = imports_data, mctable = imports_mctable)
 #'
 #' @export
-create_mc_nodes <- function(data, mctable = set_mctable(), envir = parent.frame(), ...) {
+create_mc_nodes <- function(data, mctable = set_mctable(), envir = parent.frame()) {
   # Validate that mctable has required columns
   valid_mctable <- all(c("mcnode", "mc_func") %in% names(mctable))
   if (!valid_mctable) stop("mctable must contain 'mcnode', 'mcreate' and 'mc_func' columns")
