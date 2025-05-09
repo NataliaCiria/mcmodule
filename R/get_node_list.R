@@ -13,10 +13,9 @@
 #'
 #'
 #' @examples
-#' get_node_list(model_exp = imports_exp, mctable=imports_mctable, data_keys=imports_data_keys)
+#' get_node_list(model_exp = imports_exp, mctable = imports_mctable, data_keys = imports_data_keys)
 get_node_list <- function(model_exp, param_names = NULL,
                           mctable = set_mctable(), data_keys = set_data_keys()) {
-
   module <- gsub("_exp", "", deparse(substitute(model_exp)))
 
   # Initialize lists and vectors
@@ -24,7 +23,7 @@ get_node_list <- function(model_exp, param_names = NULL,
   all_nodes <- c()
 
   # Process output nodes from model exp
-  for(i in 2:length(model_exp)) {
+  for (i in 2:length(model_exp)) {
     node_name <- deparse(model_exp[[i]][[2]])
     node_exp <- paste0(deparse(model_exp[[i]][[3]]), collapse = "")
     out_node_list[[node_name]][["node_exp"]] <- node_exp
@@ -40,18 +39,18 @@ get_node_list <- function(model_exp, param_names = NULL,
 
     # Check NA removal
     na_rm <- any(inputs %in% "mcnode_na_rm")
-    if(na_rm) {
+    if (na_rm) {
       out_node_list[[node_name]][["na_rm"]] <- na_rm
     }
 
     # Filter function inputs
     inputs <- inputs[!inputs %in% "mcnode_na_rm"]
     fun_input <- c()
-    if(length(inputs) > 0) {
-      for(j in 1:length(inputs)) {
+    if (length(inputs) > 0) {
+      for (j in 1:length(inputs)) {
         input_name <- inputs[j]
-        is_fun <- if(exists(input_name)) is.function(get(input_name)) else FALSE
-        if(is_fun) fun_input <- c(fun_input, input_name)
+        is_fun <- if (exists(input_name)) is.function(get(input_name)) else FALSE
+        if (is_fun) fun_input <- c(fun_input, input_name)
       }
     }
 
@@ -60,17 +59,16 @@ get_node_list <- function(model_exp, param_names = NULL,
 
     # Set node type
     out_node_list[[node_name]][["type"]] <-
-      if(!grepl("[:alpha:]", node_exp)) "scalar" else "out_node"
+      if (!grepl("[:alpha:]", node_exp)) "scalar" else "out_node"
 
     out_node_list[[node_name]][["inputs"]] <- inputs
     out_node_list[[node_name]][["module"]] <- module
     out_node_list[[node_name]][["mc_name"]] <- node_name
-
   }
 
   # Rename parameters
-  for(i in 1:length(all_nodes)) {
-    all_nodes[i] <- if(all_nodes[i] %in% names(param_names)) {
+  for (i in 1:length(all_nodes)) {
+    all_nodes[i] <- if (all_nodes[i] %in% names(param_names)) {
       param_names[all_nodes[i]]
     } else {
       all_nodes[i]
@@ -81,16 +79,16 @@ get_node_list <- function(model_exp, param_names = NULL,
   in_node_list <- list()
   input_nodes <- all_nodes[all_nodes %in% as.character(mctable$mcnode)]
 
-  all_inputs<-get_mc_inputs(data_keys)
+  all_inputs <- get_mc_inputs(data_keys)
 
-  if(length(input_nodes) > 0) {
-    for(i in 1:length(input_nodes)) {
+  if (length(input_nodes) > 0) {
+    for (i in 1:length(input_nodes)) {
       node_name <- input_nodes[[i]]
-      mc_row <- mctable[mctable$mcnode == node_name,]
+      mc_row <- mctable[mctable$mcnode == node_name, ]
 
       in_node_list[[node_name]][["type"]] <- "in_node"
 
-      if(!is.na(mc_row$mc_func)) {
+      if (!is.na(mc_row$mc_func)) {
         in_node_list[[node_name]][["mc_func"]] <- as.character(mc_row$mc_func)
       }
 
@@ -103,7 +101,7 @@ get_node_list <- function(model_exp, param_names = NULL,
         inputs_col <- all_inputs[[dataset_name]][grepl(pattern, all_inputs[[dataset_name]])]
 
         # Update node list if matching inputs found
-        if(length(inputs_col)> 0) {
+        if (length(inputs_col) > 0) {
           in_node_list[[node_name]][["inputs_col"]] <- inputs_col
           in_node_list[[node_name]][["input_dataset"]] <- dataset_name
           in_node_list[[node_name]][["keys"]] <- data_keys[[dataset_name]][["keys"]]
@@ -114,7 +112,7 @@ get_node_list <- function(model_exp, param_names = NULL,
       in_node_list[[node_name]][["mc_name"]] <- node_name
 
       # Handle parameter renaming
-      if(node_name %in% param_names) {
+      if (node_name %in% param_names) {
         node_name_exp <- names(param_names)[param_names %in% node_name]
         names(in_node_list)[names(in_node_list) %in% param_names] <- node_name_exp
         all_nodes[all_nodes %in% param_names] <- node_name_exp
@@ -127,27 +125,27 @@ get_node_list <- function(model_exp, param_names = NULL,
   prev_node_list <- list()
   prev_nodes <- all_nodes[!all_nodes %in% c(names(in_node_list), names(out_node_list))]
 
-  if(length(prev_nodes) > 0) {
-    for(i in 1:length(prev_nodes)) {
+  if (length(prev_nodes) > 0) {
+    for (i in 1:length(prev_nodes)) {
       node_name <- prev_nodes[i]
-      is_fun <- if(exists(node_name)) is.function(get(node_name)) else FALSE
-      if(!is_fun) {
+      is_fun <- if (exists(node_name)) is.function(get(node_name)) else FALSE
+      if (!is_fun) {
         prev_node_list[[node_name]][["type"]] <- "prev_node"
       }
     }
   }
 
   # Combine all node lists (provisional list for key matching)
-  node_list <-c(in_node_list, prev_node_list, out_node_list)
+  node_list <- c(in_node_list, prev_node_list, out_node_list)
 
   # Process output node keys
-  for(i in names(out_node_list)) {
+  for (i in names(out_node_list)) {
     inputs <- node_list[[i]][["inputs"]]
-    if(length(inputs) > 0) {
+    if (length(inputs) > 0) {
       keys_names <- unique(unlist(lapply(inputs, function(x) {
         node_list[[x]][["keys"]]
       })))
-      if(length(keys_names) > 0) {
+      if (length(keys_names) > 0) {
         node_list[[i]][["keys"]] <- keys_names
       }
     }

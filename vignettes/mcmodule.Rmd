@@ -25,7 +25,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup, include = FALSE}
-#library(mcmodule)
+# library(mcmodule)
 ```
 
 > *This document is intended for intermediate R programmers who are familiar with Monte Carlo simulation and quantitative risk assessment. For an introduction to quantitative risk assessment, please refer to:*

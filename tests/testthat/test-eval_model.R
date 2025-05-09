@@ -2,7 +2,7 @@ suppressMessages({
   test_that("eval_model works", {
     # Test basic functionality
     result <- eval_model(
-      model_exp = c(imports=imports_exp),
+      model_exp = c(imports = imports_exp),
       data = imports_data,
       mctable = imports_mctable,
       data_keys = imports_data_keys
@@ -13,7 +13,9 @@ suppressMessages({
     expect_true(all(c("data", "model_exp", "node_list", "modules") %in% names(result)))
 
     # Test error handling for missing prev_mcmodule
-    test_exp_prev <- quote({result <- prev_value * 2})
+    test_exp_prev <- quote({
+      result <- prev_value * 2
+    })
     expect_error(
       eval_model(
         model_exp = test_exp_prev,
@@ -26,7 +28,7 @@ suppressMessages({
 
     # Test only_node_list parameter
     node_list <- eval_model(
-      model_exp = c(imports=imports_exp),
+      model_exp = c(imports = imports_exp),
       data = imports_data,
       mctable = imports_mctable,
       data_keys = imports_data_keys,

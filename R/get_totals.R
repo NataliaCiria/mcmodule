@@ -13,46 +13,50 @@
 #' @export
 #'
 #' @examples
-#' at_least_one(mcmodule = imports_mcmodule,
-#'              mc_names = c("no_purchase_inf_agg", "b_entry_agg"))
+#' at_least_one(
+#'   mcmodule = imports_mcmodule,
+#'   mc_names = c("no_purchase_inf_agg", "b_entry_agg")
+#' )
 #'
 at_least_one <- function(mcmodule, mc_names, name = NULL, prefix = NULL, summary = TRUE) {
   # Validate inputs exist
-  if(!all(mc_names %in% names(mcmodule$node_list))) {
-    stop(paste(mc_names[!mc_names %in% names(mcmodule$node_list)], collapse=", "),
-         " not found in mcmodule")
+  if (!all(mc_names %in% names(mcmodule$node_list))) {
+    stop(
+      paste(mc_names[!mc_names %in% names(mcmodule$node_list)], collapse = ", "),
+      " not found in mcmodule"
+    )
   }
 
   module_name <- deparse(substitute(mcmodule))
 
   nodes_data_name <- sapply(mc_names, function(x) mcmodule$node_list[[x]][["data_name"]])
-  data_name <-unique(nodes_data_name)
+  data_name <- unique(nodes_data_name)
   nodes_dim <- sapply(mc_names, function(x) dim(mcmodule$node_list[[x]][["mcnode"]])[3])
   nodes_agg <- sapply(mc_names, function(x) !is.null(mcmodule$node_list[[x]][["agg_keys"]]))
-  nodes_keys <- lapply(mc_names, function(x) mc_keys(mcmodule,x))
-  names(nodes_keys)<-mc_names
+  nodes_keys <- lapply(mc_names, function(x) mc_keys(mcmodule, x))
+  names(nodes_keys) <- mc_names
 
 
   p_all <- 0
   keys_names <- c()
 
-  if(length(data_name)==1&&length(unique(nodes_dim))==1&&all(!nodes_agg)){
+  if (length(data_name) == 1 && length(unique(nodes_dim)) == 1 && all(!nodes_agg)) {
     for (i in 1:length(mc_names)) {
       # Check that node keys are identical for all nodes
-      if(i>1){
-        if(!identical(nodes_keys[[i]],data)){
+      if (i > 1) {
+        if (!identical(nodes_keys[[i]], data)) {
           stop("nodes_keys are not equal for all nodes")
         }
       }
-      data<-nodes_keys[[i]]
+      data <- nodes_keys[[i]]
       mc_name <- mc_names[i]
       p_i <- mcmodule$node_list[[mc_name]][["mcnode"]]
-      keys_names <- unique(c(keys_names,names(nodes_keys[[i]])))
+      keys_names <- unique(c(keys_names, names(nodes_keys[[i]])))
 
       # Update combined probability
       p_all <- 1 - ((1 - p_all) * (1 - p_i))
     }
-  }else {
+  } else {
     if (!length(mc_names) == 2) {
       stop("To aggregate mc_names without hg index provide exactly two mc_nodes")
     }
@@ -61,8 +65,8 @@ at_least_one <- function(mcmodule, mc_names, name = NULL, prefix = NULL, summary
     mc_name_x <- mc_names[1]
     mc_name_y <- mc_names[2]
 
-    keys_names_x <- unique(c(keys_names,names(nodes_keys[[mc_name_x]])))
-    keys_names_y <- unique(c(keys_names,names(nodes_keys[[mc_name_y]])))
+    keys_names_x <- unique(c(keys_names, names(nodes_keys[[mc_name_x]])))
+    keys_names_y <- unique(c(keys_names, names(nodes_keys[[mc_name_y]])))
 
     keys_names <- unique(intersect(keys_names_x, keys_names_y))
 
@@ -74,8 +78,9 @@ at_least_one <- function(mcmodule, mc_names, name = NULL, prefix = NULL, summary
 
   # Create output node name
   p_all_a_mc_name <- ifelse(is.null(name),
-                            generate_all_name(mc_names),
-                            name)
+    generate_all_name(mc_names),
+    name
+  )
 
 
   # Add new node to module
@@ -87,8 +92,9 @@ at_least_one <- function(mcmodule, mc_names, name = NULL, prefix = NULL, summary
     description = paste("Probability at least one of", mc_names, "(assuming independence)"),
     module = module_name,
     keys = keys_names,
-    node_expression = paste0("1-(", paste(paste("(1-", mc_names, ")", sep=""),
-                                          collapse="*"), ")"),
+    node_expression = paste0("1-(", paste(paste("(1-", mc_names, ")", sep = ""),
+      collapse = "*"
+    ), ")"),
     scenario = data$scenario_id,
     data_name = data_name,
     prefix = prefix
@@ -97,10 +103,12 @@ at_least_one <- function(mcmodule, mc_names, name = NULL, prefix = NULL, summary
   # Add summary if requested
   if (summary) {
     mcmodule$node_list[[p_all_a_mc_name]][["summary"]] <-
-      mc_summary(mcmodule = mcmodule,
-                 data = data,
-                 mc_name = p_all_a_mc_name,
-                 keys_names = keys_names)
+      mc_summary(
+        mcmodule = mcmodule,
+        data = data,
+        mc_name = p_all_a_mc_name,
+        keys_names = keys_names
+      )
   }
 
   return(mcmodule)
@@ -109,7 +117,7 @@ at_least_one <- function(mcmodule, mc_names, name = NULL, prefix = NULL, summary
 # Function to generate a consistent name with _all suffix
 generate_all_name <- function(mc_names) {
   # Check if "all" is already in any input
-  if(any(grepl("_all$", mc_names))) {
+  if (any(grepl("_all$", mc_names))) {
     stop("One of the mc_names already contains '_all' suffix")
   }
 
@@ -122,9 +130,9 @@ generate_all_name <- function(mc_names) {
 
   # Compare parts until they differ
   common_parts <- c()
-  for(i in 1:min_length) {
+  for (i in 1:min_length) {
     current_parts <- sapply(parts_list, `[`, i)
-    if(length(unique(current_parts)) == 1) {
+    if (length(unique(current_parts)) == 1) {
       common_parts <- c(common_parts, current_parts[1])
     } else {
       break
@@ -132,7 +140,7 @@ generate_all_name <- function(mc_names) {
   }
 
   # If no common parts found, throw error
-  if(length(common_parts) == 0) {
+  if (length(common_parts) == 0) {
     stop("Input strings do not share a common prefix")
   }
 
@@ -160,14 +168,13 @@ generate_all_name <- function(mc_names) {
 #' @return mcmodule with new aggregated node added
 #' @export
 agg_totals <- function(mcmodule, mc_name,
-                           keys_names=c("scenario_id"),
-                           suffix = "agg",
-                           name = NULL,
-                           summary = TRUE,
-                           keep_variates = FALSE,
-                           agg_func=NULL) {
-
-  if(!(is.null(agg_func)||agg_func%in%c("prob","avg","sum"))) stop("Aggregation function must be prob, avg, sum or NULL")
+                       keys_names = c("scenario_id"),
+                       suffix = "agg",
+                       name = NULL,
+                       summary = TRUE,
+                       keep_variates = FALSE,
+                       agg_func = NULL) {
+  if (!(is.null(agg_func) || agg_func %in% c("prob", "avg", "sum"))) stop("Aggregation function must be prob, avg, sum or NULL")
 
   # Extract module name and node data
   module_name <- deparse(substitute(mcmodule))
@@ -186,40 +193,52 @@ agg_totals <- function(mcmodule, mc_name,
   }
 
   # Create grouping index
-  key_col$key <- do.call(paste, c(key_col, sep=", "))
+  key_col$key <- do.call(paste, c(key_col, sep = ", "))
   key_levels <- unique(key_col$key)
 
   # Process each group
   for (i in 1:length(key_levels)) {
     index <- key_col$key %in% key_levels[i]
 
-    if(!is.null(agg_func)&&agg_func=="avg"){
+    if (!is.null(agg_func) && agg_func == "avg") {
       # Calculate average value
-      total_lev <- Reduce("+", variates_list[index])/sum(index)
+      total_lev <- Reduce("+", variates_list[index]) / sum(index)
       mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
-        paste("Average value by:",
-              paste(keys_names, collapse = ", "))
+        paste(
+          "Average value by:",
+          paste(keys_names, collapse = ", ")
+        )
       mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
-        paste0("Average ", mc_name," by: ",
-               paste(keys_names, collapse = ", "))
-    }else if ((is.null(agg_func)&&grepl("_n$", mc_name))||(!is.null(agg_func)&&agg_func=="sum")) {
+        paste0(
+          "Average ", mc_name, " by: ",
+          paste(keys_names, collapse = ", ")
+        )
+    } else if ((is.null(agg_func) && grepl("_n$", mc_name)) || (!is.null(agg_func) && agg_func == "sum")) {
       # Sum for counts
       total_lev <- Reduce("+", variates_list[index])
       mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
-        paste("Sum by:",
-              paste(keys_names, collapse = ", "))
+        paste(
+          "Sum by:",
+          paste(keys_names, collapse = ", ")
+        )
       mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
-        paste0(mc_name, "_1+", mc_name, "_2+... by:",
-               paste(keys_names, collapse = ", "))
+        paste0(
+          mc_name, "_1+", mc_name, "_2+... by:",
+          paste(keys_names, collapse = ", ")
+        )
     } else {
       # Combine probabilities
       total_lev <- 1 - Reduce("*", inv_variates_list[index])
       mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
-        paste("Combined probability assuming independence by:",
-              paste(keys_names, collapse = ", "))
+        paste(
+          "Combined probability assuming independence by:",
+          paste(keys_names, collapse = ", ")
+        )
       mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
-        paste0("1-((1-", mc_name, "_1)*(1-", mc_name, "_2)...) by:",
-               paste(keys_names, collapse = ", "))
+        paste0(
+          "1-((1-", mc_name, "_1)*(1-", mc_name, "_2)...) by:",
+          paste(keys_names, collapse = ", ")
+        )
     }
 
     # Aggregate results
@@ -227,7 +246,7 @@ agg_totals <- function(mcmodule, mc_name,
       # One row per original variate
       agg_index <- mcdata(index, type = "0", nvariates = length(index))
 
-      if (!i==1) {
+      if (!i == 1) {
         total_agg <- total_agg + agg_index * total_lev
       } else {
         total_agg <- agg_index * total_lev
@@ -237,7 +256,7 @@ agg_totals <- function(mcmodule, mc_name,
       key_data <- mc_keys(mcmodule, mc_name)[new_keys_names]
     } else {
       # One row per result
-      if (!i==1) {
+      if (!i == 1) {
         total_agg <- addvar(total_agg, total_lev)
       } else {
         total_agg <- total_lev
@@ -260,11 +279,12 @@ agg_totals <- function(mcmodule, mc_name,
 
   if (summary) {
     mcmodule$node_list[[agg_total_mc_name]][["summary"]] <-
-      mc_summary(mcmodule = mcmodule,
-                 data = key_data,
-                 mc_name = agg_total_mc_name,
-                 keys_names = new_keys_names)
-
+      mc_summary(
+        mcmodule = mcmodule,
+        data = key_data,
+        mc_name = agg_total_mc_name,
+        keys_names = new_keys_names
+      )
   }
 
   mcmodule$modules <- unique(c(mcmodule$modules, module_name))
@@ -307,106 +327,109 @@ agg_totals <- function(mcmodule, mc_name,
 #'
 #' @export
 trial_totals <- function(mcmodule, mc_names,
-                           trials_n,
-                           subsets_n = NULL,
-                           subsets_p = NULL,
-                           suffix = NULL,
-                           name = NULL,
-                           prefix = NULL,
-                           combine_prob = TRUE,
-                           mctable = set_mctable(),
-                           agg_keys = NULL,
-                           keep_variates = FALSE,
-                           summary = TRUE) {
+                         trials_n,
+                         subsets_n = NULL,
+                         subsets_p = NULL,
+                         suffix = NULL,
+                         name = NULL,
+                         prefix = NULL,
+                         combine_prob = TRUE,
+                         mctable = set_mctable(),
+                         agg_keys = NULL,
+                         keep_variates = FALSE,
+                         summary = TRUE) {
+  nodes_data_name <- sapply(mc_names, function(x) mcmodule$node_list[[x]][["data_name"]])
+  data_name <- unique(nodes_data_name)
+  if (length(data_name) > 1) stop("data_name is not equal for all nodes")
 
-    nodes_data_name <- sapply(mc_names, function(x) mcmodule$node_list[[x]][["data_name"]])
-    data_name<-unique(nodes_data_name)
-    if(length(data_name)>1) stop("data_name is not equal for all nodes")
+  data <- mcmodule$data[[data_name]]
 
-    data <- mcmodule$data[[data_name]]
+  nodes_keys <- lapply(mc_names, function(x) mc_keys(mcmodule, x))
+  module_name <- deparse(substitute(mcmodule))
 
-    nodes_keys <- lapply(mc_names, function(x) mc_keys(mcmodule,x))
-    module_name <- deparse(substitute(mcmodule))
+  # Function for individual mcnode creation and processing
+  process_mcnode <- function(mc_name, node_type, mcmodule, data, module_name, agg_keys, suffix, mctable, keep_variates, agg_func = NULL) {
+    if (mc_name %in% names(mcmodule$node_list)) {
+      mc_node <- mcmodule$node_list[[mc_name]][["mcnode"]]
+      new <- FALSE
+    } else if (mc_name %in% names(data)) {
+      mc_node <- mcdata(data[[mc_name]], type = "0", nvariates = nrow(data))
+      new <- TRUE
+    } else {
+      create_mc_nodes(data,
+        mctable = mctable[mctable$mcnode %in% mc_name, ]
+      )
 
-    # Function for individual mcnode creation and processing
-    process_mcnode <- function(mc_name, node_type, mcmodule, data, module_name, agg_keys, suffix, mctable, keep_variates, agg_func=NULL) {
-      if (mc_name %in% names(mcmodule$node_list)) {
-        mc_node <- mcmodule$node_list[[mc_name]][["mcnode"]]
-        new <- FALSE
-      } else if (mc_name %in% names(data)) {
-        mc_node <- mcdata(data[[mc_name]], type = "0", nvariates = nrow(data))
-        new <- TRUE
-      } else {
-        create_mc_nodes(data,
-                        mctable = mctable[mctable$mcnode %in% mc_name,])
-
-        mc_node <- get(mc_name)
-        new <- TRUE
-      }
-
-      # Add to node list
-      if (new) {
-        mcmodule$node_list[[mc_name]][["type"]] <- node_type
-        mcmodule$node_list[[mc_name]][["module"]] <- module_name
-        mcmodule$node_list[[mc_name]][["data_name"]] <- data_name
-        mcmodule$node_list[[mc_name]][["mcnode"]] <- mc_node
-        if("scenario_id"%in%names(data)){
-          mcmodule$node_list[[mc_name]][["scenario"]] <- data$scenario_id
-        }
-      }
-
-      if(!is.null(agg_keys)){
-        # Aggregate node if agg_keys provided
-        mcmodule<-agg_totals(mcmodule, mc_name, keys_names = agg_keys, suffix = suffix, agg_func=agg_func, keep_variates=keep_variates)
-        # Change mcnode name to agg version name
-        mc_name_name <- deparse(substitute(mc_name))
-        assign(mc_name_name,paste0(mc_name,"_",suffix), envir = parent.frame())
-        #Add agg_keys to metadata
-        mcmodule$node_list[[mc_name]][["agg_keys"]]<-agg_keys
-        # Reassign mcmodule name (defaults to "mcmodule")
-        mcmodule$node_list[[mc_name]][["module"]]<-module_name
-      }
-      return(mcmodule)
+      mc_node <- get(mc_name)
+      new <- TRUE
     }
+
+    # Add to node list
+    if (new) {
+      mcmodule$node_list[[mc_name]][["type"]] <- node_type
+      mcmodule$node_list[[mc_name]][["module"]] <- module_name
+      mcmodule$node_list[[mc_name]][["data_name"]] <- data_name
+      mcmodule$node_list[[mc_name]][["mcnode"]] <- mc_node
+      if ("scenario_id" %in% names(data)) {
+        mcmodule$node_list[[mc_name]][["scenario"]] <- data$scenario_id
+      }
+    }
+
+    if (!is.null(agg_keys)) {
+      # Aggregate node if agg_keys provided
+      mcmodule <- agg_totals(mcmodule, mc_name, keys_names = agg_keys, suffix = suffix, agg_func = agg_func, keep_variates = keep_variates)
+      # Change mcnode name to agg version name
+      mc_name_name <- deparse(substitute(mc_name))
+      assign(mc_name_name, paste0(mc_name, "_", suffix), envir = parent.frame())
+      # Add agg_keys to metadata
+      mcmodule$node_list[[mc_name]][["agg_keys"]] <- agg_keys
+      # Reassign mcmodule name (defaults to "mcmodule")
+      mcmodule$node_list[[mc_name]][["module"]] <- module_name
+    }
+    return(mcmodule)
+  }
 
   # Process all nodes
 
   mcmodule <- process_mcnode(trials_n, "trials_n", mcmodule, data, module_name, agg_keys, suffix, mctable, keep_variates)
-  trials_n_mc<-mcmodule$node_list[[trials_n]][["mcnode"]]
+  trials_n_mc <- mcmodule$node_list[[trials_n]][["mcnode"]]
 
 
   # If subsets_n is NULL, defaults to 1
-  if(is.null(subsets_n)){
-    subsets_n_mc<-mcnode_na_rm(trials_n_mc/trials_n_mc,1)
-    subsets_n<-"1"
-  }else{
-    mcmodule <- process_mcnode(subsets_n, "subsets_n", mcmodule, data, module_name, agg_keys, suffix, mctable, keep_variates, agg_func="avg")
-    subsets_n_mc<-mcmodule$node_list[[subsets_n]][["mcnode"]]
+  if (is.null(subsets_n)) {
+    subsets_n_mc <- mcnode_na_rm(trials_n_mc / trials_n_mc, 1)
+    subsets_n <- "1"
+  } else {
+    mcmodule <- process_mcnode(subsets_n, "subsets_n", mcmodule, data, module_name, agg_keys, suffix, mctable, keep_variates, agg_func = "avg")
+    subsets_n_mc <- mcmodule$node_list[[subsets_n]][["mcnode"]]
   }
 
   # If subsets_p is NULL, no multilevel probability, defaults to 1
-  if(is.null(subsets_p)){
-    multilevel<-FALSE
-    subsets_p_mc<-mcnode_na_rm(trials_n_mc/trials_n_mc,1)
-    subsets_p<-"1"
-  }else{
-    multilevel<-TRUE
-    mcmodule <- process_mcnode(subsets_p, "subsets_p", mcmodule, data, module_name, agg_keys, suffix, mctable, keep_variates, agg_func="avg")
-    subsets_p_mc<-mcmodule$node_list[[subsets_p]][["mcnode"]]
+  if (is.null(subsets_p)) {
+    multilevel <- FALSE
+    subsets_p_mc <- mcnode_na_rm(trials_n_mc / trials_n_mc, 1)
+    subsets_p <- "1"
+  } else {
+    multilevel <- TRUE
+    mcmodule <- process_mcnode(subsets_p, "subsets_p", mcmodule, data, module_name, agg_keys, suffix, mctable, keep_variates, agg_func = "avg")
+    subsets_p_mc <- mcmodule$node_list[[subsets_p]][["mcnode"]]
   }
 
   prefix <- ifelse(is.null(prefix), "", paste0(prefix, "_"))
 
   # Calculate combined probability for all nodes if requested
   # (if more than one node is provided)
-  if (combine_prob&length(mc_names)>1) {
-    mcmodule <- at_least_one(mcmodule, mc_names, name, prefix,
-                             summary)
+  if (combine_prob & length(mc_names) > 1) {
+    mcmodule <- at_least_one(
+      mcmodule, mc_names, name, prefix,
+      summary
+    )
 
     # Generate new name if name is not provided
     p_all_a_mc_name <- ifelse(is.null(name),
-                              generate_all_name(mc_names),
-                              name)
+      generate_all_name(mc_names),
+      name
+    )
 
     mc_names <- c(mc_names, p_all_a_mc_name)
   }
@@ -451,64 +474,70 @@ trial_totals <- function(mcmodule, mc_names,
         formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) p_a * subsets_p_mc,
         description = "Probability of one %s trial",
         suffix = "",
-        expression = function(mc_name, subsets_p) paste0(subsets_p,"*", mc_name)
+        expression = function(mc_name, subsets_p) paste0(subsets_p, "*", mc_name)
       ),
       num = list(
-        formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) mcnode_na_rm(p_a/p_a,1),
+        formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) mcnode_na_rm(p_a / p_a, 1),
         description = "One %s trials",
         suffix = "_n",
-        expression = function(mc_name) paste0("mcnode_na_rm(",mc_name,"/",mc_name,", 1)")
+        expression = function(mc_name) paste0("mcnode_na_rm(", mc_name, "/", mc_name, ", 1)")
       )
     ),
     subset = list(
       prob = list(
-        formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) 1-(1- subsets_p_mc*(1 - (1 - p_a)^trials_n_mc)),
+        formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) 1 - (1 - subsets_p_mc * (1 - (1 - p_a)^trials_n_mc)),
         description = "Probability of at least one %s in a subset",
         suffix = "",
-        expression = function(mc_name, trials_n, subsets_p) paste0("1-(1-",subsets_p,"*(1-(1-", mc_name, ")^", trials_n,"))")
+        expression = function(mc_name, trials_n, subsets_p) paste0("1-(1-", subsets_p, "*(1-(1-", mc_name, ")^", trials_n, "))")
       ),
       num = list(
-        formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc)
-          p_a * trials_n_mc * subsets_p_mc,
+        formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) {
+          p_a * trials_n_mc * subsets_p_mc
+        },
         description = "Expected number of %s in a subset",
         suffix = "_n",
-        expression = function(mc_name, trials_n, subsets_p)
+        expression = function(mc_name, trials_n, subsets_p) {
           paste0(mc_name, "*", trials_n, "*", subsets_p)
+        }
       )
     ),
     set = list(
       prob = list(
-        formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc)
-          1-(1-subsets_p_mc*(1-(1-p_a)^trials_n_mc))^subsets_n_mc,
+        formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) {
+          1 - (1 - subsets_p_mc * (1 - (1 - p_a)^trials_n_mc))^subsets_n_mc
+        },
         description = "Probability of at least one %s in a set",
         suffix = "",
-        expression = function(mc_name, trials_n, subsets_n, subsets_p)
+        expression = function(mc_name, trials_n, subsets_n, subsets_p) {
           paste0("1-(1-", subsets_p, "*(1-(1-", mc_name, ")^", trials_n, "))^", subsets_n)
+        }
       ),
       num = list(
-        formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc)
-          p_a * trials_n_mc * subsets_p_mc * subsets_n_mc,
+        formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) {
+          p_a * trials_n_mc * subsets_p_mc * subsets_n_mc
+        },
         description = "Expected number of %s in a set",
         suffix = "_n",
-        expression = function(mc_name, trials_n, subsets_n, subsets_p)
+        expression = function(mc_name, trials_n, subsets_n, subsets_p) {
           paste0(mc_name, "*", trials_n, "*", subsets_p, "*", subsets_n)
+        }
       )
     )
   )
 
   # Process each node
   for (mc_name in mc_names) {
-    if(!is.null(agg_keys)){
+    if (!is.null(agg_keys)) {
       # Aggregate node if agg_keys provided
-      mcmodule<-agg_totals(mcmodule, mc_name, keys_names = agg_keys, suffix=suffix, keep_variates = keep_variates)
+      mcmodule <- agg_totals(mcmodule, mc_name, keys_names = agg_keys, suffix = suffix, keep_variates = keep_variates)
       # Change mcnode name to agg version name
-      assign("mc_name",paste0(mc_name,"_",suffix))
+      assign("mc_name", paste0(mc_name, "_", suffix))
       keys_names <- agg_keys
       # Reassign mcmodule name (defaults to "mcmodule")
-      mcmodule$node_list[[mc_name]][["module"]]<-module_name
-      #Add agg_keys to metadata
-      mcmodule$node_list[[mc_name]][["agg_keys"]]<-agg_keys
-    }else{
+      mcmodule$node_list[[mc_name]][["module"]] <- module_name
+      # Add agg_keys to metadata
+      mcmodule$node_list[[mc_name]][["agg_keys"]] <- agg_keys
+    } else {
       keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
     }
 
@@ -517,9 +546,9 @@ trial_totals <- function(mcmodule, mc_names,
 
 
     # TODO: Context to match???
-    #if (dim(p_a)[3] < nrow(data)&is.null(agg_keys)) {
+    # if (dim(p_a)[3] < nrow(data)&is.null(agg_keys)) {
     #  p_a <- mc_match_data(mcmodule, mc_name, data)
-    #}
+    # }
 
     # Process trial, subset and set levels
     for (level in c("trial", "subset", "set")) {
@@ -543,7 +572,7 @@ trial_totals <- function(mcmodule, mc_names,
 
         # Calculate value based on level
         value <- calc$formula(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc)
-        total_type<-paste(ifelse(multilevel,"multilevel","single level"),level,calc_type)
+        total_type <- paste(ifelse(multilevel, "multilevel", "single level"), level, calc_type)
 
         # Create node and add metadata
         mcmodule$node_list <- add_mc_metadata(
@@ -559,8 +588,11 @@ trial_totals <- function(mcmodule, mc_names,
           },
           description = sprintf(calc$description, mc_name),
           expression = if (level == "trial") {
-            if (calc_type == "prob") calc$expression(mc_name, subsets_p)
-            else calc$expression(mc_name)
+            if (calc_type == "prob") {
+              calc$expression(mc_name, subsets_p)
+            } else {
+              calc$expression(mc_name)
+            }
           } else if (level == "subset") {
             calc$expression(mc_name, trials_n, subsets_p)
           } else {
@@ -573,21 +605,20 @@ trial_totals <- function(mcmodule, mc_names,
 
         # Add summary if requested
         if (summary) {
-          if(!is.null(agg_keys)){
+          if (!is.null(agg_keys)) {
             mcmodule$node_list[[new_mc_name]][["summary"]] <- mc_summary(
               mcmodule = mcmodule,
               data = mcmodule$node_list[[mc_name]][["summary"]],
               mc_name = new_mc_name,
               keys_names = agg_keys
             )
-
-
-          }else{
+          } else {
             mcmodule$node_list[[new_mc_name]][["summary"]] <- mc_summary(
               mcmodule = mcmodule,
               data = data,
               mc_name = new_mc_name,
-              keys_names = keys_names)
+              keys_names = keys_names
+            )
           }
         }
       }
@@ -597,4 +628,3 @@ trial_totals <- function(mcmodule, mc_names,
   mcmodule$modules <- unique(c(mcmodule$modules, module_name))
   return(mcmodule)
 }
-

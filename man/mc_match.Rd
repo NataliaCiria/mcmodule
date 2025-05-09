@@ -26,8 +26,3 @@ Matches two mc_nodes by:
 \item Null matching - Add missing groups across different scenarios
 }
 }
-\examples{
-mc_match(mcmodule = intro,
-             mc_name_x="no_purchase_inf_agg",
-             mc_name_y="b_entry_agg")
-}

@@ -23,9 +23,9 @@ set_data_keys <- function(data_keys = NULL) {
     for (name in names(data_keys)) {
       element <- data_keys[[name]]
       if (!is.list(element) ||
-          !all(c("data", "keys") %in% names(element)) ||
-          !is.data.frame(element$data) ||
-          !is.vector(element$keys)) {
+        !all(c("data", "keys") %in% names(element)) ||
+        !is.data.frame(element$data) ||
+        !is.vector(element$keys)) {
         stop("Each data model element must be a list with 'data' (data frame) and 'keys' (vector)")
       }
     }

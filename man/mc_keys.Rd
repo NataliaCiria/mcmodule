@@ -20,8 +20,6 @@ Dataframe with scenario_id and requested key columns
 Extracts key columns from Monte Carlo node's associated data.
 }
 \examples{
-\dontrun{
-keys_df <- mc_keys(mc_module, "node1", c("key1", "key2"))
-}
+keys_df <- mc_keys(imports_mcmodule, "w_prev")
 
 }

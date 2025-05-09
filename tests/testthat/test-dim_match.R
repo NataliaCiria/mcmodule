@@ -1,5 +1,4 @@
 suppressMessages({
-
   # Unit tests for add_group_id function
   test_that("add_group_id single dataframe works", {
     # Create test data
@@ -10,13 +9,12 @@ suppressMessages({
     )
 
     # Test with one key
-    result <- add_group_id(test_df, by="category")
-    expect_equal(max(result$g_id), 2)  # Should have 2 groups
+    result <- add_group_id(test_df, by = "category")
+    expect_equal(max(result$g_id), 2) # Should have 2 groups
 
     # Test with two keys
-    result <- add_group_id(test_df, by=c("category","type"))
-    expect_equal(max(result$g_id), 4)  # Should have 4 groups
-
+    result <- add_group_id(test_df, by = c("category", "type"))
+    expect_equal(max(result$g_id), 4) # Should have 4 groups
   })
 
   test_that("add_group_id two dataframes works", {
@@ -34,20 +32,22 @@ suppressMessages({
     )
 
     # Test with two dataframes
-    result <- add_group_id(df1, df2, by=c("category","type"))
+    result <- add_group_id(df1, df2, by = c("category", "type"))
     expect_equal(names(result), c("x", "y"))
     expect_equal(
-      unique(result$x[order(result$x$g_id),c("g_id","category","type")]),
-      unique(result$y[order(result$y$g_id),c("g_id","category","type")]))
+      unique(result$x[order(result$x$g_id), c("g_id", "category", "type")]),
+      unique(result$y[order(result$y$g_id), c("g_id", "category", "type")])
+    )
 
     # Test automatic categorical variable detection
     result_auto <- add_group_id(df1, df2)
     expect_equal(
-      unique(result_auto$x[order(result_auto$x$g_id),c("g_id","category","type")]),
-      unique(result_auto$y[order(result_auto$y$g_id),c("g_id","category","type")]))
+      unique(result_auto$x[order(result_auto$x$g_id), c("g_id", "category", "type")]),
+      unique(result_auto$y[order(result_auto$y$g_id), c("g_id", "category", "type")])
+    )
 
     # Test error handling
-    expect_error(add_group_id(df1, df2, by="nonexistent"))
+    expect_error(add_group_id(df1, df2, by = "nonexistent"))
   })
 
   test_that("mc_keys for keys works", {
@@ -70,7 +70,7 @@ suppressMessages({
 
     # Test with specified keys
     result <- mc_keys(test_module, "test_node", c("key1", "key2"))
-    expect_equal(ncol(result), 3)  # scenario_id + 2 keys
+    expect_equal(ncol(result), 3) # scenario_id + 2 keys
     expect_true(all(c("scenario_id", "key1", "key2") %in% names(result)))
 
     # Test default scenario_id
@@ -104,7 +104,7 @@ suppressMessages({
     )
 
     result <- mc_keys(mock_agg_module, "agg_node")
-    expect_equal(ncol(result), 2)  # scenario_id + group
+    expect_equal(ncol(result), 2) # scenario_id + group
     expect_true(all(c("scenario_id", "group") %in% names(result)))
   })
 
@@ -112,27 +112,27 @@ suppressMessages({
     # Test data
     x <- data.frame(
       type = c("1", "2"),
-      category = c("a","b"),
-      scenario_id = c(0,1)
+      category = c("a", "b"),
+      scenario_id = c(0, 1)
     )
 
     y <- data.frame(
       type = c("1", "2"),
-      category = c("c","d"),
-      scenario_id = c(0,2)
+      category = c("c", "d"),
+      scenario_id = c(0, 2)
     )
 
     # Automatic matching
     expect_message(
       result <- keys_match(x, y),
-      "Group by: type, category")
+      "Group by: type, category"
+    )
 
-    expect_equal(result$xy$scenario_id, c(0,1,0,2))
+    expect_equal(result$xy$scenario_id, c(0, 1, 0, 2))
 
     # Match by type
     result_type <- keys_match(x, y, "type")
-    expect_equal(result_type$xy$g_id, c(1,2,2))
-
+    expect_equal(result_type$xy$g_id, c(1, 2, 2))
   })
 
   test_that("mc_match group matching works", {
@@ -140,19 +140,21 @@ suppressMessages({
       node_list = list(
         node_x = list(
           mcnode = mcstoc(runif,
-                          min=mcdata(c(1, 2, 3), type="0", nvariates = 3),
-                          max=mcdata(c(2, 3, 4), type="0", nvariates = 3),
-                          nvariates = 3),
+            min = mcdata(c(1, 2, 3), type = "0", nvariates = 3),
+            max = mcdata(c(2, 3, 4), type = "0", nvariates = 3),
+            nvariates = 3
+          ),
           data_name = "data_x",
-          keys=c("category")
+          keys = c("category")
         ),
         node_y = list(
           mcnode = mcstoc(runif,
-                          min=mcdata(c(5, 6, 7), type="0", nvariates = 3),
-                          max=mcdata(c(6, 7, 8), type="0", nvariates = 3),
-                          nvariates = 3),
+            min = mcdata(c(5, 6, 7), type = "0", nvariates = 3),
+            max = mcdata(c(6, 7, 8), type = "0", nvariates = 3),
+            nvariates = 3
+          ),
           data_name = "data_y",
-          keys=c("category")
+          keys = c("category")
         )
       ),
       data = list(
@@ -175,8 +177,8 @@ suppressMessages({
     expect_equal(result$keys_xy$category, test_module$data$data_x$category)
 
     # Verify expected keys_xy
-    expect_equal(result$keys_xy$category, c("A","B","C"))
-    expect_equal(result$keys_xy$scenario_id, c("0","0","0"))
+    expect_equal(result$keys_xy$category, c("A", "B", "C"))
+    expect_equal(result$keys_xy$scenario_id, c("0", "0", "0"))
   })
 
   test_that("mc_match scenario matching works", {
@@ -184,28 +186,30 @@ suppressMessages({
       node_list = list(
         node_x = list(
           mcnode = mcstoc(runif,
-                          min=mcdata(c(1, 2, 3, 4), type="0", nvariates = 4),
-                          max=mcdata(c(2, 3, 4, 5), type="0", nvariates = 4),
-                          nvariates = 4),
+            min = mcdata(c(1, 2, 3, 4), type = "0", nvariates = 4),
+            max = mcdata(c(2, 3, 4, 5), type = "0", nvariates = 4),
+            nvariates = 4
+          ),
           data_name = "data_x",
-          keys=c("category")
+          keys = c("category")
         ),
         node_y = list(
           mcnode = mcstoc(runif,
-                          min=mcdata(c(5, 6, 7, 8), type="0", nvariates = 4),
-                          max=mcdata(c(6, 7, 8, 9), type="0", nvariates = 4),
-                          nvariates = 4),
+            min = mcdata(c(5, 6, 7, 8), type = "0", nvariates = 4),
+            max = mcdata(c(6, 7, 8, 9), type = "0", nvariates = 4),
+            nvariates = 4
+          ),
           data_name = "data_y",
-          keys=c("category")
+          keys = c("category")
         )
       ),
       data = list(
         data_x = data.frame(
-          category = c("A", "B", "A","B"),
+          category = c("A", "B", "A", "B"),
           scenario_id = c("0", "0", "1", "1")
         ),
         data_y = data.frame(
-          category = c("A", "B", "A","B"),
+          category = c("A", "B", "A", "B"),
           scenario_id = c("0", "0", "2", "2")
         )
       )
@@ -220,9 +224,8 @@ suppressMessages({
     expect_equal(dim(result$node_x_match)[2], dim(result$node_y_match)[2])
 
     # Verify expected keys_xy
-    expect_equal(result$keys_xy$category, c("A","B","A","B","A","B"))
-    expect_equal(result$keys_xy$scenario_id, c("0","0","1","1","2","2"))
-
+    expect_equal(result$keys_xy$category, c("A", "B", "A", "B", "A", "B"))
+    expect_equal(result$keys_xy$scenario_id, c("0", "0", "1", "1", "2", "2"))
   })
 
 
@@ -231,19 +234,21 @@ suppressMessages({
       node_list = list(
         node_x = list(
           mcnode = mcstoc(runif,
-                          min=mcdata(c(1, 2, 3), type="0", nvariates = 3),
-                          max=mcdata(c(2, 3, 4), type="0", nvariates = 3),
-                          nvariates = 3),
+            min = mcdata(c(1, 2, 3), type = "0", nvariates = 3),
+            max = mcdata(c(2, 3, 4), type = "0", nvariates = 3),
+            nvariates = 3
+          ),
           data_name = "data_x",
-          keys=c("category")
+          keys = c("category")
         ),
         node_y = list(
           mcnode = mcstoc(runif,
-                          min=mcdata(c(5, 6, 7), type="0", nvariates = 3),
-                          max=mcdata(c(6, 7, 8), type="0", nvariates = 3),
-                          nvariates = 3),
+            min = mcdata(c(5, 6, 7), type = "0", nvariates = 3),
+            max = mcdata(c(6, 7, 8), type = "0", nvariates = 3),
+            nvariates = 3
+          ),
           data_name = "data_y",
-          keys=c("category")
+          keys = c("category")
         )
       ),
       data = list(
@@ -264,49 +269,46 @@ suppressMessages({
     expect_equal(dim(result$node_x_match)[2], dim(result$node_y_match)[2])
 
     # Verify expected keys_xy
-    expect_equal(result$keys_xy$category, c("A","B","C","B","B"))
-    expect_equal(result$keys_xy$scenario_id, c("0","0","0","1","2"))
+    expect_equal(result$keys_xy$category, c("A", "B", "C", "B", "B"))
+    expect_equal(result$keys_xy$scenario_id, c("0", "0", "0", "1", "2"))
   })
 
   test_that("wif_match works", {
     # Test data
     x <- data.frame(
-      category = c("a","b","a","b"),
-      scenario_id = c(0,0,1,1),
-      hg = c(1,2,1,2),
+      category = c("a", "b", "a", "b"),
+      scenario_id = c(0, 0, 1, 1),
+      hg = c(1, 2, 1, 2),
       value = 1:4
     )
 
     y <- data.frame(
-      category = c("a","b","a","b"),
-      scenario_id = c(0,0,2,2),
-      hg = c(1,2,1,2),
+      category = c("a", "b", "a", "b"),
+      scenario_id = c(0, 0, 2, 2),
+      hg = c(1, 2, 1, 2),
       value = 5:8
     )
 
     # Automatic matching
     result <- wif_match(x, y)
-    expect_equal(result$x$scenario_id,result$y$scenario_id)
-    expect_equal(result$x$scenario_id,c(0,0,1,1,2,2))
-    expect_equal(result$x$hg,result$y$hg)
-    expect_equal(result$x$hg,c(1,2,1,2,1,2))
+    expect_equal(result$x$scenario_id, result$y$scenario_id)
+    expect_equal(result$x$scenario_id, c(0, 0, 1, 1, 2, 2))
+    expect_equal(result$x$hg, result$y$hg)
+    expect_equal(result$x$hg, c(1, 2, 1, 2, 1, 2))
 
     # Match by type
     result_by <- wif_match(x, y, "category")
-    expect_equal(result_by$x$scenario_id,result_by$y$scenario_id)
-    expect_equal(result_by$x$hg,result_by$y$hg)
+    expect_equal(result_by$x$scenario_id, result_by$y$scenario_id)
+    expect_equal(result_by$x$hg, result_by$y$hg)
 
     # Test error on unmatched groups
     y_bad <- data.frame(
-      category = c("a","c","a","c"),
-      scenario_id = c(0,0,2,2),
-      hg = c(1,3,1,3),
+      category = c("a", "c", "a", "c"),
+      scenario_id = c(0, 0, 2, 2),
+      hg = c(1, 3, 1, 3),
       value = 5:8
     )
     expect_error(wif_match(x, y_bad), "Groups not found")
     expect_error(wif_match(x, y_bad, "category"), "Groups not found")
   })
-
 })
-
-

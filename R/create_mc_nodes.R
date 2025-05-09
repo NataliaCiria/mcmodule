@@ -17,7 +17,7 @@
 #' @return No return value, creates MC nodes in the specified environment
 #'
 #' @examples
-#'   create_mc_nodes(data = imports_data, mctable = imports_mctable)
+#' create_mc_nodes(data = imports_data, mctable = imports_mctable)
 #'
 #' @export
 create_mc_nodes <- function(data, mctable = set_mctable(), envir = parent.frame(), ...) {
@@ -26,7 +26,7 @@ create_mc_nodes <- function(data, mctable = set_mctable(), envir = parent.frame(
   if (!valid_mctable) stop("mctable must contain 'mcnode', 'mcreate' and 'mc_func' columns")
 
   # Validate that mctable is not empty
-  if(nrow(mctable)<1) stop ("mctable is empty")
+  if (nrow(mctable) < 1) stop("mctable is empty")
 
   # Check if data contains any columns matching mcnode names
   data_mc_inputs <- grepl(paste(paste0("\\<", mctable$mcnode, ".*"), collapse = "|"), names(data))
@@ -46,9 +46,9 @@ create_mc_nodes <- function(data, mctable = set_mctable(), envir = parent.frame(
     if (value_transform_l) {
       # Determine source variable and apply transformation
       value_name <- ifelse(is.na(mcrow$from_variable), as.character(mcrow$mcnode), as.character(mcrow$from_variable))
-      assign("value",data[[value_name]],envir=envir)
-      data[as.character(mc_name)] <- eval(parse(text = transformation),envir = envir)
-      rm("value",envir=envir)
+      assign("value", data[[value_name]], envir = envir)
+      data[as.character(mc_name)] <- eval(parse(text = transformation), envir = envir)
+      rm("value", envir = envir)
     }
 
     # Identify columns that correspond to this Monte Carlo node
@@ -76,7 +76,6 @@ create_mc_nodes <- function(data, mctable = set_mctable(), envir = parent.frame(
         } else {
           assign(mc_inputs[j], eval(parse(text = mcdata_exp)), envir = envir)
         }
-
       }
 
       #### CREATE DISTRIBUTION-BASED MONTE CARLO NODES ####
@@ -120,26 +119,25 @@ create_mc_nodes <- function(data, mctable = set_mctable(), envir = parent.frame(
 
         #### ATTEMPT NODE CREATION WITH ERROR HANDLING ####
         tryCatch(assign(as.character(mc_name), eval(parse(text = mcstoc_exp)), envir = envir),
-                 error = function(e) {
-                   message("An error occurred generating ", mc_name, " ", mc_func, " mcstock node:\n", e)
-                 },
-                 warning = function(w) {
-                   #### RETRY WITH NA REMOVAL IF INITIAL ATTEMPT FAILS ####
-                   tryCatch(
-                     assign(as.character(mc_name), suppressWarnings(eval(parse(text = mcstoc_na_rm_exp))), envir = envir),
-
-                     error = function(e) {
-                       message("After mcnode_na_rm: An error occurred generating ", mc_name, " ", mc_func, " mcstock node:\n", e)
-                     },
-                     warning = function(w) {
-                       message("After mcnode_na_rm: A warning occurred generating ", mc_name, " ", mc_func, " mcstock node:\n", w, "Check data inputs: is min < mode < max?\n")
-                     }
-                   )
-                 },
-                 finally = {
-                   # Cleanup temporary input objects
-                   remove(list = mc_inputs, envir = envir)
-                 }
+          error = function(e) {
+            message("An error occurred generating ", mc_name, " ", mc_func, " mcstock node:\n", e)
+          },
+          warning = function(w) {
+            #### RETRY WITH NA REMOVAL IF INITIAL ATTEMPT FAILS ####
+            tryCatch(
+              assign(as.character(mc_name), suppressWarnings(eval(parse(text = mcstoc_na_rm_exp))), envir = envir),
+              error = function(e) {
+                message("After mcnode_na_rm: An error occurred generating ", mc_name, " ", mc_func, " mcstock node:\n", e)
+              },
+              warning = function(w) {
+                message("After mcnode_na_rm: A warning occurred generating ", mc_name, " ", mc_func, " mcstock node:\n", w, "Check data inputs: is min < mode < max?\n")
+              }
+            )
+          },
+          finally = {
+            # Cleanup temporary input objects
+            remove(list = mc_inputs, envir = envir)
+          }
         )
       }
     }

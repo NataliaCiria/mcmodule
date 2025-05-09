@@ -29,8 +29,6 @@ This function creates Monte Carlo nodes (mcnodes) based on instructions provided
 table and input variables from a dataframe. It supports various distributions and transformations.
 }
 \examples{
-\dontrun{
   create_mc_nodes(data = imports_data, mctable = imports_mctable)
-}
 
 }

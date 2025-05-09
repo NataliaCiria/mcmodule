@@ -12,13 +12,9 @@ combine_modules(mcmodule_x, mcmodule_y)
 \item{mcmodule_y}{Second module to combine}
 }
 \value{
-A combined mcmodule object containing elements from both input modules
+A combined mcmodule object containing the elements elements from both input modules
 }
 \description{
 This function combines two mcmodules into a single mcmodule, merging their data,
 model expressions, node lists, and other components.
-}
-\examples{
-combine_modules(mcmodule_x = purchase, mcmodule_y = fattening)
-
 }

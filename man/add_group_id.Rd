@@ -20,5 +20,5 @@ Dataframe or list of dataframes with added group IDs
 Add Group IDs to Data Frames
 }
 \examples{
-add_group_id(purchase_data, by=c("animal_category", "pathogen", "mov_id", "farm_id"))
+add_group_id(imports_data, by=c("pathogen ", "origin"))
 }
