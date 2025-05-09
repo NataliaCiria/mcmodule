@@ -26,17 +26,6 @@ suppressMessages({
       "prev_mcmodule.*needed but not provided"
     )
 
-    # Test only_node_list parameter
-    node_list <- eval_model(
-      model_exp = c(imports = imports_exp),
-      data = imports_data,
-      mctable = imports_mctable,
-      data_keys = imports_data_keys,
-      only_node_list = TRUE
-    )
-    expect_type(node_list, "list")
-    expect_false(inherits(node_list, "mcmodule"))
-
     # Test with multiple expressions
     model_exp_list <- list(
       imports = imports_exp,

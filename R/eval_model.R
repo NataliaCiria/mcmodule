@@ -1,8 +1,7 @@
-#' Evaluate and Process a Monte Carlo Model Expression
+#' Evaluate a Monte Carlo Model Expression and create an mcmcmodule
 #'
-#' Takes a model expression and evaluates it while creating a comprehensive node list
-#' containing results and metadata. This function handles both single expressions and
-#' lists of expressions, managing dependencies between nodes and previous modules.
+#' Takes a model expression and evaluates it while creating an mcmcmodule
+#' containing results and metadata.
 #'
 #' @param model_exp Model expression or list of expressions to evaluate
 #' @param data Input data frame containing model parameters
@@ -13,10 +12,8 @@
 #' @param mctable Monte Carlo configuration table
 #' @param data_keys List of key columns for each dataset
 #' @param create_nodes Logical; whether to create new nodes from data
-#' @param only_node_list Logical; return node list instead of full module
 #'
-#' @return Either an mcmodule object (containing data, expressions, and nodes)
-#'         or just the node list if only_node_list=TRUE
+#' @return An mcmodule object containing data, expressions, and nodes
 #' @export
 #'
 #' @examples
@@ -30,8 +27,7 @@
 eval_model <- function(model_exp, data, param_names = NULL,
                        prev_mcmodule = NULL, match_prev = FALSE,
                        summary = FALSE, mctable = set_mctable(),
-                       data_keys = set_data_keys(), create_nodes = TRUE,
-                       only_node_list = FALSE) {
+                       data_keys = set_data_keys(), create_nodes = TRUE) {
   # Initialize  mcnodes if requested and data exists
   if (create_nodes & !is.null(data)) {
     create_mc_nodes(data = data, mctable = mctable)
@@ -263,27 +259,22 @@ eval_model <- function(model_exp, data, param_names = NULL,
   node_list <- node_list[!(sapply(node_list, "[[", "type") == "prev_node")]
 
   # Return results
-  if (only_node_list) {
-    return(node_list)
-  } else {
-    # Create and return complete module
-    mcmodule <- list(
-      data = list(data),
-      model_exp = model_exp,
-      node_list = node_list,
-      modules = modules
-    )
+  mcmodule <- list(
+    data = list(data),
+    model_exp = model_exp,
+    node_list = node_list,
+    modules = modules
+  )
 
-    names(mcmodule$data) <- data_name
-    class(mcmodule) <- "mcmodule"
+  names(mcmodule$data) <- data_name
+  class(mcmodule) <- "mcmodule"
 
-    message(
-      "\nmcmodule created (expressions: ",
-      paste(names(model_exp), collapse = ", "), ")"
-    )
+  message(
+    "\nmcmodule created (expressions: ",
+    paste(names(model_exp), collapse = ", "), ")"
+  )
 
-    return(mcmodule)
-  }
+  return(mcmodule)
 }
 
 
@@ -293,10 +284,10 @@ eval_model <- function(model_exp, data, param_names = NULL,
 #'
 #' @param mcmodule An mcmodule or mcnode_list object
 #' @param mc_names Optional vector of node names to retrieve
+#' @param envir Environment where MC nodes will be created (default: parent.frame())
 #'
 #' @return A subset of the node list containing requested nodes
-#' @export
-get_mcmodule_nodes <- function(mcmodule, mc_names = NULL) {
+get_mcmodule_nodes <- function(mcmodule, mc_names = NULL, envir = parent.frame()) {
   if (class(mcmodule) == "mcmodule") {
     node_list <- mcmodule$node_list
   } else if (class(mcmodule) == "mcnode_list") {
@@ -311,7 +302,7 @@ get_mcmodule_nodes <- function(mcmodule, mc_names = NULL) {
   if (length(node_names) > 0) {
     for (i in 1:length(node_names)) {
       node_name <- node_names[i]
-      assign(node_name, node_list[[node_name]][["mcnode"]], envir = parent.frame())
+      assign(node_name, node_list[[node_name]][["mcnode"]], envir = envir)
     }
   }
 
