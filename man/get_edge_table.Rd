@@ -2,19 +2,22 @@
 % Please edit documentation in R/get_network_table.R
 \name{get_edge_table}
 \alias{get_edge_table}
-\title{Get edge table to construct a network}
+\title{Generate Edge Table for Network Construction}
 \usage{
 get_edge_table(mcmodule)
 }
 \arguments{
-\item{mcmodule}{A mcmodule object}
+\item{mcmodule}{An mcmodule object containing node relationships}
 }
 \value{
-edge_table data frame
+A data frame with columns node_from and node_to representing network edges
 }
 \description{
-Get edge table to construct a network
+Creates a data frame containing edge relationships between nodes in a Monte Carlo module network.
+Each row represents a directed edge from one node to another.
 }
 \examples{
-get_edge_table(mcmodule=unk_transport)
+\dontrun{
+edge_table <- get_edge_table(my_mcmodule)
+}
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/set_data_keys.R
 \name{reset_data_keys}
 \alias{reset_data_keys}
-\title{Reset Data Model}
+\title{Reset Data Keys}
 \usage{
 reset_data_keys()
 }

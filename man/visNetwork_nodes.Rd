@@ -2,19 +2,36 @@
 % Please edit documentation in R/get_network_table.R
 \name{visNetwork_nodes}
 \alias{visNetwork_nodes}
-\title{Get visNetwork nodetable}
+\title{Generate Network Node Table for Visualization}
 \usage{
-visNetwork_nodes(mcmodule, variate = 1, colour = col_pal, levels = level_type)
+visNetwork_nodes(mcmodule, variate = 1, color_pal = NULL, color_by = NULL)
 }
 \arguments{
-\item{mcmodule}{A mcmodule object}
+\item{mcmodule}{An mcmodule object containing the network structure}
+
+\item{variate}{Integer specifying which variate to extract (default: 1)}
+
+\item{color_pal}{Custom color palette for nodes (optional)}
+
+\item{color_by}{Column name to determine node colors (optional)}
 }
 \value{
-edge_table data frame
+A data frame formatted for visNetwork with columns:
+\itemize{
+\item id: Unique node identifier
+\item color: Node color based on type/category
+\item module: Module association
+\item expression: Node expression or type
+\item title: Hover text containing node details
+}
 }
 \description{
-Get visNetwork nodetable
+Creates a formatted node table for visualization with visNetwork.
+Includes styling and formatting for network visualization.
 }
 \examples{
-get_node_table(mcmodule=purchase)
+\dontrun{
+nodes_df <- visNetwork_nodes(my_mcmodule)
+nodes_df <- visNetwork_nodes(my_mcmodule, color_by = "category")
+}
 }

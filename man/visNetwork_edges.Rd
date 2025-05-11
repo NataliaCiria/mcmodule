@@ -2,19 +2,21 @@
 % Please edit documentation in R/get_network_table.R
 \name{visNetwork_edges}
 \alias{visNetwork_edges}
-\title{Get visNetwork edges table}
+\title{Generate visNetwork Edge Table}
 \usage{
 visNetwork_edges(mcmodule)
 }
 \arguments{
-\item{mcmodule}{A mcmodule object}
+\item{mcmodule}{An mcmodule object}
 }
 \value{
-edge_table data frame
+A data frame containing edge information for visNetwork
 }
 \description{
-Get visNetwork edges table
+Creates a formatted edge table suitable for visualization with visNetwork.
 }
 \examples{
-get_node_table(mcmodule=purchase)
+\dontrun{
+vis_edges <- visNetwork_edges(my_mcmodule)
+}
 }

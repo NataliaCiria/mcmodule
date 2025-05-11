@@ -3,7 +3,7 @@
 \docType{data}
 \name{animal_imports}
 \alias{animal_imports}
-\title{Animal Import Data}
+\title{Example Animal Import Data}
 \format{
 \subsection{animal_imports}{
 

@@ -4,12 +4,14 @@
 \alias{get_mcmodule_nodes}
 \title{Get Nodes from Monte Carlo Module}
 \usage{
-get_mcmodule_nodes(mcmodule, mc_names = NULL)
+get_mcmodule_nodes(mcmodule, mc_names = NULL, envir = parent.frame())
 }
 \arguments{
 \item{mcmodule}{An mcmodule or mcnode_list object}
 
 \item{mc_names}{Optional vector of node names to retrieve}
+
+\item{envir}{Environment where MC nodes will be created (default: parent.frame())}
 }
 \value{
 A subset of the node list containing requested nodes

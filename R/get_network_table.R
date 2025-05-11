@@ -91,6 +91,7 @@ get_node_table <- function(mcmodule, variate = 1) {
     node_table_i <- do.call(cbind.data.frame, node)
     node_table_i$name <- names(node_list)[i]
     node_table_i$value <- node_value
+    node_table_i$inputs <- ifelse(is.na(node_table_i$inputs),node_table_i$inputs_col,node_table_i$inputs)
     node_table <- dplyr::bind_rows(node_table, node_table_i)
   }
 
@@ -107,7 +108,7 @@ get_node_table <- function(mcmodule, variate = 1) {
           data_j <- data[[j]]
           if (all(inputs_col %in% names(data_j))) {
             value_j <- as.character(unlist(data_j[variate, inputs_col]))
-            value_col <- paste(value_col, paste0(data_name, "=", value_j))
+            value_col <- value_j
           }
         }
       } else {
@@ -121,16 +122,20 @@ get_node_table <- function(mcmodule, variate = 1) {
       inputs_col_table <- data.frame(
         name = node[["inputs_col"]],
         type = "inputs_col",
+        inputs = paste(node[["data_name"]],node[["input_dataset"]], sep = ", "),
         input_data = node[["data_name"]],
         input_dataset = node[["input_dataset"]],
         value = value_col
       )
+
       node_table <- dplyr::bind_rows(node_table, inputs_col_table)
 
       input_data_table <- data.frame(
         name = node[["data_name"]],
+        inputs = node[["input_dataset"]],
         input_dataset = node[["input_dataset"]],
         type = "input_data"
+
       )
 
       node_table <- dplyr::bind_rows(node_table, input_data_table)
@@ -151,36 +156,87 @@ get_node_table <- function(mcmodule, variate = 1) {
   return(node_table)
 }
 
-#' Generate visNetwork Node Table
+#' Generate Network Node Table for Visualization
 #'
-#' Creates a formatted node table suitable for visualization with visNetwork.
+#' Creates a formatted node table for visualization with visNetwork.
 #' Includes styling and formatting for network visualization.
 #'
-#' @param mcmodule An mcmodule object
-#' @param variate Integer indicating which variate to extract (default: 1)
-#' @param colour Color palette for nodes
-#' @param levels Level types for node positioning
-#' @return A data frame formatted for visNetwork visualization
-#' @export
+#' @param mcmodule An mcmodule object containing the network structure
+#' @param variate Integer specifying which variate to extract (default: 1)
+#' @param color_pal Custom color palette for nodes (optional)
+#' @param color_by Column name to determine node colors (optional)
+#' @return A data frame formatted for visNetwork with columns:
+#'   \itemize{
+#'     \item id: Unique node identifier
+#'     \item color: Node color based on type/category
+#'     \item module: Module association
+#'     \item expression: Node expression or type
+#'     \item title: Hover text containing node details
+#'   }
 #' @examples
 #' \dontrun{
-#' vis_nodes <- visNetwork_nodes(my_mcmodule)
+#' nodes_df <- visNetwork_nodes(my_mcmodule)
+#' nodes_df <- visNetwork_nodes(my_mcmodule, color_by = "category")
 #' }
-visNetwork_nodes <- function(mcmodule, variate = 1, colour = col_pal, levels = level_type) {
-  mcmodule_lev <- seq(0, length(mcmodule$modules) - 1)
-  names(mcmodule_lev) <- mcmodule$modules
+visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL) {
 
-  get_node_table(mcmodule = mcmodule, variate = variate) %>%
-    distinct(name, .keep_all = TRUE) %>%
-    transmute(
+  nodes<-get_node_table(mcmodule = mcmodule, variate = variate)
+
+  # Default color palette if none provided
+  default_color_pal <- c(
+    input_file = "#577A9E",  # Dark blue
+    inputs_col = "#89A3BE",  # Medium blue
+    in_node = "#BDCCDB",     # Light blue
+    out_node = "#18BC9C",    # Teal
+    n_trials = "#F9CF8B",    # Light orange
+    total = "#F39C12",       # Orange
+    agg_total = "#ED7427",   # Dark orange
+    prev_node = "#E74C3C"    # Red
+  )
+
+
+  # Assing color by selected node table column
+  if(is.null(color_by)) {
+    # Default to coloring by "type" if no color_by specified
+    color_by <- "type"
+    color_levels <- levels(as.factor(nodes[[color_by]]))
+
+    # Assign colors if palette was provided
+    if(!is.null(color_pal)) {
+      color_pal <- color_pal[1:length(color_levels)]
+      names(color_pal) <- color_levels
+    }else{
+      color_pal <- default_color_pal
+    }
+  } else {
+    # Use provided color_by column
+    color_levels <- levels(as.factor(nodes[[color_by]]))
+
+    if(is.null(color_pal)){
+      # Default color palette
+      color_pal <-default_color_pal[1:length(color_levels)]
+      names(color_pal) <- color_levels
+
+    }else if(is.null(names(color_pal))) {
+      # Default color mapping
+      color_pal <- color_pal[1:length(color_levels)]
+      names(color_pal) <- color_levels
+    } else {
+      # Use provided color mapping
+      color_pal <- color_pal[color_levels]
+    }
+  }
+
+  nodes%>%
+    dplyr::distinct(name, .keep_all = TRUE) %>%
+    dplyr::transmute(
       id = name,
-      color = colour[type],
-      level = ifelse(is.na(module), levels[type], levels[type] + mcmodule_lev[module]),
+      color  = color_pal[.data[[color_by]]],
       module = ifelse(is.na(module), type, module),
       expression = ifelse(
         type == "in_node",
         ifelse(is.na(keys), "user", ifelse(is.na(mc_func), "mcdata", mc_func)),
-        node_expression
+        node_exp
       ),
       title = generate_node_title(name, module, value, expression, param, inputs)
     )
@@ -192,7 +248,6 @@ visNetwork_nodes <- function(mcmodule, variate = 1, colour = col_pal, levels = l
 #'
 #' @param mcmodule An mcmodule object
 #' @return A data frame containing edge information for visNetwork
-#' @export
 #' @examples
 #' \dontrun{
 #' vis_edges <- visNetwork_edges(my_mcmodule)
@@ -206,27 +261,64 @@ visNetwork_edges <- function(mcmodule) {
     )
 }
 
+#' Create Interactive Network Visualization
+#'
+#' Generates an interactive network visualization using visNetwork library. The visualization
+#' includes interactive features for exploring model structure and relationships.
+#'
+#' @param mcmodule An mcmodule object
+#' @param variate Integer specifying which variate to visualize (default: 1)
+#' @param color_pal Custom color palette for nodes (optional)
+#' @param color_by Column name to determine node colors (optional)
+#' @return An interactive visNetwork object with features:
+#'   \itemize{
+#'     \item Highlighting of connected nodes
+#'     \item Node selection and filtering by module
+#'     \item Directional arrows showing relationships
+#'     \item Hierarchical layout
+#'     \item Draggable nodes
+#'   }
+#' @import visNetwork
+#' @export
+#' @examples
+#' \dontrun{
+#' network <- mc_network(my_mcmodule)
+#' }
+
+mc_network<-function(imports_mcmodule, variate = 1, color_pal = NULL, color_by = NULL){
+  nodes <- visNetwork_nodes(imports_mcmodule, variate = variate, color_pal = color_pal, color_by = color_by)
+  edges <- visNetwork_edges(imports_mcmodule)
+
+  visNetwork::visNetwork(nodes, edges, width = "100%") %>%
+    visNetwork::visOptions(highlightNearest = list(enabled =TRUE, degree = 2), nodesIdSelection = TRUE,selectedBy="module")%>%
+    visNetwork::visEdges(arrows = "to")%>%
+    visNetwork::visIgraphLayout(layout ="layout_with_sugiyama", maxiter=500)%>%
+    visNetwork::visPhysics(enabled = FALSE)%>%
+    visNetwork::visInteraction(dragNodes=TRUE)
+}
+
+
 # Helper functions
 format_numeric_summary <- function(summary_value) {
   summary_value %>%
-    mutate(
+    dplyr::mutate(
       median = signif_round(`X50.`, 2),
       up = signif_round(`X2.5.`, 2),
       low = signif_round(`X97.5.`, 2)
     ) %>%
-    transmute(value = paste0(median, " (", up, "-", low, ")")) %>%
-    pull(value)
+    dplyr::transmute(value = paste0(median, " (", up, "-", low, ")")) %>%
+    dplyr::pull(value)
 }
 
 format_percentage_summary <- function(summary_value) {
   summary_value %>%
-    mutate(
+    dplyr::mutate(
       median = paste0(signif_round(`X50.` * 100, 2), "%"),
       up = paste0(signif_round(`X2.5.` * 100, 2), "%"),
       low = paste0(signif_round(`X97.5.` * 100, 2), "%")
     ) %>%
-    transmute(value = paste0(median, " (", up, "-", low, ")")) %>%
-    pull(value)
+    dplyr::transmute(value = paste0(median, " (", up, "-", low, ")")) %>%
+    dplyr::pull(value)
 }
 
 generate_node_title <- function(name, module, value, expression, param, inputs) {
@@ -237,9 +329,9 @@ generate_node_title <- function(name, module, value, expression, param, inputs) 
     module,
     '</span></p>
     <p style="text-align: center;"><strong>',
-    value,
+    ifelse(is.na(value),"",value),
     "<br></strong>",
-    expression,
+    ifelse(is.na(expression),"",expression),
     '</p>
     <table style="width: 100%; border-collapse: collapse; margin: 0px auto;">
       <tbody>
@@ -249,13 +341,15 @@ generate_node_title <- function(name, module, value, expression, param, inputs) 
         </tr>
         <tr>
           <td style="width: 50%; text-align: center;">',
-    gsub(",", "<br>", param),
+    gsub(",", "<br>", ifelse(is.na(param),"",param)),
     '</td>
           <td style="width: 50%; text-align: center;">',
-    gsub(",", "<br>", inputs),
+    gsub(",", "<br>", ifelse(is.na(inputs),"",inputs)),
     "<br></td>
         </tr>
       </tbody>
     </table>"
   )
 }
+
+

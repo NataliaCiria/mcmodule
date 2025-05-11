@@ -59,12 +59,15 @@ summary_basic <- mc_summary(imports_mcmodule, "h_prev")
 
 # Using custom keys and rounding
 summary_custom <- mc_summary(imports_mcmodule, "h_prev",
-                           keys_names = c("origin"),
-                           digits = 3)
+  keys_names = c("origin"),
+  digits = 3
+)
 
 # Direct usage with data and mcnode
-summary_direct <- mc_summary(data = imports_data,
-                           mcnode = h_prev,
-                           sep_keys = FALSE)
+summary_direct <- mc_summary(
+  data = imports_data,
+  mcnode = h_prev,
+  sep_keys = FALSE
+)
 }
 }

@@ -4,7 +4,7 @@
 \alias{create_mc_nodes}
 \title{Create Monte Carlo Nodes from Data and Configuration Table}
 \usage{
-create_mc_nodes(data, mctable = set_mctable(), envir = parent.frame(), ...)
+create_mc_nodes(data, mctable = set_mctable(), envir = parent.frame())
 }
 \arguments{
 \item{data}{A data frame containing the input variables for creating Monte Carlo nodes}
@@ -18,17 +18,15 @@ create_mc_nodes(data, mctable = set_mctable(), envir = parent.frame(), ...)
 }}
 
 \item{envir}{Environment where MC nodes will be created (default: parent.frame())}
-
-\item{...}{Additional arguments (currently unused)}
 }
 \value{
 No return value, creates MC nodes in the specified environment
 }
 \description{
-This function creates Monte Carlo nodes (mcnodes) based on instructions provided in a configuration
-table and input variables from a dataframe. It supports various distributions and transformations.
+Creates Monte Carlo nodes (mcnodes) based on instructions provided in a configuration
+table (mctable) and input variables from a dataframe.
 }
 \examples{
-  create_mc_nodes(data = imports_data, mctable = imports_mctable)
+create_mc_nodes(data = imports_data, mctable = imports_mctable)
 
 }

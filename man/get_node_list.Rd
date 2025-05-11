@@ -28,5 +28,5 @@ Creates a list of nodes based on a given model expression, handling input,
 output, and previous nodes with their properties and relationships.
 }
 \examples{
-get_node_list(model_exp = imports_exp, mctable=imports_mctable, data_keys=imports_data_keys)
+get_node_list(model_exp = imports_exp, mctable = imports_mctable, data_keys = imports_data_keys)
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/eval_model.R
 \name{eval_model}
 \alias{eval_model}
-\title{Evaluate and Process a Monte Carlo Model Expression}
+\title{Evaluate a Monte Carlo Model Expression and create an mcmcmodule}
 \usage{
 eval_model(
   model_exp,
@@ -13,8 +13,7 @@ eval_model(
   summary = FALSE,
   mctable = set_mctable(),
   data_keys = set_data_keys(),
-  create_nodes = TRUE,
-  only_node_list = FALSE
+  create_nodes = TRUE
 )
 }
 \arguments{
@@ -35,22 +34,20 @@ eval_model(
 \item{data_keys}{List of key columns for each dataset}
 
 \item{create_nodes}{Logical; whether to create new nodes from data}
-
-\item{only_node_list}{Logical; return node list instead of full module}
 }
 \value{
-Either an mcmodule object (containing data, expressions, and nodes)
-or just the node list if only_node_list=TRUE
+An mcmodule object containing data, expressions, and nodes
 }
 \description{
-Takes a model expression and evaluates it while creating a comprehensive node list
-containing results and metadata. This function handles both single expressions and
-lists of expressions, managing dependencies between nodes and previous modules.
+Takes a model expression and evaluates it while creating an mcmcmodule
+containing results and metadata.
 }
 \examples{
 # Basic usage with single expression
-eval_model(model_exp = imports_exp,
-               data = imports_data,
-               mctable = imports_mctable,
-               data_keys = imports_data_keys)
+eval_model(
+  model_exp = imports_exp,
+  data = imports_data,
+  mctable = imports_mctable,
+  data_keys = imports_data_keys
+)
 }

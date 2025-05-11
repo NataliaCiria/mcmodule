@@ -2,7 +2,7 @@
 % Please edit documentation in R/dim_match.R
 \name{wif_match}
 \alias{wif_match}
-\title{Match Monte Carlo Datasets With Differing Scenarios}
+\title{Match Datasets With Differing Scenarios}
 \usage{
 wif_match(x, y, by = "hg")
 }
@@ -24,7 +24,7 @@ List containing matched datasets with aligned scenario IDs:
 Matches datasets by group and preserves baseline scenarios (scenario_id=0) when scenarios differ between them.
 }
 \examples{
-x <- data.frame(hg = 1:2, val = c("a","b"), scenario_id = c(0,1))
-y <- data.frame(hg = 1:2, val = c("c","d"), scenario_id = c(0,2))
+x <- data.frame(hg = 1:2, val = c("a", "b"), scenario_id = c(0, 1))
+y <- data.frame(hg = 1:2, val = c("c", "d"), scenario_id = c(0, 2))
 matched <- wif_match(x, y)
 }

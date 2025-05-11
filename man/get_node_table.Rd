@@ -2,19 +2,24 @@
 % Please edit documentation in R/get_network_table.R
 \name{get_node_table}
 \alias{get_node_table}
-\title{Get node table to construct a network}
+\title{Generate Node Table for Network Construction}
 \usage{
 get_node_table(mcmodule, variate = 1)
 }
 \arguments{
-\item{mcmodule}{A mcmodule object}
+\item{mcmodule}{An mcmodule object containing node information}
+
+\item{variate}{Integer indicating which variate to extract (default: 1)}
 }
 \value{
-edge_table data frame
+A data frame containing node information and attributes
 }
 \description{
-Get node table to construct a network
+Creates a data frame containing node information from a Monte Carlo module network.
+Includes node attributes, values, and relationships.
 }
 \examples{
-get_node_table(mcmodule=purchase)
+\dontrun{
+node_table <- get_node_table(my_mcmodule)
+}
 }

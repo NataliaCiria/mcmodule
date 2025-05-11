@@ -1,3 +1,4 @@
+#' @import dplyr
 
 test_that("get_edge_table works", {
   # Create test mcmodule
@@ -15,6 +16,11 @@ test_that("visNetwork functions generate correct formats", {
   nodes <- visNetwork_nodes(imports_mcmodule)
   edges <- visNetwork_edges(imports_mcmodule)
 
-  expect_true(all(c("id", "color", "level") %in% colnames(nodes)))
+  expect_true(all(c("id", "color", "module", "expression", "title") %in% colnames(nodes)))
   expect_true(all(c("from", "to", "id") %in% colnames(edges)))
+
+  imports_network<-mc_network(imports_mcmodule)
+  expect_true(all(c("visNetwork", "htmlwidget") %in% class(imports_network)))
+  expect_equal(imports_network$x$nodes[names(nodes)], nodes)
+  expect_equal(imports_network$x$edges[names(edges)], edges)
 })

@@ -22,9 +22,12 @@ Updated mcmodule with new combined probability node
 }
 \description{
 This function combines probabilities of multiple events assuming independence,
+using the formula P(A or B) = 1 - (1-P(A))*(1-P(B)). It macthes dimensions automatically.
 }
 \examples{
-at_least_one(mcmodule = imports_mcmodule,
-             mc_names = c("no_purchase_inf_agg", "b_entry_agg"))
+at_least_one(
+  mcmodule = imports_mcmodule,
+  mc_names = c("no_purchase_inf_agg", "b_entry_agg")
+)
 
 }
