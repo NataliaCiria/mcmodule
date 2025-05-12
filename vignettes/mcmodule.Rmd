@@ -2,9 +2,7 @@
 title: "mcmodule"
 subtitle: "Modular Monte-Carlo Risk Analysis"
 author: "Natalia Ciria"
-output: 
-    bookdown::html_document2:
-        base_format: rmarkdown::html_vignette
+output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{mcmodule-vignette}
   %\VignetteEngine{knitr::rmarkdown}

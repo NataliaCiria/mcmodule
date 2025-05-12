@@ -1,3 +1,5 @@
+.pkgglobalenv <- new.env(parent = emptyenv())
+
 #' Create or Modify an Monte Carlo Inputs Table
 #'
 #' @description
@@ -28,9 +30,6 @@
 #' mctable(mct)
 #'
 #' @export
-
-.pkgglobalenv <- new.env(parent = emptyenv())
-
 set_mctable <- function(data = NULL) {
   # Check if mctable exists, if not create with default values
   if (!exists("mctable", envir = .pkgglobalenv)) {

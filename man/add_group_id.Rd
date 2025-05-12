@@ -20,5 +20,7 @@ Dataframe or list of dataframes with added group IDs
 Add Group IDs to Data Frames
 }
 \examples{
+\dontrun{
 add_group_id(imports_data, by = c("pathogen ", "origin"))
+}
 }

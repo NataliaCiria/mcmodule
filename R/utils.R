@@ -6,7 +6,9 @@
 #' @return Dataframe or list of dataframes with added group IDs
 #' @import dplyr
 #' @examples
-#' add_group_id(imports_data, by = c("pathogen ", "origin"))
+#' \dontrun{
+#'add_group_id(imports_data, by = c("pathogen ", "origin"))
+#' }
 add_group_id <- function(x, y = NULL, by = NULL) {
   if (!is.null(y)) {
     if (is.null(by)) {

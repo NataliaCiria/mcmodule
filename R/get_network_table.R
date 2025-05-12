@@ -278,14 +278,17 @@ visNetwork_edges <- function(mcmodule) {
 #'     \item Hierarchical layout
 #'     \item Draggable nodes
 #'   }
-#' @import visNetwork
 #' @export
 #' @examples
 #' \dontrun{
 #' network <- mc_network(my_mcmodule)
 #' }
+mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL){
+  if(!all(requireNamespace("visNetwork", quietly = TRUE)&requireNamespace("igraph", quietly = TRUE))){
+    stop("This function need 'visNetwork' and 'igraph' packages. Please
+         install them before.")
+  }
 
-mc_network<-function(imports_mcmodule, variate = 1, color_pal = NULL, color_by = NULL){
   nodes <- visNetwork_nodes(imports_mcmodule, variate = variate, color_pal = color_pal, color_by = color_by)
   edges <- visNetwork_edges(imports_mcmodule)
 

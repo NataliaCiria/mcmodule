@@ -4,16 +4,16 @@
 \alias{mc_network}
 \title{Create Interactive Network Visualization}
 \usage{
-mc_network(imports_mcmodule, variate = 1, color_pal = NULL, color_by = NULL)
+mc_network(mcmodule, variate = 1, color_pal = NULL, color_by = NULL)
 }
 \arguments{
+\item{mcmodule}{An mcmodule object}
+
 \item{variate}{Integer specifying which variate to visualize (default: 1)}
 
 \item{color_pal}{Custom color palette for nodes (optional)}
 
 \item{color_by}{Column name to determine node colors (optional)}
-
-\item{mcmodule}{An mcmodule object}
 }
 \value{
 An interactive visNetwork object with features:

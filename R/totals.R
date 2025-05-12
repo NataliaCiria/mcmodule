@@ -160,6 +160,7 @@ generate_all_name <- function(mc_names) {
 #' @param mc_name name of node to aggregate
 #' @param keys_names grouping variables for aggregation
 #' @param suffix suffix for output node name (default: "agg")
+#' @param name Custom name for output node (optional)
 #' @param summary whether to include summary statistics (default: TRUE)
 #' @param keep_variates whether to preserve individual values (default: FALSE)
 #' @param agg_func aggregation method ("prob", "sum", "avg", or NULL)
@@ -307,11 +308,9 @@ agg_totals <- function(mcmodule, mc_name,
 #' @param name Custom name for output nodes (optional)
 #' @param prefix Prefix for output node names (optional)
 #' @param combine_prob Process all nodes if TRUE (default)
-#' @param mctable Data frame containing Monte Carlo nodes definitions (default: set_mctable())
-#' @param agg_keys Column names for aggregation (optional)
-#' @param suffix Suffix for aggregated names (default: "agg")
-#' @param keep_variates whether to preserve individual values (default: FALSE)
 #' @param summary Include summary statistics if TRUE (default)
+#' @param agg_keys Column names for aggregation (optional)
+#' @param suffix Suffix for aggregated names (optional)
 #'
 #' @return
 #' Updated mcmodule object containing:
