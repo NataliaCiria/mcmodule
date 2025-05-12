@@ -1,5 +1,3 @@
-#' @import dplyr
-
 test_that("get_edge_table works", {
   # Create test mcmodule
   edges <- get_edge_table(imports_mcmodule)

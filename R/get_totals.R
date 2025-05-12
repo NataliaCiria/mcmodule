@@ -1,6 +1,6 @@
 #' Calculate Combined Probability of Events (At least one)
 #'
-#' @description This function combines probabilities of multiple events assuming independence,
+#' Combines probabilities of multiple events assuming independence,
 #' using the formula P(A or B) = 1 - (1-P(A))*(1-P(B)). It macthes dimensions automatically.
 #'
 #' @param mcmodule Module containing node list and input data frames
@@ -329,22 +329,27 @@ trial_totals <- function(mcmodule, mc_names,
                          trials_n,
                          subsets_n = NULL,
                          subsets_p = NULL,
-                         suffix = NULL,
                          name = NULL,
                          prefix = NULL,
                          combine_prob = TRUE,
                          mctable = set_mctable(),
                          agg_keys = NULL,
+                         suffix = "agg",
                          keep_variates = FALSE,
                          summary = TRUE) {
+
+  module_name <- deparse(substitute(mcmodule))
+
+  if (!all(mc_names%in%names(mcmodule$node_list))) stop(paste(mc_names[!mc_names%in%names(mcmodule$node_list)], sep=", "), " not found in ", module_name)
+
   nodes_data_name <- sapply(mc_names, function(x) mcmodule$node_list[[x]][["data_name"]])
   data_name <- unique(nodes_data_name)
+
   if (length(data_name) > 1) stop("data_name is not equal for all nodes")
 
   data <- mcmodule$data[[data_name]]
 
   nodes_keys <- lapply(mc_names, function(x) mc_keys(mcmodule, x))
-  module_name <- deparse(substitute(mcmodule))
 
   # Function for individual mcnode creation and processing
   process_mcnode <- function(mc_name, node_type, mcmodule, data, module_name, agg_keys, suffix, mctable, keep_variates, agg_func = NULL) {
@@ -355,6 +360,7 @@ trial_totals <- function(mcmodule, mc_names,
       mc_node <- mcdata(data[[mc_name]], type = "0", nvariates = nrow(data))
       new <- TRUE
     } else {
+      if(!mc_name%in%mctable$mcnode) stop (mc_name, " not found in mctable")
       create_mc_nodes(data,
         mctable = mctable[mctable$mcnode %in% mc_name, ]
       )

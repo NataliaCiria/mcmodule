@@ -10,12 +10,12 @@ trial_totals(
   trials_n,
   subsets_n = NULL,
   subsets_p = NULL,
-  suffix = NULL,
   name = NULL,
   prefix = NULL,
   combine_prob = TRUE,
   mctable = set_mctable(),
   agg_keys = NULL,
+  suffix = "agg",
   keep_variates = FALSE,
   summary = TRUE
 )
@@ -31,8 +31,6 @@ trial_totals(
 
 \item{subsets_p}{Subset prevalence column name (optional)}
 
-\item{suffix}{Suffix for aggregated names (optional)}
-
 \item{name}{Custom name for output nodes (optional)}
 
 \item{prefix}{Prefix for output node names (optional)}
@@ -40,6 +38,8 @@ trial_totals(
 \item{combine_prob}{Process all nodes if TRUE (default)}
 
 \item{agg_keys}{Column names for aggregation (optional)}
+
+\item{suffix}{Suffix for aggregated names (optional)}
 
 \item{summary}{Include summary statistics if TRUE (default)}
 }

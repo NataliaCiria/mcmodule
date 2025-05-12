@@ -70,7 +70,7 @@ For example, if we are buying a number of cows and heifers from a specific regio
 
 This framework enables the creation and comparison of scenarios. For comparisons, you need a baseline scenario (scenario "0") and one or more alternative scenarios. Variates within a scenario are called "groups." While not every scenario needs to contain all baseline groups, any groups present in alternative scenarios must exist in the baseline.
 
-The scenario id, group id, and row number are the three mcnode properties that enable row matching and row aggregation operations (see @sec-row-matching-operations).
+The scenario id, group id, and row number are the three mcnode properties that enable row matching and row aggregation operations (see @sec-row-matching).
 
 ![An mcnode representing the probability of a farm being infected in a baseline scenario ("0", in blue) and in a what-if scenario where there is a control plan implemented ("a", in green).](images/mcmodule_mcnode_scenarios.png){fig-align="center" width="70%"}
 
@@ -82,7 +82,7 @@ Most operations in this model are element-wise, meaning each calculation occurs 
 
 ![](images/mcmodule_mcnode_element-wise_operation.png){fig-align="center" width="100%"}
 
-### Row matching {#sec-row-matching-operations}
+### Row matching {#sec-row-matching}
 
 Row matching operations align nodes to ensure they have compatible dimensions and properly matched rows for element-wise calculations. This is especially important when working with nodes containing different scenarios. The matching process may require reordering, duplicating, or adding rows to either or both nodes.
 
@@ -136,7 +136,13 @@ When nodes contain different scenarios and groups, some groups may be missing fr
 
 ![](images/mcmodule_null_matching_3.png){fig-align="center" width="100%"}
 
-### Row aggregation {#row-aggregation-operations}
+### Combined probabilities
+
+A special type of element-wise operation that automatically deals with row matching. Combines probabilities of multiple events assuming independence, using the formula:
+
+$$ P(A \cup B) = 1 - (1-P(A))(1-P(B))$$
+
+### Row aggregation {#sec-row-aggregation}
 
 Row aggregation operations combine values across multiple rows (variates) in an mcnode using specific criteria. These operations calculate overall probabilities or sum quantities across groups.
 
@@ -159,6 +165,10 @@ Where:
 ![Row aggregation by pathogen. The calculation is performed element-wise across subset variates to maintain uncertainty propagation.](images/mcmodule_row_aggregation_p.png){fig-align="center" width="100%"}
 
 If scenarios are being simulated, scenario id must always be included as an aggregation key, as probabilities are not calculated across different what-if scenarios.
+
+You can also keep all variariates, with their corresponding aggregated values, to ensure dimensions compatibility in further calculations.
+
+![Default row aggregation and row aggregation keeping all variates](images/mcmodule_keep_variates.png){fig-align="center" width="80%"}
 
 #### Quantities
 
@@ -198,13 +208,47 @@ In multilevel trials, we account for hierarchical structures where trials are or
 
 The probability of at least one success in this hierarchical structure is given by:
 
-$$ set\_p= 1-(1-subset\_p(1-(1-trial\_p)^{trial\_n}))^{subset\_n}  $$
+$$ set\_p= 1-(1-subset\_p \cdot (1-(1-trial\_p)^{trial\_n}))^{subset\_n}  $$
+
+Where:
+
+-   *trials_p* represents the probability of a trial in a subset being a success
+
+-   *trials_n* represents the number of trials in subset
+
+-   *subset_p* represents the probability of a subset being selected
+
+-   *subset_n* represents the number of subsets
+
+-   *set_p* represents the probability of a at least one trial of at least one subsetbeing a success
 
 **Multiple group multilevel trials**
 
-### At least one
+In multiple group multilevel trials, several variates (groups) can belong to the same subset. For example, when selecting animals of different categories (cow, calf, heifer, bull) from the same farm, their infection probabilities are not independent. You should include aggregation keys for groups that are not independent to calculate their trial probabilities, for example, aggregating variates for different animal categories by farm. For this calculation, the subset_p and subset_n values must be identical across all variates being aggregated.
 
-A special type of element-wise operation that automatically deals with row matching.
+$$
+trial\_p\_agg=1-\prod_{trial\_p\subseteq S}(1-trial\_p)^{trial\_n}
+$$
+
+$$ set\_p\_agg = 1-(1-subset\_p \cdot trial\_p\_agg)^{subset\_n}  $$
+
+Where:
+
+-   S represents the variates included in the aggregation
+
+-   *trials_p* represents the probability of success of a trial in a subset
+
+-   *trials_n* represents the number of trials in subset
+
+-   *trials_p* *\_agg* represents the probability of success of at least one variate in at least one of the aggregated variates
+
+-   *subset_p* represents the probability of a subset being selected
+
+-   *subset_n* represents the number of subsets
+
+-   *set_p_agg* represents the probability of success of a at least one trial in at least one of the aggregated variates in at least one subset
+
+As with row aggregation, you can keep all variates to maintain dimensions compatibility in further calculations.
 
 # Model elements
 

@@ -21,7 +21,7 @@ at_least_one(mcmodule, mc_names, name = NULL, prefix = NULL, summary = TRUE)
 Updated mcmodule with new combined probability node
 }
 \description{
-This function combines probabilities of multiple events assuming independence,
+Combines probabilities of multiple events assuming independence,
 using the formula P(A or B) = 1 - (1-P(A))*(1-P(B)). It macthes dimensions automatically.
 }
 \examples{
