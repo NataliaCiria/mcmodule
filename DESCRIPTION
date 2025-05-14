@@ -1,15 +1,18 @@
 Package: mcmodule
-Title: Multivariate Modular Monte Carlo Risk Analysis
+Title: Modular Monte Carlo Risk Analysis
 Version: 0.0.0.9000
 Authors@R: c(
-    person("Natalia", "Ciria", , "natalia.ciria@uab.cat", role = c("aut", "cre"),
+    person("Natalia", "Ciria", "nataliaciria@hotmail.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0009-0006-2669-6634")),
-    person("Alberto", "Allepuz", , "alberto.allepuz@uab.cat", role = c("ths"),
+    person("Alberto", "Allepuz", role = c("ths"),
            comment = c(ORCID = "0000-0003-3518-1991")),
-    person("Giovanna", "Ciaravino", , "giovanna.ciaravino@uab.cat", role = c("ths"),
+    person("Giovanna", "Ciaravino", role = c("ths"),
            comment = c(ORCID = "0000-0002-5796-8093"))
            )
-Description: Tools to expand mc2d capabilities for multivariate and modular risk analysis.
+Description: mcmodule provides a framework for building modular Monte Carlo risk analysis models. 
+It extends the capabilities of mc2d to facilitate working with multiple risk pathways, variates and scenarios. 
+The package includes tools for creating stochastic objects from data frames, visualising results, and 
+performing uncertainty, sensitivity and convergence analysis.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
