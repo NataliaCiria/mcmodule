@@ -3,14 +3,14 @@
 
 ## Installation
 
-- Install from CRAN:
+Install from CRAN:
 
 ```r
 install.packages("mcmodule")
 library("mcmodule")
 ```
 
-- Install latest development version from GitHub (requires `devtool` package)
+Install latest development version from GitHub (requires `devtool` package)
 
 ```r
 # install.packages("devtools")
@@ -22,3 +22,10 @@ devtools::install_github("VetEpi-UAB/mcmodule")
 [Example]
 
 Further documentation and examples can be found in the vignette.
+
+## Citations
+
+If you use `mcmodule` in your research, please cite:
+
+Ciria, N. (2024). mcmodule: Modular Monte Carlo Risk Analysis. R package version 1.0.0.
+https://github.com/VetEpi-UAB/mcmodule
