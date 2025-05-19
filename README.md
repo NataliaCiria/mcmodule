@@ -14,7 +14,7 @@ Install latest development version from GitHub (requires `devtool` package)
 
 ```r
 # install.packages("devtools")
-devtools::install_github("VetEpi-UAB/mcmodule")
+devtools::install_github("NataliaCiria/mcmodule")
 ```
 
 ## Usage
@@ -28,4 +28,4 @@ Further documentation and examples can be found in the vignette.
 If you use `mcmodule` in your research, please cite:
 
 Ciria, N. (2024). mcmodule: Modular Monte Carlo Risk Analysis. R package version 1.0.0.
-https://github.com/VetEpi-UAB/mcmodule
+https://github.com/NataliaCiria/mcmodule
