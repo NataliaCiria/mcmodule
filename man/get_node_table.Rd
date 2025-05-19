@@ -19,7 +19,5 @@ Creates a data frame containing node information from a Monte Carlo module netwo
 Includes node attributes, values, and relationships.
 }
 \examples{
-\dontrun{
-node_table <- get_node_table(my_mcmodule)
-}
+node_table <- get_node_table(imports_mcmodule)
 }

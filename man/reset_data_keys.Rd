@@ -7,8 +7,11 @@
 reset_data_keys()
 }
 \value{
-An empty list
+No return value, resets data keys
 }
 \description{
 Resets the data model to an empty list
+}
+\examples{
+reset_data_keys()
 }

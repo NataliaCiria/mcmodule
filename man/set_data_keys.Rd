@@ -2,16 +2,28 @@
 % Please edit documentation in R/set_data_keys.R
 \name{set_data_keys}
 \alias{set_data_keys}
-\title{Set Data Keys}
+\title{Set or Get Global Data Keys}
 \usage{
 set_data_keys(data_keys = NULL)
 }
 \arguments{
-\item{data_keys}{Optional list of lists containing data frames and their keys}
+\item{data_keys}{Optional list of lists. Each inner list must contain:
+\itemize{
+\item data: A data frame containing the actual data
+\item keys: A vector specifying the key columns for the data frame
+}
+If NULL, returns the current data model.}
 }
 \value{
-Current data model
+\itemize{
+\item If data_keys = NULL: Returns the current global data model
+\item If data_keys provided: Sets the new data model and returns invisibly
+}
 }
 \description{
-Sets or returns the global data model
+Manages a global data model by either setting new data keys or retrieving the current ones.
+The data model consists of named lists containing data frames and their associated keys.
+}
+\examples{
+set_data_keys(imports_data_keys)
 }

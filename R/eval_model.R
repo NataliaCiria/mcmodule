@@ -70,7 +70,7 @@ eval_model <- function(model_exp, data, param_names = NULL,
           " needed but not provided"
         )
       } else {
-        prev_mcmodule_list <- if (class(prev_mcmodule) == "mcmodule") {
+        prev_mcmodule_list <- if (inherits(mcmodule, "mcmodule")) {
           list(prev_mcmodule)
         } else {
           prev_mcmodule
@@ -288,9 +288,9 @@ eval_model <- function(model_exp, data, param_names = NULL,
 #'
 #' @return A subset of the node list containing requested nodes
 get_mcmodule_nodes <- function(mcmodule, mc_names = NULL, envir = parent.frame()) {
-  if (class(mcmodule) == "mcmodule") {
+  if (inherits(mcmodule, "mcmodule")) {
     node_list <- mcmodule$node_list
-  } else if (class(mcmodule) == "mcnode_list") {
+  } else if (inherits(mcmodule, "mcnode_list")) {
     node_list <- mcmodule
   } else {
     stop("mcmodule or mcnode_list object must be provided")

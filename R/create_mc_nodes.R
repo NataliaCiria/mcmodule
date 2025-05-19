@@ -12,9 +12,8 @@
 #'     \item from_variable: Optional source variable name for transformation
 #'   }
 #' @param envir Environment where MC nodes will be created (default: parent.frame())
-#'
 #' @return No return value, creates MC nodes in the specified environment
-#'
+#' @import mc2d
 #' @examples
 #' create_mc_nodes(data = imports_data, mctable = imports_mctable)
 #'

@@ -24,7 +24,21 @@ List containing matched datasets with aligned scenario IDs:
 Matches datasets by group and preserves baseline scenarios (scenario_id=0) when scenarios differ between them.
 }
 \examples{
-x <- data.frame(hg = 1:2, val = c("a", "b"), scenario_id = c(0, 1))
-y <- data.frame(hg = 1:2, val = c("c", "d"), scenario_id = c(0, 2))
-matched <- wif_match(x, y)
+x <- data.frame(
+  category = c("a", "b", "a", "b"),
+  scenario_id = c(0, 0, 1, 1),
+  hg = c(1, 2, 1, 2),
+  value = 1:4
+)
+
+y <- data.frame(
+  category = c("a", "b", "a", "b"),
+  scenario_id = c(0, 0, 2, 2),
+  hg = c(1, 2, 1, 2),
+  value = 5:8
+)
+
+# Automatic matching
+result <- wif_match(x, y)
+
 }

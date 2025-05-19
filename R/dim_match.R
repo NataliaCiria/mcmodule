@@ -195,11 +195,25 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
 #' @return List containing matched datasets with aligned scenario IDs:
 #'   - First element: matched version of dataset x
 #'   - Second element: matched version of dataset y
-#' @export
 #' @examples
-#' x <- data.frame(hg = 1:2, val = c("a", "b"), scenario_id = c(0, 1))
-#' y <- data.frame(hg = 1:2, val = c("c", "d"), scenario_id = c(0, 2))
-#' matched <- wif_match(x, y)
+#' x <- data.frame(
+#'   category = c("a", "b", "a", "b"),
+#'   scenario_id = c(0, 0, 1, 1),
+#'   hg = c(1, 2, 1, 2),
+#'   value = 1:4
+#' )
+#'
+#' y <- data.frame(
+#'   category = c("a", "b", "a", "b"),
+#'   scenario_id = c(0, 0, 2, 2),
+#'   hg = c(1, 2, 1, 2),
+#'   value = 5:8
+#' )
+#'
+#' # Automatic matching
+#' result <- wif_match(x, y)
+#'
+#' @export
 wif_match <- function(x, y, by = "hg") {
   # Match keys between datasets
   list_xy <- keys_match(x, y, by)

@@ -10,14 +10,44 @@
 #' @param summary Whether to calculate summary statistics (default: TRUE)
 #'
 #' @return Updated mcmodule with new combined probability node
-#' @export
 #'
 #' @examples
-#' at_least_one(
-#'   mcmodule = imports_mcmodule,
-#'   mc_names = c("no_purchase_inf_agg", "b_entry_agg")
+#' module <- list(
+#'   node_list = list(
+#'     p1 = list(
+#'       mcnode = mcstoc(runif,
+#'                       min = mcdata(c(0.1, 0.2, 0.3), type = "0", nvariates = 3),
+#'                       max = mcdata(c(0.2, 0.3, 0.4), type = "0", nvariates = 3),
+#'                       nvariates = 3
+#'       ),
+#'       data_name = "data_x",
+#'       keys = c("category")
+#'     ),
+#'     p2 = list(
+#'       mcnode = mcstoc(runif,
+#'                       min = mcdata(c(0.5, 0.6, 0.7), type = "0", nvariates = 3),
+#'                       max = mcdata(c(0.6, 0.7, 0.8), type = "0", nvariates = 3),
+#'                       nvariates = 3
+#'       ),
+#'       data_name = "data_y",
+#'       keys = c("category")
+#'     )
+#'   ),
+#'   data = list(
+#'     data_x = data.frame(
+#'       category = c("A", "B", "C"),
+#'       scenario_id = c("0", "0", "0")
+#'     ),
+#'     data_y = data.frame(
+#'       category = c("B", "B", "B"),
+#'       scenario_id = c("0", "1", "2")
+#'     )
+#'   )
 #' )
 #'
+#' module <- at_least_one(module, c("p1", "p2"), name = "p_combined")
+#' print(module$node_list$p_combined$summary)
+#' @export
 at_least_one <- function(mcmodule, mc_names, name = NULL, prefix = NULL, summary = TRUE) {
   # Validate inputs exist
   if (!all(mc_names %in% names(mcmodule$node_list))) {
@@ -167,6 +197,13 @@ generate_all_name <- function(mc_names) {
 #'
 #'
 #' @return mcmodule with new aggregated node added
+#'
+#' @examples
+#' imports_mcmodule <- agg_totals(
+#'   imports_mcmodule, "no_detect_a",
+#'   keys_names = c("scenario_id", "pathogen")
+#' )
+#' print(imports_mcmodule$node_list$no_detect_a_agg$summary)
 #' @export
 agg_totals <- function(mcmodule, mc_name,
                        keys_names = c("scenario_id"),
@@ -296,7 +333,7 @@ agg_totals <- function(mcmodule, mc_name,
 #' Calculate Probabilities and Expected Counts Across Hierarchical Levels
 #'
 #' @description
-#' A function to calculate probabilities and expected counts across hierarchical levels
+#' Calculates probabilities and expected counts across hierarchical levels
 #' (trial, subset, set) in a structured population. Uses trial probabilities and
 #' handles nested sampling with conditional probabilities.
 #'
@@ -308,9 +345,11 @@ agg_totals <- function(mcmodule, mc_name,
 #' @param name Custom name for output nodes (optional)
 #' @param prefix Prefix for output node names (optional)
 #' @param combine_prob Process all nodes if TRUE (default)
-#' @param summary Include summary statistics if TRUE (default)
+#' @param mctable Data frame containing Monte Carlo nodes definitions (default: set_mctable())
 #' @param agg_keys Column names for aggregation (optional)
-#' @param suffix Suffix for aggregated names (optional)
+#' @param suffix Suffix for aggregated names (default: "agg")
+#' @param keep_variates whether to preserve individual values (default: FALSE)
+#' @param summary Include summary statistics if TRUE (default)
 #'
 #' @return
 #' Updated mcmodule object containing:
@@ -320,11 +359,15 @@ agg_totals <- function(mcmodule, mc_name,
 #' - Probabilities and counts at set level
 #'
 #' @examples
-#' result <- trial_totals(
-#'   mcmodule = purchase_origin,
-#'   mc_names = c("a_inf", "a_inf_pi", "a_inf_tr")
+#' imports_mcmodule <- trial_totals(
+#'   mcmodule = imports_mcmodule,
+#'   mc_names = "no_detect_a",
+#'   trials_n = "animals_n",
+#'   subsets_n = "farms_n",
+#'   subsets_p = "h_prev",
+#'   mctable = imports_mctable
 #' )
-#'
+#' print(imports_mcmodule$node_list$no_detect_a_set$summary)
 #' @export
 trial_totals <- function(mcmodule, mc_names,
                          trials_n,

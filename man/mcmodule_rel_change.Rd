@@ -21,7 +21,7 @@ mcmodule_rel_change(
 \item{mcnode_admin}{Monte Carlo node administration object}
 }
 \value{
-Modified mcmoduleduction module with relative changes
+Modified mcmodule with relative changes
 }
 \description{
 Calculate Relative Change in Monte Carlo Module

@@ -1,11 +1,22 @@
-#' Set Data Keys
+#' Set or Get Global Data Keys
 #'
-#' @description
-#' Sets or returns the global data model
+#' Manages a global data model by either setting new data keys or retrieving the current ones.
+#' The data model consists of named lists containing data frames and their associated keys.
 #'
-#' @param data_keys Optional list of lists containing data frames and their keys
-#' @return Current data model
+#' @param data_keys Optional list of lists. Each inner list must contain:
+#'   \itemize{
+#'     \item data: A data frame containing the actual data
+#'     \item keys: A vector specifying the key columns for the data frame
+#'   }
+#'   If NULL, returns the current data model.
 #'
+#' @return
+#'   \itemize{
+#'     \item If data_keys = NULL: Returns the current global data model
+#'     \item If data_keys provided: Sets the new data model and returns invisibly
+#'   }
+#' @examples
+#' set_data_keys(imports_data_keys)
 #' @export
 set_data_keys <- function(data_keys = NULL) {
   if (is.null(data_keys)) {
@@ -13,6 +24,7 @@ set_data_keys <- function(data_keys = NULL) {
       empty_model <- list()
       assign("data_keys", empty_model, envir = .pkgglobalenv)
     }
+    return(get("data_keys", envir = .pkgglobalenv))
   } else {
     # Validate data model structure
     if (!is.list(data_keys)) {
@@ -32,9 +44,9 @@ set_data_keys <- function(data_keys = NULL) {
 
     # Assign validated data model
     assign("data_keys", data_keys, envir = .pkgglobalenv)
-  }
+    message("data_keys set to ", deparse(substitute(data_keys)))
 
-  return(get("data_keys", envir = .pkgglobalenv))
+  }
 }
 
 #' Reset Data Keys
@@ -42,11 +54,12 @@ set_data_keys <- function(data_keys = NULL) {
 #' @description
 #' Resets the data model to an empty list
 #'
-#' @return An empty list
-#'
+#' @return No return value, resets data keys
+#' @examples
+#' reset_data_keys()
 #' @export
 reset_data_keys <- function() {
   empty_model <- list()
   assign("data_keys", empty_model, envir = .pkgglobalenv)
-  return(get("data_keys", envir = .pkgglobalenv))
+  message("data_keys reset")
 }

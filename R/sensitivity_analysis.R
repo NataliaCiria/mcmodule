@@ -55,7 +55,7 @@ mcmodule_index <- function(mcmodule) {
 #' @param mcmodule_alt Alternative mcmoduleduction module
 #' @param mc_names Optional names of Monte Carlo nodes
 #' @param mcnode_admin Monte Carlo node administration object
-#' @return Modified mcmoduleduction module with relative changes
+#' @return Modified mcmodule with relative changes
 #' @export
 mcmodule_rel_change <- function(mcmodule_def, mcmodule_alt, mc_names = NULL, mcnode_admin = mcnode_admin) {
   mcmodule_rel <- mcmodule_def
@@ -238,13 +238,14 @@ mcmodule_spearman <- function(mcmodule, agg_output = "total_agg") {
 #'       \item List of non-converged nodes (if any)
 #'     }
 #' }
-#'
+#' @importFrom graphics abline par
+#' @importFrom stats df median quantile
+#' @importFrom utils setTxtProgressBar txtProgressBar
 #' @examples
 #' \dontrun{
 #' results <- mcmodule_converg(mc_results)
 #' results <- mcmodule_converg(mc_results, from_quantile = 0.90, conv_threshold = 0.01)
 #' }
-#'
 #' @export
 mcmodule_converg <- function(mcmodule, from_quantile = 0.95, to_quantile = 1, conv_threshold = NULL) {
   # Helper function to calculate statistics (mean and quantiles) for convergence analysis

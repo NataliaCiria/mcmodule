@@ -2,16 +2,20 @@
 % Please edit documentation in R/set_mctable.R
 \name{set_mctable}
 \alias{set_mctable}
-\title{Create or Modify an Monte Carlo Inputs Table}
+\title{Set or Get Monte Carlo Inputs Table}
 \usage{
 set_mctable(data = NULL)
 }
 \arguments{
-\item{data}{A data frame containing MC table information. If NULL, returns the current MC table.
-Must contain an 'mcnode' column. Other columns will be auto-filled if missing.}
+\item{data}{Optional data frame containing MC table information. Must contain an 'mcnode' column.
+Other columns will be auto-filled if missing. If NULL, returns the current MC table.}
 }
 \value{
-A data frame containing the MC table with the following columns:
+\itemize{
+\item If data = NULL: Returns the current MC table
+\item If data provided: Sets the new MC table and returns invisibly
+}
+The table contains the following columns:
 \itemize{
 \item mcnode - Character. Name of the Monte Carlo node (required)
 \item description - Character. Description of the node
@@ -22,17 +26,21 @@ A data frame containing the MC table with the following columns:
 }
 }
 \description{
-Creates a new input mcnodes table or modifies an existing one in the global package environment.
-The table stores information about Monte Carlo nodes including their descriptions,
-functions, dependencies, and sensitivity analysis settings.
+Manages a Monte Carlo inputs table in the global package environment by either setting new data
+or retrieving the current table. The table stores information about Monte Carlo nodes including
+their descriptions, functions, dependencies, and sensitivity analysis settings.
 }
 \examples{
+# Get current MC table
+current_table <- set_mctable()
+
+# Set new MC table
 mct <- data.frame(
   mcnode = c("h_prev", "w_prev"),
   description = c("Herd prevalence", "Within herd prevalence"),
   mc_func = c("runif", "runif"),
   sensi_analysis = c(TRUE, TRUE)
 )
-mctable(mct)
+set_mctable(mct)
 
 }

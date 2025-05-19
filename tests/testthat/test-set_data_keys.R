@@ -8,14 +8,14 @@ test_that("set_data_keys works", {
   expect_error(set_data_keys(list(bad_element = "not proper structure")))
 
   # Set data model and verify it matches expected value
-  test_model <- list(
+  test_data_keys <- list(
     test_data = list(
       data = data.frame(x = letters[1:3], y = 1:3),
       keys = c("x")
     )
   )
-  set_data_keys(test_model)
-  expect_equal(set_data_keys(), test_model)
+  expect_message(set_data_keys(test_data_keys),"data_keys set to test_data_keys")
+  expect_equal(set_data_keys(), test_data_keys)
 
   # Reset and verify it's empty
   reset_data_keys()

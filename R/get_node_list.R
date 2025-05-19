@@ -10,7 +10,9 @@
 #'         for the corresponding data frame
 #'
 #' @examples
+#' \dontrun{
 #' imports_mc_inputs <- get_mc_inputs(imports_data_keys, mctable = imports_mctable)
+#' }
 get_mc_inputs <- function(data_keys = set_data_keys(), mctable = set_mctable()) {
   # Get all column names from each data frame
   col_names <- lapply(data_keys, function(x) {
@@ -49,7 +51,9 @@ get_mc_inputs <- function(data_keys = set_data_keys(), mctable = set_mctable()) 
 #' @return A list of class "mcnode_list" containing node information
 #'
 #' @examples
+#' \dontrun{
 #' get_node_list(model_exp = imports_exp, mctable = imports_mctable, data_keys = imports_data_keys)
+#'}
 get_node_list <- function(model_exp, param_names = NULL,
                           mctable = set_mctable(), data_keys = set_data_keys()) {
   module <- gsub("_exp", "", deparse(substitute(model_exp)))

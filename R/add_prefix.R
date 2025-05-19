@@ -1,23 +1,19 @@
 #' Add Prefix to Node Names
 #'
-#' Adds a prefix to node_list names and all input nodes (non-prev)
+#' Adds a prefix to node_list names and all input nodes.
+#' Preserves previous prefixes unless rewrite_module argument is specified.
 #'
 #' @param mcmodule An mcmodule or a node_list object
-#' @param prefix String to add as prefix of the new mcmodule mcnodes (preserves previous prefixes)
-#' @param rewrite_module Name of a module to rewrite (new name equals prefix) - used after copying modules
+#' @param prefix String to add as prefix of the new mcmodule mcnodes, defaults to mcmodule name
+#' @param rewrite_module Name of a module to rewrite prefixes
 #'
-#' @return Returns either:
-#'   \itemize{
-#'     \item A node_list if input was a node_list
-#'     \item A model_object if input was an mcmodule
-#'   }
+#' @return A mcmodule with new prefixes in node_list names
 #'
 #' @examples
-#' purchase <- add_prefix(
-#'   mcmodule = transport_to,
-#'   prefix = "transport_from",
-#'   rewrite_module = "transport_to"
-#' )
+#' print(names(imports_mcmodule$node_list))
+#' imports_mcmodule_prefix<-purchase <- add_prefix(imports_mcmodule)
+#' print(names(imports_mcmodule_prefix$node_list))
+#' @export
 add_prefix <- function(mcmodule, prefix = NULL, rewrite_module = NULL) {
   # Extract node list
   node_list <- mcmodule$node_list
@@ -48,7 +44,7 @@ add_prefix <- function(mcmodule, prefix = NULL, rewrite_module = NULL) {
   }
 
   # Get unique modules
-  modules <- unique(c(unlist(strsplit(names(unlist(mcmodule$model_expression)), split = "\\.")), prefix))
+  modules <- unique(c(unlist(strsplit(names(unlist(mcmodule$model_exp)), split = "\\.")), prefix))
 
   # Add prefix to node names and inputs
   node_names[node_module[node_names] %in% modules] <- paste0(prefix, "_", node_names[node_module[node_names] %in% modules])
@@ -73,7 +69,7 @@ add_prefix <- function(mcmodule, prefix = NULL, rewrite_module = NULL) {
   names(node_list) <- node_names
 
   # Return appropriate object type
-  if (class(mcmodule) == "mcmodule") {
+  if (inherits(mcmodule, "mcmodule")) {
     mcmodule$node_list <- node_list
     mcmodule$prefix <- prefix
     return(mcmodule)

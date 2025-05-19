@@ -20,5 +20,7 @@ Searches through data frames in a provided data model (data_keys) to find variab
 that are inputs for Monte Carlo nodes (mcnodes) defined in a Monte Carlo table (mctable).
 }
 \examples{
+\dontrun{
 imports_mc_inputs <- get_mc_inputs(imports_data_keys, mctable = imports_mctable)
+}
 }

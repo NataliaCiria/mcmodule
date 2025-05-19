@@ -22,23 +22,22 @@
 #'     * Various quantiles (2.5%, 25%, 50%, 75%, 97.5%)
 #'
 #' @examples
-#' \dontrun{
-#' # Basic usage with mcmodule
-#' summary_basic <- mc_summary(imports_mcmodule, "h_prev")
+#' # Use with mcmodule
+#' summary_basic <- mc_summary(imports_mcmodule, "w_prev")
 #'
 #' # Using custom keys and rounding
-#' summary_custom <- mc_summary(imports_mcmodule, "h_prev",
+#' summary_custom <- mc_summary(imports_mcmodule, "w_prev",
 #'   keys_names = c("origin"),
 #'   digits = 3
 #' )
 #'
-#' # Direct usage with data and mcnode
+#' # Use with data and mcnode
+#' w_prev <- imports_mcmodule$node_list$w_prev$mcnode
 #' summary_direct <- mc_summary(
 #'   data = imports_data,
-#'   mcnode = h_prev,
+#'   mcnode = w_prev,
 #'   sep_keys = FALSE
 #' )
-#' }
 #' @export
 mc_summary <- function(mcmodule = NULL, mc_name = NULL,
                        keys_names = NULL,
@@ -46,6 +45,10 @@ mc_summary <- function(mcmodule = NULL, mc_name = NULL,
                        mcnode = NULL,
                        sep_keys = TRUE, digits = NULL) {
   # Input validation
+  if (!is.null(mcnode) & is.null(mc_name)) {
+    mc_name <- deparse(substitute(mcnode))
+  }
+
   if (!is.null(mcmodule)) {
     module_name <- deparse(substitute(mcmodule))
 
@@ -71,10 +74,6 @@ mc_summary <- function(mcmodule = NULL, mc_name = NULL,
   }
 
 
-  if (!is.null(mcnode) & is.null(mc_name)) {
-    mc_name <- deparse(substitute(mcnode))
-  }
-
 
   # Validate provided keys
   if (!is.null(keys_names)) {
@@ -97,7 +96,8 @@ mc_summary <- function(mcmodule = NULL, mc_name = NULL,
   }
 
   if (!sep_keys) {
-    keys <- unite(keys, col = "keys", everything(), sep = ", ")
+    keys$keys <- do.call(paste, c(keys, list(sep = ", ")))
+    keys <- keys["keys"]
     keys_groups <- c("mc_name", "keys")
   } else {
     keys_groups <- c("mc_name", names(keys))
@@ -133,9 +133,6 @@ signif_round <- function(x, digits = 2) ifelse(x < (10^-(digits)), signif(x, dig
 #' Get mcnode summary keys
 #' @param mcsummary data frame from mc_summary()
 #' @return vector of key names
-#' @export
-#' @examples
-#' mc_summary_keys(mcsummary(inf_dc))
 mc_summary_keys <- function(mcsummary) {
   if ("mean" %in% names(mcsummary)) {
     names(mcsummary)[2:(match("mean", names(mcsummary)) - 1)]
@@ -149,9 +146,6 @@ mc_summary_keys <- function(mcsummary) {
 #' @param data data frame with mc inputs
 #' @param node_list list of nodes
 #' @return updated node_list
-#' @export
-#' @examples
-#' node_list_summary(data = purchase_origin_data, node_list = node_list)
 node_list_summary <- function(mcmodule = NULL, data = NULL, node_list = NULL) {
   if (!is.null(mcmodule)) {
     data <- mcmodule$data

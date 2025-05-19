@@ -86,9 +86,11 @@ add_group_id <- function(x, y = NULL, by = NULL) {
 #'   \item{xy}{Matched datasets with aligned group and scenario IDs}
 #' @import dplyr
 #' @examples
+#' \dontrun{
 #' x <- data.frame(type = 1:2, scenario_id = c(0, 1))
 #' y <- data.frame(type = 1:2, scenario_id = c(0, 2))
 #' keys_match(x, y, keys_names = "type")
+#' }
 keys_match <- function(x, y, keys_names = NULL) {
   # Add common group ids
   keys_list <- add_group_id(x, y, keys_names)

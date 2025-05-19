@@ -58,5 +58,4 @@ The function performs the following:
 results <- mcmodule_converg(mc_results)
 results <- mcmodule_converg(mc_results, from_quantile = 0.90, conv_threshold = 0.01)
 }
-
 }

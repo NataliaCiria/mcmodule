@@ -19,6 +19,3 @@ updated node_list
 \description{
 Include summary and keys in node_list
 }
-\examples{
-node_list_summary(data = purchase_origin_data, node_list = node_list)
-}

@@ -5,11 +5,9 @@
 #'
 #' @param mcmodule An mcmodule object containing node relationships
 #' @return A data frame with columns node_from and node_to representing network edges
-#' @export
 #' @examples
-#' \dontrun{
-#' edge_table <- get_edge_table(my_mcmodule)
-#' }
+#' edge_table <- get_edge_table(imports_mcmodule)
+#' @export
 get_edge_table <- function(mcmodule) {
   node_list <- mcmodule$node_list
   edge_table <- data.frame()
@@ -55,11 +53,9 @@ get_edge_table <- function(mcmodule) {
 #' @param mcmodule An mcmodule object containing node information
 #' @param variate Integer indicating which variate to extract (default: 1)
 #' @return A data frame containing node information and attributes
-#' @export
 #' @examples
-#' \dontrun{
-#' node_table <- get_node_table(my_mcmodule)
-#' }
+#' node_table <- get_node_table(imports_mcmodule)
+#' @export
 get_node_table <- function(mcmodule, variate = 1) {
   data <- mcmodule$data
   node_list <- mcmodule$node_list
@@ -175,8 +171,7 @@ get_node_table <- function(mcmodule, variate = 1) {
 #'   }
 #' @examples
 #' \dontrun{
-#' nodes_df <- visNetwork_nodes(my_mcmodule)
-#' nodes_df <- visNetwork_nodes(my_mcmodule, color_by = "category")
+#' nodes_df <- visNetwork_nodes(imports_mcmodule)
 #' }
 visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL) {
 
@@ -250,7 +245,7 @@ visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by =
 #' @return A data frame containing edge information for visNetwork
 #' @examples
 #' \dontrun{
-#' vis_edges <- visNetwork_edges(my_mcmodule)
+#' vis_edges <- visNetwork_edges(imports_mcmodule)
 #' }
 visNetwork_edges <- function(mcmodule) {
   get_edge_table(mcmodule) %>%
@@ -281,7 +276,7 @@ visNetwork_edges <- function(mcmodule) {
 #' @export
 #' @examples
 #' \dontrun{
-#' network <- mc_network(my_mcmodule)
+#' network <- mc_network(imports_mcmodule)
 #' }
 mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL){
   if(!all(requireNamespace("visNetwork", quietly = TRUE)&requireNamespace("igraph", quietly = TRUE))){

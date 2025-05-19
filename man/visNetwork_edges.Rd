@@ -17,6 +17,6 @@ Creates a formatted edge table suitable for visualization with visNetwork.
 }
 \examples{
 \dontrun{
-vis_edges <- visNetwork_edges(my_mcmodule)
+vis_edges <- visNetwork_edges(imports_mcmodule)
 }
 }

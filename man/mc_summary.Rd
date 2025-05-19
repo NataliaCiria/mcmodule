@@ -53,21 +53,20 @@ This function can be called in two ways:
 }
 }
 \examples{
-\dontrun{
-# Basic usage with mcmodule
-summary_basic <- mc_summary(imports_mcmodule, "h_prev")
+# Use with mcmodule
+summary_basic <- mc_summary(imports_mcmodule, "w_prev")
 
 # Using custom keys and rounding
-summary_custom <- mc_summary(imports_mcmodule, "h_prev",
+summary_custom <- mc_summary(imports_mcmodule, "w_prev",
   keys_names = c("origin"),
   digits = 3
 )
 
-# Direct usage with data and mcnode
+# Use with data and mcnode
+w_prev <- imports_mcmodule$node_list$w_prev$mcnode
 summary_direct <- mc_summary(
   data = imports_data,
-  mcnode = h_prev,
+  mcnode = w_prev,
   sep_keys = FALSE
 )
-}
 }

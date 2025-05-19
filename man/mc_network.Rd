@@ -31,6 +31,6 @@ includes interactive features for exploring model structure and relationships.
 }
 \examples{
 \dontrun{
-network <- mc_network(my_mcmodule)
+network <- mc_network(imports_mcmodule)
 }
 }

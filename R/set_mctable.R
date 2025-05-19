@@ -1,16 +1,21 @@
 .pkgglobalenv <- new.env(parent = emptyenv())
 
-#' Create or Modify an Monte Carlo Inputs Table
+#' Set or Get Monte Carlo Inputs Table
 #'
 #' @description
-#' Creates a new input mcnodes table or modifies an existing one in the global package environment.
-#' The table stores information about Monte Carlo nodes including their descriptions,
-#' functions, dependencies, and sensitivity analysis settings.
+#' Manages a Monte Carlo inputs table in the global package environment by either setting new data
+#' or retrieving the current table. The table stores information about Monte Carlo nodes including
+#' their descriptions, functions, dependencies, and sensitivity analysis settings.
 #'
-#' @param data A data frame containing MC table information. If NULL, returns the current MC table.
-#'             Must contain an 'mcnode' column. Other columns will be auto-filled if missing.
+#' @param data Optional data frame containing MC table information. Must contain an 'mcnode' column.
+#'            Other columns will be auto-filled if missing. If NULL, returns the current MC table.
 #'
-#' @return A data frame containing the MC table with the following columns:
+#' @return
+#'   \itemize{
+#'     \item If data = NULL: Returns the current MC table
+#'     \item If data provided: Sets the new MC table and returns invisibly
+#'   }
+#'   The table contains the following columns:
 #'   \itemize{
 #'     \item mcnode - Character. Name of the Monte Carlo node (required)
 #'     \item description - Character. Description of the node
@@ -21,13 +26,17 @@
 #'   }
 #'
 #' @examples
+#' # Get current MC table
+#' current_table <- set_mctable()
+#'
+#' # Set new MC table
 #' mct <- data.frame(
 #'   mcnode = c("h_prev", "w_prev"),
 #'   description = c("Herd prevalence", "Within herd prevalence"),
 #'   mc_func = c("runif", "runif"),
 #'   sensi_analysis = c(TRUE, TRUE)
 #' )
-#' mctable(mct)
+#' set_mctable(mct)
 #'
 #' @export
 set_mctable <- function(data = NULL) {
@@ -75,13 +84,14 @@ set_mctable <- function(data = NULL) {
       }
 
       assign("mctable", data, envir = .pkgglobalenv)
+      message("mctable set to ", deparse(substitute(data)))
     } else {
       stop("Data must be a data frame")
     }
+  }else{
+    # Return current mctable
+    return(get("mctable", envir = .pkgglobalenv))
   }
-
-  # Return current mctable
-  return(get("mctable", envir = .pkgglobalenv))
 }
 
 #' Reset Monte Carlo Inputs Table

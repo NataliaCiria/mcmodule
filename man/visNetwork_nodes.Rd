@@ -31,7 +31,6 @@ Includes styling and formatting for network visualization.
 }
 \examples{
 \dontrun{
-nodes_df <- visNetwork_nodes(my_mcmodule)
-nodes_df <- visNetwork_nodes(my_mcmodule, color_by = "category")
+nodes_df <- visNetwork_nodes(imports_mcmodule)
 }
 }

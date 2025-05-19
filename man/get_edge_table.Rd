@@ -17,7 +17,5 @@ Creates a data frame containing edge relationships between nodes in a Monte Carl
 Each row represents a directed edge from one node to another.
 }
 \examples{
-\dontrun{
-edge_table <- get_edge_table(my_mcmodule)
-}
+edge_table <- get_edge_table(imports_mcmodule)
 }

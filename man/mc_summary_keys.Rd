@@ -15,6 +15,3 @@ vector of key names
 \description{
 Get mcnode summary keys
 }
-\examples{
-mc_summary_keys(mcsummary(inf_dc))
-}
