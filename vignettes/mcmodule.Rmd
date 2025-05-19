@@ -38,11 +38,9 @@ The `mc2d` R package [@mc2d] provides tools to build and analyse models involvin
 2.  Tools to handle complex multivariate variables
 3.  A framework to break down Monte Carlo models into smaller, reusable components (modules) that can be analysed independently before integration
 
-For an application of this risk assessment approach to on-farm biosecurity, see the [model description](https://github.com/NataliaCiria/biosecurity_model/blob/main/DOCUMENTATION/model_description.pdf) file. Details of the functions that are part of the `mcmodule` package can be found in the package documentation.
-
 # Multivariate Monte-Carlo simulations
 
-*The following section is based primarily on the mc2d package [vignette](https://cran.r-project.org/web/packages/mc2d/vignettes/docmcEnglish.pdf), adapted and expanded specifically for the context of modular, flexible Monte Carlo simulations.*
+*The following section is based primarily on the [mc2d](https://CRAN.R-project.org/package=mc2d) package vignette, adapted and expanded specifically for the context of modular, flexible Monte Carlo simulations.*
 
 Quantitative risk analysis is the numerical assessment of risk to facilitate decision making in the face of uncertainty. Monte Carlo simulation is a technique used to model and analyse uncertainty [@Vose2008]. In typical two-dimensional Monte Carlo simulation, one dimension represents variability and the other represents uncertainty. However, in this framework, we take a different approach where:
 
