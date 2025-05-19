@@ -1,4 +1,4 @@
-# mcmodule
+# mcmodule <img src="man/figures/logo.png" align="right" height="139" alt="" />
 `mcmodule` provides a framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to facilitate working with multiple risk pathways, variates and scenarios. The package includes tools for creating stochastic objects from data frames, visualising results, and performing uncertainty, sensitivity and convergence analysis.
 
 ## Installation
