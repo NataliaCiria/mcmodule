@@ -60,7 +60,7 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
 
   # Check for duplicates in baseline scenario
   if (any(duplicated(data[data$scenario_id == "0", keys_names]))) {
-    warning(sprintf("Duplicated keys in scenario 0 for %s", mc_name))
+    message(sprintf("Duplicated keys in scenario 0 for %s", mc_name))
   }
 
   # Return only requested columns
@@ -91,6 +91,10 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
   mcnode_x <- mcmodule$node_list[[mc_name_x]][["mcnode"]]
   mcnode_y <- mcmodule$node_list[[mc_name_y]][["mcnode"]]
 
+  # Get nodes data name
+  data_name_x <- mcmodule$node_list[[mc_name_x]][["data_name"]]
+  data_name_y <- mcmodule$node_list[[mc_name_y]][["data_name"]]
+
   # Remove scenario_id from keys
   keys_names <- keys_names[!keys_names == "scenario_id"]
 
@@ -98,17 +102,32 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
   keys_x <- mc_keys(mcmodule, mc_name_x, keys_names)
   keys_y <- mc_keys(mcmodule, mc_name_y, keys_names)
 
+  # If nodes do not have the same keys but both nodes come from the same data, keys are inferred from data
+  if(data_name_x==data_name_y&&
+     nrow(keys_x) == nrow(keys_y)&&
+     ncol(keys_x) != ncol(keys_y)&&
+     all(keys_x[intersect(names(keys_x),names(keys_y))]==keys_y[intersect(names(keys_x),names(keys_y))])){
 
-  # Match keys
-  keys_list <- keys_match(keys_x, keys_y, keys_names)
-  keys_x <- keys_list$x
-  keys_y <- keys_list$y
-  keys_xy <- keys_list$xy
+    # Find keys that are only pressent in one of the mcnodes
+    keys_x_only<-setdiff(names(keys_x),names(keys_y))
+    keys_y_only<-setdiff(names(keys_y),names(keys_x))
 
+    if(length(keys_x_only)>0) message("Keys infered from ",c(data_name_x)," for ",mc_name_x,": ",
+      paste0(keys_x_only,sep=", "))
 
-  # Return nodes as they are if they already match
-  if (nrow(keys_x) == nrow(keys_y) &&
-    all(keys_x[c("g_id", "scenario_id")] == keys_y[c("g_id", "scenario_id")])) {
+    if(length(keys_y_only)>0) message("Keys infered from ",c(data_name_y)," for ",mc_name_x,": ",
+                                      paste0(keys_y_only,sep=", "))
+
+    # Add the same keys to both mcnodes
+    keys_x<-cbind(keys_x[intersect(names(keys_x),names(keys_y))],
+                  keys_x[keys_x_only],
+                  keys_y[keys_y_only])
+
+    keys_y<-cbind(keys_y[intersect(names(keys_x),names(keys_y))],
+                  keys_x[keys_x_only],
+                  keys_y[keys_y_only])
+
+    # Return nodes as they are if they already match
     message(
       mc_name_x, " and ", mc_name_y, " already match, dim: [",
       paste(dim(mcnode_x), collapse = ", "), "]"
@@ -117,9 +136,17 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
     return(list(
       mcnode_x_match = mcnode_x,
       mcnode_y_match = mcnode_y,
-      keys_xy = keys_xy
+      keys_xy = keys_match(keys_x, keys_y, keys_names)$xy
     ))
+
   }
+
+  # Match keys
+  keys_list <- keys_match(keys_x, keys_y, keys_names)
+  keys_x <- keys_list$x
+  keys_y <- keys_list$y
+  keys_xy <- keys_list$xy
+
 
   # Match nodes
   null_x <- 0

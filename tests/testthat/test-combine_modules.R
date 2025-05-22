@@ -20,6 +20,7 @@ test_that("combine_modules works", {
   result <- combine_modules(module_x, module_y)
 
   expect_type(result, "list")
+  expect_equal(names(result$data), c("data_x","data_y"))
   expect_equal(names(result$node_list), c("node1","node2","node3"))
   expect_equal(result$modules, c("module_x","module_y"))
 })

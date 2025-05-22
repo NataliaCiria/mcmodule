@@ -21,7 +21,7 @@
 create_mc_nodes <- function(data, mctable = set_mctable(), envir = parent.frame()) {
   # Validate that mctable has required columns
   valid_mctable <- all(c("mcnode", "mc_func") %in% names(mctable))
-  if (!valid_mctable) stop("mctable must contain 'mcnode', 'mcreate' and 'mc_func' columns")
+  if (!valid_mctable) stop("mctable must contain 'mcnode' and 'mc_func' columns")
 
   # Validate that mctable is not empty
   if (nrow(mctable) < 1) stop("mctable is empty")

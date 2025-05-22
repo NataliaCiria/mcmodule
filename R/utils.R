@@ -126,7 +126,8 @@ keys_match <- function(x, y, keys_names = NULL) {
       g_row.x_0 = NULL,
       g_row.y = ifelse(is.na(g_row.y), g_row.y_0, g_row.y),
       g_row.y_0 = NULL
-    )
+    )%>%
+    distinct()
 
   return(list(
     x = keys_x,

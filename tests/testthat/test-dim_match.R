@@ -233,4 +233,84 @@ suppressMessages({
     expect_error(wif_match(x, y_bad), "Groups not found")
     expect_error(wif_match(x, y_bad, "category"), "Groups not found")
   })
+
+  test_that("mc_match of agg_nodes works", {
+    #  Create previous_module
+    previous_module <- eval_model(
+      model_exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    #  Create current_module
+    current_data  <-data.frame(pathogen=c("a","b","a","b"),
+                               origin=c("nord","nord","nord","nord"),
+                               scenario_id=c("0","0","no_product_imports","no_product_imports"),
+                               contaminated=c(0.1,0.5,0.1,0.5),
+                               imported=c(1,1,0.1,0.1),
+                               products_n=c(1500,1500,0,0))
+
+    current_data_keys <-list(current_data = list(data=current_data, keys=c("pathogen","origin","scenario_id")))
+
+    current_mctable  <- data.frame(mcnode = c("contaminated", "imported", "products_n"),
+                                   description = c("Probability a product is contaminated", "Probability a product is imported", "Number of products"),
+                                   mc_func = c(NA, NA, NA),
+                                   from_variable = c(NA, NA, NA),
+                                   transformation = c(NA, NA, NA),
+                                   sensi_analysis = c(FALSE, FALSE, FALSE))
+    current_exp<-quote({
+      imported_contaminated <- contaminated * imported
+    })
+
+    current_module <- eval_model(
+      model_exp = c(current = current_exp),
+      data = current_data,
+      mctable = current_mctable,
+      data_keys = current_data_keys
+    )
+
+    # Combine modules
+    module <- combine_modules(previous_module, current_module)
+
+    # Match output nodes in both modules
+    no_detect_a_keys<-mc_keys(mcmodule=module,mc_name="no_detect_a")
+    expect_equal(names(no_detect_a_keys),c("scenario_id","pathogen","origin"))
+    expect_equal(dim(no_detect_a_keys),c(6,3))
+
+    imported_contaminated_keys<-mc_keys(mcmodule=module,mc_name="imported_contaminated")
+    expect_equal(names(imported_contaminated_keys),c("scenario_id","pathogen","origin"))
+    expect_equal(dim(imported_contaminated_keys),c(4,3))
+
+    result<-mc_match(module, "no_detect_a", "imported_contaminated")
+    expect_equal(result$keys_xy$g_row.y,c(1,NA,NA,2,NA,NA,3,4))
+
+    # Aggregate imported_contaminated
+    module<-agg_totals(module,"imported_contaminated")
+    imported_contaminated_agg_keys<-mc_keys(mcmodule=module,mc_name="imported_contaminated_agg")
+
+    expect_equal(names(imported_contaminated_agg_keys),c("scenario_id"))
+    expect_equal(dim(imported_contaminated_agg_keys), c(2,1))
+
+    result<-mc_match(module, "no_detect_a", "imported_contaminated_agg")
+    expect_equal(result$keys_xy$g_row.y,c(1,1,1,1,1,1,2))
+
+    # Aggregate no_detect_a
+    module<-agg_totals(module,"no_detect_a")
+    no_detect_a_agg_keys<-mc_keys(mcmodule=module,mc_name="no_detect_a_agg")
+
+    expect_equal(names(imported_contaminated_agg_keys),c("scenario_id"))
+    expect_equal(dim(imported_contaminated_agg_keys), c(1,1))
+
+    result<-mc_match(module, "no_detect_a_agg", "imported_contaminated_agg")
+    expect_equal(result$keys_xy$g_row.y,c(1,2))
+
+    # Match mcnodes already matching
+    test_sensi_keys<-mc_keys(mcmodule=module,mc_name="test_sensi")
+
+    result<-mc_match(module, "no_detect_a", "test_sensi")
+    expect_equal(result$keys_xy$g_row.y,c(1,2,3,4,5,6))
+
+  })
 })
+
