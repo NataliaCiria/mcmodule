@@ -16,7 +16,7 @@ get_edge_table <- function(mcmodule) {
 
   for (i in seq_along(node_list)) {
     node_to <- names(node_list)[i]
-    if (node_list[[i]][["type"]] == "in_node") {
+    if ("inputs_col"%in%names(node_list[[i]])) {
       node_from <- node_list[[i]][["inputs_col"]]
       dataset_from <- node_list[[i]][["input_dataset"]]
       data_from <- node_list[[i]][["data_name"]]
@@ -118,9 +118,8 @@ get_node_table <- function(mcmodule, variate = 1) {
       inputs_col_table <- data.frame(
         name = node[["inputs_col"]],
         type = "inputs_col",
-        inputs = paste(node[["data_name"]],node[["input_dataset"]], sep = ", "),
+        inputs = paste(c(node[["data_name"]],node[["input_dataset"]]), sep = ", ", collapse = ", "),
         input_data = node[["data_name"]],
-        input_dataset = node[["input_dataset"]],
         value = value_col
       )
 
@@ -128,10 +127,7 @@ get_node_table <- function(mcmodule, variate = 1) {
 
       input_data_table <- data.frame(
         name = node[["data_name"]],
-        inputs = node[["input_dataset"]],
-        input_dataset = node[["input_dataset"]],
         type = "input_data"
-
       )
 
       node_table <- dplyr::bind_rows(node_table, input_data_table)
@@ -141,9 +137,16 @@ get_node_table <- function(mcmodule, variate = 1) {
           name = node[["input_dataset"]],
           type = "input_dataset"
         )
+
+        inputs_col_table$input_dataset<-node[["input_dataset"]]
+
+        input_data_table <- data.frame(
+          inputs = node[["input_dataset"]],
+          input_dataset = node[["input_dataset"]]
+        )
+
         node_table <- dplyr::bind_rows(node_table, input_dataset_table)
       }
-
     }
   }
 
@@ -183,7 +186,9 @@ visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by =
     inputs_col = "#89A3BE",  # Medium blue
     in_node = "#BDCCDB",     # Light blue
     out_node = "#18BC9C",    # Teal
-    n_trials = "#F9CF8B",    # Light orange
+    trials_n = "#F9CF8B",    # Light orange
+    subsets_n = "#DBCEB3",    # Light orange
+    subsets_p = "#C1B9A5",    # Light orange
     total = "#F39C12",       # Orange
     agg_total = "#ED7427",   # Dark orange
     prev_node = "#E74C3C"    # Red
@@ -224,6 +229,7 @@ visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by =
 
   nodes%>%
     dplyr::distinct(name, .keep_all = TRUE) %>%
+    dplyr::mutate(mc_func = ifelse("mc_func" %in% colnames(.), mc_func, NA))%>%
     dplyr::transmute(
       id = name,
       color  = color_pal[.data[[color_by]]],
@@ -284,8 +290,8 @@ mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL){
          install them before.")
   }
 
-  nodes <- visNetwork_nodes(imports_mcmodule, variate = variate, color_pal = color_pal, color_by = color_by)
-  edges <- visNetwork_edges(imports_mcmodule)
+  nodes <- visNetwork_nodes(mcmodule, variate = variate, color_pal = color_pal, color_by = color_by)
+  edges <- visNetwork_edges(mcmodule)
 
   visNetwork::visNetwork(nodes, edges, width = "100%") %>%
     visNetwork::visOptions(highlightNearest = list(enabled =TRUE, degree = 2), nodesIdSelection = TRUE,selectedBy="module")%>%

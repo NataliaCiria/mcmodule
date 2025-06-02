@@ -400,29 +400,38 @@ trial_totals <- function(mcmodule, mc_names,
     if (mc_name %in% names(mcmodule$node_list)) {
       mc_node <- mcmodule$node_list[[mc_name]][["mcnode"]]
       new <- FALSE
-    } else if (mc_name %in% names(data)) {
-      mc_node <- mcdata(data[[mc_name]], type = "0", nvariates = nrow(data))
-      new <- TRUE
     } else {
       if(!mc_name%in%mctable$mcnode) stop (mc_name, " not found in mctable")
+
+      mc_row<-mctable[mctable$mcnode %in% mc_name, ]
+
       create_mc_nodes(data,
-        mctable = mctable[mctable$mcnode %in% mc_name, ]
+        mctable = mc_row
       )
 
       mc_node <- get(mc_name)
-      new <- TRUE
-    }
 
-    # Add to node list
-    if (new) {
+      # Add metadata
+      pattern <- paste0("\\<", mc_name, "(\\>|[^>]*\\>)")
+      inputs_col <- names(data[grepl(pattern, names(data))])
+      mcmodule$node_list[[mc_name]][["inputs_col"]] <- inputs_col
+
+      if (!is.na(mc_row$mc_func)) {
+        mcmodule$node_list[[mc_name]][["mc_func"]] <- as.character(mc_row$mc_func)
+      }
+
+      mcmodule$node_list[[mc_name]][["description"]] <- as.character(mc_row$description)
       mcmodule$node_list[[mc_name]][["type"]] <- node_type
       mcmodule$node_list[[mc_name]][["module"]] <- module_name
       mcmodule$node_list[[mc_name]][["data_name"]] <- data_name
       mcmodule$node_list[[mc_name]][["mcnode"]] <- mc_node
+      mcmodule$node_list[[mc_name]][["mc_func"]] <- mc_row$mc_func
+
       if ("scenario_id" %in% names(data)) {
         mcmodule$node_list[[mc_name]][["scenario"]] <- data$scenario_id
       }
     }
+
 
     if (!is.null(agg_keys)) {
       # Aggregate node if agg_keys provided
@@ -616,6 +625,7 @@ trial_totals <- function(mcmodule, mc_names,
 
       # Process probability and number calculations
       for (calc_type in c("prob", "num")) {
+        if(level=="trial"&calc_type=="num") next
         calc <- calculations[[level]][[calc_type]]
         new_mc_name <- paste0(prefix, base_name, calc$suffix)
 

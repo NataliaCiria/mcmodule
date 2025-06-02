@@ -59,34 +59,45 @@ suppressMessages({
       data_keys = imports_data_keys
     )
 
+    previous_module<-trial_totals(previous_module,
+                                  mc_names="no_detect_a",
+                                  trials_n = "animals_n",
+                                  subsets_n = "farms_n",
+                                  subsets_p = "h_prev",
+                                  mctable = imports_mctable)
+
     #  Create current_module
-    current_data  <-data.frame(pathogen=c("a","b","a","b"),
-                              origin=c("nord","nord","nord","nord"),
-                              scenario_id=c("0","0","no_product_imports","no_product_imports"),
-                              contaminated=c(0.1,0.5,0.1,0.5),
-                              imported=c(1,1,0,0),
-                              products_n=c(1500,1500,0,0))
+    current_data  <-data.frame(pathogen=c("a","b"),
+                              scenario_id=c("0","clean_transport"),
+                              survival_p_min=c(0.8,0.1),
+                              survival_p_max=c(0.8,0.1))
 
-    current_data_keys <-list(current_data = list(data=current_data, keys=c("pathogen","origin","scenario_id")))
+    current_data_keys <-list(current_data = list(data=current_data, keys=c("pathogen","scenario_id")))
 
-    current_mctable  <- data.frame(mcnode = c("contaminated", "imported", "products_n"),
-                                   description = c("Probability a product is contaminated", "Probability a product is imported", "Number of products"),
-                                   mc_func = c(NA, NA, NA),
-                                   from_variable = c(NA, NA, NA),
-                                   transformation = c(NA, NA, NA),
-                                   sensi_analysis = c(FALSE, FALSE, FALSE))
+    current_mctable  <- data.frame(mcnode = c("survival_p"),
+                                   description = c("Survival probability"),
+                                   mc_func = c("runif"),
+                                   from_variable = c(NA),
+                                   transformation = c(NA),
+                                   sensi_analysis = c(FALSE))
     current_exp<-quote({
-      imported_contaminated <- contaminated * imported
+      imported_contaminated <- no_detect_a_set * survival_p
     })
 
+    # TODO
     current_module <- eval_model(
       model_exp = c(current = current_exp),
       data = current_data,
       mctable = current_mctable,
-      data_keys = current_data_keys
+      data_keys = current_data_keys,
+      prev_mcmodule = previous_module,
+      match_prev = TRUE
     )
+    combined_module<-combine_modules(previous_module,current_module)
 
+    combined_module<-at_least_one(combined_module, c("no_detect_a","imported_contaminated"), name="total")
 
+    mc_network(combined_module)
 
   })
 
