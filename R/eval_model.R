@@ -7,7 +7,6 @@
 #' @param data Input data frame containing model parameters
 #' @param param_names Named vector for parameter renaming (optional)
 #' @param prev_mcmodule Previous module(s) for dependent calculations
-#' @param match_prev Logical; whether to match dimensions with previous module
 #' @param summary Logical; whether to calculate summary statistics
 #' @param mctable Monte Carlo configuration table
 #' @param data_keys List of key columns for each dataset
@@ -25,7 +24,7 @@
 #'   data_keys = imports_data_keys
 #' )
 eval_model <- function(model_exp, data, param_names = NULL,
-                       prev_mcmodule = NULL, match_prev = FALSE,
+                       prev_mcmodule = NULL,
                        summary = FALSE, mctable = set_mctable(),
                        data_keys = set_data_keys(), create_nodes = TRUE) {
   # Initialize  mcnodes if requested and data exists
@@ -109,23 +108,38 @@ eval_model <- function(model_exp, data, param_names = NULL,
           if (length(prev_node_list_i) > 0) {
             dim_prev_nodes <- sapply(
               names(prev_node_list_i),
-              function(node_name) dim(prev_node_list_i[[node_name]][["mcnode"]])[3]
+              function(mc_name) dim(prev_node_list_i[[mc_name]][["mcnode"]])[3]
             )
-            node_name_max <- names(prev_node_list_i)[which.max(unlist(dim_prev_nodes))]
-            agg_keys_max <- prev_node_list_i[[node_name_max]][["agg_keys"]]
+            mc_name_max <- names(prev_node_list_i)[which.max(unlist(dim_prev_nodes))]
+            agg_keys_max <- prev_node_list_i[[mc_name_max]][["agg_keys"]]
+
+            message("Checking prev_nodes dimensions by largest node: ", mc_name_max)
+
           }
 
           # Process each previous node
           for (k in 1:length(prev_nodes)) {
-            node_name <- prev_nodes[k]
-            node_list_i[[node_name]] <- prev_node_list_i[[node_name]]
+            mc_name <- prev_nodes[k]
+            node_list_i[[mc_name]] <- prev_node_list_i[[mc_name]]
+            prev_data<-prev_mcmodule_i$data[[prev_node_list_i[[mc_name]]$data_name]]
 
-            if (match_prev) {
-              if (is.null(prev_node_list_i[[node_name]][["agg_keys"]])) {
-                match_prev_mcnode <- mc_match_data(prev_mcmodule, node_name, data)
-                assign(node_name, match_prev_mcnode)
+            # Match if previous node data is not equal to new data
+            if(!(nrow(prev_data) == nrow(data)&&
+                 ncol(prev_data) != ncol(data)&&
+                 all(prev_data==data))) {
+              if (is.null(prev_node_list_i[[mc_name]][["agg_keys"]])) {
+                match_prev <- mc_match_data(prev_mcmodule, mc_name, data)
+                match_prev_mcnode<-match_prev[[1]]
+                if(!(nrow(match_prev[[2]]) == nrow(data)&&
+                     ncol(match_prev[[2]]) != ncol(data)&&
+                     all(match_prev[[2]]==data))){
+                  stop("current data (",data_name,") is not matched with previous data (",prev_node_list_i[[mc_name]]$data_name,"), use wif_match() to alineate prev_mcmodule data and current data")
+                }
+
+                assign(mc_name, match_prev_mcnode)
+
               } else {
-                agg_keys <- prev_node_list_i[[node_name]][["agg_keys"]]
+                agg_keys <- prev_node_list_i[[mc_name]][["agg_keys"]]
 
                 if (!all(agg_keys_max == agg_keys)) {
                   stop("agg_keys do not match: ", agg_keys, " vs ", agg_keys_max)
@@ -133,8 +147,8 @@ eval_model <- function(model_exp, data, param_names = NULL,
 
                 match_agg_prev <- mc_match(
                   mcmodule = prev_mcmodule,
-                  mc_name_x = node_name_max,
-                  mc_name_y = node_name,
+                  mc_name_x = mc_name_max,
+                  mc_name_y = mc_name,
                   keys_names = agg_keys
                 )
 
@@ -142,10 +156,10 @@ eval_model <- function(model_exp, data, param_names = NULL,
                 match_prev_mcnode <- match_agg_prev[[2]]
                 data <- match_agg_prev[[3]]
 
-                data_name <- paste0(node_name_max, "+", node_name)
+                data_name <- paste0(mc_name_max, "+", mc_name)
 
-                assign(node_name_max, match_prev_mcnode_max)
-                assign(node_name, match_prev_mcnode)
+                assign(mc_name_max, match_prev_mcnode_max)
+                assign(mc_name, match_prev_mcnode)
               }
             }
           }
@@ -186,70 +200,70 @@ eval_model <- function(model_exp, data, param_names = NULL,
 
     # Update node metadata
     for (j in 1:length(node_list)) {
-      node_name <- names(node_list)[j]
+      mc_name <- names(node_list)[j]
 
-      if (node_name %in% prev_nodes) next
+      if (mc_name %in% prev_nodes) next
 
       # Update input references
-      inputs <- node_list[[node_name]][["inputs"]]
-      node_list[[node_name]][["param"]] <- inputs
+      inputs <- node_list[[mc_name]][["inputs"]]
+      node_list[[mc_name]][["param"]] <- inputs
 
       inputs[inputs %in% names(new_param_names)] <-
         new_param_names[inputs[inputs %in% names(new_param_names)]]
-      node_list[[node_name]][["inputs"]] <- inputs
+      node_list[[mc_name]][["inputs"]] <- inputs
 
       # Update keys for output nodes
       if (!is.null(prev_mcmodule) &
-        node_list[[node_name]][["type"]] == "out_node") {
+        node_list[[mc_name]][["type"]] == "out_node") {
         keys_names <- unique(unlist(lapply(inputs, function(x) {
           node_list[[x]][["keys"]]
         })))
-        node_list[[node_name]][["keys"]] <- keys_names
+        node_list[[mc_name]][["keys"]] <- keys_names
       }
 
       # Scalar to mcnode conversion
-      mcnode <- get(node_name)
+      mcnode <- get(mc_name)
       if (!is.mcnode(mcnode) & is.numeric(mcnode)) {
         mcnode <- mcdata(mcnode, type = "0", nvariates = length(mcnode))
       }
 
       # Update node metadata
-      node_list[[node_name]][["mcnode"]] <- mcnode
-      node_list[[node_name]][["data_name"]] <- data_name
-      node_list[[node_name]][["mc_name"]] <- node_name
+      node_list[[mc_name]][["mcnode"]] <- mcnode
+      node_list[[mc_name]][["data_name"]] <- data_name
+      node_list[[mc_name]][["mc_name"]] <- mc_name
 
       # Set module name
-      if (length(node_list[[node_name]][["module"]]) == 0 ||
-        node_list[[node_name]][["module"]] %in% "model_i") {
-        node_list[[node_name]][["module"]] <- module
+      if (length(node_list[[mc_name]][["module"]]) == 0 ||
+        node_list[[mc_name]][["module"]] %in% "model_i") {
+        node_list[[mc_name]][["module"]] <- module
       }
 
-      modules <- unique(c(modules, node_list[[node_name]][["module"]]))
+      modules <- unique(c(modules, node_list[[mc_name]][["module"]]))
 
       # Calculate summary statistics if requested
       if (summary & is.mcnode(mcnode)) {
-        inputs_names <- node_list[[node_name]][["inputs"]]
+        inputs_names <- node_list[[mc_name]][["inputs"]]
 
-        keys_names <- if (is.null(node_list[[node_name]][["agg_keys"]])) {
-          node_list[[node_name]][["keys"]]
+        keys_names <- if (is.null(node_list[[mc_name]][["agg_keys"]])) {
+          node_list[[mc_name]][["keys"]]
         } else {
-          node_list[[node_name]][["agg_keys"]]
+          node_list[[mc_name]][["agg_keys"]]
         }
 
         node_summary <- mc_summary(
           data = data, mcnode = mcnode,
-          mc_name = node_name,
+          mc_name = mc_name,
           keys_names = keys_names
         )
 
-        node_list[[node_name]][["summary"]] <- node_summary
+        node_list[[mc_name]][["summary"]] <- node_summary
       }
 
       # Add scenario information if available
       if ("scenario_id" %in% names(data)) {
-        node_list[[node_name]][["scenario"]] <- data$scenario_id
+        node_list[[mc_name]][["scenario"]] <- data$scenario_id
         if ("hg" %in% names(data)) {
-          node_list[[node_name]][["hg"]] <- data$hg
+          node_list[[mc_name]][["hg"]] <- data$hg
         }
       }
     }
@@ -296,15 +310,15 @@ get_mcmodule_nodes <- function(mcmodule, mc_names = NULL, envir = parent.frame()
     stop("mcmodule or mcnode_list object must be provided")
   }
 
-  node_names <- names(node_list)
-  node_names <- node_names[node_names %in% mc_names]
+  mc_names <- names(node_list)
+  mc_names <- mc_names[mc_names %in% mc_names]
 
-  if (length(node_names) > 0) {
-    for (i in 1:length(node_names)) {
-      node_name <- node_names[i]
-      assign(node_name, node_list[[node_name]][["mcnode"]], envir = envir)
+  if (length(mc_names) > 0) {
+    for (i in 1:length(mc_names)) {
+      mc_name <- mc_names[i]
+      assign(mc_name, node_list[[mc_name]][["mcnode"]], envir = envir)
     }
   }
 
-  return(node_list[node_names])
+  return(node_list[mc_names])
 }

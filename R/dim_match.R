@@ -69,7 +69,7 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
 
 #' Match Monte Carlo Nodes
 #'
-#' Matches two mc_nodes by:
+#' Matches two mcnodes by:
 #' 1. Group matching - Align nodes with same scenarios but different group order
 #' 2. Scenario matching - Align nodes with same groups but different scenarios
 #' 3. Null matching - Add missing groups across different scenarios
@@ -206,6 +206,131 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
   names(result) <- c(
     paste0(mc_name_x, "_match"),
     paste0(mc_name_y, "_match"),
+    "keys_xy"
+  )
+
+  return(result)
+}
+
+#' Match Monte Carlo Node with other data frame
+#'
+#' Matches an mcnode with a data frame by:
+#' 1. Group matching - Same scenarios but different group order
+#' 2. Scenario matching - Same groups but different scenarios
+#' 3. Null matching - Add missing groups across different scenarios
+#'
+#' @param mcmodule Monte Carlo module
+#' @param mc_name Node name
+#' @param data Data frame containing keys to match with
+#' @param keys_names Names of key columns
+#' @return List containing matched node, matched data and combined keys (keys_xy)
+#' @export
+mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
+  # Check if mcnodes are in mcmodule
+  if (!mc_name%in% names(mcmodule$node_list)) {
+    stop(paste("Nodes", mc_name, "not found in", deparse(substitute(mcmodule))))
+  }
+
+  # Get node
+  mcnode_x <- mcmodule$node_list[[mc_name]][["mcnode"]]
+
+  # Get nodes data name
+  data_name_x <- mcmodule$node_list[[mc_name]][["data_name"]]
+  data_name_y <- deparse(substitute(data))
+
+  # Remove scenario_id from keys
+  keys_names <- keys_names[!keys_names == "scenario_id"]
+
+  # Get keys dataframes for x and y
+  keys_x <- mc_keys(mcmodule, mc_name, keys_names)
+  keys_data<-intersect(names(keys_x),names(data))
+  keys_y <- data[keys_data]
+
+  # If nodes do not have the same keys but both nodes come from the same data, keys are inferred from data
+  if(data_name_x==data_name_y&&
+     nrow(keys_x) == nrow(keys_y)&&
+     ncol(keys_x) != ncol(keys_y)&&
+     all(keys_x[intersect(names(keys_x),names(keys_y))]==keys_y[intersect(names(keys_x),names(keys_y))])){
+
+    # Return nodes as they are if they already match
+    message(
+      mc_name, " and ", data_name_y, " already match, dim: [",
+      paste(dim(mcnode_x), collapse = ", "), "]"
+    )
+
+    return(list(
+      mcnode_match = mcnode_x,
+      data_match = data,
+      keys_xy = keys_match(keys_x, keys_y, keys_names)$xy
+    ))
+
+  }
+
+  # Match keys
+  keys_list <- keys_match(keys_x, keys_y, keys_names)
+  keys_x <- keys_list$x
+  keys_y <- keys_list$y
+  keys_xy <- keys_list$xy
+
+
+  # Match nodes
+  null_x <- 0
+  null_y <- 0
+
+  # Process X node
+  for (i in 1:nrow(keys_xy)) {
+    g_row_x_i <- keys_xy$g_row.x[i]
+
+    if (keys_xy$g_id[i] %in% keys_x$g_id) {
+      mc_i <- extractvar(mcnode_x, g_row_x_i)
+    } else {
+      mc_i <- extractvar(mcnode_x, 1) - extractvar(mcnode_x, 1)
+      null_x <- null_x + 1
+    }
+
+    if (i == 1) {
+      mcnode_x_match <- mc_i
+    } else {
+      mcnode_x_match <- addvar(mcnode_x_match, mc_i)
+    }
+  }
+  # Process data
+  for (i in 1:nrow(keys_xy)) {
+    g_row_y_i <- keys_xy$g_row.y[i]
+
+    if (keys_xy$g_id[i] %in% keys_y$g_id) {
+      row_i <- data[g_row_y_i,]
+    } else {
+      row_i <- keys_xy[i,keys_data]
+      null_y <- null_y + 1
+    }
+
+    if (i == 1) {
+      data_match <- row_i
+    } else {
+      data_match <- bind_rows(data_match, row_i)
+    }
+  }
+
+  # Log results
+  message(
+    mc_name, " prev dim: [", paste(dim(mcnode_x), collapse = ", "),
+    "], new dim: [", paste(dim(mcnode_x_match), collapse = ", "),
+    "], ", null_x, " null matches"
+  )
+
+  message(
+    data_name_y, " prev dim: [", paste(dim(data), collapse = ", "),
+    "], new dim: [", paste(dim(data_match), collapse = ", "),
+    "], ", null_y, " null matches"
+  )
+
+
+  # Return results
+  result <- list(mcnode_x_match, data_match, keys_xy)
+  names(result) <- c(
+    paste0(mc_name, "_match"),
+    paste0(data_name_y, "_match"),
     "keys_xy"
   )
 

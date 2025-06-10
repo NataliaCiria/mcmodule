@@ -68,6 +68,7 @@ suppressMessages({
 
     #  Create current_module
     current_data  <-data.frame(pathogen=c("a","b"),
+                               origin = c("nord","nord"),
                               scenario_id=c("0","clean_transport"),
                               survival_p_min=c(0.8,0.1),
                               survival_p_max=c(0.8,0.1))
@@ -90,8 +91,7 @@ suppressMessages({
       data = current_data,
       mctable = current_mctable,
       data_keys = current_data_keys,
-      prev_mcmodule = previous_module,
-      match_prev = TRUE
+      prev_mcmodule = previous_module
     )
     combined_module<-combine_modules(previous_module,current_module)
 
