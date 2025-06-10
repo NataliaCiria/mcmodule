@@ -299,8 +299,8 @@ suppressMessages({
     module<-agg_totals(module,"no_detect_a")
     no_detect_a_agg_keys<-mc_keys(mcmodule=module,mc_name="no_detect_a_agg")
 
-    expect_equal(names(imported_contaminated_agg_keys),c("scenario_id"))
-    expect_equal(dim(imported_contaminated_agg_keys), c(1,1))
+    expect_equal(names(no_detect_a_agg_keys),c("scenario_id"))
+    expect_equal(dim(no_detect_a_agg_keys), c(1,1))
 
     result<-mc_match(module, "no_detect_a_agg", "imported_contaminated_agg")
     expect_equal(result$keys_xy$g_row.y,c(1,2))

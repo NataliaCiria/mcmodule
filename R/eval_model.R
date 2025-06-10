@@ -70,7 +70,7 @@ eval_model <- function(model_exp, data, param_names = NULL,
           " needed but not provided"
         )
       } else {
-        prev_mcmodule_list <- if (inherits(mcmodule, "mcmodule")) {
+        prev_mcmodule_list <- if (inherits(prev_mcmodule, "mcmodule")) {
           list(prev_mcmodule)
         } else {
           prev_mcmodule
