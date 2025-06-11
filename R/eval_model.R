@@ -130,12 +130,6 @@ eval_model <- function(model_exp, data, param_names = NULL,
               if (is.null(prev_node_list_i[[mc_name]][["agg_keys"]])) {
                 match_prev <- mc_match_data(prev_mcmodule, mc_name, data)
                 match_prev_mcnode<-match_prev[[1]]
-                if(!(nrow(match_prev[[2]]) == nrow(data)&&
-                     ncol(match_prev[[2]]) != ncol(data)&&
-                     all(match_prev[[2]]==data))){
-                  stop("current data (",data_name,") is not matched with previous data (",prev_node_list_i[[mc_name]]$data_name,"), use wif_match() to alineate prev_mcmodule data and current data")
-                }
-
                 assign(mc_name, match_prev_mcnode)
 
               } else {

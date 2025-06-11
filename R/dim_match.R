@@ -366,7 +366,7 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
 #' result <- wif_match(x, y)
 #'
 #' @export
-wif_match <- function(x, y, by = "hg") {
+wif_match <- function(x, y, by = NULL) {
   # Match keys between datasets
   list_xy <- keys_match(x, y, by)
 
@@ -387,7 +387,7 @@ wif_match <- function(x, y, by = "hg") {
   }
 
   # Create matched versions of both datasets
-  new_x <- y[list_xy$xy$g_row.x, ] %>%
+  new_x <- x[list_xy$xy$g_row.x, ] %>%
     mutate(scenario_id = list_xy$xy$scenario_id)
   rownames(new_x) <- NULL
 
@@ -395,15 +395,20 @@ wif_match <- function(x, y, by = "hg") {
     mutate(scenario_id = list_xy$xy$scenario_id)
   rownames(new_y) <- NULL
 
-  # Count homogeneous groups for logging
-  n_hg_x <- ifelse("hg" %in% names(x), max(x$hg), "no")
-  n_hg_y <- ifelse("hg" %in% names(y), max(y$hg), "no")
+  # Count groups and scenarios for logging
+  n_g_x <- length(unique(list_xy$x$g_id))
+  n_g_y <- length(unique(list_xy$y$g_id))
+  n_g_xy <- length(unique(list_xy$xy$g_id))
+
+  n_scenario_x <- length(unique(list_xy$x$scenario_id))
+  n_scenario_y <- length(unique(list_xy$y$scenario_id))
+  n_scenario_xy <- length(unique(list_xy$xy$scenario_id))
 
   # Log matching results
   message(
-    "From ", nrow(x), " rows (", n_hg_x, " hg) and ",
-    nrow(y), " rows (", n_hg_y, " hg), to ",
-    nrow(new_x), " rows (", max(new_x$hg), " hg)\n"
+    "From ", nrow(x), " rows (", n_g_x, " groups, ",n_scenario_x," scenarios) and ",
+    nrow(y), " rows (", n_g_y, " groups, ", n_scenario_y," scenarios), to ",
+    nrow(new_x), " rows (", n_g_xy, " groups, ", n_scenario_xy," scenarios)\n"
   )
 
   # Return list with matched datasets

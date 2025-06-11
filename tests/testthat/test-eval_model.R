@@ -67,11 +67,11 @@ suppressMessages({
                                   mctable = imports_mctable)
 
     #  Create current_module
-    current_data  <-data.frame(pathogen=c("a","b"),
-                               origin = c("nord","nord"),
-                              scenario_id=c("0","clean_transport"),
-                              survival_p_min=c(0.8,0.1),
-                              survival_p_max=c(0.8,0.1))
+    current_data  <-data.frame(pathogen=c("a","a","a","b","b","b","b"),
+                               origin = c("east","south","nord","east","south","nord","nord"),
+                              scenario_id=c("0","0","0","0","0","0","clean_transport"),
+                              survival_p_min=c(0.7,0.7,0.7,0.7,0.7,0.7,0.1),
+                              survival_p_max=c(0.8,0.8,0.8,0.8,0.8,0.8,0.15))
 
     current_data_keys <-list(current_data = list(data=current_data, keys=c("pathogen","scenario_id")))
 
@@ -86,18 +86,39 @@ suppressMessages({
     })
 
     # TODO
+    expect_error(
+      current_module <- eval_model(
+        model_exp = c(current = current_exp),
+        data = current_data,
+        mctable = current_mctable,
+        data_keys = current_data_keys,
+        prev_mcmodule = previous_module
+      ),
+      "use wif_match()"
+    )
+    a<-wif_match(current_data,imports_data)
+
     current_module <- eval_model(
       model_exp = c(current = current_exp),
-      data = current_data,
+      data = a$current_data,
       mctable = current_mctable,
       data_keys = current_data_keys,
       prev_mcmodule = previous_module
     )
+
     combined_module<-combine_modules(previous_module,current_module)
 
     combined_module<-at_least_one(combined_module, c("no_detect_a","imported_contaminated"), name="total")
 
     mc_network(combined_module)
+    mc_summary(combined_module, "survival_p")
+    mc_summary(combined_module, "no_detect_a_set")
+    mc_summary(combined_module, "no_detect_a")
+
+    # CHECK mc_match_data NULL when should be 0
+    mc_summary(combined_module, "imported_contaminated")
+
+    combined_module$node_list$total
 
   })
 

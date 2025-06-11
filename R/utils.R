@@ -49,6 +49,11 @@ add_group_id <- function(x, y = NULL, by = NULL) {
       dplyr::relocate(g_id, g_row) %>%
       dplyr::ungroup()
 
+    # Add scenario_id column if missing
+    if (!"scenario_id" %in% names(x)) {
+      x$scenario_id <- "0"
+    }
+
     y <- xy %>%
       dplyr::filter(df == "y") %>%
       dplyr::bind_cols(y[!names(y) %in% c(by, "df", "g_id", "g_row")]) %>%
@@ -58,6 +63,11 @@ add_group_id <- function(x, y = NULL, by = NULL) {
       ) %>%
       dplyr::relocate(g_id, g_row) %>%
       dplyr::ungroup()
+
+    # Add scenario_id column if missing
+    if (!"scenario_id" %in% names(y)) {
+      y$scenario_id <- "0"
+    }
 
     return(list(x = x, y = y))
   } else {
