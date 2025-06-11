@@ -9,7 +9,6 @@ eval_model(
   data,
   param_names = NULL,
   prev_mcmodule = NULL,
-  match_prev = FALSE,
   summary = FALSE,
   mctable = set_mctable(),
   data_keys = set_data_keys(),
@@ -24,8 +23,6 @@ eval_model(
 \item{param_names}{Named vector for parameter renaming (optional)}
 
 \item{prev_mcmodule}{Previous module(s) for dependent calculations}
-
-\item{match_prev}{Logical; whether to match dimensions with previous module}
 
 \item{summary}{Logical; whether to calculate summary statistics}
 

@@ -18,11 +18,13 @@ add_group_id <- function(x, y = NULL, by = NULL) {
 
       # Find intersection of categorical variables
       by <- intersect(cat_x, cat_y)
+      by <- by[!by %in% c("g_id", "g_row", "scenario_id")]
+
       message("Group by: ", paste(by, collapse = ", "))
     }
 
     if (!all(by %in% names(x))) {
-      stop(paste0(by[by %in% names(x)], " columns not found in ", deparse(substitute(x))))
+      stop(paste0(paste(by[by %in% names(x)]), " columns not found in ", deparse(substitute(x))))
     }
     if (!all(by %in% names(y))) {
       stop(paste0(by[by %in% names(y)], " columns not found in ", deparse(substitute(y))))
@@ -102,6 +104,7 @@ add_group_id <- function(x, y = NULL, by = NULL) {
 #' keys_match(x, y, keys_names = "type")
 #' }
 keys_match <- function(x, y, keys_names = NULL) {
+
   # Add common group ids
   keys_list <- add_group_id(x, y, keys_names)
   keys_x <- keys_list$x
@@ -109,7 +112,12 @@ keys_match <- function(x, y, keys_names = NULL) {
 
   # Define keys_names if not provided
   if (is.null(keys_names)) {
-    keys_names <- unique(intersect(names(keys_x), names(keys_y)))
+    # Get categorical variables for each dataframe
+    cat_x <- names(x)[sapply(x, function(col) is.character(col) | is.factor(col))]
+    cat_y <- names(y)[sapply(y, function(col) is.character(col) | is.factor(col))]
+
+    # Find intersection of categorical variables
+    keys_names <- unique(intersect(cat_x, cat_y))
     keys_names <- keys_names[!keys_names %in% c("g_id", "g_row", "scenario_id")]
   }
 
@@ -130,7 +138,7 @@ keys_match <- function(x, y, keys_names = NULL) {
 
   # Fill in missing values using baseline scenario
   keys_xy <- keys_xy %>%
-    dplyr::left_join(keys_xy_0, by = "g_id") %>%
+    dplyr::left_join(keys_xy_0, by = "g_id", relationship = "many-to-many") %>%
     dplyr::mutate(
       g_row.x = ifelse(is.na(g_row.x), g_row.x_0, g_row.x),
       g_row.x_0 = NULL,

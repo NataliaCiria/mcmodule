@@ -19,7 +19,7 @@ mc_match(mcmodule, mc_name_x, mc_name_y, keys_names = NULL)
 List containing matched nodes and combined keys (keys_xy)
 }
 \description{
-Matches two mc_nodes by:
+Matches two mcnodes by:
 \enumerate{
 \item Group matching - Align nodes with same scenarios but different group order
 \item Scenario matching - Align nodes with same groups but different scenarios

@@ -73,7 +73,9 @@ suppressMessages({
                               survival_p_min=c(0.7,0.7,0.7,0.7,0.7,0.7,0.1),
                               survival_p_max=c(0.8,0.8,0.8,0.8,0.8,0.8,0.15))
 
-    current_data_keys <-list(current_data = list(data=current_data, keys=c("pathogen","scenario_id")))
+    current_data_keys <-list(current_data = list(data=current_data, keys=c("pathogen",
+                                                                           "origin",
+                                                                           "scenario_id")))
 
     current_mctable  <- data.frame(mcnode = c("survival_p"),
                                    description = c("Survival probability"),
@@ -86,39 +88,27 @@ suppressMessages({
     })
 
     # TODO
-    expect_error(
-      current_module <- eval_model(
-        model_exp = c(current = current_exp),
-        data = current_data,
-        mctable = current_mctable,
-        data_keys = current_data_keys,
-        prev_mcmodule = previous_module
-      ),
-      "use wif_match()"
-    )
-    a<-wif_match(current_data,imports_data)
-
     current_module <- eval_model(
       model_exp = c(current = current_exp),
-      data = a$current_data,
+      data = current_data,
       mctable = current_mctable,
       data_keys = current_data_keys,
-      prev_mcmodule = previous_module
-    )
+      prev_mcmodule = previous_module)
 
     combined_module<-combine_modules(previous_module,current_module)
 
     combined_module<-at_least_one(combined_module, c("no_detect_a","imported_contaminated"), name="total")
 
-    mc_network(combined_module)
-    mc_summary(combined_module, "survival_p")
-    mc_summary(combined_module, "no_detect_a_set")
-    mc_summary(combined_module, "no_detect_a")
+    summary1<-mc_summary(combined_module, "no_detect_a_set")
+    expect_equal(summary1$pathogen,c("a","a","a","b","b","b"))
 
-    # CHECK mc_match_data NULL when should be 0
-    mc_summary(combined_module, "imported_contaminated")
+    summary2<-mc_summary(combined_module, "survival_p")
+    expect_equal(summary2$pathogen,c("a","a","a","b","b","b","b"))
 
-    combined_module$node_list$total
+    summary3<-mc_summary(combined_module, "imported_contaminated")
+    expect_equal(summary3$scenario_id,c(0,0,0,0,0,0,"clean_transport"))
+
+    expect_message(mc_summary(combined_module, "total"), "Too many data names. Using existing summary." )
 
   })
 

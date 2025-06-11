@@ -69,6 +69,12 @@ mc_summary <- function(mcmodule = NULL, mc_name = NULL,
     if (is.null(data)) {
       data <- mcmodule$data[[data_name]]
     }
+
+    if(length(data_name)>1&!is.null(mcmodule$node_list[[mc_name]]$summary)){
+      message("Too many data names. Using existing summary.")
+      return(mcmodule$node_list[[mc_name]]$summary)
+    }
+
   } else {
     if (is.null(data)) stop("mcmodule or data must be provided")
   }

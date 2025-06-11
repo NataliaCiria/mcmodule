@@ -4,7 +4,7 @@
 \alias{wif_match}
 \title{Match Datasets With Differing Scenarios}
 \usage{
-wif_match(x, y, by = "hg")
+wif_match(x, y, by = NULL)
 }
 \arguments{
 \item{x}{First dataset to match}

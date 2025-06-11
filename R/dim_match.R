@@ -83,6 +83,7 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
 mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
   # Check if mcnodes are in mcmodule
   missing_nodes <- c(mc_name_x, mc_name_y)[!c(mc_name_x, mc_name_y) %in% names(mcmodule$node_list)]
+
   if (length(missing_nodes) > 0) {
     stop(paste("Nodes", paste(missing_nodes, collapse = ", "), "not found in", deparse(substitute(mcmodule))))
   }
@@ -371,6 +372,18 @@ wif_match <- function(x, y, by = NULL) {
   list_xy <- keys_match(x, y, by)
 
   # Find any unmatched groups in both datasets
+
+  # Define keys_names if not provided
+  if (is.null(by)) {
+    # Get categorical variables for each dataframe
+    cat_x <- names(x)[sapply(x, function(col) is.character(col) | is.factor(col))]
+    cat_y <- names(y)[sapply(y, function(col) is.character(col) | is.factor(col))]
+
+    # Find intersection of categorical variables
+    by <- unique(intersect(cat_x, cat_y))
+    by <- by[!by %in% c("g_id", "g_row", "scenario_id")]
+  }
+
   null_x <- unlist(unique(list_xy$xy[is.na(list_xy$xy$g_row.x), by]))
   null_y <- unlist(unique(list_xy$xy[is.na(list_xy$xy$g_row.y), by]))
 

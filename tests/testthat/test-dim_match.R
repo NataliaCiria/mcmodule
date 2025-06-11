@@ -200,14 +200,12 @@ suppressMessages({
     x <- data.frame(
       category = c("a", "b", "a", "b"),
       scenario_id = c(0, 0, 1, 1),
-      hg = c(1, 2, 1, 2),
       value = 1:4
     )
 
     y <- data.frame(
       category = c("a", "b", "a", "b"),
       scenario_id = c(0, 0, 2, 2),
-      hg = c(1, 2, 1, 2),
       value = 5:8
     )
 
@@ -215,19 +213,17 @@ suppressMessages({
     result <- wif_match(x, y)
     expect_equal(result$x$scenario_id, result$y$scenario_id)
     expect_equal(result$x$scenario_id, c(0, 0, 1, 1, 2, 2))
-    expect_equal(result$x$hg, result$y$hg)
-    expect_equal(result$x$hg, c(1, 2, 1, 2, 1, 2))
+    expect_equal(result$x$value, c(1, 2, 3, 4, 1, 2))
+    expect_equal(result$y$value, c(5, 6, 5, 6, 7, 8))
 
     # Match by type
     result_by <- wif_match(x, y, "category")
     expect_equal(result_by$x$scenario_id, result_by$y$scenario_id)
-    expect_equal(result_by$x$hg, result_by$y$hg)
 
     # Test error on unmatched groups
     y_bad <- data.frame(
       category = c("a", "c", "a", "c"),
       scenario_id = c(0, 0, 2, 2),
-      hg = c(1, 3, 1, 3),
       value = 5:8
     )
     expect_error(wif_match(x, y_bad), "Groups not found")
@@ -293,7 +289,8 @@ suppressMessages({
     expect_equal(dim(imported_contaminated_agg_keys), c(2,1))
 
     result<-mc_match(module, "no_detect_a", "imported_contaminated_agg")
-    expect_equal(result$keys_xy$g_row.y,c(1,1,1,1,1,1,2))
+    expect_equal(result$keys_xy$g_row.x,c(1,2,3,4,5,6,1,2,3,4,5,6))
+    expect_equal(result$keys_xy$g_row.y,c(1,1,1,1,1,1,2,2,2,2,2,2))
 
     # Aggregate no_detect_a
     module<-agg_totals(module,"no_detect_a")

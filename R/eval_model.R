@@ -113,8 +113,6 @@ eval_model <- function(model_exp, data, param_names = NULL,
             mc_name_max <- names(prev_node_list_i)[which.max(unlist(dim_prev_nodes))]
             agg_keys_max <- prev_node_list_i[[mc_name_max]][["agg_keys"]]
 
-            message("Checking prev_nodes dimensions by largest node: ", mc_name_max)
-
           }
 
           # Process each previous node
@@ -127,6 +125,7 @@ eval_model <- function(model_exp, data, param_names = NULL,
             if(!(nrow(prev_data) == nrow(data)&&
                  ncol(prev_data) != ncol(data)&&
                  all(prev_data==data))) {
+
               if (is.null(prev_node_list_i[[mc_name]][["agg_keys"]])) {
                 match_prev <- mc_match_data(prev_mcmodule, mc_name, data)
                 match_prev_mcnode<-match_prev[[1]]
@@ -138,6 +137,8 @@ eval_model <- function(model_exp, data, param_names = NULL,
                 if (!all(agg_keys_max == agg_keys)) {
                   stop("agg_keys do not match: ", agg_keys, " vs ", agg_keys_max)
                 }
+
+                message("Matching agg prev_nodes dimensions by largest node: ", mc_name_max)
 
                 match_agg_prev <- mc_match(
                   mcmodule = prev_mcmodule,
@@ -304,8 +305,8 @@ get_mcmodule_nodes <- function(mcmodule, mc_names = NULL, envir = parent.frame()
     stop("mcmodule or mcnode_list object must be provided")
   }
 
-  mc_names <- names(node_list)
-  mc_names <- mc_names[mc_names %in% mc_names]
+  all_mc_names <- names(node_list)
+  mc_names <- all_mc_names[all_mc_names %in% mc_names]
 
   if (length(mc_names) > 0) {
     for (i in 1:length(mc_names)) {
