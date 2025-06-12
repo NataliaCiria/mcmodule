@@ -2,9 +2,7 @@
 title: "mcmodule"
 subtitle: "Modular Monte-Carlo Risk Analysis"
 author: "Natalia Ciria"
-output: 
-  bookdown::html_document2:
-      base_format: rmarkdown::html_vignette
+output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{mcmodule-vignette}
   %\VignetteEngine{knitr::rmarkdown}
@@ -68,7 +66,7 @@ For example, if we are buying a number of cows and heifers from a specific regio
 
 This framework enables the creation and comparison of scenarios. For comparisons, you need a baseline scenario (scenario "0") and one or more alternative scenarios. Variates within a scenario are called "groups." While not every scenario needs to contain all baseline groups, any groups present in alternative scenarios must exist in the baseline.
 
-The scenario id, group id, and row number are the three mcnode properties that enable row matching and row aggregation operations (see Section \@ref(sec-row-matching))
+The scenario id, group id, and row number are the three mcnode properties that enable row matching and row aggregation operations.
 
 ![An mcnode representing the probability of a farm being infected in a baseline scenario ("0", in blue) and in a what-if scenario where there is a control plan implemented ("a", in green).](images/mcmodule_mcnode_scenarios.png){fig-align="center" style="display: block; margin: 1em auto" width="70%"}
 
