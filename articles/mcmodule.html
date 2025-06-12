@@ -132,7 +132,7 @@ As most of the input parameters are uncertain, we will use the term
 “uncertainty dimension” throughout this document to refer to the
 combined dimension of variability and uncertainty.</p>
 <div class="float">
-<img src="images/mcmodule_mcnode_definition.png" style="width:40.0%" fig-align="center" alt="Structure of an mcnode containing u uncertainty iterations and i variates."><div class="figcaption">Structure of an mcnode containing u uncertainty
+<img src="images/mcmodule_mcnode_definition.png" style="display: block; margin: 1em auto;width:40.0%" fig-align="center" alt="Structure of an mcnode containing u uncertainty iterations and i variates."><div class="figcaption">Structure of an mcnode containing u uncertainty
 iterations and i variates.</div>
 </div>
 <p>For example, if we are buying a number of cows and heifers from a
@@ -146,7 +146,7 @@ using minimum, mode, and maximum parameters across <em>u</em> iterations
 (columns) to model the uncertainty in these estimates.</p></li>
 </ul>
 <div class="float">
-<img src="images/mcmodule_mcnode_example.png" style="width:85.0%" fig-align="center" alt="An mcnode representing herd prevalence of three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR), and bovine viral diarrhea (BVD), and two animal categories (cows and heifers). The herd prevalence is the same for both animal categories, but values differ due to the stochastic nature of random sampling from the PERT distribution."><div class="figcaption">An mcnode representing herd prevalence of three
+<img src="images/mcmodule_mcnode_example.png" style="display: block; margin: 1em auto;width:85.0%" fig-align="center" alt="An mcnode representing herd prevalence of three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR), and bovine viral diarrhea (BVD), and two animal categories (cows and heifers). The herd prevalence is the same for both animal categories, but values differ due to the stochastic nature of random sampling from the PERT distribution."><div class="figcaption">An mcnode representing herd prevalence of three
 pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR),
 and bovine viral diarrhea (BVD), and two animal categories (cows and
 heifers). The herd prevalence is the same for both animal categories,
@@ -163,9 +163,9 @@ While not every scenario needs to contain all baseline groups, any
 groups present in alternative scenarios must exist in the baseline.</p>
 <p>The scenario id, group id, and row number are the three mcnode
 properties that enable row matching and row aggregation operations (see
-<span class="citation">(<a href="#ref-sec-row-matching"><strong>sec-row-matching?</strong></a>)</span>).</p>
+Section @ref(sec-row-matching))</p>
 <div class="float">
-<img src="images/mcmodule_mcnode_scenarios.png" style="width:70.0%" fig-align="center" alt="An mcnode representing the probability of a farm being infected in a baseline scenario (“0”, in blue) and in a what-if scenario where there is a control plan implemented (“a”, in green)."><div class="figcaption">An mcnode representing the probability of a farm
+<img src="images/mcmodule_mcnode_scenarios.png" style="display: block; margin: 1em auto;width:70.0%" fig-align="center" alt="An mcnode representing the probability of a farm being infected in a baseline scenario (“0”, in blue) and in a what-if scenario where there is a control plan implemented (“a”, in green)."><div class="figcaption">An mcnode representing the probability of a farm
 being infected in a baseline scenario (“0”, in blue) and in a what-if
 scenario where there is a control plan implemented (“a”, in
 green).</div>
@@ -182,7 +182,7 @@ calculation occurs independently on matching elements across nodes.
 These operations preserve node dimensions while applying functions (such
 as multiplication or addition) to corresponding elements, allowing
 uncertainties and variates to propagate through the calculations.</p>
-<p><img src="images/mcmodule_mcnode_element-wise_operation.png" style="width:100.0%" fig-align="center"></p>
+<p><img src="images/mcmodule_mcnode_element-wise_operation.png" style="display: block; margin: 1em auto;width:100.0%" fig-align="center"></p>
 </div>
 <div class="section level4">
 <h4 id="sec-row-matching">Row matching<a class="anchor" aria-label="anchor" href="#sec-row-matching"></a>
@@ -201,17 +201,17 @@ combinations:</p>
 <ol style="list-style-type: decimal">
 <li>Check if keys that define groups are in a different order</li>
 </ol>
-<p><img src="images/mcmodule_group_match_1.png" style="width:100.0%" fig-align="center"></p>
+<p><img src="images/mcmodule_group_match_1.png" style="display: block; margin: 1em auto;width:100.0%" fig-align="center"></p>
 <ol start="2" style="list-style-type: decimal">
 <li>Assign common group ids, based on keys</li>
 </ol>
-<p><img src="images/mcmodule_group_match_2.png" style="width:100.0%" fig-align="center"></p>
+<p><img src="images/mcmodule_group_match_2.png" style="display: block; margin: 1em auto;width:100.0%" fig-align="center"></p>
 <ol start="3" style="list-style-type: decimal">
 <li>Reorder rows to align group ids. This is similar to dplyr
 <code>left_join</code>
 </li>
 </ol>
-<p><img src="images/mcmodule_group_match_3.png" style="width:100.0%" fig-align="center"></p>
+<p><img src="images/mcmodule_group_match_3.png" style="display: block; margin: 1em auto;width:100.0%" fig-align="center"></p>
 </div>
 <div class="section level5">
 <h5 id="scenario-matching">Scenario matching<a class="anchor" aria-label="anchor" href="#scenario-matching"></a>
@@ -222,12 +222,12 @@ that a variable takes the values from the baseline scenario.</p>
 <ol style="list-style-type: decimal">
 <li>Check if scenarios are different</li>
 </ol>
-<p><img src="images/mcmodule_scenario_match_1.png" style="width:100.0%" fig-align="center"></p>
+<p><img src="images/mcmodule_scenario_match_1.png" style="display: block; margin: 1em auto;width:100.0%" fig-align="center"></p>
 <ol start="2" style="list-style-type: decimal">
 <li>For missing scenarios, duplicate the baseline scenario (scenario
 “0”)</li>
 </ol>
-<p><img src="images/mcmodule_scenario_match_2.png" style="width:100.0%" fig-align="center"></p>
+<p><img src="images/mcmodule_scenario_match_2.png" style="display: block; margin: 1em auto;width:100.0%" fig-align="center"></p>
 <ol start="3" style="list-style-type: decimal">
 <li>When nodes matched by scenario are used in an element-wise
 operation, the resulting node will contain all scenarios from both input
@@ -235,7 +235,7 @@ nodes. This is conceptually similar to a dplyr <code>full_join</code>,
 except that any unmatched rows use values from the baseline
 scenario.</li>
 </ol>
-<p><img src="images/mcmodule_scenario_match_3.png" style="width:100.0%" fig-align="center"></p>
+<p><img src="images/mcmodule_scenario_match_3.png" style="display: block; margin: 1em auto;width:100.0%" fig-align="center"></p>
 </div>
 <div class="section level5">
 <h5 id="null-matching">Null matching<a class="anchor" aria-label="anchor" href="#null-matching"></a>
@@ -247,17 +247,17 @@ complements scenario matching.</p>
 <ol style="list-style-type: decimal">
 <li>Check for missing groups</li>
 </ol>
-<p><img src="images/mcmodule_null_matching_1.png" style="width:100.0%" fig-align="center"></p>
+<p><img src="images/mcmodule_null_matching_1.png" style="display: block; margin: 1em auto;width:100.0%" fig-align="center"></p>
 <ol start="2" style="list-style-type: decimal">
 <li>Add null variates with probability 0 for any missing groups (and
 apply scenario matching)</li>
 </ol>
-<p><img src="images/mcmodule_null_matching_2.png" style="width:100.0%" fig-align="center"></p>
+<p><img src="images/mcmodule_null_matching_2.png" style="display: block; margin: 1em auto;width:100.0%" fig-align="center"></p>
 <ol style="list-style-type: decimal">
 <li>When nodes are matched by scenario in an element-wise operation, the
 resulting node will contain all groups from both input nodes</li>
 </ol>
-<p><img src="images/mcmodule_null_matching_3.png" style="width:100.0%" fig-align="center"></p>
+<p><img src="images/mcmodule_null_matching_3.png" style="display: block; margin: 1em auto;width:100.0%" fig-align="center"></p>
 </div>
 </div>
 <div class="section level4">
@@ -298,7 +298,7 @@ occurring</p></li>
 least one variate of S</p></li>
 </ul>
 <div class="float">
-<img src="images/mcmodule_row_aggregation_p.png" style="width:100.0%" fig-align="center" alt="Row aggregation by pathogen. The calculation is performed element-wise across subset variates to maintain uncertainty propagation."><div class="figcaption">Row aggregation by pathogen. The calculation is
+<img src="images/mcmodule_row_aggregation_p.png" style="display: block; margin: 1em auto;width:100.0%" fig-align="center" alt="Row aggregation by pathogen. The calculation is performed element-wise across subset variates to maintain uncertainty propagation."><div class="figcaption">Row aggregation by pathogen. The calculation is
 performed element-wise across subset variates to maintain uncertainty
 propagation.</div>
 </div>
@@ -309,7 +309,7 @@ different what-if scenarios.</p>
 aggregated values, to ensure dimensions compatibility in further
 calculations.</p>
 <div class="float">
-<img src="images/mcmodule_keep_variates.png" style="width:80.0%" fig-align="center" alt="Default row aggregation and row aggregation keeping all variates"><div class="figcaption">Default row aggregation and row aggregation
+<img src="images/mcmodule_keep_variates.png" style="display: block; margin: 1em auto;width:80.0%" fig-align="center" alt="Default row aggregation and row aggregation keeping all variates"><div class="figcaption">Default row aggregation and row aggregation
 keeping all variates</div>
 </div>
 </div>
