@@ -2,7 +2,9 @@
 title: "mcmodule"
 subtitle: "Modular Monte-Carlo Risk Analysis"
 author: "Natalia Ciria"
-output: rmarkdown::html_vignette
+output: 
+  bookdown::html_document2:
+      base_format: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{mcmodule-vignette}
   %\VignetteEngine{knitr::rmarkdown}
@@ -52,7 +54,7 @@ This approach enables us to track multiple values across groups simultaneously u
 
 In this framework, an mcnode is an array of **dimensions (*u* × 1 × *i*)**, where u is the dimension of variability and uncertainty combined, and i is the number of variates. As most of the input parameters are uncertain, we will use the term "uncertainty dimension" throughout this document to refer to the combined dimension of variability and uncertainty.
 
-![Structure of an mcnode containing u uncertainty iterations and i variates.](images/mcmodule_mcnode_definition.png){fig-align="center" width="40%"}
+![Structure of an mcnode containing u uncertainty iterations and i variates.](images/mcmodule_mcnode_definition.png){fig-align="center" style="display: block; margin: 1em auto" width="40%"}
 
 For example, if we are buying a number of cows and heifers from a specific region, a mcnode for herd prevalence would have:
 
@@ -60,15 +62,15 @@ For example, if we are buying a number of cows and heifers from a specific regio
 
 -   Probability values generated through a PERT distribution (rpert), using minimum, mode, and maximum parameters across *u* iterations (columns) to model the uncertainty in these estimates.
 
-![An mcnode representing herd prevalence of three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR), and bovine viral diarrhea (BVD), and two animal categories (cows and heifers). The herd prevalence is the same for both animal categories, but values differ due to the stochastic nature of random sampling from the PERT distribution.](images/mcmodule_mcnode_example.png){fig-align="center" width="85%"}
+![An mcnode representing herd prevalence of three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR), and bovine viral diarrhea (BVD), and two animal categories (cows and heifers). The herd prevalence is the same for both animal categories, but values differ due to the stochastic nature of random sampling from the PERT distribution.](images/mcmodule_mcnode_example.png){fig-align="center" style="display: block; margin: 1em auto" width="85%"}
 
 ## Scenarios
 
 This framework enables the creation and comparison of scenarios. For comparisons, you need a baseline scenario (scenario "0") and one or more alternative scenarios. Variates within a scenario are called "groups." While not every scenario needs to contain all baseline groups, any groups present in alternative scenarios must exist in the baseline.
 
-The scenario id, group id, and row number are the three mcnode properties that enable row matching and row aggregation operations (see @sec-row-matching).
+The scenario id, group id, and row number are the three mcnode properties that enable row matching and row aggregation operations (see Section \@ref(sec-row-matching))
 
-![An mcnode representing the probability of a farm being infected in a baseline scenario ("0", in blue) and in a what-if scenario where there is a control plan implemented ("a", in green).](images/mcmodule_mcnode_scenarios.png){fig-align="center" width="70%"}
+![An mcnode representing the probability of a farm being infected in a baseline scenario ("0", in blue) and in a what-if scenario where there is a control plan implemented ("a", in green).](images/mcmodule_mcnode_scenarios.png){fig-align="center" style="display: block; margin: 1em auto" width="70%"}
 
 ## Multivariate nodes operations
 
@@ -76,7 +78,7 @@ The scenario id, group id, and row number are the three mcnode properties that e
 
 Most operations in this model are element-wise, meaning each calculation occurs independently on matching elements across nodes. These operations preserve node dimensions while applying functions (such as multiplication or addition) to corresponding elements, allowing uncertainties and variates to propagate through the calculations.
 
-![](images/mcmodule_mcnode_element-wise_operation.png){fig-align="center" width="100%"}
+![](images/mcmodule_mcnode_element-wise_operation.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
 
 ### Row matching {#sec-row-matching}
 
@@ -90,15 +92,15 @@ Nodes with same scenarios/dimensions but different group order
 
 1.  Check if keys that define groups are in a different order
 
-![](images/mcmodule_group_match_1.png){fig-align="center" width="100%"}
+![](images/mcmodule_group_match_1.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
 
 2.  Assign common group ids, based on keys
 
-![](images/mcmodule_group_match_2.png){fig-align="center" width="100%"}
+![](images/mcmodule_group_match_2.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
 
 3.  Reorder rows to align group ids. This is similar to dplyr `left_join`
 
-![](images/mcmodule_group_match_3.png){fig-align="center" width="100%"}
+![](images/mcmodule_group_match_3.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
 
 #### Scenario matching
 
@@ -106,15 +108,15 @@ Nodes with same groups but different scenarios. The general rule for these opera
 
 1.  Check if scenarios are different
 
-![](images/mcmodule_scenario_match_1.png){fig-align="center" width="100%"}
+![](images/mcmodule_scenario_match_1.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
 
 2.  For missing scenarios, duplicate the baseline scenario (scenario "0")
 
-![](images/mcmodule_scenario_match_2.png){fig-align="center" width="100%"}
+![](images/mcmodule_scenario_match_2.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
 
 3.  When nodes matched by scenario are used in an element-wise operation, the resulting node will contain all scenarios from both input nodes. This is conceptually similar to a dplyr `full_join`, except that any unmatched rows use values from the baseline scenario.
 
-![](images/mcmodule_scenario_match_3.png){fig-align="center" width="100%"}
+![](images/mcmodule_scenario_match_3.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
 
 #### Null matching
 
@@ -122,15 +124,15 @@ When nodes contain different scenarios and groups, some groups may be missing fr
 
 1.  Check for missing groups
 
-![](images/mcmodule_null_matching_1.png){fig-align="center" width="100%"}
+![](images/mcmodule_null_matching_1.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
 
 2.  Add null variates with probability 0 for any missing groups (and apply scenario matching)
 
-![](images/mcmodule_null_matching_2.png){fig-align="center" width="100%"}
+![](images/mcmodule_null_matching_2.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
 
 1.  When nodes are matched by scenario in an element-wise operation, the resulting node will contain all groups from both input nodes
 
-![](images/mcmodule_null_matching_3.png){fig-align="center" width="100%"}
+![](images/mcmodule_null_matching_3.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
 
 ### Combined probabilities
 
@@ -158,13 +160,13 @@ Where:
 
 -   *p_agg* represents the probability of occurrence in at least one variate of S
 
-![Row aggregation by pathogen. The calculation is performed element-wise across subset variates to maintain uncertainty propagation.](images/mcmodule_row_aggregation_p.png){fig-align="center" width="100%"}
+![Row aggregation by pathogen. The calculation is performed element-wise across subset variates to maintain uncertainty propagation.](images/mcmodule_row_aggregation_p.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
 
 If scenarios are being simulated, scenario id must always be included as an aggregation key, as probabilities are not calculated across different what-if scenarios.
 
 You can also keep all variariates, with their corresponding aggregated values, to ensure dimensions compatibility in further calculations.
 
-![Default row aggregation and row aggregation keeping all variates](images/mcmodule_keep_variates.png){fig-align="center" width="80%"}
+![Default row aggregation and row aggregation keeping all variates](images/mcmodule_keep_variates.png){fig-align="center" style="display: block; margin: 1em auto" width="80%"}
 
 #### Quantities
 
