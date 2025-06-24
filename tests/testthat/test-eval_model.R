@@ -73,7 +73,7 @@ suppressMessages({
                               survival_p_min=c(0.7,0.7,0.7,0.7,0.7,0.7,0.1),
                               survival_p_max=c(0.8,0.8,0.8,0.8,0.8,0.8,0.15))
 
-    current_data_keys <-list(current_data = list(data=current_data, keys=c("pathogen",
+    current_data_keys <-list(current_data = list(cols=names(current_data), keys=c("pathogen",
                                                                            "origin",
                                                                            "scenario_id")))
 

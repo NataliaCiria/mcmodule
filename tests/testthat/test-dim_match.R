@@ -247,7 +247,7 @@ suppressMessages({
                                imported=c(1,1,0.1,0.1),
                                products_n=c(1500,1500,0,0))
 
-    current_data_keys <-list(current_data = list(data=current_data, keys=c("pathogen","origin","scenario_id")))
+    current_data_keys <-list(current_data = list(cols=names(current_data), keys=c("pathogen","origin","scenario_id")))
 
     current_mctable  <- data.frame(mcnode = c("contaminated", "imported", "products_n"),
                                    description = c("Probability a product is contaminated", "Probability a product is imported", "Number of products"),

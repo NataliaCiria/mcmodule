@@ -1,12 +1,12 @@
 #' Set or Get Global Data Keys
 #'
 #' Manages a global data model by either setting new data keys or retrieving the current ones.
-#' The data model consists of named lists containing data frames and their associated keys.
+#' The data model consists of named lists containing column names and their associated key columns.
 #'
 #' @param data_keys Optional list of lists. Each inner list must contain:
 #'   \itemize{
-#'     \item data: A data frame containing the actual data
-#'     \item keys: A vector specifying the key columns for the data frame
+#'     \item cols: A vector containing the column names for the data
+#'     \item keys: A vector specifying the key columns
 #'   }
 #'   If NULL, returns the current data model.
 #'
@@ -16,7 +16,7 @@
 #'     \item If data_keys provided: Sets the new data model and returns invisibly
 #'   }
 #' @examples
-#' set_data_keys(imports_data_keys)
+#' set_data_keys(cattle_data_keys)
 #' @export
 set_data_keys <- function(data_keys = NULL) {
   if (is.null(data_keys)) {
@@ -34,18 +34,28 @@ set_data_keys <- function(data_keys = NULL) {
     # Check each element has required structure
     for (name in names(data_keys)) {
       element <- data_keys[[name]]
+      if (is.null(element)) {
+        next  # Skip NULL elements (conditionally included datasets)
+      }
       if (!is.list(element) ||
-        !all(c("data", "keys") %in% names(element)) ||
-        !is.data.frame(element$data) ||
-        !is.vector(element$keys)) {
-        stop("Each data model element must be a list with 'data' (data frame) and 'keys' (vector)")
+          !all(c("cols", "keys") %in% names(element)) ||
+          !is.vector(element$cols) ||
+          !is.vector(element$keys)) {
+        stop("Each data model element must be a list with 'cols' (column names vector) and 'keys' (vector of key columns)")
+      }
+
+      # Validate that all keys exist in cols
+      if (!all(element$keys %in% element$cols)) {
+        missing_keys <- element$keys[!element$keys %in% element$cols]
+        stop("Keys must be a subset of column names. Missing in cols: ",
+             paste(missing_keys, collapse = ", "),
+             " for dataset: ", name)
       }
     }
 
     # Assign validated data model
     assign("data_keys", data_keys, envir = .pkgglobalenv)
     message("data_keys set to ", deparse(substitute(data_keys)))
-
   }
 }
 

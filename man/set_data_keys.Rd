@@ -9,8 +9,8 @@ set_data_keys(data_keys = NULL)
 \arguments{
 \item{data_keys}{Optional list of lists. Each inner list must contain:
 \itemize{
-\item data: A data frame containing the actual data
-\item keys: A vector specifying the key columns for the data frame
+\item cols: A vector containing the column names for the data
+\item keys: A vector specifying the key columns
 }
 If NULL, returns the current data model.}
 }
@@ -22,8 +22,8 @@ If NULL, returns the current data model.}
 }
 \description{
 Manages a global data model by either setting new data keys or retrieving the current ones.
-The data model consists of named lists containing data frames and their associated keys.
+The data model consists of named lists containing column names and their associated key columns.
 }
 \examples{
-set_data_keys(imports_data_keys)
+set_data_keys(cattle_data_keys)
 }
