@@ -1,9 +1,9 @@
 #' Evaluate a Monte Carlo Model Expression and create an mcmcmodule
 #'
-#' Takes a model expression and evaluates it while creating an mcmcmodule
+#' Takes a set of Monte Carlo model expressions and evaluates them and creates an mcmcmodule
 #' containing results and metadata.
 #'
-#' @param model_exp Model expression or list of expressions to evaluate
+#' @param exp Model expression or list of expressions to evaluate
 #' @param data Input data frame containing model parameters
 #' @param param_names Named vector for parameter renaming (optional)
 #' @param prev_mcmodule Previous module(s) for dependent calculations
@@ -17,13 +17,13 @@
 #'
 #' @examples
 #' # Basic usage with single expression
-#' eval_model(
-#'   model_exp = imports_exp,
+#' eval_module(
+#'   exp = imports_exp,
 #'   data = imports_data,
 #'   mctable = imports_mctable,
 #'   data_keys = imports_data_keys
 #' )
-eval_model <- function(model_exp, data, param_names = NULL,
+eval_module <- function(exp, data, param_names = NULL,
                        prev_mcmodule = NULL,
                        summary = FALSE, mctable = set_mctable(),
                        data_keys = set_data_keys(), create_nodes = TRUE) {
@@ -35,24 +35,24 @@ eval_model <- function(model_exp, data, param_names = NULL,
   data_name <- deparse(substitute(data))
 
   # Convert single expression to list format
-  if (is.list(model_exp)) {
-    model_exp_list <- model_exp
+  if (is.list(exp)) {
+    exp_list <- exp
   } else {
-    exp_name <- gsub("_exp", "", deparse(substitute(model_exp)))
-    model_exp_list <- list(model_exp)
-    names(model_exp_list) <- exp_name
+    exp_name <- gsub("_exp", "", deparse(substitute(exp)))
+    exp_list <- list(exp)
+    names(exp_list) <- exp_name
   }
 
   node_list <- list()
   modules <- c()
 
   # Process each expression in the list
-  for (i in 1:length(model_exp_list)) {
-    model_exp_i <- model_exp_list[[i]]
-    module <- names(model_exp_list)[[i]]
+  for (i in 1:length(exp_list)) {
+    exp_i <- exp_list[[i]]
+    module <- names(exp_list)[[i]]
 
     # Get initial node list
-    node_list_i <- get_node_list(model_exp_i,
+    node_list_i <- get_node_list(exp_i,
       param_names = param_names,
       mctable = mctable, data_keys = data_keys
     )
@@ -190,7 +190,7 @@ eval_model <- function(model_exp, data, param_names = NULL,
     }
 
     # Evaluate current expression
-    eval(model_exp_i)
+    eval(exp_i)
     message("\n", module, " evaluated")
 
     # Update node metadata
@@ -229,7 +229,7 @@ eval_model <- function(model_exp, data, param_names = NULL,
 
       # Set module name
       if (length(node_list[[mc_name]][["module"]]) == 0 ||
-        node_list[[mc_name]][["module"]] %in% "model_i") {
+        node_list[[mc_name]][["module"]] %in% "exp_i") {
         node_list[[mc_name]][["module"]] <- module
       }
 
@@ -270,7 +270,7 @@ eval_model <- function(model_exp, data, param_names = NULL,
   # Return results
   mcmodule <- list(
     data = list(data),
-    model_exp = model_exp,
+    exp = exp,
     node_list = node_list,
     modules = modules
   )
@@ -280,7 +280,7 @@ eval_model <- function(model_exp, data, param_names = NULL,
 
   message(
     "\nmcmodule created (expressions: ",
-    paste(names(model_exp), collapse = ", "), ")"
+    paste(names(exp), collapse = ", "), ")"
   )
 
   return(mcmodule)

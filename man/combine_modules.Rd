@@ -25,14 +25,14 @@ module_x <- list(
     node2 = list(type = "out_node")
   ),
   modules = c("module_x"),
-  model_expression = quote({node2 <- node1 * 2})
+  exp = quote({node2 <- node1 * 2})
 )
 
 module_y <- list(
   data = list(data_y = data.frame(y = 4:6)),
   node_list = list(node3 = list(type = "out_node")),
   modules = c("module_y"),
-  model_expression = quote({node3 <- node1 + node2})
+  exp = quote({node3 <- node1 + node2})
 )
 
 module_xy <- combine_modules(module_x, module_y)

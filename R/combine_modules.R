@@ -16,14 +16,14 @@
 #'     node2 = list(type = "out_node")
 #'   ),
 #'   modules = c("module_x"),
-#'   model_expression = quote({node2 <- node1 * 2})
+#'   exp = quote({node2 <- node1 * 2})
 #' )
 #'
 #' module_y <- list(
 #'   data = list(data_y = data.frame(y = 4:6)),
 #'   node_list = list(node3 = list(type = "out_node")),
 #'   modules = c("module_y"),
-#'   model_expression = quote({node3 <- node1 + node2})
+#'   exp = quote({node3 <- node1 + node2})
 #' )
 #'
 #' module_xy <- combine_modules(module_x, module_y)
@@ -45,11 +45,11 @@ combine_modules <- function(mcmodule_x, mcmodule_y) {
   }
 
   # Combine model expressions
-  mcmodule$model_expression <- list(
-    mcmodule_x$model_expression,
-    mcmodule_y$model_expression
+  mcmodule$exp <- list(
+    mcmodule_x$exp,
+    mcmodule_y$exp
   )
-  names(mcmodule$model_expression) <- c(name_x, name_y)
+  names(mcmodule$exp) <- c(name_x, name_y)
 
   # Combine node lists and modules
   mcmodule$node_list <- c(mcmodule_x$node_list, mcmodule_y$node_list)

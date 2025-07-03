@@ -25,7 +25,7 @@ suppressMessages({
 
     # Run function
     node_list <- get_node_list(
-      model_exp = test_exp,
+      exp = test_exp,
       mctable = test_mctable,
       data_keys = test_data_keys
     )

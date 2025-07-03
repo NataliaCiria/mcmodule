@@ -5,14 +5,14 @@
 \title{Create Node List from Model Expression}
 \usage{
 get_node_list(
-  model_exp,
+  exp,
   param_names = NULL,
   mctable = set_mctable(),
   data_keys = set_data_keys()
 )
 }
 \arguments{
-\item{model_exp}{An R expression containing model calculations}
+\item{exp}{An R expression containing model calculations}
 
 \item{param_names}{Optional named vector for parameter renaming}
 
@@ -29,6 +29,6 @@ output, and previous nodes with their properties and relationships.
 }
 \examples{
 \dontrun{
-get_node_list(model_exp = imports_exp, mctable = imports_mctable, data_keys = imports_data_keys)
+get_node_list(exp = imports_exp, mctable = imports_mctable, data_keys = imports_data_keys)
 }
 }

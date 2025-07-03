@@ -1,8 +1,8 @@
 suppressMessages({
-  test_that("eval_model works", {
+  test_that("eval_module works", {
     # Test basic functionality
-    result <- eval_model(
-      model_exp = c(imports = imports_exp),
+    result <- eval_module(
+      exp = c(imports = imports_exp),
       data = imports_data,
       mctable = imports_mctable,
       data_keys = imports_data_keys
@@ -10,15 +10,15 @@ suppressMessages({
 
     # Check class and structure
     expect_equal(class(result), "mcmodule")
-    expect_true(all(c("data", "model_exp", "node_list", "modules") %in% names(result)))
+    expect_true(all(c("data", "exp", "node_list", "modules") %in% names(result)))
 
     # Test error handling for missing prev_mcmodule
     test_exp_prev <- quote({
       result <- prev_value * 2
     })
     expect_error(
-      eval_model(
-        model_exp = test_exp_prev,
+      eval_module(
+        exp = test_exp_prev,
         data = imports_data,
         mctable = imports_mctable,
         data_keys = imports_data_keys
@@ -27,33 +27,32 @@ suppressMessages({
     )
 
     # Test with multiple expressions
-    model_exp_list <- list(
+    exp_list <- list(
       imports = imports_exp,
       additional = quote({
         final_result <- no_detect_a * 2
       })
     )
 
-    multi_result <- eval_model(
-      model_exp = model_exp_list,
+    multi_result <- eval_module(
+      exp = exp_list,
       data = imports_data,
       mctable = imports_mctable,
       data_keys = imports_data_keys
     )
 
     # Verify multiple modules were created
-    expect_equal(length(multi_result$modules), 2)
-    expect_true(all(c("imports", "additional") %in% multi_result$modules))
+    expect_equal(multi_result$modules, c("imports", "additional"))
 
     # Check that variables from first module are available in second
     expect_true("no_detect_a" %in% names(multi_result$node_list))
     expect_true("final_result" %in% names(multi_result$node_list))
   })
 
-  test_that("eval_model gets previous nodes", {
+  test_that("eval_module gets previous nodes", {
     #  Create previous_module
-    previous_module <- eval_model(
-      model_exp = c(imports = imports_exp),
+    previous_module <- eval_module(
+      exp = c(imports = imports_exp),
       data = imports_data,
       mctable = imports_mctable,
       data_keys = imports_data_keys
@@ -88,8 +87,8 @@ suppressMessages({
     })
 
     # TODO
-    current_module <- eval_model(
-      model_exp = c(current = current_exp),
+    current_module <- eval_module(
+      exp = c(current = current_exp),
       data = current_data,
       mctable = current_mctable,
       data_keys = current_data_keys,

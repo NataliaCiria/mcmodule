@@ -232,8 +232,8 @@ suppressMessages({
 
   test_that("mc_match of agg_nodes works", {
     #  Create previous_module
-    previous_module <- eval_model(
-      model_exp = c(imports = imports_exp),
+    previous_module <- eval_module(
+      exp = c(imports = imports_exp),
       data = imports_data,
       mctable = imports_mctable,
       data_keys = imports_data_keys
@@ -259,8 +259,8 @@ suppressMessages({
       imported_contaminated <- contaminated * imported
     })
 
-    current_module <- eval_model(
-      model_exp = c(current = current_exp),
+    current_module <- eval_module(
+      exp = c(current = current_exp),
       data = current_data,
       mctable = current_mctable,
       data_keys = current_data_keys

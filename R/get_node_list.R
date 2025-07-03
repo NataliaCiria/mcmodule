@@ -3,7 +3,7 @@
 #' Creates a list of nodes based on a given model expression, handling input,
 #' output, and previous nodes with their properties and relationships.
 #'
-#' @param model_exp An R expression containing model calculations
+#' @param exp An R expression containing model calculations
 #' @param param_names Optional named vector for parameter renaming
 #' @param mctable Reference table for  mcnodes, defaults to set_mctable()
 #' @param data_keys Data structure and keys, defaults to set_data_keys()
@@ -12,20 +12,20 @@
 #'
 #' @examples
 #' \dontrun{
-#' get_node_list(model_exp = imports_exp, mctable = imports_mctable, data_keys = imports_data_keys)
+#' get_node_list(exp = imports_exp, mctable = imports_mctable, data_keys = imports_data_keys)
 #'}
-get_node_list <- function(model_exp, param_names = NULL,
+get_node_list <- function(exp, param_names = NULL,
                           mctable = set_mctable(), data_keys = set_data_keys()) {
-  module <- gsub("_exp", "", deparse(substitute(model_exp)))
+  module <- gsub("_exp", "", deparse(substitute(exp)))
 
   # Initialize lists and vectors
   out_node_list <- list()
   all_nodes <- c()
 
   # Process output nodes from model exp
-  for (i in 2:length(model_exp)) {
-    node_name <- deparse(model_exp[[i]][[2]])
-    node_exp <- paste0(deparse(model_exp[[i]][[3]]), collapse = "")
+  for (i in 2:length(exp)) {
+    node_name <- deparse(exp[[i]][[2]])
+    node_exp <- paste0(deparse(exp[[i]][[3]]), collapse = "")
     out_node_list[[node_name]][["node_exp"]] <- node_exp
 
     # Extract input node names
