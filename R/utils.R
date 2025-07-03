@@ -24,10 +24,10 @@ add_group_id <- function(x, y = NULL, by = NULL) {
     }
 
     if (!all(by %in% names(x))) {
-      stop(paste0(paste(by[by %in% names(x)]), " columns not found in ", deparse(substitute(x))))
+      stop(paste0(paste(by[!by %in% names(x)]), " columns not found in ", deparse(substitute(x)),"\n"))
     }
     if (!all(by %in% names(y))) {
-      stop(paste0(by[by %in% names(y)], " columns not found in ", deparse(substitute(y))))
+      stop(paste0(paste(by[!by %in% names(y)]), " columns not found in ", deparse(substitute(y)),"\n"))
     }
 
     x$df <- "x"

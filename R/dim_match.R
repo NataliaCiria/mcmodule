@@ -384,8 +384,8 @@ wif_match <- function(x, y, by = NULL) {
     by <- by[!by %in% c("g_id", "g_row", "scenario_id")]
   }
 
-  null_x <- unlist(unique(list_xy$xy[is.na(list_xy$xy$g_row.x), by]))
-  null_y <- unlist(unique(list_xy$xy[is.na(list_xy$xy$g_row.y), by]))
+  null_x <- unique(list_xy$xy[is.na(list_xy$xy$g_row.x), by])
+  null_y <- unique(list_xy$xy[is.na(list_xy$xy$g_row.y), by])
 
   # Format error messages for unmatched groups
   w_null_x <- paste(names(null_x), null_x, sep = " ", collapse = ", ")
