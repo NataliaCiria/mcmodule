@@ -217,7 +217,7 @@ agg_totals <- function(mcmodule, mc_name,
   # Extract module name and node data
   module_name <- deparse(substitute(mcmodule))
   mcnode <- mcmodule$node_list[[mc_name]][["mcnode"]]
-  key_col <- mc_keys(mcmodule, mc_name)[keys_names]
+  key_col <- mc_keys(mcmodule, mc_name, keys_names)
   data_name <- mcmodule$node_list[[mc_name]][["data_name"]]
 
   agg_total_mc_name <- paste0(mc_name, "_", suffix)

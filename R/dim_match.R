@@ -43,6 +43,11 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
     mcmodule$data[[node[["data_name"]]]]
   }
 
+  # Add scenario_id column if missing
+  if (!"scenario_id" %in% names(data)) {
+    data$scenario_id <- "0"
+  }
+
   # Validate all requested keys exist
   missing_keys <- setdiff(keys_names, names(data))
   if (length(missing_keys) > 0) {
@@ -51,11 +56,6 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
       paste(missing_keys, collapse = ", "),
       mc_name
     ))
-  }
-
-  # Add scenario_id column if missing
-  if (!"scenario_id" %in% names(data)) {
-    data$scenario_id <- "0"
   }
 
   # Check for duplicates in baseline scenario
