@@ -2,7 +2,7 @@
 % Please edit documentation in R/totals.R
 \name{agg_totals}
 \alias{agg_totals}
-\title{Aggregate Node Values Across Groups}
+\title{Aggregate Across Groups}
 \usage{
 agg_totals(
   mcmodule,
@@ -36,7 +36,7 @@ agg_totals(
 mcmodule with new aggregated node added
 }
 \description{
-Combines values across specified grouping variables using different aggregation methods.
+Combines node values across specified grouping variables using different aggregation methods.
 The aggregation method can be specified via agg_func parameter:
 \itemize{
 \item "prob": Combined probability assuming independence

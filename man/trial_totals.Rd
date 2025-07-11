@@ -2,7 +2,7 @@
 % Please edit documentation in R/totals.R
 \name{trial_totals}
 \alias{trial_totals}
-\title{Calculate Probabilities and Expected Counts Across Hierarchical Levels}
+\title{Trial Probability and Expected Counts}
 \usage{
 trial_totals(
   mcmodule,

@@ -1,4 +1,4 @@
-#' Calculate Combined Probability of Events (At least one)
+#' Combined Probability of Events (At least one)
 #'
 #' Combines probabilities of multiple events assuming independence,
 #' using the formula P(A or B) = 1 - (1-P(A))*(1-P(B)). It macthes dimensions automatically.
@@ -178,9 +178,9 @@ generate_all_name <- function(mc_names) {
   paste(c(common_parts, "all"), collapse = "_")
 }
 
-#' Aggregate Node Values Across Groups
+#' Aggregate Across Groups
 #'
-#' Combines values across specified grouping variables using different aggregation methods.
+#' Combines node values across specified grouping variables using different aggregation methods.
 #' The aggregation method can be specified via agg_func parameter:
 #' - "prob": Combined probability assuming independence
 #' - "sum": Sum of values
@@ -330,9 +330,8 @@ agg_totals <- function(mcmodule, mc_name,
 }
 
 
-#' Calculate Probabilities and Expected Counts Across Hierarchical Levels
+#' Trial Probability and Expected Counts
 #'
-#' @description
 #' Calculates probabilities and expected counts across hierarchical levels
 #' (trial, subset, set) in a structured population. Uses trial probabilities and
 #' handles nested sampling with conditional probabilities.

@@ -23,10 +23,8 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup, include = FALSE}
-# library(mcmodule)
+library(mcmodule)
 ```
-
-> *This document is intended for intermediate R programmers who are familiar with Monte Carlo simulation and quantitative risk assessment. For an introduction to quantitative risk assessment, please refer to:*
 
 # Introduction
 
@@ -40,7 +38,7 @@ The `mc2d` R package [@mc2d] provides tools to build and analyse models involvin
 
 # Multivariate Monte-Carlo simulations
 
-*The following section is based primarily on the [mc2d](https://CRAN.R-project.org/package=mc2d) package vignette, adapted and expanded specifically for the context of modular, flexible Monte Carlo simulations.*
+| *This section draws from the [mc2d](https://cran.r-project.org/package=mc2d) package vignette, with adaptations for modular Monte Carlo simulations.*
 
 Quantitative risk analysis is the numerical assessment of risk to facilitate decision making in the face of uncertainty. Monte Carlo simulation is a technique used to model and analyse uncertainty [@Vose2008]. In typical two-dimensional Monte Carlo simulation, one dimension represents variability and the other represents uncertainty. However, in this framework, we take a different approach where:
 
@@ -196,6 +194,38 @@ In single-level trials, each trial is independent with the same probability of s
 
 $$ set\_p= 1-(1-trial\_p)^{trials\_n} $$
 
+In `imports_mcmodule`, we have the probability that an infected animal from an infected farm goes undetected ($no\_detect\_a$). When all animals (in a variate) have the same probability, we can use the total number of animals selected per farm ($animals\_n$) as the number of trials (`trials_n`) to determine the probability that at least one infected animal from one farm is not detected ($no\_detect\_set$).
+
+```{r}
+mc_summary(imports_mcmodule,"no_detect_a")
+mc_summary(imports_mcmodule,"animals_n")
+
+imports_mcmodule <- trial_totals(
+  mcmodule = imports_mcmodule,
+  mc_names = "no_detect_a",
+  trials_n = "animals_n",
+  mctable = imports_mctable
+)
+
+mc_summary(imports_mcmodule,"no_detect_a_set")
+```
+
+Assuming all farms are infected, we can add the number of farms ($farms\_n$) as the `subsets_n` argument to calculate the probability that at least one infected animal from any farm goes undetected.
+
+```{r}
+mc_summary(imports_mcmodule,"farms_n")
+
+imports_mcmodule <- trial_totals(
+  mcmodule = imports_mcmodule,
+  mc_names = "no_detect_a",
+  trials_n = "animals_n",
+  subsets_n = "farms_n",
+  mctable = imports_mctable
+)
+
+mc_summary(imports_mcmodule,"no_detect_a_set")
+```
+
 #### Multilevel trials
 
 **Simple multilevel**
@@ -217,6 +247,23 @@ Where:
 -   *subset_n* represents the number of subsets
 
 -   *set_p* represents the probability of a at least one trial of at least one subsetbeing a success
+
+In our previous example, we assumed that all farms in `imports_mcmodule` were infected. However, if we want to account for the probability of a farm being infected based on regional herd prevalence ($h\_prev$), we should include this as the `subsets_p` parameter. Note that while $h\_prev$ isn't defined as an mcnode in `imports_mcmodule` (not used in `imports_mcmodule$model_exp`), it can be automatically generated in `trial_totals()` because it's included in `imports_mctable` and the required data exists in `imports_mcmodule$data`.
+
+```{r}
+print(imports_mcmodule$data$imports_data[1:4])
+
+imports_mcmodule <- trial_totals(
+  mcmodule = imports_mcmodule,
+  mc_names = "no_detect_a",
+  trials_n = "animals_n",
+  subsets_n = "farms_n",
+  subsets_p = "h_prev",
+  mctable = imports_mctable
+)
+
+mc_summary(imports_mcmodule,"no_detect_a_set")
+```
 
 **Multiple group multilevel trials**
 

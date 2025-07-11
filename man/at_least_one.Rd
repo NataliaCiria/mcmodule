@@ -2,7 +2,7 @@
 % Please edit documentation in R/totals.R
 \name{at_least_one}
 \alias{at_least_one}
-\title{Calculate Combined Probability of Events (At least one)}
+\title{Combined Probability of Events (At least one)}
 \usage{
 at_least_one(mcmodule, mc_names, name = NULL, prefix = NULL, summary = TRUE)
 }
