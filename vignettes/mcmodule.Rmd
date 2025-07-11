@@ -197,33 +197,40 @@ $$ set\_p= 1-(1-trial\_p)^{trials\_n} $$
 In `imports_mcmodule`, we have the probability that an infected animal from an infected farm goes undetected ($no\_detect\_a$). When all animals (in a variate) have the same probability, we can use the total number of animals selected per farm ($animals\_n$) as the number of trials (`trials_n`) to determine the probability that at least one infected animal from one farm is not detected ($no\_detect\_set$). Note that while $animals\_n$ isn't defined as an mcnode in `imports_mcmodule` (not used in `imports_mcmodule$model_exp`), it can be automatically generated in `trial_totals()` because it's included in `imports_mctable` and the required data exists in `imports_mcmodule$data`.
 
 ```{r}
+# Probability that an infected animal from an infected farm is not detected (trial_p)
 mc_summary(imports_mcmodule,"no_detect_a", digits=2)[,-1]
 
+# Number of animals per farm (trials_n)
 print(imports_mcmodule$data$imports_data[c("pathogen","origin","animals_n_mean","animals_n_sd")])
 
+# Single-level trial
 imports_mcmodule <- trial_totals(
   mcmodule = imports_mcmodule,
-  mc_names = "no_detect_a",
+  mc_names = "no_detect_a", # trial_p
   trials_n = "animals_n",
   mctable = imports_mctable
 )
 
+# Probability that at least one infected animal from an infected farm is not detected
 mc_summary(imports_mcmodule,"no_detect_a_set", digits=2)[,-1]
 ```
 
 Assuming all farms are infected, we can add the number of farms ($farms\_n$) as the `subsets_n` argument to calculate the probability that at least one infected animal from any farm goes undetected.
 
 ```{r}
+# Number of farms (subsets_n)
 print(imports_mcmodule$data$imports_data[c("pathogen","origin","farms_n")])
 
+# Single-level trial, whith subsets
 imports_mcmodule <- trial_totals(
   mcmodule = imports_mcmodule,
-  mc_names = "no_detect_a",
+  mc_names = "no_detect_a", # trial_p
   trials_n = "animals_n",
   subsets_n = "farms_n",
   mctable = imports_mctable
 )
 
+# Probability that at least one infected animal from at least one infected farm is not detected
 mc_summary(imports_mcmodule,"no_detect_a_set", digits=2)[,-1]
 ```
 
@@ -249,20 +256,46 @@ Where:
 
 -   *set_p* represents the probability of a at least one trial of at least one subsetbeing a success
 
+``` mermaid
+graph LR
+    A["Farm Selection
+    (subset_n=farms_n)"] --> B["Farm Infected 
+    (subset_p=h_prev)"]
+    A --> C["Farm Not Infected
+    (1-h_prev)"]
+    B --> D["Animal Selection
+    (trials_n=animals_n)"]
+    D --> E["Animal Undetected
+    (trials_p=no_detect_a)"]
+    D --> F["Animal Detected
+    (1-no_detect_a)"]
+
+    
+    style A fill:#d0e0ff,stroke:#333
+    style B fill:#ffe0d0,stroke:#333
+    style C fill:#d0ffd0,stroke:#333
+    style D fill:#d0e0ff,stroke:#333
+    style E fill:#ffe0d0,stroke:#333
+    style F fill:#d0ffd0,stroke:#333
+```
+
 In our previous example, we assumed that all farms in `imports_mcmodule` were infected. However, if we want to account for the probability of a farm being infected based on regional herd prevalence ($h\_prev$), we should include this as the `subsets_p` parameter.
 
 ```{r}
+# Probability that a farm is infected
 print(imports_mcmodule$data$imports_data[c("pathogen","origin","h_prev_min","h_prev_max")])
 
+# Simple multilevel trial
 imports_mcmodule <- trial_totals(
   mcmodule = imports_mcmodule,
-  mc_names = "no_detect_a",
+  mc_names = "no_detect_a", # trial_p
   trials_n = "animals_n",
   subsets_n = "farms_n",
   subsets_p = "h_prev",
   mctable = imports_mctable
 )
 
+# Probability that at least one infected animal from at least one farm is not detected
 mc_summary(imports_mcmodule,"no_detect_a_set", digits=2)[,-1]
 ```
 
