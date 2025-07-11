@@ -213,7 +213,7 @@ mc_summary(imports_mcmodule,"no_detect_a_set")
 Assuming all farms are infected, we can add the number of farms ($farms\_n$) as the `subsets_n` argument to calculate the probability that at least one infected animal from any farm goes undetected.
 
 ```{r}
-mc_summary(imports_mcmodule,"farms_n")
+print(imports_mcmodule$data$imports_data[c("pathogen","origin","farms_n")])
 
 imports_mcmodule <- trial_totals(
   mcmodule = imports_mcmodule,

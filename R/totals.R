@@ -515,15 +515,6 @@ trial_totals <- function(mcmodule, mc_names,
     node_list
   }
 
-  # Configuration for name replacements (animal, farm, batch)
-  # TODO - NOTE: THIS IS ONLY FOR FARMRISK COMPATIBILITY CONSIDER REMOVING
-  name_replacements <- list(
-    trial = list(from = "^a", to = "tri", level = "_t_"),
-    subset = list(from = "^a", to = "sub", level = "_f_"),
-    set = list(from = "^a", to = "set", level = "_b_")
-  )
-
-
   # Configuration for calculations
   calculations <- list(
     trial = list(
@@ -601,26 +592,9 @@ trial_totals <- function(mcmodule, mc_names,
     clean_mc_name <- gsub(prefix, "", mc_name)
     p_a <- mcmodule$node_list[[mc_name]][["mcnode"]]
 
-
-    # TODO: Context to match???
-    # if (dim(p_a)[3] < nrow(data)&is.null(agg_keys)) {
-    #  p_a <- mc_match_data(mcmodule, mc_name, data)
-    # }
-
     # Process trial, subset and set levels
     for (level in c("trial", "subset", "set")) {
-      base_name <- gsub(
-        name_replacements[[level]]$from,
-        name_replacements[[level]]$to,
-        clean_mc_name
-      )
-
-      # Check if "_a_" is in the base_name, if not, add the level suffix
-      if (!grepl("^a_|_a_", mc_name)) {
-        base_name <- paste0(base_name, "_", level)
-      } else {
-        base_name <- gsub("_a_", name_replacements[[level]]$level, base_name)
-      }
+      base_name <- paste0(clean_mc_name, "_", level)
 
       # Process probability and number calculations
       for (calc_type in c("prob", "num")) {
