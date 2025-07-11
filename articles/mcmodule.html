@@ -380,7 +380,8 @@ generated in <code><a href="../reference/trial_totals.html">trial_totals()</a></
 <code>imports_mctable</code> and the required data exists in
 <code>imports_mcmodule$data</code>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/mc_summary.html">mc_summary</a></span><span class="op">(</span><span class="va">imports_mcmodule</span>,<span class="st">"no_detect_a"</span>, digits<span class="op">=</span><span class="fl">2</span><span class="op">)</span><span class="op">[</span>,<span class="op">-</span><span class="fl">1</span><span class="op">]</span></span>
+<code class="sourceCode R"><span><span class="co"># Probability that an infected animal from an infected farm is not detected (trial_p)</span></span>
+<span><span class="fu"><a href="../reference/mc_summary.html">mc_summary</a></span><span class="op">(</span><span class="va">imports_mcmodule</span>,<span class="st">"no_detect_a"</span>, digits<span class="op">=</span><span class="fl">2</span><span class="op">)</span><span class="op">[</span>,<span class="op">-</span><span class="fl">1</span><span class="op">]</span></span>
 <span><span class="co">#&gt;   pathogen origin mean     sd  Min 2.5%  25%  50%  75% 97.5%  Max  nsv Na's</span></span>
 <span><span class="co">#&gt; 1        a   nord 0.10 0.0079 0.08 0.08 0.09 0.10 0.10  0.11 0.11 1001    0</span></span>
 <span><span class="co">#&gt; 2        a  south 0.10 0.0081 0.08 0.08 0.09 0.10 0.10  0.11 0.11 1001    0</span></span>
@@ -389,6 +390,7 @@ generated in <code><a href="../reference/trial_totals.html">trial_totals()</a></
 <span><span class="co">#&gt; 5        b  south 0.22 0.0063 0.21 0.21 0.22 0.22 0.23  0.23 0.24 1001    0</span></span>
 <span><span class="co">#&gt; 6        b   east 0.53 0.0400 0.45 0.45 0.49 0.53 0.56  0.60 0.60 1001    0</span></span>
 <span></span>
+<span><span class="co"># Number of animals per farm (trials_n)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">imports_mcmodule</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">imports_data</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pathogen"</span>,<span class="st">"origin"</span>,<span class="st">"animals_n_mean"</span>,<span class="st">"animals_n_sd"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   pathogen origin animals_n_mean animals_n_sd</span></span>
 <span><span class="co">#&gt; 1        a   nord            100            6</span></span>
@@ -398,13 +400,15 @@ generated in <code><a href="../reference/trial_totals.html">trial_totals()</a></
 <span><span class="co">#&gt; 5        b  south            130            4</span></span>
 <span><span class="co">#&gt; 6        b   east            140            3</span></span>
 <span></span>
+<span><span class="co"># Single-level trial</span></span>
 <span><span class="va">imports_mcmodule</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/trial_totals.html">trial_totals</a></span><span class="op">(</span></span>
 <span>  mcmodule <span class="op">=</span> <span class="va">imports_mcmodule</span>,</span>
-<span>  mc_names <span class="op">=</span> <span class="st">"no_detect_a"</span>,</span>
+<span>  mc_names <span class="op">=</span> <span class="st">"no_detect_a"</span>, <span class="co"># trial_p</span></span>
 <span>  trials_n <span class="op">=</span> <span class="st">"animals_n"</span>,</span>
 <span>  mctable <span class="op">=</span> <span class="va">imports_mctable</span></span>
 <span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># Probability that at least one infected animal from an infected farm is not detected</span></span>
 <span><span class="fu"><a href="../reference/mc_summary.html">mc_summary</a></span><span class="op">(</span><span class="va">imports_mcmodule</span>,<span class="st">"no_detect_a_set"</span>, digits<span class="op">=</span><span class="fl">2</span><span class="op">)</span><span class="op">[</span>,<span class="op">-</span><span class="fl">1</span><span class="op">]</span></span>
 <span><span class="co">#&gt;   pathogen origin mean      sd  Min 2.5% 25% 50% 75% 97.5% Max  nsv Na's</span></span>
 <span><span class="co">#&gt; 1        a   nord    1 7.3e-05 1.00    1   1   1   1     1   1 1001    0</span></span>
@@ -418,7 +422,8 @@ generated in <code><a href="../reference/trial_totals.html">trial_totals()</a></
 as the <code>subsets_n</code> argument to calculate the probability that
 at least one infected animal from any farm goes undetected.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">imports_mcmodule</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">imports_data</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pathogen"</span>,<span class="st">"origin"</span>,<span class="st">"farms_n"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Number of farms (subsets_n)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">imports_mcmodule</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">imports_data</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pathogen"</span>,<span class="st">"origin"</span>,<span class="st">"farms_n"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   pathogen origin farms_n</span></span>
 <span><span class="co">#&gt; 1        a   nord       5</span></span>
 <span><span class="co">#&gt; 2        a  south      10</span></span>
@@ -427,14 +432,16 @@ at least one infected animal from any farm goes undetected.</p>
 <span><span class="co">#&gt; 5        b  south      10</span></span>
 <span><span class="co">#&gt; 6        b   east       7</span></span>
 <span></span>
+<span><span class="co"># Single-level trial, whith subsets</span></span>
 <span><span class="va">imports_mcmodule</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/trial_totals.html">trial_totals</a></span><span class="op">(</span></span>
 <span>  mcmodule <span class="op">=</span> <span class="va">imports_mcmodule</span>,</span>
-<span>  mc_names <span class="op">=</span> <span class="st">"no_detect_a"</span>,</span>
+<span>  mc_names <span class="op">=</span> <span class="st">"no_detect_a"</span>, <span class="co"># trial_p</span></span>
 <span>  trials_n <span class="op">=</span> <span class="st">"animals_n"</span>,</span>
 <span>  subsets_n <span class="op">=</span> <span class="st">"farms_n"</span>,</span>
 <span>  mctable <span class="op">=</span> <span class="va">imports_mctable</span></span>
 <span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># Probability that at least one infected animal from at least one infected farm is not detected</span></span>
 <span><span class="fu"><a href="../reference/mc_summary.html">mc_summary</a></span><span class="op">(</span><span class="va">imports_mcmodule</span>,<span class="st">"no_detect_a_set"</span>, digits<span class="op">=</span><span class="fl">2</span><span class="op">)</span><span class="op">[</span>,<span class="op">-</span><span class="fl">1</span><span class="op">]</span></span>
 <span><span class="co">#&gt;   pathogen origin mean      sd Min 2.5% 25% 50% 75% 97.5% Max  nsv Na's</span></span>
 <span><span class="co">#&gt; 1        a   nord    1 3.5e-18   1    1   1   1   1     1   1 1001    0</span></span>
@@ -472,14 +479,35 @@ selected</p></li>
 <li><p><em>set_p</em> represents the probability of a at least one trial
 of at least one subsetbeing a success</p></li>
 </ul>
+<pre class="mermaid"><code>graph LR
+    A["Farm Selection
+    (subset_n=farms_n)"] --&gt; B["Farm Infected 
+    (subset_p=h_prev)"]
+    A --&gt; C["Farm Not Infected
+    (1-h_prev)"]
+    B --&gt; D["Animal Selection
+    (trials_n=animals_n)"]
+    D --&gt; E["Animal Undetected
+    (trials_p=no_detect_a)"]
+    D --&gt; F["Animal Detected
+    (1-no_detect_a)"]
+
+    
+    style A fill:#d0e0ff,stroke:#333
+    style B fill:#ffe0d0,stroke:#333
+    style C fill:#d0ffd0,stroke:#333
+    style D fill:#d0e0ff,stroke:#333
+    style E fill:#ffe0d0,stroke:#333
+    style F fill:#d0ffd0,stroke:#333</code></pre>
 <p>In our previous example, we assumed that all farms in
 <code>imports_mcmodule</code> were infected. However, if we want to
 account for the probability of a farm being infected based on regional
 herd prevalence
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>h</mi><mi>_</mi><mi>p</mi><mi>r</mi><mi>e</mi><mi>v</mi></mrow><annotation encoding="application/x-tex">h\_prev</annotation></semantics></math>),
 we should include this as the <code>subsets_p</code> parameter.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">imports_mcmodule</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">imports_data</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pathogen"</span>,<span class="st">"origin"</span>,<span class="st">"h_prev_min"</span>,<span class="st">"h_prev_max"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Probability that a farm is infected</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">imports_mcmodule</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">imports_data</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pathogen"</span>,<span class="st">"origin"</span>,<span class="st">"h_prev_min"</span>,<span class="st">"h_prev_max"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   pathogen origin h_prev_min h_prev_max</span></span>
 <span><span class="co">#&gt; 1        a   nord       0.08       0.10</span></span>
 <span><span class="co">#&gt; 2        a  south       0.02       0.05</span></span>
@@ -488,15 +516,17 @@ we should include this as the <code>subsets_p</code> parameter.</p>
 <span><span class="co">#&gt; 5        b  south       0.25       0.30</span></span>
 <span><span class="co">#&gt; 6        b   east       0.30       0.50</span></span>
 <span></span>
+<span><span class="co"># Simple multilevel trial</span></span>
 <span><span class="va">imports_mcmodule</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/trial_totals.html">trial_totals</a></span><span class="op">(</span></span>
 <span>  mcmodule <span class="op">=</span> <span class="va">imports_mcmodule</span>,</span>
-<span>  mc_names <span class="op">=</span> <span class="st">"no_detect_a"</span>,</span>
+<span>  mc_names <span class="op">=</span> <span class="st">"no_detect_a"</span>, <span class="co"># trial_p</span></span>
 <span>  trials_n <span class="op">=</span> <span class="st">"animals_n"</span>,</span>
 <span>  subsets_n <span class="op">=</span> <span class="st">"farms_n"</span>,</span>
 <span>  subsets_p <span class="op">=</span> <span class="st">"h_prev"</span>,</span>
 <span>  mctable <span class="op">=</span> <span class="va">imports_mctable</span></span>
 <span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># Probability that at least one infected animal from at least one farm is not detected</span></span>
 <span><span class="fu"><a href="../reference/mc_summary.html">mc_summary</a></span><span class="op">(</span><span class="va">imports_mcmodule</span>,<span class="st">"no_detect_a_set"</span>, digits<span class="op">=</span><span class="fl">2</span><span class="op">)</span><span class="op">[</span>,<span class="op">-</span><span class="fl">1</span><span class="op">]</span></span>
 <span><span class="co">#&gt;   pathogen origin mean     sd  Min 2.5%  25%  50%  75% 97.5%  Max  nsv Na's</span></span>
 <span><span class="co">#&gt; 1        a   nord 0.38 0.0200 0.34 0.34 0.36 0.38 0.39  0.41 0.41 1001    0</span></span>
