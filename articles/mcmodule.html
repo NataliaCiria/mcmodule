@@ -380,21 +380,22 @@ generated in <code><a href="../reference/trial_totals.html">trial_totals()</a></
 <code>imports_mctable</code> and the required data exists in
 <code>imports_mcmodule$data</code>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/mc_summary.html">mc_summary</a></span><span class="op">(</span><span class="va">imports_mcmodule</span>,<span class="st">"no_detect_a"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;       mc_name pathogen origin       mean          sd        Min       2.5%</span></span>
-<span><span class="co">#&gt; 1 no_detect_a        a   nord 0.09655845 0.007867569 0.08227174 0.08357236</span></span>
-<span><span class="co">#&gt; 2 no_detect_a        a  south 0.09609737 0.008076782 0.08226929 0.08322944</span></span>
-<span><span class="co">#&gt; 3 no_detect_a        a   east 0.17521166 0.014629736 0.15001055 0.15103984</span></span>
-<span><span class="co">#&gt; 4 no_detect_a        b   nord 0.07917899 0.012103587 0.05063742 0.05686249</span></span>
-<span><span class="co">#&gt; 5 no_detect_a        b  south 0.22164329 0.006323118 0.20579745 0.20926038</span></span>
-<span><span class="co">#&gt; 6 no_detect_a        b   east 0.52710914 0.042619591 0.45007084 0.45489969</span></span>
-<span><span class="co">#&gt;          25%        50%        75%     97.5%       Max  nsv Na's</span></span>
-<span><span class="co">#&gt; 1 0.08968577 0.09688963 0.10333423 0.1094528 0.1105342 1001    0</span></span>
-<span><span class="co">#&gt; 2 0.08895608 0.09608131 0.10346753 0.1093207 0.1104952 1001    0</span></span>
-<span><span class="co">#&gt; 3 0.16211006 0.17587347 0.18756786 0.1981793 0.1999876 1001    0</span></span>
-<span><span class="co">#&gt; 4 0.07115084 0.07884401 0.08781699 0.1030421 0.1143716 1001    0</span></span>
-<span><span class="co">#&gt; 5 0.21697495 0.22165162 0.22626829 0.2338817 0.2379286 1001    0</span></span>
-<span><span class="co">#&gt; 6 0.49043718 0.52811327 0.56243956 0.5961684 0.5996813 1001    0</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/mc_summary.html">mc_summary</a></span><span class="op">(</span><span class="va">imports_mcmodule</span>,<span class="st">"no_detect_a"</span>, digits<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span>
+<span><span class="co">#&gt;       mc_name pathogen origin mean     sd  Min 2.5%  25%  50%  75% 97.5%  Max</span></span>
+<span><span class="co">#&gt; 1 no_detect_a        a   nord 0.10 0.0079 0.08 0.08 0.09 0.10 0.10  0.11 0.11</span></span>
+<span><span class="co">#&gt; 2 no_detect_a        a  south 0.10 0.0081 0.08 0.08 0.09 0.10 0.10  0.11 0.11</span></span>
+<span><span class="co">#&gt; 3 no_detect_a        a   east 0.18 0.0100 0.15 0.15 0.16 0.18 0.19  0.20 0.20</span></span>
+<span><span class="co">#&gt; 4 no_detect_a        b   nord 0.08 0.0100 0.05 0.06 0.07 0.08 0.09  0.10 0.11</span></span>
+<span><span class="co">#&gt; 5 no_detect_a        b  south 0.22 0.0063 0.21 0.21 0.22 0.22 0.23  0.23 0.24</span></span>
+<span><span class="co">#&gt; 6 no_detect_a        b   east 0.53 0.0400 0.45 0.45 0.49 0.53 0.56  0.60 0.60</span></span>
+<span><span class="co">#&gt;    nsv Na's</span></span>
+<span><span class="co">#&gt; 1 1001    0</span></span>
+<span><span class="co">#&gt; 2 1001    0</span></span>
+<span><span class="co">#&gt; 3 1001    0</span></span>
+<span><span class="co">#&gt; 4 1001    0</span></span>
+<span><span class="co">#&gt; 5 1001    0</span></span>
+<span><span class="co">#&gt; 6 1001    0</span></span>
+<span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">imports_mcmodule</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">imports_data</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pathogen"</span>,<span class="st">"origin"</span>,<span class="st">"animals_n_mean"</span>,<span class="st">"animals_n_sd"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   pathogen origin animals_n_mean animals_n_sd</span></span>
 <span><span class="co">#&gt; 1        a   nord            100            6</span></span>
@@ -411,21 +412,21 @@ generated in <code><a href="../reference/trial_totals.html">trial_totals()</a></
 <span>  mctable <span class="op">=</span> <span class="va">imports_mctable</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/mc_summary.html">mc_summary</a></span><span class="op">(</span><span class="va">imports_mcmodule</span>,<span class="st">"no_detect_a_set"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;           mc_name pathogen origin      mean           sd       Min      2.5%</span></span>
-<span><span class="co">#&gt; 1 no_detect_a_set        a   nord 0.9999344 7.271373e-05 0.9994190 0.9997340</span></span>
-<span><span class="co">#&gt; 2 no_detect_a_set        a  south 0.9999945 9.174980e-06 0.9998817 0.9999651</span></span>
-<span><span class="co">#&gt; 3 no_detect_a_set        a   east 1.0000000 3.759259e-10 1.0000000 1.0000000</span></span>
-<span><span class="co">#&gt; 4 no_detect_a_set        b   nord 0.9994337 7.901747e-04 0.9939744 0.9970818</span></span>
-<span><span class="co">#&gt; 5 no_detect_a_set        b  south 1.0000000 4.055315e-14 1.0000000 1.0000000</span></span>
-<span><span class="co">#&gt; 6 no_detect_a_set        b   east 1.0000000 0.000000e+00 1.0000000 1.0000000</span></span>
-<span><span class="co">#&gt;         25%       50%       75%     97.5%       Max  nsv Na's</span></span>
-<span><span class="co">#&gt; 1 0.9999148 0.9999601 0.9999825 0.9999952 0.9999982 1001    0</span></span>
-<span><span class="co">#&gt; 2 0.9999936 0.9999979 0.9999993 0.9999999 1.0000000 1001    0</span></span>
-<span><span class="co">#&gt; 3 1.0000000 1.0000000 1.0000000 1.0000000 1.0000000 1001    0</span></span>
-<span><span class="co">#&gt; 4 0.9993747 0.9997226 0.9998992 0.9999833 0.9999951 1001    0</span></span>
-<span><span class="co">#&gt; 5 1.0000000 1.0000000 1.0000000 1.0000000 1.0000000 1001    0</span></span>
-<span><span class="co">#&gt; 6 1.0000000 1.0000000 1.0000000 1.0000000 1.0000000 1001    0</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/mc_summary.html">mc_summary</a></span><span class="op">(</span><span class="va">imports_mcmodule</span>,<span class="st">"no_detect_a_set"</span>, digits<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span>
+<span><span class="co">#&gt;           mc_name pathogen origin mean      sd  Min 2.5% 25% 50% 75% 97.5% Max</span></span>
+<span><span class="co">#&gt; 1 no_detect_a_set        a   nord    1 7.3e-05 1.00    1   1   1   1     1   1</span></span>
+<span><span class="co">#&gt; 2 no_detect_a_set        a  south    1 9.2e-06 1.00    1   1   1   1     1   1</span></span>
+<span><span class="co">#&gt; 3 no_detect_a_set        a   east    1 3.8e-10 1.00    1   1   1   1     1   1</span></span>
+<span><span class="co">#&gt; 4 no_detect_a_set        b   nord    1 7.9e-04 0.99    1   1   1   1     1   1</span></span>
+<span><span class="co">#&gt; 5 no_detect_a_set        b  south    1 4.1e-14 1.00    1   1   1   1     1   1</span></span>
+<span><span class="co">#&gt; 6 no_detect_a_set        b   east    1 0.0e+00 1.00    1   1   1   1     1   1</span></span>
+<span><span class="co">#&gt;    nsv Na's</span></span>
+<span><span class="co">#&gt; 1 1001    0</span></span>
+<span><span class="co">#&gt; 2 1001    0</span></span>
+<span><span class="co">#&gt; 3 1001    0</span></span>
+<span><span class="co">#&gt; 4 1001    0</span></span>
+<span><span class="co">#&gt; 5 1001    0</span></span>
+<span><span class="co">#&gt; 6 1001    0</span></span></code></pre></div>
 <p>Assuming all farms are infected, we can add the number of farms
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mi>a</mi><mi>r</mi><mi>m</mi><mi>s</mi><mi>_</mi><mi>n</mi></mrow><annotation encoding="application/x-tex">farms\_n</annotation></semantics></math>)
 as the <code>subsets_n</code> argument to calculate the probability that
@@ -448,21 +449,21 @@ at least one infected animal from any farm goes undetected.</p>
 <span>  mctable <span class="op">=</span> <span class="va">imports_mctable</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/mc_summary.html">mc_summary</a></span><span class="op">(</span><span class="va">imports_mcmodule</span>,<span class="st">"no_detect_a_set"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;           mc_name pathogen origin mean           sd Min 2.5% 25% 50% 75% 97.5%</span></span>
-<span><span class="co">#&gt; 1 no_detect_a_set        a   nord    1 3.510833e-18   1    1   1   1   1     1</span></span>
-<span><span class="co">#&gt; 2 no_detect_a_set        a  south    1 0.000000e+00   1    1   1   1   1     1</span></span>
-<span><span class="co">#&gt; 3 no_detect_a_set        a   east    1 0.000000e+00   1    1   1   1   1     1</span></span>
-<span><span class="co">#&gt; 4 no_detect_a_set        b   nord    1 3.207807e-13   1    1   1   1   1     1</span></span>
-<span><span class="co">#&gt; 5 no_detect_a_set        b  south    1 0.000000e+00   1    1   1   1   1     1</span></span>
-<span><span class="co">#&gt; 6 no_detect_a_set        b   east    1 0.000000e+00   1    1   1   1   1     1</span></span>
-<span><span class="co">#&gt;   Max  nsv Na's</span></span>
-<span><span class="co">#&gt; 1   1 1001    0</span></span>
-<span><span class="co">#&gt; 2   1 1001    0</span></span>
-<span><span class="co">#&gt; 3   1 1001    0</span></span>
-<span><span class="co">#&gt; 4   1 1001    0</span></span>
-<span><span class="co">#&gt; 5   1 1001    0</span></span>
-<span><span class="co">#&gt; 6   1 1001    0</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/mc_summary.html">mc_summary</a></span><span class="op">(</span><span class="va">imports_mcmodule</span>,<span class="st">"no_detect_a_set"</span>, digits<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span>
+<span><span class="co">#&gt;           mc_name pathogen origin mean      sd Min 2.5% 25% 50% 75% 97.5% Max</span></span>
+<span><span class="co">#&gt; 1 no_detect_a_set        a   nord    1 3.5e-18   1    1   1   1   1     1   1</span></span>
+<span><span class="co">#&gt; 2 no_detect_a_set        a  south    1 0.0e+00   1    1   1   1   1     1   1</span></span>
+<span><span class="co">#&gt; 3 no_detect_a_set        a   east    1 0.0e+00   1    1   1   1   1     1   1</span></span>
+<span><span class="co">#&gt; 4 no_detect_a_set        b   nord    1 3.2e-13   1    1   1   1   1     1   1</span></span>
+<span><span class="co">#&gt; 5 no_detect_a_set        b  south    1 0.0e+00   1    1   1   1   1     1   1</span></span>
+<span><span class="co">#&gt; 6 no_detect_a_set        b   east    1 0.0e+00   1    1   1   1   1     1   1</span></span>
+<span><span class="co">#&gt;    nsv Na's</span></span>
+<span><span class="co">#&gt; 1 1001    0</span></span>
+<span><span class="co">#&gt; 2 1001    0</span></span>
+<span><span class="co">#&gt; 3 1001    0</span></span>
+<span><span class="co">#&gt; 4 1001    0</span></span>
+<span><span class="co">#&gt; 5 1001    0</span></span>
+<span><span class="co">#&gt; 6 1001    0</span></span></code></pre></div>
 </div>
 <div class="section level5">
 <h5 id="multilevel-trials">Multilevel trials<a class="anchor" aria-label="anchor" href="#multilevel-trials"></a>
@@ -517,21 +518,21 @@ we should include this as the <code>subsets_p</code> parameter.</p>
 <span>  mctable <span class="op">=</span> <span class="va">imports_mctable</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/mc_summary.html">mc_summary</a></span><span class="op">(</span><span class="va">imports_mcmodule</span>,<span class="st">"no_detect_a_set"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;           mc_name pathogen origin      mean          sd       Min      2.5%</span></span>
-<span><span class="co">#&gt; 1 no_detect_a_set        a   nord 0.3751423 0.019733152 0.3409524 0.3426460</span></span>
-<span><span class="co">#&gt; 2 no_detect_a_set        a  south 0.2983362 0.063870551 0.1832968 0.1895545</span></span>
-<span><span class="co">#&gt; 3 no_detect_a_set        a   east 0.6036920 0.044480372 0.5226157 0.5280721</span></span>
-<span><span class="co">#&gt; 4 no_detect_a_set        b   nord 0.9874145 0.008134916 0.9687223 0.9703162</span></span>
-<span><span class="co">#&gt; 5 no_detect_a_set        b  south 0.9595645 0.008106003 0.9437070 0.9445905</span></span>
-<span><span class="co">#&gt; 6 no_detect_a_set        b   east 0.9669209 0.020362719 0.9178690 0.9221780</span></span>
-<span><span class="co">#&gt;         25%       50%       75%     97.5%       Max  nsv Na's</span></span>
-<span><span class="co">#&gt; 1 0.3582775 0.3750435 0.3917222 0.4076169 0.4094941 1001    0</span></span>
-<span><span class="co">#&gt; 2 0.2423500 0.3017989 0.3569197 0.3967448 0.4012105 1001    0</span></span>
-<span><span class="co">#&gt; 3 0.5676385 0.6023678 0.6422033 0.6749761 0.6791340 1001    0</span></span>
-<span><span class="co">#&gt; 4 0.9812589 0.9894601 0.9945844 0.9973065 0.9975475 1001    0</span></span>
-<span><span class="co">#&gt; 5 0.9530900 0.9606450 0.9667288 0.9711794 0.9717423 1001    0</span></span>
-<span><span class="co">#&gt; 6 0.9524917 0.9725558 0.9840094 0.9916157 0.9921511 1001    0</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/mc_summary.html">mc_summary</a></span><span class="op">(</span><span class="va">imports_mcmodule</span>,<span class="st">"no_detect_a_set"</span>, digits<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span>
+<span><span class="co">#&gt;           mc_name pathogen origin mean     sd  Min 2.5%  25%  50%  75% 97.5%</span></span>
+<span><span class="co">#&gt; 1 no_detect_a_set        a   nord 0.38 0.0200 0.34 0.34 0.36 0.38 0.39  0.41</span></span>
+<span><span class="co">#&gt; 2 no_detect_a_set        a  south 0.30 0.0600 0.18 0.19 0.24 0.30 0.36  0.40</span></span>
+<span><span class="co">#&gt; 3 no_detect_a_set        a   east 0.60 0.0400 0.52 0.53 0.57 0.60 0.64  0.67</span></span>
+<span><span class="co">#&gt; 4 no_detect_a_set        b   nord 0.99 0.0081 0.97 0.97 0.98 0.99 0.99  1.00</span></span>
+<span><span class="co">#&gt; 5 no_detect_a_set        b  south 0.96 0.0081 0.94 0.94 0.95 0.96 0.97  0.97</span></span>
+<span><span class="co">#&gt; 6 no_detect_a_set        b   east 0.97 0.0200 0.92 0.92 0.95 0.97 0.98  0.99</span></span>
+<span><span class="co">#&gt;    Max  nsv Na's</span></span>
+<span><span class="co">#&gt; 1 0.41 1001    0</span></span>
+<span><span class="co">#&gt; 2 0.40 1001    0</span></span>
+<span><span class="co">#&gt; 3 0.68 1001    0</span></span>
+<span><span class="co">#&gt; 4 1.00 1001    0</span></span>
+<span><span class="co">#&gt; 5 0.97 1001    0</span></span>
+<span><span class="co">#&gt; 6 0.99 1001    0</span></span></code></pre></div>
 <p><strong>Multiple group multilevel trials</strong></p>
 <p>In multiple group multilevel trials, several variates (groups) can
 belong to the same subset. For example, when selecting animals of
