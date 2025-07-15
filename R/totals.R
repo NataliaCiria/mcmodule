@@ -440,8 +440,9 @@ trial_totals <- function(mcmodule, mc_names,
       mc_name_name <- deparse(substitute(mc_name))
       assign(mc_name_name, paste0(mc_name, "_", suffix), envir = parent.frame())
       # Add agg_keys to metadata
-      mcmodule$node_list[[mc_name]][["agg_keys"]] <- agg_keys
+      mcmodule$node_list[[paste0(mc_name, "_", suffix)]][["agg_keys"]] <- agg_keys
       # Reassign mcmodule name (defaults to "mcmodule")
+      mcmodule$node_list[[paste0(mc_name, "_", suffix)]][["module"]] <- module_name
       mcmodule$node_list[[mc_name]][["module"]] <- module_name
     }
     return(mcmodule)
@@ -583,9 +584,10 @@ trial_totals <- function(mcmodule, mc_names,
       assign("mc_name", paste0(mc_name, "_", suffix))
       keys_names <- agg_keys
       # Reassign mcmodule name (defaults to "mcmodule")
+      mcmodule$node_list[[paste0(mc_name, "_", suffix)]][["module"]] <- module_name
       mcmodule$node_list[[mc_name]][["module"]] <- module_name
       # Add agg_keys to metadata
-      mcmodule$node_list[[mc_name]][["agg_keys"]] <- agg_keys
+      mcmodule$node_list[[paste0(mc_name, "_", suffix)]][["agg_keys"]] <- agg_keys
     } else {
       keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
     }
