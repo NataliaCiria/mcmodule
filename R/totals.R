@@ -213,6 +213,7 @@ agg_totals <- function(mcmodule, mc_name,
                        keep_variates = FALSE,
                        agg_func = NULL) {
   if (!(is.null(agg_func) || agg_func %in% c("prob", "avg", "sum"))) stop("Aggregation function must be prob, avg, sum or NULL")
+  if(all(keys_names=="scenario_id")) message("Keys to aggreggate by not provided, using 'scenario_id', by default")
 
   # Extract module name and node data
   module_name <- deparse(substitute(mcmodule))
@@ -392,7 +393,7 @@ trial_totals <- function(mcmodule, mc_names,
 
   data <- mcmodule$data[[data_name]]
 
-  nodes_keys <- lapply(mc_names, function(x) mc_keys(mcmodule, x))
+  nodes_keys <- lapply(mc_names, function(x) mc_keys(mcmodule, x, agg_keys))
 
   # Function for individual mcnode creation and processing
   process_mcnode <- function(mc_name, node_type, mcmodule, data, module_name, agg_keys, suffix, mctable, keep_variates, agg_func = NULL) {
@@ -589,7 +590,11 @@ trial_totals <- function(mcmodule, mc_names,
       keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
     }
 
-    clean_mc_name <- gsub(prefix, "", mc_name)
+    clean_mc_name <- ifelse(is.null(name),
+                            gsub(prefix, "", mc_name),
+                            name
+    )
+
     p_a <- mcmodule$node_list[[mc_name]][["mcnode"]]
 
     # Process trial, subset and set levels

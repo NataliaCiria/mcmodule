@@ -60,7 +60,7 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
 
   # Check for duplicates in baseline scenario
   if (any(duplicated(data[data$scenario_id == "0", keys_names]))) {
-    message(sprintf("Duplicated keys in scenario 0 for %s", mc_name))
+    message(paste0(sum(duplicated(data[data$scenario_id == "0", keys_names]))," variates per group for ", mc_name))
   }
 
   # Return only requested columns
