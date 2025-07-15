@@ -7,7 +7,7 @@
 agg_totals(
   mcmodule,
   mc_name,
-  keys_names = c("scenario_id"),
+  keys_names = NULL,
   suffix = "agg",
   name = NULL,
   summary = TRUE,

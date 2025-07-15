@@ -206,14 +206,17 @@ generate_all_name <- function(mc_names) {
 #' print(imports_mcmodule$node_list$no_detect_a_agg$summary)
 #' @export
 agg_totals <- function(mcmodule, mc_name,
-                       keys_names = c("scenario_id"),
+                       keys_names = NULL,
                        suffix = "agg",
                        name = NULL,
                        summary = TRUE,
                        keep_variates = FALSE,
                        agg_func = NULL) {
   if (!(is.null(agg_func) || agg_func %in% c("prob", "avg", "sum"))) stop("Aggregation function must be prob, avg, sum or NULL")
-  if(all(keys_names=="scenario_id")) message("Keys to aggreggate by not provided, using 'scenario_id', by default")
+  if(is.null(keys_names)){
+    keys_names<-"scenario_id"
+    message("Keys to aggreggate by not provided, using 'scenario_id', by default")
+  }
 
   # Extract module name and node data
   module_name <- deparse(substitute(mcmodule))
@@ -435,7 +438,17 @@ trial_totals <- function(mcmodule, mc_names,
 
     if (!is.null(agg_keys)) {
       # Aggregate node if agg_keys provided
-      mcmodule <- agg_totals(mcmodule, mc_name, keys_names = agg_keys, suffix = suffix, agg_func = agg_func, keep_variates = keep_variates)
+      messages  <- character(0)
+      withCallingHandlers(
+        expr = {
+          mcmodule <- agg_totals(mcmodule, mc_name, keys_names = agg_keys, suffix = suffix, agg_func = agg_func, keep_variates = keep_variates)
+        },
+        message = function(m) {
+          messages <<- c(messages, conditionMessage(m))
+          invokeRestart("muffleMessage")
+        }
+      )
+      if(!all(grepl("variates per group for", messages ))) message(messages)
       # Change mcnode name to agg version name
       mc_name_name <- deparse(substitute(mc_name))
       assign(mc_name_name, paste0(mc_name, "_", suffix), envir = parent.frame())
@@ -579,7 +592,17 @@ trial_totals <- function(mcmodule, mc_names,
   for (mc_name in mc_names) {
     if (!is.null(agg_keys)) {
       # Aggregate node if agg_keys provided
-      mcmodule <- agg_totals(mcmodule, mc_name, keys_names = agg_keys, suffix = suffix, keep_variates = keep_variates)
+      messages  <- character(0)
+      withCallingHandlers(
+        expr = {
+          mcmodule <- agg_totals(mcmodule, mc_name, keys_names = agg_keys, suffix = suffix, keep_variates = keep_variates)
+        },
+        message = function(m) {
+          messages <<- c(messages, conditionMessage(m))
+          invokeRestart("muffleMessage")
+        }
+      )
+      if(!all(grepl("variates per group for", messages ))) message(messages)
       # Change mcnode name to agg version name
       assign("mc_name", paste0(mc_name, "_", suffix))
       keys_names <- agg_keys
