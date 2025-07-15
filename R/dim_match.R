@@ -59,8 +59,15 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
   }
 
   # Check for duplicates in baseline scenario
-  if (any(duplicated(data[data$scenario_id == "0", keys_names]))) {
-    message(paste0(sum(duplicated(data[data$scenario_id == "0", keys_names]))," variates per group for ", mc_name))
+  scenario_0<- if(any(data$scenario_id=="0")) "0" else data$scenario_id[1]
+  if (any(duplicated(data[data$scenario_id == scenario_0, keys_names]))) {
+    data_0<-data[data$scenario_id == scenario_0, keys_names]
+    if(length(data_0)==1&&is.data.frame(data_0)){
+      var_groups<-table(apply(data_0 , 1 , paste , collapse = "-" ))
+    }else{
+      var_groups<-table(data_0)
+    }
+    message(paste0(max(var_groups)," variates per group for ", mc_name))
   }
 
   # Return only requested columns
