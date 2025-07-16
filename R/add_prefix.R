@@ -44,7 +44,7 @@ add_prefix <- function(mcmodule, prefix = NULL, rewrite_module = NULL) {
   }
 
   # Get unique modules
-  modules <- unique(c(unlist(strsplit(names(unlist(mcmodule$model_exp)), split = "\\.")), prefix))
+  modules <- unique(c(unlist(strsplit(names(unlist(mcmodule$exp)), split = "\\.")), prefix))
 
   # Add prefix to node names and inputs
   node_names[node_module[node_names] %in% modules] <- paste0(prefix, "_", node_names[node_module[node_names] %in% modules])
