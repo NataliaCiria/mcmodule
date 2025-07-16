@@ -13,9 +13,10 @@ trial_totals(
   name = NULL,
   prefix = NULL,
   combine_prob = TRUE,
+  level_suffix = c("trial", "subset", "set"),
   mctable = set_mctable(),
   agg_keys = NULL,
-  suffix = "agg",
+  agg_suffix = "agg",
   keep_variates = FALSE,
   summary = TRUE
 )
@@ -35,17 +36,19 @@ trial_totals(
 
 \item{prefix}{Prefix for output node names (optional)}
 
-\item{combine_prob}{Process all nodes if TRUE (default)}
+\item{combine_prob}{Process all nodes if TRUE (default: TRUE)}
+
+\item{level_suffix}{A list of suffixes for each hierarchical level (default: c("_p", "_subset", "_set"))}
 
 \item{mctable}{Data frame containing Monte Carlo nodes definitions (default: set_mctable())}
 
 \item{agg_keys}{Column names for aggregation (optional)}
 
-\item{suffix}{Suffix for aggregated names (default: "agg")}
+\item{agg_suffix}{Suffix for aggregated node names (default: "agg")}
 
 \item{keep_variates}{whether to preserve individual values (default: FALSE)}
 
-\item{summary}{Include summary statistics if TRUE (default)}
+\item{summary}{Include summary statistics if TRUE (default: TRUE)}
 }
 \value{
 Updated mcmodule object containing:

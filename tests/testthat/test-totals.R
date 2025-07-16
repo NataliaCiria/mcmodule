@@ -268,6 +268,18 @@ suppressMessages({
 
     expect_true("p_1_x_set"%in%names(result$node_list))
 
+    # Test with custom level suffix
+    result <- trial_totals(
+      test_module,
+      mc_names = "p_1_x",
+      trials_n = "times_n",
+      subsets_n = "sites_n",
+      subsets_p = "p_2",
+      level_suffix = c("singletime", "singlesite", "allsites")
+    )
+
+    expect_true("p_1_x_singletime"%in%names(result$node_list))
+
     # Test with custom suffix and scenario_id aggregation
     result <- trial_totals(
       test_module,
@@ -276,7 +288,7 @@ suppressMessages({
       subsets_n = "sites_n",
       subsets_p = "p_2",
       agg_keys = "scenario_id",
-      suffix = "site"
+      agg_suffix = "site"
     )
     expect_true("p_1_x_site_set"%in%names(result$node_list))
 
@@ -324,4 +336,5 @@ suppressMessages({
     # Clean up
     reset_mctable()
   })
+
 })
