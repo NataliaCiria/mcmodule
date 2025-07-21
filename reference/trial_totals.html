@@ -54,7 +54,7 @@ handles nested sampling with conditional probabilities.</p>
 <span>  name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  prefix <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  combine_prob <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  level_suffix <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"trial"</span>, <span class="st">"subset"</span>, <span class="st">"set"</span><span class="op">)</span>,</span>
+<span>  level_suffix <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>trial <span class="op">=</span> <span class="st">"trial"</span>, subset <span class="op">=</span> <span class="st">"subset"</span>, set <span class="op">=</span> <span class="st">"set"</span><span class="op">)</span>,</span>
 <span>  mctable <span class="op">=</span> <span class="fu"><a href="set_mctable.html">set_mctable</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  agg_keys <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  agg_suffix <span class="op">=</span> <span class="st">"agg"</span>,</span>
@@ -100,7 +100,7 @@ handles nested sampling with conditional probabilities.</p>
 
 
 <dt id="arg-level-suffix">level_suffix<a class="anchor" aria-label="anchor" href="#arg-level-suffix"></a></dt>
-<dd><p>A list of suffixes for each hierarchical level (default: c("_p", "_subset", "_set"))</p></dd>
+<dd><p>A list of suffixes for each hierarchical level (default: c(trial="trial",subset="subset",set="set"))</p></dd>
 
 
 <dt id="arg-mctable">mctable<a class="anchor" aria-label="anchor" href="#arg-mctable"></a></dt>
