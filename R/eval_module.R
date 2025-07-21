@@ -124,7 +124,7 @@ eval_module <- function(exp, data, param_names = NULL,
             # Match if previous node data is not equal to new data
             if(!(nrow(prev_data) == nrow(data)&&
                  ncol(prev_data) != ncol(data)&&
-                 all(prev_data==data))) {
+                 all(prev_data==data,na.rm=TRUE))) {
 
               if (is.null(prev_node_list_i[[mc_name]][["agg_keys"]])||prev_node_list_i[[mc_name]][["keep_variates"]]) {
                 match_prev <- mc_match_data(prev_mcmodule, mc_name, data)

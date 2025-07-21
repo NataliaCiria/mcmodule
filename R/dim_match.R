@@ -258,7 +258,7 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
   if(data_name_x==data_name_y&&
      nrow(keys_x) == nrow(keys_y)&&
      ncol(keys_x) != ncol(keys_y)&&
-     all(keys_x[intersect(names(keys_x),names(keys_y))]==keys_y[intersect(names(keys_x),names(keys_y))])){
+     all(keys_x[intersect(names(keys_x),names(keys_y))]==keys_y[intersect(names(keys_x),names(keys_y))],na.rm=TRUE)){
 
     # Return nodes as they are if they already match
     message(
