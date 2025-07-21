@@ -687,8 +687,6 @@ trial_totals <- function(mcmodule, mc_names,
         # Add summary if requested
         if (summary) {
           if (!is.null(agg_keys)) {
-            print(paste0("new_mc_name: ", new_mc_name, ", mc_name: ", mc_name, ", summary mc_name:"))
-            print(mcmodule$node_list[[mc_name]][["summary"]])
             mcmodule$node_list[[new_mc_name]][["summary"]] <- mc_summary(
               mcmodule = mcmodule,
               data = mcmodule$node_list[[mc_name]][["summary"]],
