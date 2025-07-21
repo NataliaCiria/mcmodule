@@ -619,7 +619,7 @@ trial_totals <- function(mcmodule, mc_names,
       if(!all(grepl("variates per group for", messages ))) message(messages)
       # Change mcnode name to agg version name
       assign("mc_name", paste0(mc_name, "_", agg_suffix))
-      keys_names <- agg_keys
+      keys_names <-if(!keep_variates) agg_keys else  mcmodule$node_list[[mc_name]][["keys"]]
       # Reassign mcmodule name (defaults to "mcmodule")
       mcmodule$node_list[[mc_name]][["module"]] <- module_name
       # Add agg_keys to metadata
