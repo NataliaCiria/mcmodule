@@ -13,7 +13,7 @@ trial_totals(
   name = NULL,
   prefix = NULL,
   combine_prob = TRUE,
-  level_suffix = c("trial", "subset", "set"),
+  level_suffix = c(trial = "trial", subset = "subset", set = "set"),
   mctable = set_mctable(),
   agg_keys = NULL,
   agg_suffix = "agg",
@@ -38,7 +38,7 @@ trial_totals(
 
 \item{combine_prob}{Process all nodes if TRUE (default: TRUE)}
 
-\item{level_suffix}{A list of suffixes for each hierarchical level (default: c("_p", "_subset", "_set"))}
+\item{level_suffix}{A list of suffixes for each hierarchical level (default: c(trial="trial",subset="subset",set="set"))}
 
 \item{mctable}{Data frame containing Monte Carlo nodes definitions (default: set_mctable())}
 

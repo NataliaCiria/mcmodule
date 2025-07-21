@@ -275,10 +275,22 @@ suppressMessages({
       trials_n = "times_n",
       subsets_n = "sites_n",
       subsets_p = "p_2",
-      level_suffix = c("singletime", "singlesite", "allsites")
+      level_suffix = c(trial="singletime", subset="singlesite", set="allsites")
     )
 
     expect_true("p_1_x_singletime"%in%names(result$node_list))
+
+    # Test with custom level suffix
+    result <- trial_totals(
+      test_module,
+      mc_names = "p_1_x",
+      trials_n = "times_n",
+      subsets_n = "sites_n",
+      subsets_p = "p_2",
+      level_suffix = c(set="allsites")
+    )
+
+    expect_true("p_1_x_trial"%in%names(result$node_list))
 
     # Test with custom suffix and scenario_id aggregation
     result <- trial_totals(

@@ -348,7 +348,7 @@ agg_totals <- function(mcmodule, mc_name,
 #' @param name Custom name for output nodes (optional)
 #' @param prefix Prefix for output node names (optional)
 #' @param combine_prob Process all nodes if TRUE (default: TRUE)
-#' @param level_suffix A list of suffixes for each hierarchical level (default: c("_p", "_subset", "_set"))
+#' @param level_suffix A list of suffixes for each hierarchical level (default: c(trial="trial",subset="subset",set="set"))
 #' @param mctable Data frame containing Monte Carlo nodes definitions (default: set_mctable())
 #' @param agg_keys Column names for aggregation (optional)
 #' @param agg_suffix Suffix for aggregated node names (default: "agg")
@@ -380,7 +380,7 @@ trial_totals <- function(mcmodule, mc_names,
                          name = NULL,
                          prefix = NULL,
                          combine_prob = TRUE,
-                         level_suffix = c("trial","subset","set"),
+                         level_suffix = c(trial="trial",subset="subset",set="set"),
                          mctable = set_mctable(),
                          agg_keys = NULL,
                          agg_suffix = "agg",
@@ -395,6 +395,10 @@ trial_totals <- function(mcmodule, mc_names,
   data_name <- unique(nodes_data_name)
 
   if (length(data_name) > 1) stop("data_name is not equal for all nodes")
+
+  if(!all(names(level_suffix)%in%c("trial","subset","set"))) stop("Suffixes for each hierarchical level must be defined as a named vector with the following structure: c(trial = '...', subset = '...', set = '...')")
+  #Fix missing level suffixes
+  level_suffix[setdiff(c("trial","subset","set"),names(level_suffix))]<-setdiff(c("trial","subset","set"),names(level_suffix))
 
   data <- mcmodule$data[[data_name]]
 
@@ -473,9 +477,11 @@ trial_totals <- function(mcmodule, mc_names,
   if (is.null(subsets_n)) {
     subsets_n_mc <- mcnode_na_rm(trials_n_mc / trials_n_mc, 1)
     subsets_n <- "1"
+    hierarchical_n <- FALSE
   } else {
     mcmodule <- process_mcnode(subsets_n, "subsets_n", mcmodule, data, module_name, agg_keys, agg_suffix, mctable, keep_variates, agg_func = "avg")
     subsets_n_mc <- mcmodule$node_list[[subsets_n]][["mcnode"]]
+    hierarchical_n <- TRUE
   }
 
   # If subsets_p is NULL, no multilevel probability, defaults to 1
@@ -483,10 +489,12 @@ trial_totals <- function(mcmodule, mc_names,
     multilevel <- FALSE
     subsets_p_mc <- mcnode_na_rm(trials_n_mc / trials_n_mc, 1)
     subsets_p <- "1"
+    hierarchical_p <- FALSE
   } else {
     multilevel <- TRUE
     mcmodule <- process_mcnode(subsets_p, "subsets_p", mcmodule, data, module_name, agg_keys, agg_suffix, mctable, keep_variates, agg_func = "avg")
     subsets_p_mc <- mcmodule$node_list[[subsets_p]][["mcnode"]]
+    hierarchical_p <- TRUE
   }
 
   prefix <- ifelse(is.null(prefix), "", paste0(prefix, "_"))
@@ -537,30 +545,30 @@ trial_totals <- function(mcmodule, mc_names,
     trial = list(
       prob = list(
         formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) p_a * subsets_p_mc,
-        description = "Probability of one %s trial",
-        suffix = paste0("_",level_suffix[[1]]),
+        description = paste0("Probability of one %s trial (",level_suffix[["trial"]],")"),
+        suffix = paste0("_",level_suffix[["trial"]]),
         expression = function(mc_name, subsets_p) paste0(subsets_p, "*", mc_name)
       ),
       num = list(
         formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) mcnode_na_rm(p_a / p_a, 1),
         description = "One %s trials",
-        suffix = paste0("_",level_suffix[[1]],"_n"),
+        suffix = paste0("_",level_suffix[["trial"]],"_n"),
         expression = function(mc_name) paste0("mcnode_na_rm(", mc_name, "/", mc_name, ", 1)")
       )
     ),
     subset = list(
       prob = list(
         formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) 1 - (1 - subsets_p_mc * (1 - (1 - p_a)^trials_n_mc)),
-        description = "Probability of at least one %s in a subset",
-        suffix = paste0("_",level_suffix[[2]]),
+        description = paste0("Probability of at least one %s in a subset",level_suffix[["subset"]],")"),
+        suffix = paste0("_",level_suffix[["subset"]]),
         expression = function(mc_name, trials_n, subsets_p) paste0("1-(1-", subsets_p, "*(1-(1-", mc_name, ")^", trials_n, "))")
       ),
       num = list(
         formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) {
           p_a * trials_n_mc * subsets_p_mc
         },
-        description = "Expected number of %s in a subset",
-        suffix = paste0("_",level_suffix[[2]],"_n"),
+        description = paste0("Expected number of %s in a subset",level_suffix[["subset"]],")"),
+        suffix = paste0("_",level_suffix[["subset"]],"_n"),
         expression = function(mc_name, trials_n, subsets_p) {
           paste0(mc_name, "*", trials_n, "*", subsets_p)
         }
@@ -571,8 +579,8 @@ trial_totals <- function(mcmodule, mc_names,
         formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) {
           1 - (1 - subsets_p_mc * (1 - (1 - p_a)^trials_n_mc))^subsets_n_mc
         },
-        description = "Probability of at least one %s in a set",
-        suffix = paste0("_",level_suffix[[3]]),
+        description =  paste0("Probability of at least one %s in a set",level_suffix[["set"]],")"),
+        suffix = paste0("_",level_suffix[["set"]]),
         expression = function(mc_name, trials_n, subsets_n, subsets_p) {
           paste0("1-(1-", subsets_p, "*(1-(1-", mc_name, ")^", trials_n, "))^", subsets_n)
         }
@@ -581,8 +589,8 @@ trial_totals <- function(mcmodule, mc_names,
         formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) {
           p_a * trials_n_mc * subsets_p_mc * subsets_n_mc
         },
-        description = "Expected number of %s in a set",
-        suffix = paste0("_",level_suffix[[3]],"_n"),
+        description =  paste0("Expected number of %s in a set",level_suffix[["set"]],")"),
+        suffix = paste0("_",level_suffix[["set"]],"_n"),
         expression = function(mc_name, trials_n, subsets_n, subsets_p) {
           paste0(mc_name, "*", trials_n, "*", subsets_p, "*", subsets_n)
         }
@@ -624,8 +632,20 @@ trial_totals <- function(mcmodule, mc_names,
 
     p_a <- mcmodule$node_list[[mc_name]][["mcnode"]]
 
-    # Process trial, subset and set levels
-    for (level in c("trial", "subset", "set")) {
+    # Process levels
+    all_levels<-if(hierarchical_n){
+      if(hierarchical_p){
+        c("trial", "subset", "set")
+      }else
+        c("subset", "set")
+    }else{
+      if(hierarchical_p){
+        c("trial","set")
+      }else
+        c("set")
+    }
+
+    for (level in all_levels) {
       # Process probability and number calculations
       for (calc_type in c("prob", "num")) {
         if(level=="trial"&calc_type=="num") next
