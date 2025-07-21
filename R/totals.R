@@ -188,7 +188,7 @@ generate_all_name <- function(mc_names) {
 #' - NULL: defaults to "sum" if mc_name ends in "_n", else defaults to "prob"
 #' @param mcmodule mcmodule object containing nodes and data
 #' @param mc_name name of node to aggregate
-#' @param keys_names grouping variables for aggregation
+#' @param agg_keys grouping variables for aggregation
 #' @param suffix suffix for output node name (default: "agg")
 #' @param name Custom name for output node (optional)
 #' @param summary whether to include summary statistics (default: TRUE)
@@ -201,27 +201,27 @@ generate_all_name <- function(mc_names) {
 #' @examples
 #' imports_mcmodule <- agg_totals(
 #'   imports_mcmodule, "no_detect_a",
-#'   keys_names = c("scenario_id", "pathogen")
+#'   agg_keys = c("scenario_id", "pathogen")
 #' )
 #' print(imports_mcmodule$node_list$no_detect_a_agg$summary)
 #' @export
 agg_totals <- function(mcmodule, mc_name,
-                       keys_names = NULL,
+                       agg_keys = NULL,
                        suffix = "agg",
                        name = NULL,
                        summary = TRUE,
                        keep_variates = FALSE,
                        agg_func = NULL) {
   if (!(is.null(agg_func) || agg_func %in% c("prob", "avg", "sum"))) stop("Aggregation function must be prob, avg, sum or NULL")
-  if(is.null(keys_names)){
-    keys_names<-"scenario_id"
+  if(is.null(agg_keys)){
+    agg_keys<-"scenario_id"
     message("Keys to aggreggate by not provided, using 'scenario_id', by default")
   }
 
   # Extract module name and node data
   module_name <- deparse(substitute(mcmodule))
   mcnode <- mcmodule$node_list[[mc_name]][["mcnode"]]
-  key_col <- mc_keys(mcmodule, mc_name, keys_names)
+  key_col <- mc_keys(mcmodule, mc_name, agg_keys)
   data_name <- mcmodule$node_list[[mc_name]][["data_name"]]
 
   agg_total_mc_name <- paste0(mc_name, "_", suffix)
@@ -248,12 +248,12 @@ agg_totals <- function(mcmodule, mc_name,
       mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
         paste(
           "Average value by:",
-          paste(keys_names, collapse = ", ")
+          paste(agg_keys, collapse = ", ")
         )
       mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
         paste0(
           "Average ", mc_name, " by: ",
-          paste(keys_names, collapse = ", ")
+          paste(agg_keys, collapse = ", ")
         )
     } else if ((is.null(agg_func) && grepl("_n$", mc_name)) || (!is.null(agg_func) && agg_func == "sum")) {
       # Sum for counts
@@ -261,12 +261,12 @@ agg_totals <- function(mcmodule, mc_name,
       mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
         paste(
           "Sum by:",
-          paste(keys_names, collapse = ", ")
+          paste(agg_keys, collapse = ", ")
         )
       mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
         paste0(
           mc_name, "_1+", mc_name, "_2+... by:",
-          paste(keys_names, collapse = ", ")
+          paste(agg_keys, collapse = ", ")
         )
     } else {
       # Combine probabilities
@@ -274,12 +274,12 @@ agg_totals <- function(mcmodule, mc_name,
       mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
         paste(
           "Combined probability assuming independence by:",
-          paste(keys_names, collapse = ", ")
+          paste(agg_keys, collapse = ", ")
         )
       mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
         paste0(
           "1-((1-", mc_name, "_1)*(1-", mc_name, "_2)...) by:",
-          paste(keys_names, collapse = ", ")
+          paste(agg_keys, collapse = ", ")
         )
     }
 
@@ -294,8 +294,8 @@ agg_totals <- function(mcmodule, mc_name,
         total_agg <- agg_index * total_lev
       }
 
-      new_keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
-      key_data <- mc_keys(mcmodule, mc_name)[new_keys_names]
+      new_agg_keys <- mcmodule$node_list[[mc_name]][["keys"]]
+      key_data <- mc_keys(mcmodule, mc_name)[new_agg_keys]
     } else {
       # One row per result
       if (!i == 1) {
@@ -303,7 +303,7 @@ agg_totals <- function(mcmodule, mc_name,
       } else {
         total_agg <- total_lev
       }
-      new_keys_names <- keys_names
+      new_agg_keys <- agg_keys
       key_data <- unique(key_col)
     }
   }
@@ -313,7 +313,7 @@ agg_totals <- function(mcmodule, mc_name,
   mcmodule$node_list[[agg_total_mc_name]][["type"]] <- "agg_total"
   mcmodule$node_list[[agg_total_mc_name]][["module"]] <- module_name
   mcmodule$node_list[[agg_total_mc_name]][["agg_data"]] <- key_levels
-  mcmodule$node_list[[agg_total_mc_name]][["agg_keys"]] <- new_keys_names
+  mcmodule$node_list[[agg_total_mc_name]][["agg_keys"]] <- new_agg_keys
   mcmodule$node_list[[agg_total_mc_name]][["keys"]] <-
     mcmodule$node_list[[mc_name]][["keys"]]
   mcmodule$node_list[[agg_total_mc_name]][["inputs"]] <- mc_name
@@ -325,7 +325,7 @@ agg_totals <- function(mcmodule, mc_name,
         mcmodule = mcmodule,
         data = key_data,
         mc_name = agg_total_mc_name,
-        keys_names = new_keys_names
+        keys_names = new_agg_keys
       )
   }
 
@@ -447,7 +447,7 @@ trial_totals <- function(mcmodule, mc_names,
       messages  <- character(0)
       withCallingHandlers(
         expr = {
-          mcmodule <- agg_totals(mcmodule, mc_name, keys_names = agg_keys, suffix = agg_suffix, agg_func = agg_func, keep_variates = keep_variates)
+          mcmodule <- agg_totals(mcmodule, mc_name, agg_keys = agg_keys, suffix = agg_suffix, agg_func = agg_func, keep_variates = keep_variates)
         },
         message = function(m) {
           messages <<- c(messages, conditionMessage(m))
@@ -551,7 +551,7 @@ trial_totals <- function(mcmodule, mc_names,
       ),
       num = list(
         formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) mcnode_na_rm(p_a / p_a, 1),
-        description = "One %s trials",
+        description = paste0("One %s trials (",level_suffix[["trial"]],")"),
         suffix = paste0("_",level_suffix[["trial"]],"_n"),
         expression = function(mc_name) paste0("mcnode_na_rm(", mc_name, "/", mc_name, ", 1)")
       )
@@ -559,7 +559,7 @@ trial_totals <- function(mcmodule, mc_names,
     subset = list(
       prob = list(
         formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) 1 - (1 - subsets_p_mc * (1 - (1 - p_a)^trials_n_mc)),
-        description = paste0("Probability of at least one %s in a subset",level_suffix[["subset"]],")"),
+        description = paste0("Probability of at least one %s in a subset (",level_suffix[["subset"]],")"),
         suffix = paste0("_",level_suffix[["subset"]]),
         expression = function(mc_name, trials_n, subsets_p) paste0("1-(1-", subsets_p, "*(1-(1-", mc_name, ")^", trials_n, "))")
       ),
@@ -567,7 +567,7 @@ trial_totals <- function(mcmodule, mc_names,
         formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) {
           p_a * trials_n_mc * subsets_p_mc
         },
-        description = paste0("Expected number of %s in a subset",level_suffix[["subset"]],")"),
+        description = paste0("Expected number of %s in a subset (",level_suffix[["subset"]],")"),
         suffix = paste0("_",level_suffix[["subset"]],"_n"),
         expression = function(mc_name, trials_n, subsets_p) {
           paste0(mc_name, "*", trials_n, "*", subsets_p)
@@ -579,7 +579,7 @@ trial_totals <- function(mcmodule, mc_names,
         formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) {
           1 - (1 - subsets_p_mc * (1 - (1 - p_a)^trials_n_mc))^subsets_n_mc
         },
-        description =  paste0("Probability of at least one %s in a set",level_suffix[["set"]],")"),
+        description =  paste0("Probability of at least one %s in a set (",level_suffix[["set"]],")"),
         suffix = paste0("_",level_suffix[["set"]]),
         expression = function(mc_name, trials_n, subsets_n, subsets_p) {
           paste0("1-(1-", subsets_p, "*(1-(1-", mc_name, ")^", trials_n, "))^", subsets_n)
@@ -589,7 +589,7 @@ trial_totals <- function(mcmodule, mc_names,
         formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) {
           p_a * trials_n_mc * subsets_p_mc * subsets_n_mc
         },
-        description =  paste0("Expected number of %s in a set",level_suffix[["set"]],")"),
+        description =  paste0("Expected number of %s in a set (",level_suffix[["set"]],")"),
         suffix = paste0("_",level_suffix[["set"]],"_n"),
         expression = function(mc_name, trials_n, subsets_n, subsets_p) {
           paste0(mc_name, "*", trials_n, "*", subsets_p, "*", subsets_n)
@@ -605,7 +605,7 @@ trial_totals <- function(mcmodule, mc_names,
       messages  <- character(0)
       withCallingHandlers(
         expr = {
-          mcmodule <- agg_totals(mcmodule, mc_name, keys_names = agg_keys, suffix = agg_suffix, keep_variates = keep_variates)
+          mcmodule <- agg_totals(mcmodule, mc_name, agg_keys = agg_keys, suffix = agg_suffix, keep_variates = keep_variates)
         },
         message = function(m) {
           messages <<- c(messages, conditionMessage(m))
@@ -687,6 +687,8 @@ trial_totals <- function(mcmodule, mc_names,
         # Add summary if requested
         if (summary) {
           if (!is.null(agg_keys)) {
+            print(paste0("new_mc_name: ", new_mc_name, ", mc_name: ", mc_name, ", summary mc_name:"))
+            print(mcmodule$node_list[[mc_name]][["summary"]])
             mcmodule$node_list[[new_mc_name]][["summary"]] <- mc_summary(
               mcmodule = mcmodule,
               data = mcmodule$node_list[[mc_name]][["summary"]],
