@@ -16,7 +16,8 @@
 #'     \item If data_keys provided: Sets the new data model and returns invisibly
 #'   }
 #' @examples
-#' set_data_keys(cattle_data_keys)
+#' print(imports_data_keys)
+#' set_data_keys(imports_data_keys)
 #' @export
 set_data_keys <- function(data_keys = NULL) {
   if (is.null(data_keys)) {

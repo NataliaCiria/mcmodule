@@ -8,7 +8,7 @@
 An mcmodule object with the following components:
 \describe{
 \item{data}{Input data frame with 6 rows and 13 variables}
-\item{model_exp}{Model expressions for calculating probabilities}
+\item{exp}{Model expressions for calculating probabilities}
 \item{node_list}{List of Monte Carlo nodes with simulation results}
 \item{modules}{Character vector of module names}
 }

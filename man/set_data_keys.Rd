@@ -25,5 +25,6 @@ Manages a global data model by either setting new data keys or retrieving the cu
 The data model consists of named lists containing column names and their associated key columns.
 }
 \examples{
-set_data_keys(cattle_data_keys)
+print(imports_data_keys)
+set_data_keys(imports_data_keys)
 }
