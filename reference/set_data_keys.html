@@ -64,8 +64,34 @@ The data model consists of named lists containing column names and their associa
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">set_data_keys</span><span class="op">(</span><span class="va">cattle_data_keys</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'cattle_data_keys' not found</span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">imports_data_keys</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_sensitivity</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_sensitivity$cols</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "pathogen"        "test_sensi_min"  "test_sensi_mode" "test_sensi_max" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_sensitivity$keys</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "pathogen"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $animal_imports</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $animal_imports$cols</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "origin"         "farms_n"        "animals_n_mean" "animals_n_sd"  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $animal_imports$keys</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "origin"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $prevalence_region</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $prevalence_region$cols</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "pathogen"    "origin"      "h_prev_min"  "h_prev_max"  "w_prev_min" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [6] "w_prev_max"  "test_origin"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $prevalence_region$keys</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "pathogen" "origin"  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span><span class="fu">set_data_keys</span><span class="op">(</span><span class="va">imports_data_keys</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> data_keys set to imports_data_keys</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

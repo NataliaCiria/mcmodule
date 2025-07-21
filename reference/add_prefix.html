@@ -72,9 +72,11 @@ Preserves previous prefixes unless rewrite_module argument is specified.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "w_prev"      "test_origin" "test_sensi"  "inf_a"       "false_neg_a"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [6] "no_test_a"   "no_detect_a"</span>
 <span class="r-in"><span><span class="va">imports_mcmodule_prefix</span><span class="op">&lt;-</span><span class="va">purchase</span> <span class="op">&lt;-</span> <span class="fu">add_prefix</span><span class="op">(</span><span class="va">imports_mcmodule</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in strsplit(names(unlist(mcmodule$exp)), split = "\\."):</span> non-character argument</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">imports_mcmodule_prefix</span><span class="op">$</span><span class="va">node_list</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'imports_mcmodule_prefix' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "imports_mcmodule_w_prev"      "imports_mcmodule_test_origin"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [3] "imports_mcmodule_test_sensi"  "imports_mcmodule_inf_a"      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [5] "imports_mcmodule_false_neg_a" "imports_mcmodule_no_test_a"  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [7] "imports_mcmodule_no_detect_a"</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
