@@ -7,7 +7,7 @@
 agg_totals(
   mcmodule,
   mc_name,
-  keys_names = NULL,
+  agg_keys = NULL,
   suffix = "agg",
   name = NULL,
   summary = TRUE,
@@ -20,7 +20,7 @@ agg_totals(
 
 \item{mc_name}{name of node to aggregate}
 
-\item{keys_names}{grouping variables for aggregation}
+\item{agg_keys}{grouping variables for aggregation}
 
 \item{suffix}{suffix for output node name (default: "agg")}
 
@@ -48,7 +48,7 @@ The aggregation method can be specified via agg_func parameter:
 \examples{
 imports_mcmodule <- agg_totals(
   imports_mcmodule, "no_detect_a",
-  keys_names = c("scenario_id", "pathogen")
+  agg_keys = c("scenario_id", "pathogen")
 )
 print(imports_mcmodule$node_list$no_detect_a_agg$summary)
 }
