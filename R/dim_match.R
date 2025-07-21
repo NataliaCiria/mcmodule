@@ -30,14 +30,14 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
   # 3. Fall back to regular keys
   keys_names <- if (!is.null(keys_names)) {
     keys_names
-  } else if (!is.null(node[["agg_keys"]])) {
+  } else if (!is.null(node[["agg_keys"]])&&!node[["keep_variates"]]) {
     node[["agg_keys"]]
   } else {
     node[["keys"]]
   }
 
   # Get data based on node type (aggregated or regular)
-  data <- if (!is.null(node[["agg_keys"]])) {
+  data <- if (!is.null(node[["agg_keys"]])&&!node[["keep_variates"]]) {
     node[["summary"]]
   } else {
     mcmodule$data[[node[["data_name"]]]]

@@ -47,7 +47,8 @@ suppressMessages({
           summary = data.frame(
             group = c("X", "Y"),
             count = c(5, 10)
-          )
+          ),
+          keep_variates=FALSE
         )
       )
     )
