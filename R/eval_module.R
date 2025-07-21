@@ -126,7 +126,7 @@ eval_module <- function(exp, data, param_names = NULL,
                  ncol(prev_data) != ncol(data)&&
                  all(prev_data==data))) {
 
-              if (is.null(prev_node_list_i[[mc_name]][["agg_keys"]])) {
+              if (is.null(prev_node_list_i[[mc_name]][["agg_keys"]])||prev_node_list_i[[mc_name]][["keep_variates"]]) {
                 match_prev <- mc_match_data(prev_mcmodule, mc_name, data)
                 match_prev_mcnode<-match_prev[[1]]
                 assign(mc_name, match_prev_mcnode)

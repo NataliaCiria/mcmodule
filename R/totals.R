@@ -246,40 +246,40 @@ agg_totals <- function(mcmodule, mc_name,
       # Calculate average value
       total_lev <- Reduce("+", variates_list[index]) / sum(index)
       mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
-        paste(
-          "Average value by:",
-          paste(agg_keys, collapse = ", ")
+        paste0(
+          "Average value by: ",
+          paste0(agg_keys, collapse = ", ")
         )
       mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
         paste0(
           "Average ", mc_name, " by: ",
-          paste(agg_keys, collapse = ", ")
+          paste0(agg_keys, collapse = ", ")
         )
     } else if ((is.null(agg_func) && grepl("_n$", mc_name)) || (!is.null(agg_func) && agg_func == "sum")) {
       # Sum for counts
       total_lev <- Reduce("+", variates_list[index])
       mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
-        paste(
-          "Sum by:",
-          paste(agg_keys, collapse = ", ")
+        paste0(
+          "Sum by: ",
+          paste0(agg_keys, collapse = ", ")
         )
       mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
         paste0(
-          mc_name, "_1+", mc_name, "_2+... by:",
-          paste(agg_keys, collapse = ", ")
+          mc_name, "_1+", mc_name, "_2+... by: ",
+          paste0(agg_keys, collapse = ", ")
         )
     } else {
       # Combine probabilities
       total_lev <- 1 - Reduce("*", inv_variates_list[index])
       mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
-        paste(
-          "Combined probability assuming independence by:",
-          paste(agg_keys, collapse = ", ")
+        paste0(
+          "Combined probability assuming independence by: ",
+          paste0(agg_keys, collapse = ", ")
         )
       mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
         paste0(
-          "1-((1-", mc_name, "_1)*(1-", mc_name, "_2)...) by:",
-          paste(agg_keys, collapse = ", ")
+          "1-((1-", mc_name, "_1)*(1-", mc_name, "_2)...) by: ",
+          paste0(agg_keys, collapse = ", ")
         )
     }
 
@@ -314,6 +314,7 @@ agg_totals <- function(mcmodule, mc_name,
   mcmodule$node_list[[agg_total_mc_name]][["module"]] <- module_name
   mcmodule$node_list[[agg_total_mc_name]][["agg_data"]] <- key_levels
   mcmodule$node_list[[agg_total_mc_name]][["agg_keys"]] <- new_agg_keys
+  mcmodule$node_list[[agg_total_mc_name]][["keep_variates"]] <- keep_variates
   mcmodule$node_list[[agg_total_mc_name]][["keys"]] <-
     mcmodule$node_list[[mc_name]][["keys"]]
   mcmodule$node_list[[agg_total_mc_name]][["inputs"]] <- mc_name
@@ -463,6 +464,7 @@ trial_totals <- function(mcmodule, mc_names,
       # Reassign mcmodule name (defaults to "mcmodule")
       mcmodule$node_list[[paste0(mc_name, "_", agg_suffix)]][["module"]] <- module_name
       mcmodule$node_list[[mc_name]][["module"]] <- module_name
+      mcmodule$node_list[[mc_name]][["keep_variates"]] <- keep_variates
     }
     return(mcmodule)
   }
@@ -517,7 +519,7 @@ trial_totals <- function(mcmodule, mc_names,
   }
 
   # Helper function to add metadata to nodes
-  add_mc_metadata <- function(node_list, name, value, params, description, expression, type = "total", keys_names, agg_keys, total_type) {
+  add_mc_metadata <- function(node_list, name, value, params, description, expression, type = "total", keys_names, agg_keys, total_type, keep_variates) {
     node_list[[name]] <- list(
       mcnode = value,
       param = params,
@@ -535,6 +537,8 @@ trial_totals <- function(mcmodule, mc_names,
 
     if (!is.null(agg_keys)) {
       node_list[[name]]$agg_keys <- agg_keys
+      node_list[[name]]$keep_variates <- keep_variates
+
     }
 
     node_list
@@ -620,6 +624,8 @@ trial_totals <- function(mcmodule, mc_names,
       mcmodule$node_list[[mc_name]][["module"]] <- module_name
       # Add agg_keys to metadata
       mcmodule$node_list[[mc_name]][["agg_keys"]] <- agg_keys
+      mcmodule$node_list[[mc_name]][["keep_variates"]] <- keep_variates
+
     } else {
       keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
     }
@@ -681,12 +687,13 @@ trial_totals <- function(mcmodule, mc_names,
           },
           keys_names = keys_names,
           agg_keys = agg_keys,
-          total_type = total_type
+          total_type = total_type,
+          keep_variates = keep_variates
         )
 
         # Add summary if requested
         if (summary) {
-          if (!is.null(agg_keys)) {
+          if (!is.null(agg_keys)&!keep_variates) {
             mcmodule$node_list[[new_mc_name]][["summary"]] <- mc_summary(
               mcmodule = mcmodule,
               data = mcmodule$node_list[[mc_name]][["summary"]],

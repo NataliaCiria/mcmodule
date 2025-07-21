@@ -146,9 +146,9 @@ suppressMessages({
       )
     )
 
-    # Test cases
+    # Test default agg
     result <- agg_totals(test_module, "p1")
-    expect_type(result, "list")
+
     expect_equal(
       result$node_list[["p1_agg"]]$description,
       "Combined probability assuming independence by: scenario_id"
@@ -328,6 +328,7 @@ suppressMessages({
       keep_variates = TRUE
     )
     expect_equal(dim(result$node_list$p_1_all_agg_set$mcnode), c(1001,1,4))
+    expect_true(result$node_list$p_2_agg$keep_variates)
 
     # Expect error: node not found in mcmodule
     expect_error({
