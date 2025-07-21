@@ -605,6 +605,7 @@ trial_totals <- function(mcmodule, mc_names,
   # Process each node
   for (mc_name in mc_names) {
     if (!is.null(agg_keys)) {
+      keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
       # Aggregate node if agg_keys provided
       messages  <- character(0)
       withCallingHandlers(
@@ -619,12 +620,15 @@ trial_totals <- function(mcmodule, mc_names,
       if(!all(grepl("variates per group for", messages ))) message(messages)
       # Change mcnode name to agg version name
       assign("mc_name", paste0(mc_name, "_", agg_suffix))
-      keys_names <-if(!keep_variates) agg_keys else  mcmodule$node_list[[mc_name]][["keys"]]
-      # Reassign mcmodule name (defaults to "mcmodule")
+      # Add metadata
       mcmodule$node_list[[mc_name]][["module"]] <- module_name
-      # Add agg_keys to metadata
       mcmodule$node_list[[mc_name]][["agg_keys"]] <- agg_keys
+      mcmodule$node_list[[mc_name]][["keys"]] <- keys_names
       mcmodule$node_list[[mc_name]][["keep_variates"]] <- keep_variates
+
+      #Update keys_names if it it does not keep all variates
+      if(!keep_variates) keys_names<-agg_keys
+
 
     } else {
       keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
