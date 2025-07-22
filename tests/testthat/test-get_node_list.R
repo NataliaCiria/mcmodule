@@ -13,14 +13,9 @@ suppressMessages({
     )
 
     test_data_keys <- list(
-      dataset1 = list(
-        data = data.frame(
-          x = letters[1:3],
-          input_a = 1:3,
-          input_b = 4:6
-        ),
-        keys = c("x")
-      )
+      test_data=list(
+      cols = c("x", "input_a_min","input_a_max","input_b_mean","input_b_sd"),
+      keys = c("x"))
     )
 
     # Run function
@@ -49,9 +44,13 @@ suppressMessages({
     expect_equal(sort(node_list$result$inputs), sort(c("input_a", "input_b")))
     expect_equal(sort(node_list$final$inputs), sort(c("result", "prev_value")))
 
+    # Test keys
+    expect_equal(node_list$result$keys, "x")
+
     # Test error cases
     expect_error(get_node_list("not an expression"))
     expect_error(get_node_list(quote(not_valid <- 1)))
   })
+
 
 })

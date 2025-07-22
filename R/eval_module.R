@@ -52,9 +52,11 @@ eval_module <- function(exp, data, param_names = NULL,
     module <- names(exp_list)[[i]]
 
     # Get initial node list
-    node_list_i <- get_node_list(exp_i,
+    node_list_i <- get_node_list(
+      exp = exp_i,
       param_names = param_names,
-      mctable = mctable, data_keys = data_keys
+      mctable = mctable,
+      data_keys = data_keys
     )
 
     # Identify nodes requiring previous module data
@@ -123,7 +125,7 @@ eval_module <- function(exp, data, param_names = NULL,
 
             # Match if previous node data is not equal to new data
             if(!(nrow(prev_data) == nrow(data)&&
-                 ncol(prev_data) != ncol(data)&&
+                 all(names(prev_data) == names(data))&&
                  all(prev_data==data,na.rm=TRUE))) {
 
               if (is.null(prev_node_list_i[[mc_name]][["agg_keys"]])||prev_node_list_i[[mc_name]][["keep_variates"]]) {
