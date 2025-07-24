@@ -150,7 +150,7 @@ get_node_table <- function(mcmodule, variate = 1) {
     }
   }
 
-  node_table <- node_table %>% relocate(name)
+  node_table <- dplyr::relocate(node_table,"name")
   rownames(node_table) <- NULL
   return(node_table)
 }
@@ -178,7 +178,7 @@ get_node_table <- function(mcmodule, variate = 1) {
 #' }
 visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL) {
 
-  nodes<-get_node_table(mcmodule = mcmodule, variate = variate)
+  nodes <- get_node_table(mcmodule = mcmodule, variate = variate)
 
   # Default color palette if none provided
   default_color_pal <- c(
@@ -214,7 +214,7 @@ visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by =
 
     if(is.null(color_pal)){
       # Default color palette
-      color_pal <-default_color_pal[1:length(color_levels)]
+      color_pal <- default_color_pal[1:length(color_levels)]
       names(color_pal) <- color_levels
 
     }else if(is.null(names(color_pal))) {
@@ -227,19 +227,19 @@ visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by =
     }
   }
 
-  nodes%>%
-    dplyr::distinct(name, .keep_all = TRUE) %>%
-    dplyr::mutate(mc_func = ifelse("mc_func" %in% colnames(.), mc_func, NA))%>%
+  nodes %>%
+    dplyr::distinct(.data$name, .keep_all = TRUE) %>%
+    dplyr::mutate(mc_func = ifelse("mc_func" %in% colnames(nodes), .data$mc_func, NA)) %>%
     dplyr::transmute(
-      id = name,
-      color  = color_pal[.data[[color_by]]],
-      module = ifelse(is.na(module), type, module),
+      id = .data$name,
+      color = color_pal[.data[[color_by]]],
+      module = ifelse(is.na(.data$module), .data$type, .data$module),
       expression = ifelse(
-        type == "in_node",
-        ifelse(is.na(keys), "user", ifelse(is.na(mc_func), "mcdata", mc_func)),
-        node_exp
+        .data$type == "in_node",
+        ifelse(is.na(.data$keys), "user", ifelse(is.na(.data$mc_func), "mcdata", .data$mc_func)),
+        .data$node_exp
       ),
-      title = generate_node_title(name, module, value, expression, param, inputs)
+      title = generate_node_title(.data$name, .data$module, .data$value, .data$expression, .data$param, .data$inputs)
     )
 }
 
@@ -256,8 +256,8 @@ visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by =
 visNetwork_edges <- function(mcmodule) {
   get_edge_table(mcmodule) %>%
     transmute(
-      from = node_from,
-      to = node_to,
+      from = .data$node_from,
+      to = .data$node_to,
       id = row_number()
     )
 }
@@ -301,28 +301,29 @@ mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL){
     visNetwork::visInteraction(dragNodes=TRUE)
 }
 
-
 # Helper functions
 format_numeric_summary <- function(summary_value) {
-  summary_value %>%
-    dplyr::mutate(
-      median = signif_round(`X50.`, 2),
-      up = signif_round(`X2.5.`, 2),
-      low = signif_round(`X97.5.`, 2)
-    ) %>%
-    dplyr::transmute(value = paste0(median, " (", up, "-", low, ")")) %>%
-    dplyr::pull(value)
+  # Extract quantiles
+  median_val <- signif_round(summary_value[["X50."]], 2)
+  lower_val <- signif_round(summary_value[["X2.5."]], 2)
+  upper_val <- signif_round(summary_value[["X97.5."]], 2)
+
+  # Format string
+  result <- paste0(median_val, " (", lower_val, "-", upper_val, ")")
+
+  return(result)
 }
 
 format_percentage_summary <- function(summary_value) {
-  summary_value %>%
-    dplyr::mutate(
-      median = paste0(signif_round(`X50.` * 100, 2), "%"),
-      up = paste0(signif_round(`X2.5.` * 100, 2), "%"),
-      low = paste0(signif_round(`X97.5.` * 100, 2), "%")
-    ) %>%
-    dplyr::transmute(value = paste0(median, " (", up, "-", low, ")")) %>%
-    dplyr::pull(value)
+  # Extract and format percentages
+  median_pct <- paste0(signif_round(summary_value[["X50."]] * 100, 2), "%")
+  lower_pct <- paste0(signif_round(summary_value[["X2.5."]] * 100, 2), "%")
+  upper_pct <- paste0(signif_round(summary_value[["X97.5."]] * 100, 2), "%")
+
+  # Format string
+  result <- paste0(median_pct, " (", lower_pct, "-", upper_pct, ")")
+
+  return(result)
 }
 
 generate_node_title <- function(name, module, value, expression, param, inputs) {

@@ -13,8 +13,8 @@ add_group_id <- function(x, y = NULL, by = NULL) {
   if (!is.null(y)) {
     if (is.null(by)) {
       # Get categorical variables for each dataframe
-      cat_x <- names(x)[sapply(x, function(col) is.character(col) | is.factor(col))]
-      cat_y <- names(y)[sapply(y, function(col) is.character(col) | is.factor(col))]
+      cat_x <- names(x)[vapply(x, function(col) is.character(col) | is.factor(col), logical(1))]
+      cat_y <- names(y)[vapply(y, function(col) is.character(col) | is.factor(col), logical(1))]
 
       # Find intersection of categorical variables
       by <- intersect(cat_x, cat_y)
@@ -30,59 +30,57 @@ add_group_id <- function(x, y = NULL, by = NULL) {
       stop(paste0(paste(by[!by %in% names(y)]), " columns not found in ", deparse(substitute(y)),"\n"))
     }
 
-    x$df <- "x"
-    y$df <- "y"
+    x[["df"]] <- "x"
+    y[["df"]] <- "y"
 
-    xy <- dplyr::bind_rows(x[c(by, "df")], y[c(by, "df")]) %>%
-      dplyr::mutate(
-        g_id = NULL,
-        g_row = NULL
-      ) %>%
-      dplyr::group_by(dplyr::across(dplyr::all_of(by))) %>%
-      dplyr::mutate(g_id = dplyr::cur_group_id())
+    xy <- dplyr::bind_rows(x[c(by, "df")], y[c(by, "df")])
+    xy <- dplyr::mutate(xy, g_id = NULL, g_row = NULL)
 
-    x <- xy %>%
-      dplyr::filter(df == "x") %>%
-      dplyr::bind_cols(x[!names(x) %in% c(by, "df", "g_id", "g_row")]) %>%
-      dplyr::mutate(
-        df = NULL,
-        g_row = dplyr::cur_group_rows()
-      ) %>%
-      dplyr::relocate(g_id, g_row) %>%
-      dplyr::ungroup()
+    group_vars <- by
+    xy <- dplyr::group_by(xy, dplyr::across(dplyr::all_of(group_vars)))
+    xy <- dplyr::mutate(xy, g_id = dplyr::cur_group_id())
+    x_filtered <- dplyr::filter(xy, .data$df == "x")
+    x_cols <- names(x)[!names(x) %in% c(by, "df", "g_id", "g_row")]
+    x_data <- x[x_cols]
+    x_result <- dplyr::bind_cols(x_filtered, x_data)
+    x_result <- dplyr::mutate(x_result, df = NULL)
+    x_result <- dplyr::mutate(x_result, g_row = dplyr::cur_group_rows())
+    x_result <- dplyr::relocate(x_result, "g_id", "g_row")
+    x_result <- dplyr::ungroup(x_result)
 
     # Add scenario_id column if missing
-    if (!"scenario_id" %in% names(x)) {
-      x$scenario_id <- "0"
+    if (!"scenario_id" %in% names(x_result)) {
+      x_result[["scenario_id"]] <- "0"
     }
 
-    y <- xy %>%
-      dplyr::filter(df == "y") %>%
-      dplyr::bind_cols(y[!names(y) %in% c(by, "df", "g_id", "g_row")]) %>%
-      dplyr::mutate(
-        df = NULL,
-        g_row = dplyr::cur_group_rows()
-      ) %>%
-      dplyr::relocate(g_id, g_row) %>%
-      dplyr::ungroup()
+    # Same for y dataset
+    y_filtered <- dplyr::filter(xy, .data$df == "y")
+    y_cols <- names(y)[!names(y) %in% c(by, "df", "g_id", "g_row")]
+    y_data <- y[y_cols]
+    y_result <- dplyr::bind_cols(y_filtered, y_data)
+
+    y_result <- dplyr::mutate(y_result, df = NULL)
+    y_result <- dplyr::mutate(y_result, g_row = dplyr::cur_group_rows())
+    y_result <- dplyr::relocate(y_result, "g_id", "g_row")
+    y_result <- dplyr::ungroup(y_result)
 
     # Add scenario_id column if missing
-    if (!"scenario_id" %in% names(y)) {
-      y$scenario_id <- "0"
+    if (!"scenario_id" %in% names(y_result)) {
+      y_result[["scenario_id"]] <- "0"
     }
 
-    return(list(x = x, y = y))
+    return(list(x = x_result, y = y_result))
   } else {
-    x <- x %>%
-      dplyr::group_by(dplyr::across(dplyr::all_of(by))) %>%
-      dplyr::mutate(
-        g_id = dplyr::cur_group_id(),
-        g_row = dplyr::cur_group_rows()
-      ) %>%
-      dplyr::relocate(g_id, g_row) %>%
-      dplyr::ungroup()
+    group_vars <- by
+    x_grouped <- dplyr::group_by(x, dplyr::across(dplyr::all_of(group_vars)))
 
-    return(x)
+    x_result <- dplyr::mutate(x_grouped,
+                              g_id = dplyr::cur_group_id(),
+                              g_row = dplyr::cur_group_rows())
+    x_result <- dplyr::relocate(x_result, "g_id", "g_row")
+    x_result <- dplyr::ungroup(x_result)
+
+    return(x_result)
   }
 }
 
@@ -104,7 +102,6 @@ add_group_id <- function(x, y = NULL, by = NULL) {
 #' keys_match(x, y, keys_names = "type")
 #' }
 keys_match <- function(x, y, keys_names = NULL) {
-
   # Add common group ids
   keys_list <- add_group_id(x, y, keys_names)
   keys_x <- keys_list$x
@@ -113,8 +110,8 @@ keys_match <- function(x, y, keys_names = NULL) {
   # Define keys_names if not provided
   if (is.null(keys_names)) {
     # Get categorical variables for each dataframe
-    cat_x <- names(x)[sapply(x, function(col) is.character(col) | is.factor(col))]
-    cat_y <- names(y)[sapply(y, function(col) is.character(col) | is.factor(col))]
+    cat_x <- names(x)[vapply(x, function(col) is.character(col) | is.factor(col), logical(1))]
+    cat_y <- names(y)[vapply(y, function(col) is.character(col) | is.factor(col), logical(1))]
 
     # Find intersection of categorical variables
     keys_names <- unique(intersect(cat_x, cat_y))
@@ -122,30 +119,47 @@ keys_match <- function(x, y, keys_names = NULL) {
   }
 
   # Group and scenario matching
-  keys_xy <- keys_x %>%
-    dplyr::full_join(keys_y, by = c("g_id", "scenario_id", keys_names)) %>%
-    dplyr::relocate("g_id", "scenario_id", dplyr::all_of(keys_names))
+  keys_xy <- dplyr::full_join(
+    keys_x,
+    keys_y,
+    by = c("g_id", "scenario_id", keys_names)
+  )
+  keys_xy <- dplyr::relocate(keys_xy, "g_id", "scenario_id", dplyr::all_of(keys_names))
 
   # Get group ids for baseline scenario (scenario_id = 0)
-  keys_xy_0 <- keys_xy %>%
-    dplyr::full_join(keys_y, by = c("g_id", "scenario_id", keys_names)) %>%
-    dplyr::filter(scenario_id == 0) %>%
-    dplyr::transmute(
-      g_id,
-      g_row.x_0 = g_row.x,
-      g_row.y_0 = g_row.y
-    )
+  temp_xy_0 <- dplyr::full_join(
+    keys_xy,
+    keys_y,
+    by = c("g_id", "scenario_id", keys_names)
+  )
+  temp_xy_0 <- dplyr::filter(temp_xy_0, .data$scenario_id == "0")
+  keys_xy_0 <- dplyr::transmute(
+    temp_xy_0,
+    g_id = .data$g_id,
+    g_row.x_0 = .data$g_row.x,
+    g_row.y_0 = .data$g_row.y
+  )
 
   # Fill in missing values using baseline scenario
-  keys_xy <- keys_xy %>%
-    dplyr::left_join(keys_xy_0, by = "g_id", relationship = "many-to-many") %>%
-    dplyr::mutate(
-      g_row.x = ifelse(is.na(g_row.x), g_row.x_0, g_row.x),
-      g_row.x_0 = NULL,
-      g_row.y = ifelse(is.na(g_row.y), g_row.y_0, g_row.y),
-      g_row.y_0 = NULL
-    )%>%
-    distinct()
+  keys_xy <- dplyr::left_join(
+    keys_xy,
+    keys_xy_0,
+    by = "g_id",
+    relationship = "many-to-many"
+  )
+
+  g_row_x <- keys_xy$g_row.x
+  g_row_x_0 <- keys_xy$g_row.x_0
+  g_row_y <- keys_xy$g_row.y
+  g_row_y_0 <- keys_xy$g_row.y_0
+
+  keys_xy$g_row.x <- ifelse(is.na(g_row_x), g_row_x_0, g_row_x)
+  keys_xy$g_row.x_0 <- NULL
+  keys_xy$g_row.y <- ifelse(is.na(g_row_y), g_row_y_0, g_row_y)
+  keys_xy$g_row.y_0 <- NULL
+
+  # Remove duplicates
+  keys_xy <- dplyr::distinct(keys_xy)
 
   return(list(
     x = keys_x,
