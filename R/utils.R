@@ -105,8 +105,6 @@ add_group_id <- function(x, y = NULL, by = NULL) {
 keys_match <- function(x, y, keys_names = NULL) {
   # Add common group ids
   keys_list <- add_group_id(x, y, keys_names)
-  keys_x <- keys_list$x
-  keys_y <- keys_list$y
 
   # Define keys_names if not provided
   if (is.null(keys_names)) {
@@ -120,6 +118,10 @@ keys_match <- function(x, y, keys_names = NULL) {
 
   #Exclude default "by" variables from key_names
   keys_names <- keys_names[!keys_names %in% c("g_id", "g_row", "scenario_id")]
+
+  #Get x and y keys dataframes
+  keys_x <- keys_list$x[c("g_id", "g_row", "scenario_id", keys_names)]
+  keys_y <- keys_list$y[c("g_id", "g_row", "scenario_id", keys_names)]
 
   # Group and scenario matching
   keys_xy <- dplyr::full_join(
