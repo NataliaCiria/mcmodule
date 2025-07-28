@@ -19,7 +19,6 @@ add_group_id <- function(x, y = NULL, by = NULL) {
       # Find intersection of categorical variables
       by <- intersect(cat_x, cat_y)
       by <- by[!by %in% c("g_id", "g_row", "scenario_id")]
-
       message("Group by: ", paste(by, collapse = ", "))
     }
 
@@ -36,7 +35,9 @@ add_group_id <- function(x, y = NULL, by = NULL) {
     xy <- dplyr::bind_rows(x[c(by, "df")], y[c(by, "df")])
     xy <- dplyr::mutate(xy, g_id = NULL, g_row = NULL)
 
-    group_vars <- by
+    #Exclude special columns from group_vars
+    group_vars <- by[!by %in% c("g_id", "g_row", "scenario_id")]
+
     xy <- dplyr::group_by(xy, dplyr::across(dplyr::all_of(group_vars)))
     xy <- dplyr::mutate(xy, g_id = dplyr::cur_group_id())
     x_filtered <- dplyr::filter(xy, .data$df == "x")
@@ -116,7 +117,7 @@ keys_match <- function(x, y, keys_names = NULL) {
     keys_names <- unique(intersect(cat_x, cat_y))
   }
 
-  #Exclude default "by" variables from key_names
+  #Exclude special columns from keys_names
   keys_names <- keys_names[!keys_names %in% c("g_id", "g_row", "scenario_id")]
 
   #Get x and y keys dataframes
