@@ -132,8 +132,8 @@ at_least_one <- function(mcmodule, mc_names, name = NULL, prefix = NULL, summary
 
   # Get agg keys (if nodes are aggregated)
   if(any(nodes_agg)){
-    agg_keys_names<-unique(unlist(sapply(mc_names, function(x) mcmodule$node_list[[x]][["agg_keys"]])))
-    mcmodule$node_list[[p_all_a_mc_name]][["agg_keys"]]<-agg_keys_names
+    mcmodule$node_list[[p_all_a_mc_name]][["agg_keys"]]<-unique(unlist(sapply(mc_names, function(x) mcmodule$node_list[[x]][["agg_keys"]])))
+    mcmodule$node_list[[p_all_a_mc_name]][["keep_variates"]] <- all(unlist(sapply(mc_names, function(x) mcmodule$node_list[[x]][["keep_variates"]])))
   }
 
   # Add summary if requested
