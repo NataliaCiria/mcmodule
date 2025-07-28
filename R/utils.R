@@ -43,6 +43,7 @@ add_group_id <- function(x, y = NULL, by = NULL) {
     x_cols <- names(x)[!names(x) %in% c(by, "df", "g_id", "g_row")]
     x_data <- x[x_cols]
     x_result <- dplyr::bind_cols(x_filtered, x_data)
+    x_result<-x_result[, !duplicated(names(x_result))]
     x_result <- dplyr::mutate(x_result, df = NULL)
     x_result <- dplyr::mutate(x_result, g_row = dplyr::cur_group_rows())
     x_result <- dplyr::relocate(x_result, "g_id", "g_row")
@@ -58,7 +59,7 @@ add_group_id <- function(x, y = NULL, by = NULL) {
     y_cols <- names(y)[!names(y) %in% c(by, "df", "g_id", "g_row")]
     y_data <- y[y_cols]
     y_result <- dplyr::bind_cols(y_filtered, y_data)
-
+    y_result<-y_result[, !duplicated(names(y_result))]
     y_result <- dplyr::mutate(y_result, df = NULL)
     y_result <- dplyr::mutate(y_result, g_row = dplyr::cur_group_rows())
     y_result <- dplyr::relocate(y_result, "g_id", "g_row")
