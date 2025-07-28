@@ -130,6 +130,12 @@ at_least_one <- function(mcmodule, mc_names, name = NULL, prefix = NULL, summary
     prefix = prefix
   )
 
+  # Get agg keys (if nodes are aggregated)
+  if(any(nodes_agg)){
+    agg_keys_names<-unique(unlist(sapply(mc_names, function(x) mcmodule$node_list[[x]][["agg_keys"]])))
+    mcmodule$node_list[[p_all_a_mc_name]][["agg_keys"]]<-agg_keys_names
+  }
+
   # Add summary if requested
   if (summary) {
     mcmodule$node_list[[p_all_a_mc_name]][["summary"]] <-
@@ -245,43 +251,16 @@ agg_totals <- function(mcmodule, mc_name,
     if (!is.null(agg_func) && agg_func == "avg") {
       # Calculate average value
       total_lev <- Reduce("+", variates_list[index]) / sum(index)
-      mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
-        paste0(
-          "Average value by: ",
-          paste0(agg_keys, collapse = ", ")
-        )
-      mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
-        paste0(
-          "Average ", mc_name, " by: ",
-          paste0(agg_keys, collapse = ", ")
-        )
+
     } else if ((is.null(agg_func) && grepl("_n$", mc_name)) || (!is.null(agg_func) && agg_func == "sum")) {
       # Sum for counts
       total_lev <- Reduce("+", variates_list[index])
-      mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
-        paste0(
-          "Sum by: ",
-          paste0(agg_keys, collapse = ", ")
-        )
-      mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
-        paste0(
-          mc_name, "_1+", mc_name, "_2+... by: ",
-          paste0(agg_keys, collapse = ", ")
-        )
+
     } else {
       # Combine probabilities
       total_lev <- 1 - Reduce("*", inv_variates_list[index])
-      mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
-        paste0(
-          "Combined probability assuming independence by: ",
-          paste0(agg_keys, collapse = ", ")
-        )
-      mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
-        paste0(
-          "1-((1-", mc_name, "_1)*(1-", mc_name, "_2)...) by: ",
-          paste0(agg_keys, collapse = ", ")
-        )
     }
+
 
     # Aggregate results
     if (keep_variates) {
@@ -306,6 +285,45 @@ agg_totals <- function(mcmodule, mc_name,
       new_agg_keys <- agg_keys
       key_data <- unique(key_col)
     }
+  }
+
+  # Add description and node_expression
+  if (!is.null(agg_func) && agg_func == "avg") {
+    # Calculate average value
+    mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
+      paste0(
+        "Average value by: ",
+        paste0(agg_keys, collapse = ", ")
+      )
+    mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
+      paste0(
+        "Average ", mc_name, " by: ",
+        paste0(agg_keys, collapse = ", ")
+      )
+  } else if ((is.null(agg_func) && grepl("_n$", mc_name)) || (!is.null(agg_func) && agg_func == "sum")) {
+    # Sum for counts
+    mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
+      paste0(
+        "Sum by: ",
+        paste0(agg_keys, collapse = ", ")
+      )
+    mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
+      paste0(
+        mc_name, "_1+", mc_name, "_2+... by: ",
+        paste0(agg_keys, collapse = ", ")
+      )
+  } else {
+    # Combine probabilities
+    mcmodule$node_list[[agg_total_mc_name]][["description"]] <-
+      paste0(
+        "Combined probability assuming independence by: ",
+        paste0(agg_keys, collapse = ", ")
+      )
+    mcmodule$node_list[[agg_total_mc_name]][["node_expression"]] <-
+      paste0(
+        "1-((1-", mc_name, "_1)*(1-", mc_name, "_2)...) by: ",
+        paste0(agg_keys, collapse = ", ")
+      )
   }
 
   # Add aggregated node to module
