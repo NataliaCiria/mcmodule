@@ -116,8 +116,10 @@ keys_match <- function(x, y, keys_names = NULL) {
 
     # Find intersection of categorical variables
     keys_names <- unique(intersect(cat_x, cat_y))
-    keys_names <- keys_names[!keys_names %in% c("g_id", "g_row", "scenario_id")]
   }
+
+  #Exclude default "by" variables from key_names
+  keys_names <- keys_names[!keys_names %in% c("g_id", "g_row", "scenario_id")]
 
   # Group and scenario matching
   keys_xy <- dplyr::full_join(
