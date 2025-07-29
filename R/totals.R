@@ -359,14 +359,14 @@ agg_totals <- function(mcmodule, mc_name,
 #' (trial, subset, set) in a structured population. Uses trial probabilities and
 #' handles nested sampling with conditional probabilities.
 #'
-#' @param mcmodule McModule object containing input data and node structure
+#' @param mcmodule mcmodule object containing input data and node structure
 #' @param mc_names Vector of node names to process
 #' @param trials_n Trial count column name
 #' @param subsets_n Subset count column name (optional)
 #' @param subsets_p Subset prevalence column name (optional)
 #' @param name Custom name for output nodes (optional)
 #' @param prefix Prefix for output node names (optional)
-#' @param combine_prob Process all nodes if TRUE (default: TRUE)
+#' @param combine_prob Combine probability of all nodes assuming independence (default: TRUE)
 #' @param level_suffix A list of suffixes for each hierarchical level (default: c(trial="trial",subset="subset",set="set"))
 #' @param mctable Data frame containing Monte Carlo nodes definitions (default: set_mctable())
 #' @param agg_keys Column names for aggregation (optional)
@@ -652,10 +652,18 @@ trial_totals <- function(mcmodule, mc_names,
       keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
     }
 
-    clean_mc_name <- ifelse(is.null(name),
-                            gsub(prefix, "", mc_name),
-                            name
-    )
+    clean_mc_name <- if(is.null(name)) {
+      gsub(prefix, "", mc_name)
+    } else {
+      if(length(mc_names) > 1 && combine_prob && mc_name == p_all_a_mc_name) {
+        name
+      } else if(length(mc_names) > 1 && !combine_prob) {
+        stop("name argument can only be used when mc_names length is 1 or when combine_prob is TRUE")
+      } else {
+        gsub(prefix, "", mc_name)
+      }
+    }
+
 
     p_a <- mcmodule$node_list[[mc_name]][["mcnode"]]
 

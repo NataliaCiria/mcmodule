@@ -22,7 +22,7 @@ trial_totals(
 )
 }
 \arguments{
-\item{mcmodule}{McModule object containing input data and node structure}
+\item{mcmodule}{mcmodule object containing input data and node structure}
 
 \item{mc_names}{Vector of node names to process}
 
@@ -36,7 +36,7 @@ trial_totals(
 
 \item{prefix}{Prefix for output node names (optional)}
 
-\item{combine_prob}{Process all nodes if TRUE (default: TRUE)}
+\item{combine_prob}{Combine probability of all nodes assuming independence (default: TRUE)}
 
 \item{level_suffix}{A list of suffixes for each hierarchical level (default: c(trial="trial",subset="subset",set="set"))}
 

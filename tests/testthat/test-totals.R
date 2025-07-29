@@ -247,7 +247,7 @@ suppressMessages({
     expect_true(is.null(result$node_list$sites_p))
 
 
-    # Add sites_n as subset probability
+    # Add sites_n as subset probability (multilevel: hierarchical_p)
     result <- trial_totals(
       test_module,
       mc_names = c("p_1_x", "p_1_y"),
@@ -257,7 +257,7 @@ suppressMessages({
     expect_true("p_1_all_set"%in%names(result$node_list))
     expect_true(is.null(result$node_list$sites_n))
 
-    # Test with single probability node and both subset types
+    # Test with single probability node and both subset types (multilevel: hierarchical_p, hierarchical_n)
     result <- trial_totals(
       test_module,
       mc_names = "p_1_x",
@@ -292,7 +292,7 @@ suppressMessages({
 
     expect_true("p_1_x_trial"%in%names(result$node_list))
 
-    # Test with custom suffix and scenario_id aggregation
+    # Test with custom suffix and scenario_id aggregation (aggregated multilevel: hierarchical_p, hierarchical_n)
     result <- trial_totals(
       test_module,
       mc_names = c("p_1_x"),
@@ -315,7 +315,27 @@ suppressMessages({
     )
 
     expect_true("p_1_all_agg_set"%in%names(result$node_list))
+
+    expect_equal(dim(result$node_list$p_1_all$mcnode), c(1001,1,4))
     expect_equal(dim(result$node_list$p_1_all_agg_set$mcnode), c(1001,1,2))
+
+    # Test aggregation with multiple probability nodes when name is provided
+    result <- trial_totals(
+      test_module,
+      mc_names = c("p_1_x", "p_1_y"),
+      trials_n = "times_n",
+      subsets_n = "sites_n",
+      subsets_p = "p_2",
+      agg_keys = "scenario_id",
+      name="p_total"
+    )
+
+    expect_true("p_1_x_agg_set"%in%names(result$node_list))
+    expect_true("p_total_agg"%in%names(result$node_list))
+    expect_true("p_total"%in%names(result$node_list))
+
+    expect_equal(dim(result$node_list$p_total$mcnode), c(1001,1,4))
+    expect_equal(dim(result$node_list$p_total_agg$mcnode), c(1001,1,2))
 
     # Test with keep_variates option
     result <- trial_totals(
