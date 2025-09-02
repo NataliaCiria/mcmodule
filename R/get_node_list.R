@@ -102,9 +102,19 @@ get_node_list <- function(exp, param_names = NULL,
 
       # Process input columns and datasets
       for (dataset_name in names(all_inputs)) {
-        # Get matching input columns for current node
-        pattern <- paste0("\\<", node_name, "(\\>|[^>]*\\>)")
-        inputs_col <- all_inputs[[dataset_name]][grepl(pattern, all_inputs[[dataset_name]])]
+
+        if (is.null(mc_row$from_variable)||is.na(mc_row$from_variable)) {
+          # Get matching input columns for current node
+          pattern <- paste0("\\<", node_name, "(\\>|[^>]*\\>)")
+          inputs_col <- all_inputs[[dataset_name]][grepl(pattern, all_inputs[[dataset_name]])]
+        }else{
+          # Get matching input columns from transformed variable
+          pattern <- paste0("\\<", mc_row$from_variable, "(\\>|[^>]*\\>)")
+          inputs_col <- all_inputs[[dataset_name]][grepl(pattern, all_inputs[[dataset_name]])]
+          # Add transformation info to node list
+          if(!is.null(mc_row$from_variable)&&!is.na(mc_row$transformation)) in_node_list[[node_name]][["transformation"]] <- mc_row$transformation
+
+        }
 
         # Update node list if matching inputs found
         if (length(inputs_col) > 0) {
@@ -117,7 +127,7 @@ get_node_list <- function(exp, param_names = NULL,
       in_node_list[[node_name]][["module"]] <- module
       in_node_list[[node_name]][["mc_name"]] <- node_name
 
-      # Handle parameter renaming
+      # Parameter renaming
       if (node_name %in% param_names) {
         node_name_exp <- names(param_names)[param_names %in% node_name]
         names(in_node_list)[names(in_node_list) %in% param_names] <- node_name_exp
