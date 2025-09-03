@@ -172,13 +172,13 @@ suppressMessages({
     expect_error(agg_totals(test_module, "test_node", agg_func = "invalid"))
     expect_error(agg_totals(test_module, "nonexistent_node"))
   })
-
-  test_that("trial_totals works", {
-    # Create a test module with mock data including:
+  # Helper function to setup the test module
+  setup_test_module <- function() {
+    # Test module with mock data including:
     # - p_1_x and p_1_y: Two probability nodes with uniform distribution
     # - p_2: Another probability node for subset calculations
     # - times_n: Number of trials for each category/scenario combination
-    test_module <- list(
+    list(
       node_list = list(
         p_1_x = list(
           mcnode = mcstoc(runif,
@@ -224,8 +224,10 @@ suppressMessages({
         )
       )
     )
+  }
 
-    # Set up Monte Carlo table for sites_n parameter
+  # Helper function to setup the test mctable
+  setup_test_mctable <- function() {
     test_mctable <- data.frame(
       mcnode = c("sites_n"),
       description = c("Number of sites"),
@@ -235,6 +237,12 @@ suppressMessages({
       sensi_analysis = c(FALSE)
     )
     set_mctable(test_mctable)
+  }
+
+  test_that("trial_totals basic functionality works", {
+    # Create a test module with mock data
+    test_module <- setup_test_module()
+    setup_test_mctable()
 
     # Basic trial_totals with two probability nodes
     result <- trial_totals(
@@ -242,10 +250,17 @@ suppressMessages({
       mc_names = c("p_1_x", "p_1_y"),
       trials_n = "times_n")
 
-    expect_true("p_1_all_set"%in%names(result$node_list))
+    expect_true("p_1_all_set" %in% names(result$node_list))
     expect_true(is.null(result$node_list$sites_n))
     expect_true(is.null(result$node_list$sites_p))
 
+    reset_mctable()
+  })
+
+  test_that("trial_totals works with subset probabilities", {
+    # Create a test module with mock data
+    test_module <- setup_test_module()
+    setup_test_mctable()
 
     # Add sites_n as subset probability (multilevel: hierarchical_p)
     result <- trial_totals(
@@ -254,10 +269,18 @@ suppressMessages({
       trials_n = "times_n",
       subsets_p = "p_2"
     )
-    expect_true("p_1_all_set"%in%names(result$node_list))
+    expect_true("p_1_all_set" %in% names(result$node_list))
     expect_true(is.null(result$node_list$sites_n))
 
-    # Test with single probability node and both subset types (multilevel: hierarchical_p, hierarchical_n)
+    reset_mctable()
+  })
+
+  test_that("trial_totals works with both subset types", {
+    # Create a test module with mock data
+    test_module <- setup_test_module()
+    setup_test_mctable()
+
+    # Test with single probability node and both subset types
     result <- trial_totals(
       test_module,
       mc_names = "p_1_x",
@@ -266,7 +289,15 @@ suppressMessages({
       subsets_p = "p_2"
     )
 
-    expect_true("p_1_x_set"%in%names(result$node_list))
+    expect_true("p_1_x_set" %in% names(result$node_list))
+
+    reset_mctable()
+  })
+
+  test_that("trial_totals handles custom level suffixes", {
+    # Create a test module with mock data
+    test_module <- setup_test_module()
+    setup_test_mctable()
 
     # Test with custom level suffix
     result <- trial_totals(
@@ -278,9 +309,9 @@ suppressMessages({
       level_suffix = c(trial="singletime", subset="singlesite", set="allsites")
     )
 
-    expect_true("p_1_x_singletime"%in%names(result$node_list))
+    expect_true("p_1_x_singletime" %in% names(result$node_list))
 
-    # Test with custom level suffix
+    # Test with partial custom level suffix
     result <- trial_totals(
       test_module,
       mc_names = "p_1_x",
@@ -290,9 +321,17 @@ suppressMessages({
       level_suffix = c(set="allsites")
     )
 
-    expect_true("p_1_x_trial"%in%names(result$node_list))
+    expect_true("p_1_x_trial" %in% names(result$node_list))
 
-    # Test with custom suffix and scenario_id aggregation (aggregated multilevel: hierarchical_p, hierarchical_n)
+    reset_mctable()
+  })
+
+  test_that("trial_totals handles scenario aggregation", {
+    # Create a test module with mock data
+    test_module <- setup_test_module()
+    setup_test_mctable()
+
+    # Test with custom suffix and scenario_id aggregation
     result <- trial_totals(
       test_module,
       mc_names = c("p_1_x"),
@@ -302,7 +341,7 @@ suppressMessages({
       agg_keys = "scenario_id",
       agg_suffix = "site"
     )
-    expect_true("p_1_x_site_set"%in%names(result$node_list))
+    expect_true("p_1_x_site_set" %in% names(result$node_list))
 
     # Test aggregation with multiple probability nodes
     result <- trial_totals(
@@ -314,10 +353,17 @@ suppressMessages({
       agg_keys = "scenario_id",
     )
 
-    expect_true("p_1_all_agg_set"%in%names(result$node_list))
-
+    expect_true("p_1_all_agg_set" %in% names(result$node_list))
     expect_equal(dim(result$node_list$p_1_all$mcnode), c(1001,1,4))
     expect_equal(dim(result$node_list$p_1_all_agg_set$mcnode), c(1001,1,2))
+
+    reset_mctable()
+  })
+
+  test_that("trial_totals works with custom name parameter", {
+    # Create a test module with mock data
+    test_module <- setup_test_module()
+    setup_test_mctable()
 
     # Test aggregation with multiple probability nodes when name is provided
     result <- trial_totals(
@@ -330,12 +376,20 @@ suppressMessages({
       name="p_total"
     )
 
-    expect_true("p_1_x_agg_set"%in%names(result$node_list))
-    expect_true("p_total_agg"%in%names(result$node_list))
-    expect_true("p_total"%in%names(result$node_list))
+    expect_true("p_1_x_agg_set" %in% names(result$node_list))
+    expect_true("p_total_agg" %in% names(result$node_list))
+    expect_true("p_total" %in% names(result$node_list))
 
     expect_equal(dim(result$node_list$p_total$mcnode), c(1001,1,4))
     expect_equal(dim(result$node_list$p_total_agg$mcnode), c(1001,1,2))
+
+    reset_mctable()
+  })
+
+  test_that("trial_totals keeps variates when requested", {
+    # Create a test module with mock data
+    test_module <- setup_test_module()
+    setup_test_mctable()
 
     # Test with keep_variates option
     result <- trial_totals(
@@ -349,6 +403,14 @@ suppressMessages({
     )
     expect_equal(dim(result$node_list$p_1_all_agg_set$mcnode), c(1001,1,4))
     expect_true(result$node_list$p_2_agg$keep_variates)
+
+    reset_mctable()
+  })
+
+  test_that("trial_totals handles error cases", {
+    # Create a test module with mock data
+    test_module <- setup_test_module()
+    setup_test_mctable()
 
     # Expect error: node not found in mcmodule
     expect_error({
@@ -366,8 +428,8 @@ suppressMessages({
         trials_n = "nonexistent_node")
     }, "nonexistent_node not found in mctable")
 
-    # Clean up
     reset_mctable()
   })
 
 })
+

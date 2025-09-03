@@ -107,14 +107,14 @@ at_least_one <- function(mcmodule, mc_names, name = NULL, prefix = NULL, summary
   }
 
   # Create output node name
-  p_all_a_mc_name <- ifelse(is.null(name),
+  p_all_mc_name <- ifelse(is.null(name),
     generate_all_name(mc_names),
     name
   )
 
 
   # Add new node to module
-  mcmodule$node_list[[p_all_a_mc_name]] <- list(
+  mcmodule$node_list[[p_all_mc_name]] <- list(
     mcnode = p_all,
     type = "total",
     param = mc_names,
@@ -132,17 +132,17 @@ at_least_one <- function(mcmodule, mc_names, name = NULL, prefix = NULL, summary
 
   # Get agg keys (if nodes are aggregated)
   if(any(nodes_agg)){
-    mcmodule$node_list[[p_all_a_mc_name]][["agg_keys"]]<-unique(unlist(sapply(mc_names, function(x) mcmodule$node_list[[x]][["agg_keys"]])))
-    mcmodule$node_list[[p_all_a_mc_name]][["keep_variates"]] <- all(unlist(sapply(mc_names, function(x) mcmodule$node_list[[x]][["keep_variates"]])))
+    mcmodule$node_list[[p_all_mc_name]][["agg_keys"]]<-unique(unlist(sapply(mc_names, function(x) mcmodule$node_list[[x]][["agg_keys"]])))
+    mcmodule$node_list[[p_all_mc_name]][["keep_variates"]] <- all(unlist(sapply(mc_names, function(x) mcmodule$node_list[[x]][["keep_variates"]])))
   }
 
   # Add summary if requested
   if (summary) {
-    mcmodule$node_list[[p_all_a_mc_name]][["summary"]] <-
+    mcmodule$node_list[[p_all_mc_name]][["summary"]] <-
       mc_summary(
         mcmodule = mcmodule,
         data = data,
-        mc_name = p_all_a_mc_name,
+        mc_name = p_all_mc_name,
         keys_names = keys_names
       )
   }
@@ -528,12 +528,12 @@ trial_totals <- function(mcmodule, mc_names,
     )
 
     # Generate new name if name is not provided
-    p_all_a_mc_name <- ifelse(is.null(name),
+    p_all_mc_name <- ifelse(is.null(name),
       generate_all_name(mc_names),
       name
     )
 
-    mc_names <- c(mc_names, p_all_a_mc_name)
+    mc_names <- c(mc_names, p_all_mc_name)
   }
 
   # Helper function to add metadata to nodes
@@ -655,7 +655,7 @@ trial_totals <- function(mcmodule, mc_names,
     clean_mc_name <- if(is.null(name)) {
       gsub(prefix, "", mc_name)
     } else {
-      if(length(mc_names) > 1 && combine_prob && mc_name == p_all_a_mc_name) {
+      if(length(mc_names) > 1 && combine_prob && mc_name == p_all_mc_name) {
         name
       } else if(length(mc_names) > 1 && !combine_prob) {
         stop("name argument can only be used when mc_names length is 1 or when combine_prob is TRUE")
