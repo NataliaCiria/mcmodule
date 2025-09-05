@@ -47,6 +47,21 @@ suppressMessages({
     # Check that variables from first module are available in second
     expect_true("no_detect_a" %in% names(multi_result$node_list))
     expect_true("final_result" %in% names(multi_result$node_list))
+
+    # Check that inputs have the right metadata
+    expect_equal(combined_module$node_list$test_sensi$keys,c("pathogen"))
+    expect_equal(combined_module$node_list$test_sensi$input_dataset,c("test_sensitivity"))
+
+    expect_equal(combined_module$node_list$w_prev$keys,c("pathogen", "origin"))
+    expect_equal(combined_module$node_list$w_prev$input_dataset,c("prevalence_region"))
+
+    # Check that outputs have the right metadata
+    expect_equal(combined_module$node_list$no_detect_a$keys,c("pathogen", "origin"))
+    expect_equal(combined_module$node_list$no_detect_a$inputs,c("false_neg_a", "no_test_a"))
+
+    expect_equal(combined_module$node_list$no_detect_a_set$keys,c("pathogen", "origin"))
+    expect_equal(combined_module$node_list$no_detect_a_set$inputs,c("no_detect_a", "animals_n", "farms_n", "h_prev"))
+
   })
 
   test_that("eval_module gets previous nodes", {
@@ -68,13 +83,13 @@ suppressMessages({
     #  Create current_module
     current_data  <-data.frame(pathogen=c("a","a","a","b","b","b","b"),
                                origin = c("east","south","nord","east","south","nord","nord"),
+                               clean = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE),
                               scenario_id=c("0","0","0","0","0","0","clean_transport"),
                               survival_p_min=c(0.7,0.7,0.7,0.7,0.7,0.7,0.1),
                               survival_p_max=c(0.8,0.8,0.8,0.8,0.8,0.8,0.15))
 
-    current_data_keys <-list(current_data = list(cols=names(current_data), keys=c("pathogen",
-                                                                           "origin",
-                                                                           "scenario_id")))
+    current_data_keys <-list(survival = list(cols=c("pathogen", "clean","survival_p_min", "survival_p_max"),
+                                             keys=c("pathogen", "clean")))
 
     current_mctable  <- data.frame(mcnode = c("survival_p"),
                                    description = c("Survival probability"),
@@ -86,7 +101,6 @@ suppressMessages({
       imported_contaminated <- no_detect_a_set * survival_p
     })
 
-    # TODO
     current_module <- eval_module(
       exp = c(current = current_exp),
       data = current_data,
@@ -98,15 +112,20 @@ suppressMessages({
 
     combined_module<-at_least_one(combined_module, c("no_detect_a","imported_contaminated"), name="total")
 
+    expect_equal(combined_module$node_list$no_detect_a$keys,c("pathogen","origin"))
     summary1<-mc_summary(combined_module, "no_detect_a_set")
     expect_equal(summary1$pathogen,c("a","a","a","b","b","b"))
 
+    expect_equal(combined_module$node_list$survival_p$keys,c("pathogen","clean"))
+    expect_equal(combined_module$node_list$survival_p$input_dataset,c("survival"))
     summary2<-mc_summary(combined_module, "survival_p")
     expect_equal(summary2$pathogen,c("a","a","a","b","b","b","b"))
 
+    expect_equal(combined_module$node_list$imported_contaminated$keys,c("pathogen","origin","clean")) # union
     summary3<-mc_summary(combined_module, "imported_contaminated")
     expect_equal(summary3$scenario_id,c(0,0,0,0,0,0,"clean_transport"))
 
+    expect_equal(combined_module$node_list$total$keys,c("scenario_id","pathogen","origin")) # intersection
     expect_message(mc_summary(combined_module, "total"), "Too many data names. Using existing summary." )
 
   })
