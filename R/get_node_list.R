@@ -59,7 +59,7 @@ get_node_list <- function(exp, param_names = NULL,
 
     # Set node type
     out_node_list[[node_name]][["type"]] <-
-      if (!grepl("[:alpha:]", node_exp)) "scalar" else "out_node"
+      if (!grepl("[[:alpha:]]", node_exp)) "scalar" else "out_node"
 
     out_node_list[[node_name]][["inputs"]] <- inputs
     out_node_list[[node_name]][["module"]] <- module

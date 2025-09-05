@@ -210,7 +210,7 @@ eval_module <- function(exp, data, param_names = NULL,
       node_list[[mc_name]][["inputs"]] <- inputs
 
       # Update keys for output nodes
-      if (!is.null(prev_mcmodule) &
+      if (((!is.null(prev_mcmodule))|(length(exp)>1)) &
         node_list[[mc_name]][["type"]] == "out_node") {
         keys_names <- unique(unlist(lapply(inputs, function(x) {
           node_list[[x]][["keys"]]

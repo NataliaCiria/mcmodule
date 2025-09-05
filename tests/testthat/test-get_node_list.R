@@ -121,4 +121,44 @@ suppressMessages({
     expect_equal(node_list$result$keys,c("x","y"))
 
   })
+
+  test_that("get_node_list works with functions and scalars", {
+    # Create test data
+    test_exp <- quote({
+      output_1 <- (input_a * input_b)/output_1
+      output_2 <- mcnode_na_rm(output_1, 0)
+      level <- 2
+      output_3 <- (1 + output_2) * prev_value
+      output_4 <- output_3 * level
+    })
+
+    test_mctable <- data.frame(
+      mcnode = c("input_a", "input_b","input_c"),
+      mc_func = c("runif", "rnorm",NA),
+      description = c("Test input A", "Test input B", "Test input C")
+    )
+
+    test_data_keys <- list(
+      test_data_x=list(
+        cols = c("x", "input_a_min","input_a_max","input_b_mean","input_b_sd"),
+        keys = c("x")),
+      test_data_y=list(
+        cols = c("y", "input_c"),
+        keys = c("y"))
+    )
+
+    # Run function
+    node_list <- get_node_list(
+      exp = test_exp,
+      mctable = test_mctable,
+      data_keys = test_data_keys
+    )
+
+    expect_true(node_list$output_2$na_rm)
+    expect_equal(node_list$level$type,c("scalar"))
+    expect_equal(node_list$output_3$inputs,c("output_2", "prev_value"))
+    expect_equal(node_list$output_3$node_exp,c("(1 + output_2) * prev_value"))
+    expect_equal(node_list$output_4$inputs,c("output_3","level"))
+
+  })
 })

@@ -49,18 +49,18 @@ suppressMessages({
     expect_true("final_result" %in% names(multi_result$node_list))
 
     # Check that inputs have the right metadata
-    expect_equal(combined_module$node_list$test_sensi$keys,c("pathogen"))
-    expect_equal(combined_module$node_list$test_sensi$input_dataset,c("test_sensitivity"))
+    expect_equal(multi_result$node_list$test_sensi$keys,c("pathogen"))
+    expect_equal(multi_result$node_list$test_sensi$input_dataset,c("test_sensitivity"))
 
-    expect_equal(combined_module$node_list$w_prev$keys,c("pathogen", "origin"))
-    expect_equal(combined_module$node_list$w_prev$input_dataset,c("prevalence_region"))
+    expect_equal(multi_result$node_list$w_prev$keys,c("pathogen", "origin"))
+    expect_equal(multi_result$node_list$w_prev$input_dataset,c("prevalence_region"))
 
     # Check that outputs have the right metadata
-    expect_equal(combined_module$node_list$no_detect_a$keys,c("pathogen", "origin"))
-    expect_equal(combined_module$node_list$no_detect_a$inputs,c("false_neg_a", "no_test_a"))
+    expect_equal(multi_result$node_list$no_detect_a$keys,c("pathogen", "origin"))
+    expect_equal(multi_result$node_list$no_detect_a$inputs,c("false_neg_a", "no_test_a"))
 
-    expect_equal(combined_module$node_list$no_detect_a_set$keys,c("pathogen", "origin"))
-    expect_equal(combined_module$node_list$no_detect_a_set$inputs,c("no_detect_a", "animals_n", "farms_n", "h_prev"))
+    expect_equal(multi_result$node_list$final_result$keys,c("pathogen", "origin"))
+    expect_equal(multi_result$node_list$final_result$inputs,c("no_detect_a"))
 
   })
 
@@ -127,7 +127,6 @@ suppressMessages({
 
     expect_equal(combined_module$node_list$total$keys,c("scenario_id","pathogen","origin")) # intersection
     expect_message(mc_summary(combined_module, "total"), "Too many data names. Using existing summary." )
-
   })
 
   test_that("get_mcmodule_nodes works", {
