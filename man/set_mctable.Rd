@@ -18,10 +18,10 @@ Other columns will be auto-filled if missing. If NULL, returns the current MC ta
 The table contains the following columns:
 \itemize{
 \item mcnode - Character. Name of the Monte Carlo node (required)
-\item description - Character. Description of the node
-\item mc_func - Character. Monte Carlo function to be used
-\item from_variable - Character. Dependency on other variables
-\item transformation - Character. Transformation to be applied
+\item description - Character. Description of the parameter
+\item mc_func - Character. Probability distribution
+\item from_variable - Character. Variable name in the data table, if it is in a column with a name different from the mcnode
+\item transformation - Character. Transformation to be applied to the original column values
 \item sensi_analysis - Logical. Whether to include in sensitivity analysis
 }
 }
