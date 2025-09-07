@@ -21,6 +21,10 @@ their descriptions, functions, dependencies, and sensitivity analysis settings."
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/mcmodule.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/intro.html">An Introduction to Modular Monte-Carlo Risk Analysis with mcmodule</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -63,10 +67,10 @@ Other columns will be auto-filled if missing. If NULL, returns the current MC ta
 <ul><li><p>If data = NULL: Returns the current MC table</p></li>
 <li><p>If data provided: Sets the new MC table and returns invisibly</p></li>
 </ul><p>The table contains the following columns:</p><ul><li><p>mcnode - Character. Name of the Monte Carlo node (required)</p></li>
-<li><p>description - Character. Description of the node</p></li>
-<li><p>mc_func - Character. Monte Carlo function to be used</p></li>
-<li><p>from_variable - Character. Dependency on other variables</p></li>
-<li><p>transformation - Character. Transformation to be applied</p></li>
+<li><p>description - Character. Description of the parameter</p></li>
+<li><p>mc_func - Character. Probability distribution</p></li>
+<li><p>from_variable - Character. Variable name in the data table, if it is in a column with a name different from the mcnode</p></li>
+<li><p>transformation - Character. Transformation to be applied to the original column values</p></li>
 <li><p>sensi_analysis - Logical. Whether to include in sensitivity analysis</p></li>
 </ul></div>
 
