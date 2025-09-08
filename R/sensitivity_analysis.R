@@ -3,16 +3,15 @@
 #'
 #' @param mcmodule A Monte Carlo module object
 #' @return A list containing expression data, data keys, and global keys
-#' @export
 mcmodule_index <- function(mcmodule) {
   # Extract module expressions and metadata
-  expression <- unlist(lapply(names(mcmodule$node_list), \(x) mcmodule$node_list[[x]][["module"]]))
-  data_name <- unlist(lapply(names(mcmodule$node_list), \(x) mcmodule$node_list[[x]][["data_name"]] %||% NA))
-  type <- unlist(lapply(names(mcmodule$node_list), \(x) mcmodule$node_list[[x]][["type"]] %||% NA))
+  expression <- unlist(lapply(names(mcmodule$node_list), function(x) mcmodule$node_list[[x]][["module"]]))
+  data_name <- unlist(lapply(names(mcmodule$node_list), function(x) mcmodule$node_list[[x]][["data_name"]] %||% NA))
+  type <- unlist(lapply(names(mcmodule$node_list), function(x) mcmodule$node_list[[x]][["type"]] %||% NA))
 
   # Extract keys
-  agg_keys_list <- lapply(names(mcmodule$node_list), \(x) mcmodule$node_list[[x]][["agg_keys"]] %||% NA)
-  keys_list <- lapply(names(mcmodule$node_list), \(x) mcmodule$node_list[[x]][["keys"]] %||% NA)
+  agg_keys_list <- lapply(names(mcmodule$node_list), function(x) mcmodule$node_list[[x]][["agg_keys"]] %||% NA)
+  keys_list <- lapply(names(mcmodule$node_list), function(x) mcmodule$node_list[[x]][["keys"]] %||% NA)
 
   # Process keys for each unique expression
   keys <- data.frame()
@@ -56,7 +55,6 @@ mcmodule_index <- function(mcmodule) {
 #' @param mc_names Optional names of Monte Carlo nodes
 #' @param mcnode_admin Monte Carlo node administration object
 #' @return Modified mcmodule with relative changes
-#' @export
 mcmodule_rel_change <- function(mcmodule_def, mcmodule_alt, mc_names = NULL, mcnode_admin = mcnode_admin) {
   mcmodule_rel <- mcmodule_def
   mc_names <- mc_names %||% names(mcmodule_rel$node_list)
@@ -104,7 +102,6 @@ mcmodule_rel_change <- function(mcmodule_def, mcmodule_alt, mc_names = NULL, mcn
 #' @param mcmodule Monte Carlo module object
 #' @param agg_output Name of aggregated output, defaults to "total_agg"
 #' @return Data frame with Spearman correlation results
-#' @export
 mcmodule_spearman <- function(mcmodule, agg_output = "total_agg") {
   exp_names <- names(mcmodule$mc_list)
   spearman_rho_exp <- spearman_rho_agg <- data.frame()
@@ -246,7 +243,6 @@ mcmodule_spearman <- function(mcmodule, agg_output = "total_agg") {
 #' results <- mcmodule_converg(mc_results)
 #' results <- mcmodule_converg(mc_results, from_quantile = 0.90, conv_threshold = 0.01)
 #' }
-#' @export
 mcmodule_converg <- function(mcmodule, from_quantile = 0.95, to_quantile = 1, conv_threshold = NULL) {
   # Helper function to calculate statistics (mean and quantiles) for convergence analysis
   mc_stat <- function(i, x) {

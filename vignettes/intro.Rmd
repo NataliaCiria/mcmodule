@@ -1,9 +1,9 @@
 ---
-title: "An Introduction to Modular Monte-Carlo Risk Analysis with mcmodule"
+title: "Introduction"
 author: "Natalia Ciria"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{mcmodule-vignette}
+  %\VignetteIndexEntry{Introduction-vignette}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 bibliography: references.bib
@@ -194,7 +194,6 @@ Other recommended packages to load along with mcmodule are:
 
 ```{r, warning=FALSE, message=FALSE}
 library(dplyr)     # Data manipulation
-library(tidyr)     # Data cleaning
 library(ggplot2)   # Plots
 library(igraph)    # Network analysis
 library(visNetwork)# Interactive network visualization
@@ -399,7 +398,7 @@ When considering animals (trials_n) from different farms (subset_n), we must acc
 
 ```{r}
 # Probability of at least one animal from at least one herd being is not detected (probability of a herd being infected: h_prev)
-imports_mcmodule <- trial_totals(
+imports <- trial_totals(
   mcmodule = imports,
   mc_names = "no_detect",
   trials_n = "animals_n",
