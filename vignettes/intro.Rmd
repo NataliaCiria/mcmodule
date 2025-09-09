@@ -14,48 +14,27 @@ crossref:
 link-citations: true
 ---
 
-# Introduction {#sec-introduction}
+# Getting started
 
-This is a gentle and casual welcome to the wonders of modular Monte Carlo risk analysis and the use of [`mcmodule`](https://nataliaciria.github.io/mcmodule/). For a more formal approach, I invite you to read the package official [vignette](https://nataliaciria.github.io/mcmodule/articles/mcmodule.html).
+This is a gentle and casual welcome to Monte Carlo risk analysis and the use of [`mcmodule`](https://nataliaciria.github.io/mcmodule/). For a more formal approach you can read the package official [vignette](https://nataliaciria.github.io/mcmodule/articles/mcmodule.html).
 
-I developed this new R package because of the lack of suitable tools to handle complex risk analysis models, with thousands of parameters, hundreds of cases, dozens of scenarios, and several pathways (like [farmR!SK](https://github.com/VetEpi-UAB/farmrisk)).
+I developed this new R package because I could not find any suitable tools for creating complex risk analysis models with thousands of parameters, hundreds of cases, dozens of scenarios, and multiple pathways in R (or in any other software accessible to epidemiologists).
 
-`mcmodule` is a framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to make working with multiple risk pathways, variates, and scenarios easier. The package includes tools for creating stochastic objects from data frames, visualizing results, and performing uncertainty, sensitivity, and convergence analysis.
+Formally, `mcmodule` is a framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to make working with multiple risk pathways, variates, and scenarios easier. The package includes tools for creating stochastic objects from data frames, visualizing results, and performing uncertainty, sensitivity, and convergence analysis.
 
-## A simple risk assessment
+For me, `mcmodule` was a little set of custom functions that was born out of necessity and grew out of obsession. Eventually, the effort and lessons learned in building smooth, large-scale risk analysis in R were so great that it was something I couldn't keep just for our [farmR!SK](https://github.com/VetEpi-UAB/farmrisk) project. Now, I hope this package can help other epidemiologists (and risk modellers from other disciplines), not only to save a few hours of work, but also to be ambitious and design complex risk pathways knowing that it will be feasible to evaluate them in R.
+
+## Risk assessment
+
+This section provides a brief introduction to risk assessment in R. Although this package is not intended for beginners in risk assessment, it can help you understand the logic behind mcmodule and its purpose.
+
+### A simple risk assessment
 
 Let's imagine we want to buy a heifer from a friend. We know their farm is infected with pathogen A, a disease that your farm is free from. To reduce risk, we plan to perform a diagnostic test before bringing the heifer to our farm. We want to calculate the probability of introducing the disease if we purchase one heifer that tests negative.
 
-This risk assessment can be performed using **base R** random sampling functions:
+Risk assessment is a technique to estimate the probability and impact of an "adverse" event. It identifies the steps necessary for the event to occur and assigns them a probability. In our case, we have some uncertainty around the probability that an animal in a herd is infected and around the test sensitivity, so we want to conduct a probabilistic or stochastic risk assessment that can account for that uncertainty.
 
-```{r}
-set.seed(123)
-n_iterations <- 10000
-
-# PARAMETERS
-# Within-herd prevalence
-w_prev <- runif(n_iterations, min = 0.15, max = 0.2)
-# Test sensitivity
-test_sensi <- runif(n_iterations, min = 0.89, max = 0.91)
-# Probability an animal is tested in origin
-test_origin <- 1 # Yes
-
-# EXPRESSIONS
-# Probability that an animal in an infected herd is infected (a = animal)
-inf <- w_prev
-# Probability an animal is tested and is a false negative
-# (test specificity assumed to be 100%)
-false_neg <- inf * test_origin * (1 - test_sensi)
-# Probability an animal is not tested
-no_test <- inf * (1 - test_origin)
-# Probability an animal is not detected
-no_detect <- false_neg + no_test
-
-# RESULT
-summary(no_detect)
-```
-
-A similar approach can be implemented with `mc2d` [@mc2d]. This package provides additional probability distributions (such as rpert) and other useful tools for analysing Monte Carlo simulations.
+The risk assessment for our cattle purchase can be performed using base R random sampling functions, or `mc2d` [@mc2d], a package provides additional probability distributions (such as rpert) and other useful tools for analyzing stochastic (Monte-Carlo) simulations.
 
 ```{r, warning=FALSE, message=FALSE}
 library(mc2d)
@@ -91,7 +70,7 @@ hist(mc_model)
 no_detect
 ```
 
-## Multiple risk assessments at once
+### Multiple risk assessments at once
 
 In the previous example, we calculated the risk for one specific case. However, we know that this farm is also positive for pathogen B, so it would be also interesting to calculate the risk of introducing it as well. Pathogen B has different within-herd prevalence and test sensitivity than Pathogen A.
 
@@ -175,7 +154,7 @@ This package is particularly useful for:
 
 However, for simpler analyses, such as single pathway models, exploratory work, small models with few parameters, one-off analyses or learning risk assessment `mcmodule`'s additional structure may be unnecessary.
 
-# Installing mcmodule
+## Installing mcmodule
 
 Now let's explore this new package! It's about to be submitted to CRAN, but since it's not there yet, we'll install it from GitHub instead.
 
@@ -322,7 +301,7 @@ imports_exp<-quote({
 })
 ```
 
-## Evaluating a model
+## Evaluating an mcmodule
 
 With all components in place, we're now ready to create our first mcmodule using `eval_module()`.
 
@@ -354,7 +333,15 @@ imports$node_list$no_detect
 
 And now that we have an mcmodule, we can begin exploring its possibilities!
 
-# Summarizing {#sec-calculating-totals}
+# Working with an mcmodule
+
+## Visualizing
+
+```{r}
+mc_network(imports)
+```
+
+## Summarizing {#sec-calculating-totals}
 
 In the imports mcmodule, we can already see the raw mcnode results for the probability of an imported animal not being detected (`no_detect`). However, it's difficult to determine which pathogen or region these results refer to. The `mc_summary()` function solves this problem by linking mcnode results with their key columns in the data.
 
@@ -364,7 +351,9 @@ In the imports mcmodule, we can already see the raw mcnode results for the proba
 mc_summary(mcmodule = imports, mc_name = "no_detect")
 ```
 
-# Calculating totals
+## Calculating totals
+
+### Single-level trials
 
 In `imports`, we have the probability that an infected animal from an infected farm goes undetected (`"no_detect"`). When all animals (in a variate) have the same probability, we can use the total number of animals selected per farm (`"animals_n"`) as the number of trials (`trials_n`) to determine the probability that at least one infected animal from one farm is not detected (no_detect_set).
 
@@ -386,9 +375,9 @@ Note that this function returns an mcmodule with some additional nodes. Total no
 imports$node_list$no_detect_set$summary
 ```
 
-## Multilevel trials
+### Multilevel trials
 
-### Simple multilevel
+#### Simple multilevel
 
 When considering animals (trials_n) from different farms (subset_n), we must account for both the farm’s probability of being infected (subset_p) and the individual animal’s probability of being infected (trial_p).
 
@@ -413,15 +402,23 @@ imports$node_list$no_detect_set
 
 # Combining mcmodules
 
-...
-
-# Visualizing mcmodule models
-
 ```{r}
-mc_network(imports)
+
 ```
 
 # Analysing mcmodule models
+
+## **Convergence** analysis
+
+Checks if all variates in all parameters converge in the unceratainty dimensions for the number of simulations performed.
+
+## Sensitivity analysis
+
+Parameters included specified in the mctable.
+
+### Relative Change
+
+### **Spearman Correlation**
 
 # Tricks and tweaks {#sec-tricks-and-tweaks}
 
