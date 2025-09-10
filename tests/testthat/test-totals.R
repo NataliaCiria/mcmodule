@@ -38,10 +38,7 @@ suppressMessages({
     expect_equal(result$node_list$p_combined$param, c("p1", "p2"))
 
     # Test error on missing nodes
-    expect_error(
-      at_least_one(test_module, c("p1", "missing")),
-      "missing not found in mcmodule"
-    )
+    expect_error(at_least_one(test_module, c("p1", "missing")),"not found")
   })
 
   test_that("at_least_one match works", {
@@ -90,10 +87,7 @@ suppressMessages({
     expect_equal(result$node_list$p_combined$summary$category, c("A", "B", "C", "B", "B"))
 
     # Test error on missing nodes
-    expect_error(
-      at_least_one(test_module, c("p1", "missing")),
-      "missing not found in mcmodule"
-    )
+    expect_error(at_least_one(test_module, c("p1", "missing")),"not found")
   })
 
   test_that("generate_all_name works", {
@@ -246,7 +240,7 @@ suppressMessages({
 
     # Basic trial_totals with two probability nodes
     result <- trial_totals(
-      test_module,
+      mcmodule = test_module,
       mc_names = c("p_1_x", "p_1_y"),
       trials_n = "times_n")
 
@@ -430,6 +424,183 @@ suppressMessages({
 
     reset_mctable()
   })
+
+  test_that("at_least_one naming options work", {
+    # Setup module
+    module <- list(
+      node_list = list(
+        p_1 = list(
+          mcnode = mcstoc(runif,
+                          min = mcdata(c(0.1, 0.2), type = "0", nvariates = 2),
+                          max = mcdata(c(0.2, 0.3), type = "0", nvariates = 2),
+                          nvariates = 2
+          ),
+          data_name = "data_x",
+          keys = c("category")
+        ),
+        p_2 = list(
+          mcnode = mcstoc(runif,
+                          min = mcdata(c(0.5, 0.6), type = "0", nvariates = 2),
+                          max = mcdata(c(0.6, 0.7), type = "0", nvariates = 2),
+                          nvariates = 2
+          ),
+          data_name = "data_x",
+          keys = c("category")
+        )
+      ),
+      data = list(
+        data_x = data.frame(
+          category = c("A", "B"),
+          scenario_id = c("0", "0")
+        )
+      )
+    )
+
+    # Default name
+    mod1 <- at_least_one(module, c("p_1", "p_2"))
+    expect_true("p_all" %in% names(mod1$node_list))
+
+    # Custom name
+    mod2 <- at_least_one(module, c("p_1", "p_2"), name = "custom_comb")
+    expect_true("custom_comb" %in% names(mod2$node_list))
+
+    # Custom all_suffix
+    mod3 <- at_least_one(module, c("p_1", "p_2"), all_suffix = "combo")
+    expect_true("p_combo" %in% names(mod3$node_list))
+
+    # Custom prefix
+    mod4 <- at_least_one(module, c("p_1", "p_2"), prefix = "pre")
+    expect_equal(mod4$node_list[["pre_p_all"]]$prefix, "pre")
+
+    # Error on missing node
+    expect_error(at_least_one(module, c("p1", "missing")), "not found")
+  })
+
+  test_that("generate_all_name works with suffix and errors", {
+    expect_equal(generate_all_name(c("test_a", "test_b")), "test_all")
+    expect_equal(generate_all_name(c("foo_a", "foo_b"), all_suffix = "group"), "foo_group")
+    expect_error(generate_all_name(c("foo_a", "bar_b")), "common prefix")
+    expect_error(generate_all_name(c("foo_all", "foo_b")), "contains '_all' suffix")
+  })
+
+  test_that("agg_totals naming options work", {
+    module <- list(
+      node_list = list(
+        p1 = list(
+          mcnode = mcstoc(runif,
+                          min = mcdata(c(0.1, 0.2), type = "0", nvariates = 2),
+                          max = mcdata(c(0.2, 0.3), type = "0", nvariates = 2),
+                          nvariates = 2
+          ),
+          data_name = "data_x",
+          keys = c("category")
+        )
+      ),
+      data = list(
+        data_x = data.frame(
+          category = c("A", "B"),
+          scenario_id = c("0", "0")
+        )
+      )
+    )
+
+    # Default agg name
+    mod1 <- agg_totals(module, "p1")
+    expect_true("p1_agg" %in% names(mod1$node_list))
+
+    # Custom name
+    mod2 <- agg_totals(module, "p1", name = "custom_agg")
+    expect_true("custom_agg" %in% names(mod2$node_list))
+
+    # Custom agg_suffix
+    mod3 <- agg_totals(module, "p1", agg_suffix = "sum")
+    expect_true("p1_sum" %in% names(mod3$node_list))
+
+    # Error for invalid agg_func
+    expect_error(agg_totals(module, "p1", agg_func = "invalid"), "Aggregation function")
+
+    # Error for missing node
+    expect_error(agg_totals(module, "missing"), "not found")
+  })
+
+  test_that("trial_totals naming options work", {
+    module <- list(
+      node_list = list(
+        p_1 = list(
+          mcnode = mcstoc(runif,
+                          min = mcdata(c(0.1, 0.2), type = "0", nvariates = 2),
+                          max = mcdata(c(0.2, 0.3), type = "0", nvariates = 2),
+                          nvariates = 2
+          ),
+          data_name = "data_x",
+          keys = c("category")
+        ),
+        p_2 = list(
+          mcnode = mcstoc(runif,
+                          min = mcdata(c(0.4, 0.5), type = "0", nvariates = 2),
+                          max = mcdata(c(0.6, 0.7), type = "0", nvariates = 2),
+                          nvariates = 2
+          ),
+          data_name = "data_x",
+          keys = c("category")
+        ),
+        times_n = list(
+          mcnode = mcdata(c(3, 4), type = "0", nvariates = 2),
+          data_name = "data_x",
+          keys = c("category")
+        )
+      ),
+      data = list(
+        data_x = data.frame(
+          category = c("A", "B"),
+          scenario_id = c("0", "0"),
+          times_n = c(3, 4)
+        )
+      )
+    )
+
+    # Default trial_totals
+    mod1 <- trial_totals(module, mc_names = "p_1", trials_n = "times_n")
+    expect_true("p_1_set" %in% names(mod1$node_list))
+
+    # Custom name
+    mod2 <- trial_totals(module, mc_names = "p_1", trials_n = "times_n",
+                         name = "custom_trial")
+    expect_true("custom_trial_set" %in% names(mod2$node_list))
+
+    # Custom agg_suffix - no agg_keys
+    mod3 <- trial_totals(module, mc_names = "p_1", trials_n = "times_n",
+                         agg_suffix = "aggx")
+    expect_true("p_1_set" %in% names(mod3$node_list))
+
+    # Custom agg_suffix - agg_keys
+    mod4 <- trial_totals(module, mc_names = "p_1", trials_n = "times_n",
+                         agg_suffix = "aggx", agg_keys = "category")
+    expect_true("p_1_aggx_set" %in% names(mod4$node_list))
+
+    # Custom all_suffix
+    mod5 <- trial_totals(module, mc_names = "p_1", trials_n = "times_n",
+                         all_suffix = "tot")
+    expect_true("p_1_set" %in% names(mod5$node_list))
+
+    mod5 <- trial_totals(module, mc_names = c("p_1","p_2"), trials_n = "times_n",
+                         all_suffix = "tot")
+    expect_true("p_tot_set" %in% names(mod5$node_list))
+
+    # Custom prefix
+    mod6 <- trial_totals(module, mc_names = "p_1", trials_n = "times_n",
+                         prefix = "pre")
+    expect_true("pre_p_1_set"%in%names(mod6$node_list))
+
+    # Custom all options
+    mod7 <- trial_totals(module, mc_names = "p_1", trials_n = "times_n", name = "custom",
+                         agg_suffix = "aggx", all_suffix = "tot", prefix = "pre")
+    expect_true("pre_custom_set_n"%in%names(mod7$node_list))
+
+    # Error for missing node
+    expect_error(trial_totals(module, mc_names = "missing", trials_n = "times_n"), "not found")
+  })
+
 
 })
 

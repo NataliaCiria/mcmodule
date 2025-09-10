@@ -18,7 +18,7 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
     stop("Invalid mcmodule structure")
   }
   if (!mc_name %in% names(mcmodule$node_list)) {
-    stop("Node not found in module")
+    stop(paste(mc_name, "not found in", deparse(substitute(mcmodule))))
   }
 
   # Get the node from module

@@ -34,7 +34,7 @@ suppressMessages({
     # Test with invalid node name
     expect_error(
       mc_keys(test_module, "nonexistent_node"),
-      "Node not found in module"
+      "not found"
     )
   })
 
