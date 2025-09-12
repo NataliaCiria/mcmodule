@@ -406,9 +406,51 @@ imports <- trial_totals(
 imports$node_list$no_detect_set
 ```
 
-# Combining mcmodules
+# Working with multiple mcmodules
+
+## Inputs from previous mcmodules
+
+Now that we know the probability of an infected imported animal not being detected, we want to estimate the probability that an imported animal ends up infecting another animal via direct contact
 
 ```{r}
+#  Create pathogen data table
+transmission_data  <-data.frame(pathogen=c("a","b"),
+                            inf_dc_min=c(0.05,0.3),
+                            inf_dc_max=c(0.08,0.4))
+
+transmission_data_keys <-list(transmission_data = list(cols=c("pathogen", "inf_dc_min","inf_dc_max"),
+                                         keys=c("pathogen")))
+
+transmission_mctable  <- data.frame(mcnode = c("inf_dc"),
+                               description = c("Probability of infection via direct contact"),
+                               mc_func = c("runif"),
+                               from_variable = c(NA),
+                               transformation = c(NA),
+                               sensi_analysis = c(FALSE))
+dir_contact_exp<-quote({
+  dir_contact <- inf_dc
+})
+
+
+
+transmission <- eval_module(
+  exp = c(dir_contact = dir_contact_exp),
+  data = transmission_data,
+  mctable =transmission_mctable,
+  data_keys = transmission_data_keys)
+#TODO: prefix bug 
+  #prev_mcmodule = imports)
+```
+
+
+
+## Combining mcmodules
+
+```{r}
+
+    combined_module<-combine_modules(imports,current_module)
+
+    combined_module<-at_least_one(combined_module, c("no_detect_a","imported_contaminated"), name="total")
 
 ```
 
