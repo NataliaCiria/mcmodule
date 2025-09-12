@@ -597,6 +597,12 @@ suppressMessages({
                          agg_suffix = "aggx", all_suffix = "tot", prefix = "pre")
     expect_true("pre_custom_set_n"%in%names(mod7$node_list))
 
+    # Custom name with agg_keys
+    mod8 <- trial_totals(module, mc_names = "p_1", trials_n = "times_n",
+                         name = "custom_trial", agg_keys = "category")
+
+    expect_true("custom_trial_set" %in% names(mod8$node_list))
+
     # Error for missing node
     expect_error(trial_totals(module, mc_names = "missing", trials_n = "times_n"), "not found")
   })
