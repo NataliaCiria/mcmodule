@@ -163,6 +163,50 @@ suppressMessages({
     expect_equal(length(result4), 0)
   })
 
-})
+  test_that("eval_mcmodule dim match works", {
+    #  Create pathogen data table
+    transmission_data  <- data.frame(pathogen=c("a","b"),
+                                     inf_dc_min=c(0.05,0.3),
+                                     inf_dc_max=c(0.08,0.4))
 
+    transmission_data_keys <- list(transmission_data = list(cols=c("pathogen", "inf_dc_min","inf_dc_max"),
+                                                            keys=c("pathogen")))
+
+    transmission_mctable  <- data.frame(mcnode = c("inf_dc"),
+                                        description = c("Probability of infection via direct contact"),
+                                        mc_func = c("runif"),
+                                        from_variable = c(NA),
+                                        transformation = c(NA),
+                                        sensi_analysis = c(FALSE))
+
+    # Test expression
+    transmission_exp <- quote({
+      infection_risk <- no_detect_a * inf_dc
+    })
+
+    # Evaluate module with previous module
+    result_module <- eval_module(
+      exp = c(transmission = transmission_exp),
+      data = transmission_data,
+      mctable = transmission_mctable,
+      data_keys = transmission_data_keys,
+      prev_mcmodule = imports_mcmodule
+    )
+
+    # Verify dimensions
+    expect_equal(dim(result_module$node_list$no_detect_a$mcnode)[3], 6)
+    expect_equal(dim(result_module$node_list$infection_risk$mcnode)[3], 6)
+
+    # Verify keys are correctly combined
+    expect_equal(result_module$node_list$infection_risk$keys, c("pathogen", "origin"))
+
+    # Verify input tracking
+    expect_equal(result_module$node_list$infection_risk$inputs, c("no_detect_a", "inf_dc"))
+
+    # Verify no null matches in the dimension matching process
+    summary <- mc_summary(result_module, "infection_risk")
+    expect_equal(nrow(summary), 6)
+    expect_true(all(c("pathogen", "origin") %in% names(summary)))
+  })
+})
 

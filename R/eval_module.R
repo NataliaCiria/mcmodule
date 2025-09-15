@@ -10,7 +10,6 @@
 #' @param summary Logical; whether to calculate summary statistics
 #' @param mctable Monte Carlo configuration table
 #' @param data_keys List of key columns for each dataset
-#' @param create_nodes Logical; whether to create new nodes from data
 #'
 #' @return An mcmodule object containing data, expressions, and nodes
 #' @export
@@ -26,11 +25,7 @@
 eval_module <- function(exp, data, param_names = NULL,
                        prev_mcmodule = NULL,
                        summary = FALSE, mctable = set_mctable(),
-                       data_keys = set_data_keys(), create_nodes = TRUE) {
-  # Initialize  mcnodes if requested and data exists
-  if (create_nodes & !is.null(data)) {
-    create_mc_nodes(data = data, mctable = mctable)
-  }
+                       data_keys = set_data_keys()) {
 
   data_name <- deparse(substitute(data))
 
@@ -84,23 +79,24 @@ eval_module <- function(exp, data, param_names = NULL,
           # Prefix matching for node names
           if (any(!prev_nodes %in% names(prev_mcmodule_i$node_list))) {
             prefixes <- unlist(sapply(prev_mcmodule_i$node_list, "[[", "prefix"))
-            new_names <- sapply(names(prefixes), function(x) {
-              gsub(paste0("^", prefixes[x], "_"), "", x)
-            })
+            if(!is.null(prefixes)){
+              new_names <- sapply(names(prefixes), function(x) {
+                gsub(paste0("^", prefixes[x], "_"), "", x)
+              })
 
-            original_names <- names(prefixes)
-            names(prefixes) <- new_names
+              original_names <- names(prefixes)
+              names(prefixes) <- new_names
 
-            prev_nodes_names <- prev_nodes
-            prev_nodes <- ifelse(prev_nodes %in% original_names,
-              prev_nodes, ifelse(is.na(prefixes[prev_nodes]), prev_nodes,
-                paste0(prefixes[prev_nodes], "_", prev_nodes)
+              prev_nodes_names <- prev_nodes
+              prev_nodes <- ifelse(prev_nodes %in% original_names,
+                                   prev_nodes, ifelse(is.na(prefixes[prev_nodes]), prev_nodes,
+                                                      paste0(prefixes[prev_nodes], "_", prev_nodes)
+                                   )
               )
-            )
-            names(prev_nodes) <- prev_nodes_names
-            prev_param_names <- prev_nodes
+              names(prev_nodes) <- prev_nodes_names
+              prev_param_names <- prev_nodes
+            }
           }
-
           # Get nodes from previous module
           prev_node_list_i <- get_mcmodule_nodes(prev_mcmodule_i,
             mc_names = prev_nodes
@@ -131,6 +127,8 @@ eval_module <- function(exp, data, param_names = NULL,
               if (is.null(prev_node_list_i[[mc_name]][["agg_keys"]])||prev_node_list_i[[mc_name]][["keep_variates"]]) {
                 match_prev <- mc_match_data(prev_mcmodule, mc_name, data)
                 match_prev_mcnode<-match_prev[[1]]
+                data<-match_prev[["data_match"]]
+
                 assign(mc_name, match_prev_mcnode)
 
               } else {
@@ -190,6 +188,10 @@ eval_module <- function(exp, data, param_names = NULL,
         }
       }
     }
+
+    # Create mcnodes for the current expression
+    mctable_i = mctable[mctable$mcnode%in%names(node_list_i)[grepl("in_node", node_list_i)],]
+    if(nrow(mctable_i) > 0) create_mc_nodes(data = data, mctable = mctable_i)
 
     # Evaluate current expression
     eval(exp_i)
