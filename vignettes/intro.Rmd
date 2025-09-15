@@ -339,11 +339,12 @@ And now that we have an mcmodule, we can begin exploring its possibilities!
 
 ## Visualizing
 
-We can visualize an mc_module with the mc_network() function. For this you will need to have `igraph` [@igraph] and `visNetwork` [@visNetwork] installed.
+We can visualize an mc_module with the mc_network() function. For this you will need to have `igraph` [@igraph] and `visNetwork` [@visnetwork]installed.
 
-In these visualizations, input datasets appear in <h color="blue">blue</h>, input columns in <h color="gray">dark-grey-blue</h>, input mcnodes in <h color="gray">grey</h>, output mcnodes in <h color="green">green</h>, and total mcnodes (as we will see later) in <h color="orange">orange</h>. The numbers displayed when clicked correspond to the first variate of each mcnode.
+In these visualizations, input datasets appear in blue, input columns in dark-grey-blue, input mcnodes in grey, output mcnodes in green, and total mcnodes (as we will see later) in orange. The numbers displayed when clicked correspond to the first variate of each mcnode.
 
 ```{r}
+#TODO: why inf is not conected to no_test, false_neg??
 mc_network(imports)
 ```
 
@@ -428,37 +429,29 @@ transmission_mctable  <- data.frame(mcnode = c("inf_dc"),
                                transformation = c(NA),
                                sensi_analysis = c(FALSE))
 dir_contact_exp<-quote({
-  dir_contact <- inf_dc
+  dir_contact <- no_detect * inf_dc
 })
-
-
 
 transmission <- eval_module(
   exp = c(dir_contact = dir_contact_exp),
   data = transmission_data,
   mctable =transmission_mctable,
-  data_keys = transmission_data_keys)
-#TODO: prefix bug 
-  #prev_mcmodule = imports)
+  data_keys = transmission_data_keys,
+  prev_mcmodule = imports)
 ```
-
-
 
 ## Combining mcmodules
 
 ```{r}
-
-    combined_module<-combine_modules(imports,current_module)
-
-    combined_module<-at_least_one(combined_module, c("no_detect_a","imported_contaminated"), name="total")
-
+intro<-combine_modules(imports,transmission)
+#intro<-at_least_one(intro, c("no_detect","dir_contact"), name="total")
 ```
 
 # Analysing mcmodule models
 
 ## **Convergence** analysis
 
-Checks if all variates in all parameters converge in the unceratainty dimensions for the number of simulations performed.
+Checks if all variates in all parameters converge in the uncertainty dimensions for the number of simulations performed.
 
 ## Sensitivity analysis
 
