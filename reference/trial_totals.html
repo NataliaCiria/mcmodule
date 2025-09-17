@@ -58,6 +58,7 @@ handles nested sampling with conditional probabilities.</p>
 <span>  name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  prefix <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  combine_prob <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  all_suffix <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  level_suffix <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>trial <span class="op">=</span> <span class="st">"trial"</span>, subset <span class="op">=</span> <span class="st">"subset"</span>, set <span class="op">=</span> <span class="st">"set"</span><span class="op">)</span>,</span>
 <span>  mctable <span class="op">=</span> <span class="fu"><a href="set_mctable.html">set_mctable</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  agg_keys <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -101,6 +102,10 @@ handles nested sampling with conditional probabilities.</p>
 
 <dt id="arg-combine-prob">combine_prob<a class="anchor" aria-label="anchor" href="#arg-combine-prob"></a></dt>
 <dd><p>Combine probability of all nodes assuming independence (default: TRUE)</p></dd>
+
+
+<dt id="arg-all-suffix">all_suffix<a class="anchor" aria-label="anchor" href="#arg-all-suffix"></a></dt>
+<dd><p>Suffix for combined node name (default: "all")</p></dd>
 
 
 <dt id="arg-level-suffix">level_suffix<a class="anchor" aria-label="anchor" href="#arg-level-suffix"></a></dt>
@@ -147,19 +152,19 @@ handles nested sampling with conditional probabilities.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">imports_mcmodule</span><span class="op">$</span><span class="va">node_list</span><span class="op">$</span><span class="va">no_detect_a_set</span><span class="op">$</span><span class="va">summary</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           mc_name pathogen origin      mean          sd       Min      2.5%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 no_detect_a_set        a   nord 0.3762896 0.019718541 0.3409873 0.3431093</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 no_detect_a_set        a  south 0.2945292 0.062682718 0.1831448 0.1916380</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 no_detect_a_set        a   east 0.6036576 0.044908712 0.5217529 0.5254732</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 no_detect_a_set        b   nord 0.9873100 0.008051349 0.9682061 0.9705914</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 no_detect_a_set        b  south 0.9589618 0.007970423 0.9437431 0.9447343</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6 no_detect_a_set        b   east 0.9664367 0.021116960 0.9178862 0.9231474</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 no_detect_a_set        a   nord 0.3750450 0.020108413 0.3410136 0.3426586</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 no_detect_a_set        a  south 0.2978174 0.064004187 0.1829532 0.1888451</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 no_detect_a_set        a   east 0.6025875 0.045383047 0.5218729 0.5261802</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 no_detect_a_set        b   nord 0.9875566 0.008070346 0.9689414 0.9704140</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 no_detect_a_set        b  south 0.9594431 0.008275134 0.9437901 0.9446762</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 no_detect_a_set        b   east 0.9668884 0.020678650 0.9177136 0.9230652</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         25%       50%       75%     97.5%       Max  nsv Na's</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.3597082 0.3765885 0.3930981 0.4078016 0.4094241 1001    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.2401187 0.2928859 0.3480493 0.3970215 0.4012468 1001    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.5660103 0.6046856 0.6415854 0.6759990 0.6792414 1001    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 0.9815927 0.9892586 0.9942821 0.9972646 0.9975622 1001    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 0.9521419 0.9599332 0.9657958 0.9710771 0.9717516 1001    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6 0.9509804 0.9711635 0.9852675 0.9916828 0.9921781 1001    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.3576956 0.3748559 0.3928853 0.4077016 0.4094812 1001    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.2433367 0.3015970 0.3524411 0.3964220 0.4010001 1001    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.5639605 0.6023181 0.6424667 0.6752938 0.6794225 1001    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 0.9814800 0.9895902 0.9944236 0.9973534 0.9975015 1001    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 0.9522929 0.9602068 0.9668934 0.9712431 0.9717516 1001    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 0.9523051 0.9715396 0.9847453 0.9916434 0.9921812 1001    0</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

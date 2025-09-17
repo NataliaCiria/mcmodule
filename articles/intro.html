@@ -789,51 +789,8 @@ we must account for both the farm’s probability of being infected
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Result</span></span>
-<span><span class="va">imports</span><span class="op">$</span><span class="va">node_list</span><span class="op">$</span><span class="va">no_detect_set</span></span></code></pre></div>
-<pre><code><span><span class="co">## $mcnode</span></span>
-<span><span class="co">##   node    mode  nsv nsu nva variate   min  mean median   max Nas type outm</span></span>
-<span><span class="co">## 1    x numeric 1001   1   6       1 0.341 0.375  0.375 0.409   0    V each</span></span>
-<span><span class="co">## 2    x numeric 1001   1   6       2 0.183 0.300  0.301 0.401   0    V each</span></span>
-<span><span class="co">## 3    x numeric 1001   1   6       3 0.522 0.603  0.601 0.679   0    V each</span></span>
-<span><span class="co">## 4    x numeric 1001   1   6       4 0.969 0.988  0.990 0.998   0    V each</span></span>
-<span><span class="co">## 5    x numeric 1001   1   6       5 0.944 0.959  0.959 0.972   0    V each</span></span>
-<span><span class="co">## 6    x numeric 1001   1   6       6 0.918 0.967  0.972 0.992   0    V each</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## $param</span></span>
-<span><span class="co">## [1] "no_detect" "animals_n" "farms_n"   "h_prev"   </span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## $inputs</span></span>
-<span><span class="co">## [1] "no_detect" "animals_n" "farms_n"   "h_prev"   </span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## $description</span></span>
-<span><span class="co">## [1] "Probability of at least one no_detect in a set (set)"</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## $node_expression</span></span>
-<span><span class="co">## [1] "1-(1-h_prev*(1-(1-no_detect)^animals_n))^farms_n"</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## $type</span></span>
-<span><span class="co">## [1] "total"</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## $module</span></span>
-<span><span class="co">## [1] "imports"</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## $keys</span></span>
-<span><span class="co">## [1] "pathogen" "origin"  </span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## $scenario</span></span>
-<span><span class="co">## NULL</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## $data_name</span></span>
-<span><span class="co">## [1] "imports_data"</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## $prefix</span></span>
-<span><span class="co">## NULL</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## $total_type</span></span>
-<span><span class="co">## [1] "multilevel set prob"</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## $summary</span></span>
-<span><span class="co">##         mc_name pathogen origin      mean          sd       Min      2.5%</span></span>
+<span><span class="va">imports</span><span class="op">$</span><span class="va">node_list</span><span class="op">$</span><span class="va">no_detect_set</span><span class="op">$</span><span class="va">summary</span></span></code></pre></div>
+<pre><code><span><span class="co">##         mc_name pathogen origin      mean          sd       Min      2.5%</span></span>
 <span><span class="co">## 1 no_detect_set        a   nord 0.3750658 0.019423805 0.3409096 0.3426622</span></span>
 <span><span class="co">## 2 no_detect_set        a  south 0.2996147 0.062082135 0.1831011 0.1880185</span></span>
 <span><span class="co">## 3 no_detect_set        a   east 0.6033211 0.044910761 0.5223697 0.5281263</span></span>
@@ -887,7 +844,7 @@ animal ends up infecting another animal via direct contact</p>
 <span>  prev_mcmodule <span class="op">=</span> <span class="va">imports</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Group by: pathogen</span></span></code></pre>
 <pre><code><span><span class="co">## no_detect prev dim: [1001, 1, 6], new dim: [1001, 1, 6], 0 null matches</span></span></code></pre>
-<pre><code><span><span class="co">## data prev dim: [2, 3], new dim: [6, 3], 0 null matches</span></span></code></pre>
+<pre><code><span><span class="co">## data prev dim: [2, 3], new dim: [6, 4], 0 null matches</span></span></code></pre>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## dir_contact evaluated</span></span></code></pre>
 <pre><code><span><span class="co">## </span></span>
@@ -898,7 +855,25 @@ animal ends up infecting another animal via direct contact</p>
 </h3>
 <div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">intro</span><span class="op">&lt;-</span><span class="fu"><a href="../reference/combine_modules.html">combine_modules</a></span><span class="op">(</span><span class="va">imports</span>,<span class="va">transmission</span><span class="op">)</span></span>
-<span><span class="co">#intro&lt;-at_least_one(intro, c("no_detect","dir_contact"), name="total")</span></span></code></pre></div>
+<span><span class="va">intro</span><span class="op">&lt;-</span><span class="fu"><a href="../reference/at_least_one.html">at_least_one</a></span><span class="op">(</span><span class="va">intro</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"no_detect"</span>,<span class="st">"dir_contact"</span><span class="op">)</span>, name<span class="op">=</span><span class="st">"total"</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## no_detect prev dim: [1001, 1, 6], new dim: [1001, 1, 6], 0 null matches</span></span></code></pre>
+<pre><code><span><span class="co">## dir_contact prev dim: [1001, 1, 6], new dim: [1001, 1, 6], 0 null matches</span></span></code></pre>
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">intro</span><span class="op">$</span><span class="va">node_list</span><span class="op">$</span><span class="va">total</span><span class="op">$</span><span class="va">summary</span></span></code></pre></div>
+<pre><code><span><span class="co">##   mc_name scenario_id pathogen origin      mean          sd        Min</span></span>
+<span><span class="co">## 1   total           0        a   nord 0.1017032 0.008316155 0.08652697</span></span>
+<span><span class="co">## 2   total           0        a  south 0.1016742 0.008312220 0.08664343</span></span>
+<span><span class="co">## 3   total           0        a   east 0.1851332 0.014866279 0.15735121</span></span>
+<span><span class="co">## 4   total           0        b   nord 0.1043658 0.015686276 0.06477790</span></span>
+<span><span class="co">## 5   total           0        b  south 0.2821575 0.009186013 0.26018305</span></span>
+<span><span class="co">## 6   total           0        b   east 0.6115412 0.044621528 0.52571025</span></span>
+<span><span class="co">##         2.5%        25%       50%       75%     97.5%       Max  nsv Na's</span></span>
+<span><span class="co">## 1 0.08799273 0.09442702 0.1019738 0.1089670 0.1156366 0.1176561 1001    0</span></span>
+<span><span class="co">## 2 0.08833183 0.09484400 0.1012064 0.1086527 0.1163239 0.1178921 1001    0</span></span>
+<span><span class="co">## 3 0.15985209 0.17274241 0.1854175 0.1979932 0.2089985 0.2119475 1001    0</span></span>
+<span><span class="co">## 4 0.07661499 0.09305156 0.1032357 0.1150922 0.1352968 0.1502795 1001    0</span></span>
+<span><span class="co">## 5 0.26529339 0.27550870 0.2820065 0.2886288 0.3002188 0.3072622 1001    0</span></span>
+<span><span class="co">## 6 0.53596143 0.57523484 0.6113143 0.6504614 0.6846910 0.6940671 1001    0</span></span></code></pre>
 </div>
 </div>
 <div class="section level2">
@@ -932,7 +907,7 @@ dimensions for the number of simulations performed.</p>
 <div class="section level3">
 <h3 id="remove-mcnode-nas">Remove mcnode NAs<a class="anchor" aria-label="anchor" href="#remove-mcnode-nas"></a>
 </h3>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sample_mcnode</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/mc2d/man/mcstoc.html" class="external-link">mcstoc</a></span><span class="op">(</span><span class="va">runif</span>,</span>
 <span>               min <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/mc2d/man/mcnode.html" class="external-link">mcdata</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fl">0.2</span>, <span class="op">-</span><span class="cn">Inf</span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"0"</span>, nvariates <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
 <span>               max <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/mc2d/man/mcnode.html" class="external-link">mcdata</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fl">0.3</span>, <span class="cn">Inf</span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"0"</span>, nvariates <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
@@ -940,7 +915,7 @@ dimensions for the number of simulations performed.</p>
 <span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Warning in (function (n, min = 0, max = 1) : NAs produced</span></span></code></pre>
 <pre><code><span><span class="co">## Warning in (function (n, min = 0, max = 1) : NAs produced</span></span></code></pre>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Replace NA and Inf with 0</span></span>
 <span><span class="va">clean_mcnode</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/mcnode_na_rm.html">mcnode_na_rm</a></span><span class="op">(</span><span class="va">sample_mcnode</span><span class="op">)</span></span></code></pre></div>
 <p>Useful to include in expressions were there is a division with a

@@ -65,7 +65,8 @@ The aggregation method can be specified via agg_func parameter:</p><ul><li><p>"p
 <span>  <span class="va">mcmodule</span>,</span>
 <span>  <span class="va">mc_name</span>,</span>
 <span>  agg_keys <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  suffix <span class="op">=</span> <span class="st">"agg"</span>,</span>
+<span>  agg_suffix <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  prefix <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  summary <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  keep_variates <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -89,8 +90,12 @@ The aggregation method can be specified via agg_func parameter:</p><ul><li><p>"p
 <dd><p>grouping variables for aggregation</p></dd>
 
 
-<dt id="arg-suffix">suffix<a class="anchor" aria-label="anchor" href="#arg-suffix"></a></dt>
-<dd><p>suffix for output node name (default: "agg")</p></dd>
+<dt id="arg-agg-suffix">agg_suffix<a class="anchor" aria-label="anchor" href="#arg-agg-suffix"></a></dt>
+<dd><p>Suffix for aggregated node name (default: "agg")</p></dd>
+
+
+<dt id="arg-prefix">prefix<a class="anchor" aria-label="anchor" href="#arg-prefix"></a></dt>
+<dd><p>Optional prefix for output node name - includes metadata as add_prefix() (default: NULL)</p></dd>
 
 
 <dt id="arg-name">name<a class="anchor" aria-label="anchor" href="#arg-name"></a></dt>
