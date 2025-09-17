@@ -8,7 +8,8 @@ agg_totals(
   mcmodule,
   mc_name,
   agg_keys = NULL,
-  suffix = "agg",
+  agg_suffix = NULL,
+  prefix = NULL,
   name = NULL,
   summary = TRUE,
   keep_variates = FALSE,
@@ -22,7 +23,9 @@ agg_totals(
 
 \item{agg_keys}{grouping variables for aggregation}
 
-\item{suffix}{suffix for output node name (default: "agg")}
+\item{agg_suffix}{Suffix for aggregated node name (default: "agg")}
+
+\item{prefix}{Optional prefix for output node name - includes metadata as add_prefix() (default: NULL)}
 
 \item{name}{Custom name for output node (optional)}
 

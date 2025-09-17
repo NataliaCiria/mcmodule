@@ -11,8 +11,7 @@ eval_module(
   prev_mcmodule = NULL,
   summary = FALSE,
   mctable = set_mctable(),
-  data_keys = set_data_keys(),
-  create_nodes = TRUE
+  data_keys = set_data_keys()
 )
 }
 \arguments{
@@ -29,8 +28,6 @@ eval_module(
 \item{mctable}{Monte Carlo configuration table}
 
 \item{data_keys}{List of key columns for each dataset}
-
-\item{create_nodes}{Logical; whether to create new nodes from data}
 }
 \value{
 An mcmodule object containing data, expressions, and nodes

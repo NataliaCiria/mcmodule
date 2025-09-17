@@ -13,6 +13,7 @@ trial_totals(
   name = NULL,
   prefix = NULL,
   combine_prob = TRUE,
+  all_suffix = NULL,
   level_suffix = c(trial = "trial", subset = "subset", set = "set"),
   mctable = set_mctable(),
   agg_keys = NULL,
@@ -37,6 +38,8 @@ trial_totals(
 \item{prefix}{Prefix for output node names (optional)}
 
 \item{combine_prob}{Combine probability of all nodes assuming independence (default: TRUE)}
+
+\item{all_suffix}{Suffix for combined node name (default: "all")}
 
 \item{level_suffix}{A list of suffixes for each hierarchical level (default: c(trial="trial",subset="subset",set="set"))}
 

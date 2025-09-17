@@ -4,14 +4,23 @@
 \alias{at_least_one}
 \title{Combined Probability of Events (At least one)}
 \usage{
-at_least_one(mcmodule, mc_names, name = NULL, prefix = NULL, summary = TRUE)
+at_least_one(
+  mcmodule,
+  mc_names,
+  name = NULL,
+  all_suffix = NULL,
+  prefix = NULL,
+  summary = TRUE
+)
 }
 \arguments{
 \item{mcmodule}{Module containing node list and input data frames}
 
 \item{mc_names}{Vector of node names to combine}
 
-\item{name}{Optional custom name for output node (default: NULL)}
+\item{name}{Optional custom name for combined node (default: NULL)}
+
+\item{all_suffix}{Suffix for combined node name (default: "all")}
 
 \item{prefix}{Optional prefix for output node name (default: NULL)}
 
@@ -22,25 +31,26 @@ Updated mcmodule with new combined probability node
 }
 \description{
 Combines probabilities of multiple events assuming independence,
-using the formula P(A or B) = 1 - (1-P(A))*(1-P(B)). It macthes dimensions automatically.
+using the formula P(A or B) = 1 - (1-P(A))*(1-P(B)).
+It matches dimensions automatically.
 }
 \examples{
 module <- list(
   node_list = list(
     p1 = list(
       mcnode = mcstoc(runif,
-                      min = mcdata(c(0.1, 0.2, 0.3), type = "0", nvariates = 3),
-                      max = mcdata(c(0.2, 0.3, 0.4), type = "0", nvariates = 3),
-                      nvariates = 3
+        min = mcdata(c(0.1, 0.2, 0.3), type = "0", nvariates = 3),
+        max = mcdata(c(0.2, 0.3, 0.4), type = "0", nvariates = 3),
+        nvariates = 3
       ),
       data_name = "data_x",
       keys = c("category")
     ),
     p2 = list(
       mcnode = mcstoc(runif,
-                      min = mcdata(c(0.5, 0.6, 0.7), type = "0", nvariates = 3),
-                      max = mcdata(c(0.6, 0.7, 0.8), type = "0", nvariates = 3),
-                      nvariates = 3
+        min = mcdata(c(0.5, 0.6, 0.7), type = "0", nvariates = 3),
+        max = mcdata(c(0.6, 0.7, 0.8), type = "0", nvariates = 3),
+        nvariates = 3
       ),
       data_name = "data_y",
       keys = c("category")

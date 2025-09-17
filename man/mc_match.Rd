@@ -26,3 +26,39 @@ Matches two mcnodes by:
 \item Null matching - Add missing groups across different scenarios
 }
 }
+\examples{
+test_module <- list(
+  node_list = list(
+    node_x = list(
+      mcnode = mcstoc(runif,
+        min = mcdata(c(1, 2, 3), type = "0", nvariates = 3),
+        max = mcdata(c(2, 3, 4), type = "0", nvariates = 3),
+        nvariates = 3
+      ),
+      data_name = "data_x",
+      keys = c("category")
+    ),
+    node_y = list(
+      mcnode = mcstoc(runif,
+        min = mcdata(c(5, 6, 7), type = "0", nvariates = 3),
+        max = mcdata(c(6, 7, 8), type = "0", nvariates = 3),
+        nvariates = 3
+      ),
+      data_name = "data_y",
+      keys = c("category")
+    )
+  ),
+  data = list(
+    data_x = data.frame(
+      category = c("A", "B", "C"),
+      scenario_id = c("0", "0", "0")
+    ),
+    data_y = data.frame(
+      category = c("B", "B", "B"),
+      scenario_id = c("0", "1", "2")
+    )
+  )
+)
+
+result <- mc_match(test_module, "node_x", "node_y")
+}

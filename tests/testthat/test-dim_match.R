@@ -334,5 +334,24 @@ suppressMessages({
     expect_equal(result$keys_xy$g_row.y,c(1,2,3,4,5,6))
 
   })
+
+  test_that("mc_match_data works", {
+    # Create test data
+    test_data  <- data.frame(pathogen=c("a","b"),
+                             inf_dc_min=c(0.05,0.3),
+                             inf_dc_max=c(0.08,0.4))
+
+    result<-mc_match_data(imports_mcmodule,"no_detect_a", test_data)
+
+    # Check dimensions
+    expect_equal(dim(result$test_data_match),c(6,4))
+
+    # Check new keys column names are included in the result
+    expect_true(all(c("pathogen","origin")%in%names(result$test_data_match)))
+    expect_true(all(c("pathogen","origin")%in%names(result$keys_xy)))
+
+    # Check row number
+    expect_equal(result$keys_xy$g_row.y,c(1,1,1,2,2,2))
+  })
 })
 

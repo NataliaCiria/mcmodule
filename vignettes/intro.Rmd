@@ -404,7 +404,7 @@ imports <- trial_totals(
 )
 
 # Result
-imports$node_list$no_detect_set
+imports$node_list$no_detect_set$summary
 ```
 
 # Working with multiple mcmodules
@@ -444,7 +444,8 @@ transmission <- eval_module(
 
 ```{r}
 intro<-combine_modules(imports,transmission)
-#intro<-at_least_one(intro, c("no_detect","dir_contact"), name="total")
+intro<-at_least_one(intro, c("no_detect","dir_contact"), name="total")
+intro$node_list$total$summary
 ```
 
 # Analysing mcmodule models

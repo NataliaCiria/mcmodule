@@ -16,7 +16,7 @@ mc_match_data(mcmodule, mc_name, data, keys_names = NULL)
 \item{keys_names}{Names of key columns}
 }
 \value{
-List containing matched node, matched data and combined keys (keys_xy)
+List containing matched node, matched data and combined keys (keys_xy
 }
 \description{
 Matches an mcnode with a data frame by:
@@ -25,4 +25,10 @@ Matches an mcnode with a data frame by:
 \item Scenario matching - Same groups but different scenarios
 \item Null matching - Add missing groups across different scenarios
 }
+}
+\examples{
+test_data  <- data.frame(pathogen=c("a","b"),
+                         inf_dc_min=c(0.05,0.3),
+                         inf_dc_max=c(0.08,0.4))
+result<-mc_match_data(imports_mcmodule,"no_detect_a", test_data)
 }

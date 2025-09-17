@@ -86,6 +86,41 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
 #' @param mc_name_y Second node name
 #' @param keys_names Names of key columns
 #' @return List containing matched nodes and combined keys (keys_xy)
+#' @examples
+#' test_module <- list(
+#'   node_list = list(
+#'     node_x = list(
+#'       mcnode = mcstoc(runif,
+#'         min = mcdata(c(1, 2, 3), type = "0", nvariates = 3),
+#'         max = mcdata(c(2, 3, 4), type = "0", nvariates = 3),
+#'         nvariates = 3
+#'       ),
+#'       data_name = "data_x",
+#'       keys = c("category")
+#'     ),
+#'     node_y = list(
+#'       mcnode = mcstoc(runif,
+#'         min = mcdata(c(5, 6, 7), type = "0", nvariates = 3),
+#'         max = mcdata(c(6, 7, 8), type = "0", nvariates = 3),
+#'         nvariates = 3
+#'       ),
+#'       data_name = "data_y",
+#'       keys = c("category")
+#'     )
+#'   ),
+#'   data = list(
+#'     data_x = data.frame(
+#'       category = c("A", "B", "C"),
+#'       scenario_id = c("0", "0", "0")
+#'     ),
+#'     data_y = data.frame(
+#'       category = c("B", "B", "B"),
+#'       scenario_id = c("0", "1", "2")
+#'     )
+#'   )
+#' )
+#'
+#' result <- mc_match(test_module, "node_x", "node_y")
 #' @export
 mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
   # Check if mcnodes are in mcmodule
@@ -151,10 +186,20 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
 
   # Match keys
   keys_list <- keys_match(keys_x, keys_y, keys_names)
-  keys_x <- keys_list$x
-  keys_y <- keys_list$y
-  keys_xy <- keys_list$xy
+  keys_x_match <- keys_list$x
+  keys_y_match <- keys_list$y
+  keys_xy_match <- keys_list$xy
 
+  # Update keys (add x and y unique keys to all matched outputs)
+  new_keys<-unique(names(keys_x),names(keys_y))
+  new_keys <- new_keys[!new_keys %in%c("g_id","g_row","scenario_id")]
+
+  keys_x<-cbind(keys_x_match[!names(keys_x_match)%in%new_keys],keys_x[names(keys_x)%in%new_keys])
+  keys_y<-cbind(keys_y_match[!names(keys_y_match)%in%new_keys],keys_y[names(keys_y)%in%new_keys])
+  keys_xy_match<-left_join(keys_xy_match,keys_x[!names(keys_x)%in%names(keys_xy_match)], by=c("g_row.x"="g_row"))
+  keys_xy_match<-left_join(keys_xy_match,keys_y[!names(keys_y)%in%names(keys_xy_match)], by=c("g_row.y"="g_row"))
+  keys_xy_match
+  keys_xy<-relocate(keys_xy_match,c("g_id","g_row.x","g_row.y","scenario_id"))
 
   # Match nodes
   null_x <- 0
@@ -231,7 +276,12 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
 #' @param mc_name Node name
 #' @param data Data frame containing keys to match with
 #' @param keys_names Names of key columns
-#' @return List containing matched node, matched data and combined keys (keys_xy)
+#' @return List containing matched node, matched data and combined keys (keys_xy
+#' @examples
+#' test_data  <- data.frame(pathogen=c("a","b"),
+#'                          inf_dc_min=c(0.05,0.3),
+#'                          inf_dc_max=c(0.08,0.4))
+#' result<-mc_match_data(imports_mcmodule,"no_detect_a", test_data)
 #' @export
 mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
   # Check if mcnodes are in mcmodule
@@ -253,6 +303,7 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
   keys_x <- mc_keys(mcmodule, mc_name, keys_names)
   keys_data<-intersect(names(keys_x),names(data))
   keys_y <- data[keys_data]
+
 
   # If nodes do not have the same keys but both nodes come from the same data, keys are inferred from data
   if(data_name_x==data_name_y&&
@@ -276,10 +327,20 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
 
   # Match keys
   keys_list <- keys_match(keys_x, keys_y, keys_names)
-  keys_x <- keys_list$x
-  keys_y <- keys_list$y
-  keys_xy <- keys_list$xy
+  keys_x_match <- keys_list$x
+  keys_y_match <- keys_list$y
+  keys_xy_match <- keys_list$xy
 
+  # Update keys (add x and y unique keys to all matched outputs)
+  new_keys<-unique(names(keys_x),names(keys_y))
+  new_keys <- new_keys[!new_keys %in%c("g_id","g_row","scenario_id")]
+
+  keys_x<-cbind(keys_x_match[!names(keys_x_match)%in%new_keys],keys_x[names(keys_x)%in%new_keys])
+  keys_y<-cbind(keys_y_match[!names(keys_y_match)%in%new_keys],keys_y[names(keys_y)%in%new_keys])
+  keys_xy_match<-left_join(keys_xy_match,keys_x[!names(keys_x)%in%names(keys_xy_match)], by=c("g_row.x"="g_row"))
+  keys_xy_match<-left_join(keys_xy_match,keys_y[!names(keys_y)%in%names(keys_xy_match)], by=c("g_row.y"="g_row"))
+  keys_xy_match
+  keys_xy<-relocate(keys_xy_match,c("g_id","g_row.x","g_row.y","scenario_id"))
 
   # Match nodes
   null_x <- 0
@@ -308,6 +369,7 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
 
     if (keys_xy$g_id[i] %in% keys_y$g_id) {
       row_i <- data[g_row_y_i,]
+      row_i<-cbind(keys_xy[i,new_keys],row_i[!names(row_i)%in%new_keys])
     } else {
       row_i <- keys_xy[i,keys_data]
       null_y <- null_y + 1
@@ -316,7 +378,7 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
     if (i == 1) {
       data_match <- row_i
     } else {
-      data_match <- bind_rows(data_match, row_i)
+      data_match <- dplyr::bind_rows(data_match, row_i)
     }
   }
 

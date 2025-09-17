@@ -23,9 +23,16 @@ List containing:
 Match and align keys between two datasets
 }
 \examples{
-\dontrun{
-x <- data.frame(type = 1:2, scenario_id = c(0, 1))
-y <- data.frame(type = 1:2, scenario_id = c(0, 2))
-keys_match(x, y, keys_names = "type")
-}
+x <- data.frame(
+  type = c("1", "2"),
+  category = c("a", "b"),
+  scenario_id = c(0, 1)
+)
+
+y <- data.frame(
+   type = c("1", "2"),
+   category = c("c", "d"),
+   scenario_id = c(0, 2)
+ )
+keys_match(x, y)
 }
