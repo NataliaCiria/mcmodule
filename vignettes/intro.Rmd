@@ -16,13 +16,11 @@ link-citations: true
 
 # Getting started
 
-This is a gentle and casual welcome to Monte Carlo risk analysis and the use of [`mcmodule`](https://nataliaciria.github.io/mcmodule/). For a more formal approach you can read the package official [vignette](https://nataliaciria.github.io/mcmodule/articles/mcmodule.html).
-
-I developed this new R package because I could not find any suitable tools for creating complex risk analysis models with thousands of parameters, hundreds of cases, dozens of scenarios, and multiple pathways in R (or in any other software accessible to epidemiologists).
+This is a gentle and casual welcome to Monte Carlo risk analysis and [`mcmodule`](https://nataliaciria.github.io/mcmodule/) R package. For a more technical approach you can read the package official [vignette](https://nataliaciria.github.io/mcmodule/articles/mcmodule.html).
 
 Formally, `mcmodule` is a framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to make working with multiple risk pathways, variates, and scenarios easier. The package includes tools for creating stochastic objects from data frames, visualizing results, and performing uncertainty, sensitivity, and convergence analysis.
 
-For me, `mcmodule` was a little set of custom functions that was born out of necessity and grew out of obsession. Eventually, the effort and lessons learned in building smooth, large-scale risk analysis in R were so great that it was something I couldn't keep just for our [farmR!SK](https://github.com/VetEpi-UAB/farmrisk) project. Now, I hope this package can help other epidemiologists (and risk modellers from other disciplines), not only to save a few hours of work, but also to be ambitious and design complex risk pathways knowing that it will be feasible to evaluate them in R.
+For me, `mcmodule` was a little set of custom functions that was born out of necessity and grew out of obsession. I developed this new R package because I could not find any suitable tools for creating complex risk analysis models involving thousands of parameters, hundreds of cases, dozens of scenarios, and multiple pathways in R (or in any other software accessible to epidemiologists like me). Eventually, the effort and lessons learned from building smooth, large-scale risk analysis in R went beyond what I could keep just for our [farmR!SK](https://github.com/VetEpi-UAB/farmrisk) project. Now, I hope this package can help other epidemiologists (and risk modelers from other disciplines), not only to save a few hours of work, but also to be ambitious and design complex risk pathways knowing that it will be feasible to evaluate them in R.
 
 ## Risk assessment
 
@@ -30,13 +28,15 @@ This section provides a brief introduction to risk assessment in R. Although thi
 
 ### A simple risk assessment
 
-Let's imagine we want to buy a heifer from a friend. We know their farm is infected with pathogen A, a disease that your farm is free from. To reduce risk, we plan to perform a diagnostic test before bringing the heifer to our farm. We want to calculate the probability of introducing the disease if we purchase one heifer that tests negative.
+Imagine we want to buy a heifer. We have found a good deal on a farm that we know is infected with pathogen A, a disease that your farm is free from. To reduce the risk of introducing the disease to our farm, we plan to perform a diagnostic test on the heifer before bringing her to our farm. We want to calculate the probability of introducing the disease by purchasing one heifer that tests negative.
 
-Risk assessment is a technique to estimate the probability and impact of an "adverse"[^1] event. It identifies the steps necessary for the event to occur and assigns them a probability. In our case, we have some uncertainty around the probability that an animal in a herd is infected and around the test sensitivity, so we want to conduct a probabilistic or stochastic risk assessment that can account for that uncertainty.
+> **Risk assessment** is a technique to estimate the probability and impact of an "adverse"[^1] event. It identifies the **steps** necessary for the event to occur and assigns them a **probability**.
 
 [^1]: Although in practice it is more commonly used to assess adverse events (that's why they're called "risks"), these quantitative techniques can obviously also be used to estimate the probability of any event, judgements about whether it is adverse or not are not part of the probabilistic calculations.
 
-The risk assessment for our cattle purchase can be performed using base R [@base] random sampling functions, or `mc2d` [@mc2d], a package provides additional probability distributions (such as rpert) and other useful tools for analyzing stochastic (Monte-Carlo) simulations.
+We have some uncertainty around the probability that an animal in a herd is infected and around the test sensitivity, so we want to conduct a probabilistic or **stochastic** risk assessment that can account for that **uncertainty**.
+
+The risk assessment for our cattle purchase can be performed using base R [@base] random sampling functions, or `mc2d` [@mc2d], a package provides additional probability distributions (such as rpert) and other useful tools for analysing stochastic (Monte-Carlo) simulations.
 
 ```{r, warning=FALSE, message=FALSE}
 library(mc2d)
