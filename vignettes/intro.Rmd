@@ -55,16 +55,16 @@ test_origin <- mcdata(1, type="0") #Yes
 
 # EXPRESSIONS
 # Probability that an animal in an infected herd is infected (a = animal)
-inf <- w_prev
+infected <- w_prev
 # Probability an animal is tested and is a false negative 
 # (test specificity assumed to be 100%)
-false_neg <- inf * test_origin * (1 - test_sensi)
+false_neg <- infected * test_origin * (1 - test_sensi)
 # Probability an animal is not tested
-no_test <- inf * (1 - test_origin)
+no_test <- infected * (1 - test_origin)
 # Probability an animal is not detected
 no_detect <- false_neg + no_test
 
-mc_model<-mc(w_prev, inf, test_origin, test_sensi, 
+mc_model<-mc(w_prev, infected, test_origin, test_sensi, 
              false_neg, no_test, no_detect)
 
 # RESULT
@@ -118,16 +118,16 @@ test_origin <- mcdata(c(a = 1, b = 1), nvariates = 2, type="0")
 
 # EXPRESSIONS
 # Probability that an animal in an infected herd is infected (a = animal)
-inf <- w_prev
+infected <- w_prev
 # Probability an animal is tested and is a false negative 
 # (test specificity assumed to be 100%)
-false_neg <- inf * test_origin * (1 - test_sensi)
+false_neg <- infected * test_origin * (1 - test_sensi)
 # Probability an animal is not tested
-no_test <- inf * (1 - test_origin)
+no_test <- infected * (1 - test_origin)
 # Probability an animal is not detected
 no_detect <- false_neg + no_test
 
-mc_model<-mc(w_prev, inf, test_origin, test_sensi, 
+mc_model<-mc(w_prev, infected, test_origin, test_sensi, 
              false_neg, no_test, no_detect)
 
 # RESULT
@@ -162,13 +162,13 @@ Now let's explore this new package! It's about to be submitted to CRAN, but sinc
 
 ```{r, eval=FALSE}
 # install.packages("devtools")
-devtools::install_github("NataliaCiria/mcmodule")
+#devtools::install_github("NataliaCiria/mcmodule")
 ```
 
 And we load the package in our R session. Easy-peasy, ready to go!
 
 ```{r}
-library(mcmodule)
+#library(mcmodule)
 ```
 
 Other recommended packages to load along with mcmodule are:
@@ -292,12 +292,12 @@ Finally, we need to write the model's mathematical expression. This expressions 
 ```{r}
 imports_exp<-quote({
   # Probability that an animal in an infected herd is infected (a = animal)
-  inf <- w_prev
+  infected <- w_prev
   # Probability an animal is tested and is a false negative 
   # (test specificity assumed to be 100%)
-  false_neg <- inf * test_origin * (1 - test_sensi)
+  false_neg <- infected * test_origin * (1 - test_sensi)
   # Probability an animal is not tested
-  no_test <- inf * (1 - test_origin)
+  no_test <- infected * (1 - test_origin)
   # Probability an animal is not detected
   no_detect <- false_neg + no_test
 })
@@ -341,11 +341,10 @@ And now that we have an mcmodule, we can begin exploring its possibilities!
 
 We can visualize an mc_module with the mc_network() function. For this you will need to have `igraph` [@igraph] and `visNetwork` [@visnetwork]installed.
 
-In these visualizations, input datasets appear in blue, input columns in dark-grey-blue, input mcnodes in grey, output mcnodes in green, and total mcnodes (as we will see later) in orange. The numbers displayed when clicked correspond to the first variate of each mcnode.
+In these network visualizations, input datasets appear in blue, input data files, input columns and input mcnodes appear in different shades of dark-grey-blue, output mcnodes in green, and total mcnodes (as we will see later) in orange. The numbers displayed when clicked correspond to the first variate of each mcnode.
 
 ```{r}
-#TODO: why inf is not conected to no_test, false_neg??
-mc_network(imports)
+mc_network(imports, legend = TRUE)
 ```
 
 ## Summarizing {#sec-calculating-totals}

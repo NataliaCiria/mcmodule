@@ -34,6 +34,7 @@ get_node_list <- function(exp, param_names = NULL,
     exp3 <- gsub("975UNDERSCORE2023", "_", exp2)
     exp4 <- c(strsplit(exp3, split = ",")[[1]])
     exp4 <- exp4[!exp4 %in% ""]
+    if(any(suppressWarnings(as.numeric(exp4))%in%c(Inf,-Inf))) warning("Inputs called 'inf' or '-inf' are assumed to be infinite (numeric) and are not parsed as mcnodes")
     exp5 <- suppressWarnings(exp4[is.na(as.numeric(exp4))])
     inputs <- unique(exp5)
 

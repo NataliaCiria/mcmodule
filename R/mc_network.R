@@ -180,21 +180,6 @@ visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by =
 
   nodes <- get_node_table(mcmodule = mcmodule, variate = variate)
 
-  # Default color palette if none provided
-  default_color_pal <- c(
-    input_file = "#577A9E",  # Dark blue
-    inputs_col = "#89A3BE",  # Medium blue
-    in_node = "#BDCCDB",     # Light blue
-    out_node = "#18BC9C",    # Teal
-    trials_n = "#F9CF8B",    # Light orange
-    subsets_n = "#DBCEB3",    # Light orange
-    subsets_p = "#C1B9A5",    # Light orange
-    total = "#F39C12",       # Orange
-    agg_total = "#ED7427",   # Dark orange
-    prev_node = "#E74C3C"    # Red
-  )
-
-
   # Assing color by selected node table column
   if(is.null(color_by)) {
     # Default to coloring by "type" if no color_by specified
@@ -271,6 +256,7 @@ visNetwork_edges <- function(mcmodule) {
 #' @param variate Integer specifying which variate to visualize (default: 1)
 #' @param color_pal Custom color palette for nodes (optional)
 #' @param color_by Column name to determine node colors (optional)
+#' @param legend Add colors legend (optional)
 #' @return An interactive visNetwork object with features:
 #'   \itemize{
 #'     \item Highlighting of connected nodes
@@ -284,7 +270,7 @@ visNetwork_edges <- function(mcmodule) {
 #' \dontrun{
 #' network <- mc_network(imports_mcmodule)
 #' }
-mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL){
+mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL, legend = FALSE){
   if(!all(requireNamespace("visNetwork", quietly = TRUE)&requireNamespace("igraph", quietly = TRUE))){
     stop("This function need 'visNetwork' and 'igraph' packages. Please
          install them before.")
@@ -293,12 +279,27 @@ mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL){
   nodes <- visNetwork_nodes(mcmodule, variate = variate, color_pal = color_pal, color_by = color_by)
   edges <- visNetwork_edges(mcmodule)
 
-  visNetwork::visNetwork(nodes, edges, width = "100%") %>%
+  network<-visNetwork::visNetwork(nodes, edges, width = "100%") %>%
     visNetwork::visOptions(highlightNearest = list(enabled =TRUE, degree = 2), nodesIdSelection = TRUE,selectedBy="module")%>%
     visNetwork::visEdges(arrows = "to")%>%
     visNetwork::visIgraphLayout(layout ="layout_with_sugiyama", maxiter=500)%>%
     visNetwork::visPhysics(enabled = FALSE)%>%
     visNetwork::visInteraction(dragNodes=TRUE)
+
+  if(legend){
+    if(is.null(color_pal)) color_pal<- default_color_pal
+    # passing custom nodes and/or edges
+    lnodes <- data.frame(label = names(color_pal), color = color_pal, shape="dot",
+                         title = "Node type", font.size = 15)
+    network<-network%>%
+      visLegend(addNodes = lnodes, useGroups = FALSE, ncol=2, zoom=FALSE)
+
+    return(network)
+
+  }else{
+    return(network)
+  }
+
 }
 
 # Helper functions
@@ -357,4 +358,16 @@ generate_node_title <- function(name, module, value, expression, param, inputs) 
   )
 }
 
-
+# Default color palette if none provided
+default_color_pal<-c(
+    input_file = "#577A9E",  # Dark blue
+    inputs_col = "#89A3BE",  # Medium blue
+    in_node = "#BDCCDB",     # Light blue
+    out_node = "#18BC9C",    # Teal
+    trials_n = "#F9CF8B",    # Light orange
+    subsets_n = "#DBCEB3",    # Light orange
+    subsets_p = "#C1B9A5",    # Light orange
+    total = "#F39C12",       # Orange
+    agg_total = "#ED7427",   # Dark orange
+    prev_node = "#E74C3C"    # Red
+  )
