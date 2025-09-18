@@ -35,7 +35,7 @@ includes interactive features for exploring model structure and relationships.">
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Create Interactive Network Visualization</h1>
-      <small class="dont-index">Source: <a href="https://github.com/NataliaCiria/mcmodule/blob/main/R/get_network_table.R" class="external-link"><code>R/get_network_table.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/NataliaCiria/mcmodule/blob/main/R/mc_network.R" class="external-link"><code>R/mc_network.R</code></a></small>
       <div class="d-none name"><code>mc_network.Rd</code></div>
     </div>
 
@@ -46,7 +46,13 @@ includes interactive features for exploring model structure and relationships.</
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">mc_network</span><span class="op">(</span><span class="va">mcmodule</span>, variate <span class="op">=</span> <span class="fl">1</span>, color_pal <span class="op">=</span> <span class="cn">NULL</span>, color_by <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">mc_network</span><span class="op">(</span></span>
+<span>  <span class="va">mcmodule</span>,</span>
+<span>  variate <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  color_pal <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  color_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  legend <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -67,6 +73,10 @@ includes interactive features for exploring model structure and relationships.</
 
 <dt id="arg-color-by">color_by<a class="anchor" aria-label="anchor" href="#arg-color-by"></a></dt>
 <dd><p>Column name to determine node colors (optional)</p></dd>
+
+
+<dt id="arg-legend">legend<a class="anchor" aria-label="anchor" href="#arg-legend"></a></dt>
+<dd><p>Add colors legend (optional)</p></dd>
 
 </dl></div>
     <div class="section level2">
