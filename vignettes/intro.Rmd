@@ -162,13 +162,13 @@ Now let's explore this new package! It's about to be submitted to CRAN, but sinc
 
 ```{r, eval=FALSE}
 # install.packages("devtools")
-#devtools::install_github("NataliaCiria/mcmodule")
+devtools::install_github("NataliaCiria/mcmodule")
 ```
 
 And we load the package in our R session. Easy-peasy, ready to go!
 
 ```{r}
-#library(mcmodule)
+library(mcmodule)
 ```
 
 Other recommended packages to load along with mcmodule are:
@@ -335,6 +335,12 @@ imports$node_list$no_detect
 
 And now that we have an mcmodule, we can begin exploring its possibilities!
 
+## Understanding mcnodes operations
+
+When arithmetic operations are performed between nodes in mcmodule, they are applied on matching elements and keep the original dimensions, allowing uncertainties and variates to propagate through the calculations.
+
+![](images/mcmodule_mcnode_element-wise_operation.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
+
 # Working with an mcmodule
 
 ## Visualizing
@@ -361,9 +367,11 @@ mc_summary(mcmodule = imports, mc_name = "no_detect")
 
 ### Single-level trials
 
-In `imports`, we have the probability that an infected animal from an infected farm goes undetected (`"no_detect"`). When all animals (in a variate) have the same probability, we can use the total number of animals selected per farm (`"animals_n"`) as the number of trials (`trials_n`) to determine the probability that at least one infected animal from one farm is not detected (no_detect_set).
+In `imports`, we have the probability that an infected animal from an infected farm goes undetected (`"no_detect"`). When all animals (in a variate) have the same probability, we can use the total number of animals selected per farm (`"animals_n"`) as the number of trials (`trials_n`) to determine the probability that at least one infected animal from an infected farm is not detected (`no_detect_set`).
 
-> Note that while `"animals_n"` is not found as an mcnode in `imports` (it was not used in `imports$exp`), it can be automatically generated in `trial_totals()` because it’s included in `imports_mctable` and the required data exists in `imports$data`.
+In single-level trials, each trial is independent with the same probability of success ($trial\_p$). For a set of $trials\_n$ trials, the probability of at least one success is:
+
+$$ set\_p= 1-(1-trial\_p)^{trials\_n} $$
 
 ```{r}
 # Probability of at least one imported animal from an infected herd is not detected 
@@ -375,21 +383,43 @@ imports <- trial_totals(
 )
 ```
 
-Note that this function returns an mcmodule with some additional nodes. Total nodes have special metadata fields, and always include a summary by default.
+The `trial_totals()` functions returns the mcmodule with some additional nodes: the probability and the expected number. This **total nodes** have special metadata fields, and always include a summary by default.
 
 ```{r}
+# Probability of at least one
 imports$node_list$no_detect_set$summary
+
+# Expected number of animals
+imports$node_list$no_detect_set_n$summary
 ```
 
 ### Multilevel trials
 
 #### Simple multilevel
 
-When considering animals (trials_n) from different farms (subset_n), we must account for both the farm’s probability of being infected (subset_p) and the individual animal’s probability of being infected (trial_p).
+Now we want to calculate the probability that at least one infected animal from at least one infected farm goes undetected. We need to consider two levels: animals and farms.
 
-![](images/mcmodule_multilevel_trial_drawing.png)
+![Selection (in blue) of 4 animals from 3 farms, with a 20% regional herd prevalence and 50% within-herd prevalence.](images/mcmodule_multilevel_trial_drawing.png)
+
+We import animals from `"farms_n"` farms. Each farm has a probability `"h_prev"` (regional herd prevalence) of being infected. From each farm, we import `"animals_n"` animals. In an infected farm, each animal has a probability `"w_prev"` (within-herd prevalence) of being infected. We've already used this to calculate `"no_detect"`, which is the probability that an infected animal is not detected.
 
 ![](images/mcmodule_multilevel_trial_diagram.png)
+
+The probability of at least one success in this hierarchical structure is given by:
+
+$$ set\_p= 1-(1-subset\_p \cdot (1-(1-trial\_p)^{trial\_n}))^{subset\_n}  $$
+
+Where:
+
+-   *trials_p* represents the probability of a trial in a subset being a success
+
+-   *trials_n* represents the number of trials in subset
+
+-   *subset_p* represents the probability of a subset being selected
+
+-   *subset_n* represents the number of subsets
+
+-   *set_p* represents the probability of a at least one trial of at least one subsetbeing a success
 
 ```{r}
 # Probability of at least one animal from at least one herd being is not detected (probability of a herd being infected: h_prev)
@@ -399,11 +429,89 @@ imports <- trial_totals(
   trials_n = "animals_n",
   subsets_n = "farms_n",
   subsets_p = "h_prev",
-  mctable = imports_mctable
+  mctable = imports_mctable,
 )
 
 # Result
 imports$node_list$no_detect_set$summary
+```
+
+It also provides the probability of at least one and the expected number of infected animals by subset (in this case a farm)
+
+```{r}
+# Probability of at least one in a farm
+imports$node_list$no_detect_subset$summary
+```
+
+**Multiple group multilevel trials**
+
+This `trial_totals()` application out of the scope of the introduction to `mcmodule`, but there are cases where we might have several variates from the same subset. For example we could deal with different animal categories (cow, calf, bull...) from the same farm. Here the infection probability of animals within the same farm is not independent, and it should be taken into account. For more information about this, check: [Multilevel trials](https://nataliaciria.github.io/mcmodule/articles/mcmodule.html#multilevel-trials) in the official vignette.
+
+![Selection (in blue) of 2 cows and 5 calves from 3 farms, with a 20% regional herd prevalence and 50% within-herd prevalence for adult animals and 30% within-herd prevalence for young animals.](images/mcmodule_multilevel_trial_drawing_groups.png)
+
+### Aggregated totals
+
+Until this point, all mcnode operations were element-wise, keeping the original dimensions, and allowing uncertainties and variates to propagate through the calculations. However, sometimes, we need to aggregate variates to calculate totals, for example, to total risk of introducing a pathogen across all regions. In this case, we want to preserve the uncertainty dimension but reduce the variates dimension. With `agg_totals()` we can calculate overall probabilities or sum quantities across groups.
+
+```{r}
+imports <- agg_totals(
+  mcmodule = imports,
+  mc_name = "no_detect_set",
+  agg_keys = "pathogen"
+)
+
+# Result
+imports$node_list$no_detect_set_agg$summary
+```
+
+Now we can visualize our mcmodule again and see all these new nodes created by the totals functions.
+
+```{r}
+mc_network(imports, legend = TRUE)
+```
+
+# Working with what-if scenarios
+
+So far, we've only tested our model using current data. But risk analysis is most useful when comparing different scenarios. In our example, we could compare the baseline risk with the risk if tests were always performed in all regions.
+
+For this, we only need to add a column called "scenario_id". This name is important as it is used to will recognize it specifically for scenario comparisons, not as regular variate categories. The baseline scenario should be called "0". What-if scenarios can have any name, and they can modify any of the values in the dataset.
+
+```{r}
+imports_data<-imports_data%>%
+  mutate(scenario_id = "0")
+
+imports_data_wif<-imports_data%>%
+  mutate(scenario_id = "always_test",
+         test_origin = "always")%>%
+  bind_rows(imports_data)%>%
+  relocate(scenario_id)
+
+imports_data_wif[,1:6]
+```
+
+Now we create the mcmodule and calculate the totals. Note that, as the first input and the output of most of the functions to work with mcmodules are mcmodules, we can use the pipe `%>%` to simplify this processs.
+
+```{r}
+imports_wif<-eval_module(
+  exp = c(imports=imports_exp),
+  data = imports_data_wif,
+  mctable = imports_mctable,
+  data_keys = imports_data_keys
+  )%>%
+  trial_totals(
+    mc_names = "no_detect",
+    trials_n = "animals_n",
+    subsets_n = "farms_n",
+    subsets_p = "h_prev",
+    mctable = imports_mctable,
+  )%>%
+  agg_totals(
+    mc_name = "no_detect_set",
+    agg_keys = c("pathogen", "scenario_id")
+  )
+
+# Result
+imports_wif$node_list$no_detect_set_agg$summary
 ```
 
 # Working with multiple mcmodules
@@ -436,15 +544,19 @@ transmission <- eval_module(
   data = transmission_data,
   mctable =transmission_mctable,
   data_keys = transmission_data_keys,
-  prev_mcmodule = imports)
+  prev_mcmodule = imports_wif)
+
+mc_network(transmission, legend = TRUE)
 ```
 
 ## Combining mcmodules
 
 ```{r}
-intro<-combine_modules(imports,transmission)
+intro<-combine_modules(imports_wif,transmission)
 intro<-at_least_one(intro, c("no_detect","dir_contact"), name="total")
 intro$node_list$total$summary
+
+mc_network(intro, legend = TRUE)
 ```
 
 # Analysing mcmodule models
@@ -477,8 +589,6 @@ clean_mcnode <- mcnode_na_rm(sample_mcnode)
 ```
 
 Useful to include in expressions were there is a division with a denominator can potentially be 0 and it will return `Inf` or `NaN`, but we actually want that parameter to be 0.
-
-## Include functions in expressions
 
 ## Some functions that can be used without mcmodules
 

@@ -26,6 +26,8 @@ knitr::opts_chunk$set(
 library(mcmodule)
 ```
 
+> *Work in progress!* 🏗
+
 # Introduction
 
 This guide presents a flexible approach for building risk assessment models with Monte Carlo simulations in R. The framework is **multivariate**, allowing simultaneous analysis of multiple variates (different categories or groups), and **modular,** breaking complex systems into manageable components.
