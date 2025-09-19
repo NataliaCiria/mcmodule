@@ -30,11 +30,13 @@ This section provides a brief introduction to risk assessment in R. Although thi
 
 Imagine we want to buy a heifer. We have found a good deal on a farm that we know is infected with pathogen A, a disease that your farm is free from. To reduce the risk of introducing the disease to our farm, we plan to perform a diagnostic test on the heifer before bringing her to our farm. We want to calculate the probability of introducing the disease by purchasing one heifer that tests negative.
 
+We have data containing uncertainty about both the probability of animal infection within a herd and the test sensitivity, so we want to conduct a **stochastic** risk assessment that properly accounts for this **uncertainty**.
+
 > **Risk assessment** is a technique to estimate the probability and impact of an "adverse"[^1] event. It identifies the **steps** necessary for the event to occur and assigns them a **probability**.
+>
+> **Monte Carlo simulation** is a technique used to model and analyse uncertainty [@Vose2008].
 
 [^1]: Although in practice it is more commonly used to assess adverse events (that's why they're called "risks"), these quantitative techniques can obviously also be used to estimate the probability of any event, judgements about whether it is adverse or not are not part of the probabilistic calculations.
-
-We have some uncertainty around the probability that an animal in a herd is infected and around the test sensitivity, so we want to conduct a probabilistic or **stochastic** risk assessment that can account for that **uncertainty**.
 
 The risk assessment for our cattle purchase can be performed using base R [@base] random sampling functions, or `mc2d` [@mc2d], a package provides additional probability distributions (such as rpert) and other useful tools for analysing stochastic (Monte-Carlo) simulations.
 
@@ -174,6 +176,7 @@ library(mcmodule)
 Other recommended packages to load along with mcmodule are:
 
 ```{r, warning=FALSE, message=FALSE}
+# install.packages(c("dplyr","ggplot2","igraph","visNetwork"))
 library(dplyr)     # Data manipulation
 library(ggplot2)   # Plots
 library(igraph)    # Network analysis
@@ -268,9 +271,7 @@ Here we have the `imports_mctable` for our example. While the mctable can be har
 # Display the table with horizontal scrolling
 imports_mctable %>%
   mutate(transformation=ifelse(mcnode=="test_origin", 'ifelse(value == "always", 1, ifelse(value == "sometimes", 0.5, ifelse(value == "never", 0, NA)))',transformation)) %>%
-  knitr::kable() #%>%
-  #kableExtra::kable_classic(full_width = TRUE) #%>%
-  #kableExtra::scroll_box(width = "100%")
+  knitr::kable()
 ```
 
 The data table and the mctable must complement each other:
@@ -345,9 +346,9 @@ When arithmetic operations are performed between nodes in mcmodule, they are app
 
 ## Visualizing
 
-We can visualize an mc_module with the mc_network() function. For this you will need to have `igraph` [@igraph] and `visNetwork` [@visnetwork]installed.
+We can visualize an mc_module with the `mc_network()` function. For this you will need to have `igraph` [@igraph] and `visNetwork` [@visnetwork] installed.
 
-In these network visualizations, input datasets appear in blue, input data files, input columns and input mcnodes appear in different shades of dark-grey-blue, output mcnodes in green, and total mcnodes (as we will see later) in orange. The numbers displayed when clicked correspond to the first variate of each mcnode.
+In these network visualizations, input datasets appear in blue, input data files, input columns and input mcnodes appear in different shades of dark-grey-blue, output mcnodes in green, and total mcnodes (as we will see later) in orange. The numbers displayed when clicked correspond to the median and the 95% confidence interval of the first variate of each mcnode.
 
 ```{r}
 mc_network(imports, legend = TRUE)
@@ -365,11 +366,13 @@ mc_summary(mcmodule = imports, mc_name = "no_detect")
 
 ## Calculating totals
 
+Most of the following probability processes and calculations are based on Chapter 5 of the *Handbook on Import Risk Analysis for Animals and Animal Products Volume 2. Quantitative risk assessment* [@Murray2004].
+
 ### Single-level trials
 
-In `imports`, we have the probability that an infected animal from an infected farm goes undetected (`"no_detect"`). When all animals (in a variate) have the same probability, we can use the total number of animals selected per farm (`"animals_n"`) as the number of trials (`trials_n`) to determine the probability that at least one infected animal from an infected farm is not detected (`no_detect_set`).
+In `imports`, we know the probability that an infected animal from an infected farm goes undetected (`"no_detect"`). We can use the total number of animals selected per farm (`"animals_n"`) as the number of trials (`trials_n`) to determine the probability that at least one infected animal from an infected farm is not detected (`no_detect_set`).
 
-In single-level trials, each trial is independent with the same probability of success ($trial\_p$). For a set of $trials\_n$ trials, the probability of at least one success is:
+In single-level trials, each trial is independent with the same probability of success ($trial\_p$). For a set of $trials\_n$ trials, the **probability of at least one success** is:
 
 $$ set\_p= 1-(1-trial\_p)^{trials\_n} $$
 
@@ -383,7 +386,7 @@ imports <- trial_totals(
 )
 ```
 
-The `trial_totals()` functions returns the mcmodule with some additional nodes: the probability and the expected number. This **total nodes** have special metadata fields, and always include a summary by default.
+The `trial_totals()` function returns the mcmodule with some additional nodes: the probability of at least one success and the expected number of successes. These **total nodes** have special metadata fields, and always include a summary by default.
 
 ```{r}
 # Probability of at least one
@@ -397,9 +400,9 @@ imports$node_list$no_detect_set_n$summary
 
 #### Simple multilevel
 
-Now we want to calculate the probability that at least one infected animal from at least one infected farm goes undetected. We need to consider two levels: animals and farms.
+We can also calculate the probability that at least one infected animal from at least one infected farm is not detected, but here, we need to consider two levels: animals and farms.
 
-![Selection (in blue) of 4 animals from 3 farms, with a 20% regional herd prevalence and 50% within-herd prevalence.](images/mcmodule_multilevel_trial_drawing.png)
+![*Selection (in blue) of 4 animals from 3 farms, with a 20% regional herd prevalence and 50% within-herd prevalence.*](images/mcmodule_multilevel_trial_drawing.png)
 
 We import animals from `"farms_n"` farms. Each farm has a probability `"h_prev"` (regional herd prevalence) of being infected. From each farm, we import `"animals_n"` animals. In an infected farm, each animal has a probability `"w_prev"` (within-herd prevalence) of being infected. We've already used this to calculate `"no_detect"`, which is the probability that an infected animal is not detected.
 
@@ -447,7 +450,7 @@ imports$node_list$no_detect_subset$summary
 
 This `trial_totals()` application out of the scope of the introduction to `mcmodule`, but there are cases where we might have several variates from the same subset. For example we could deal with different animal categories (cow, calf, bull...) from the same farm. Here the infection probability of animals within the same farm is not independent, and it should be taken into account. For more information about this, check: [Multilevel trials](https://nataliaciria.github.io/mcmodule/articles/mcmodule.html#multilevel-trials) in the official vignette.
 
-![Selection (in blue) of 2 cows and 5 calves from 3 farms, with a 20% regional herd prevalence and 50% within-herd prevalence for adult animals and 30% within-herd prevalence for young animals.](images/mcmodule_multilevel_trial_drawing_groups.png)
+![*Selection (in blue) of 2 cows and 5 calves from 3 farms, with a 20% regional herd prevalence and 50% within-herd prevalence for adult animals and 30% within-herd prevalence for young animals.*](images/mcmodule_multilevel_trial_drawing_groups.png)
 
 ### Aggregated totals
 
@@ -590,12 +593,24 @@ clean_mcnode <- mcnode_na_rm(sample_mcnode)
 
 Useful to include in expressions were there is a division with a denominator can potentially be 0 and it will return `Inf` or `NaN`, but we actually want that parameter to be 0.
 
+## Total node names
+
+As we already saw, all totals functions: `at_least_one()`, `agg_totals()`, and `trial_totals()` generate new mcnodes in the mcmodule. The names of these nodes are based on input mcnode names, adding some informative suffixes. Both the "root" name and the prefixes can be customized to have more self-describing names.
+
+[add examples]
+
+## Prefixing mcmodules
+
+Some risk analysis models might include mcmodules that contain the same expression repeated multiple times. This creates problems when aggregating modules because duplicated names cause significant issues. In these cases, adding a prefix to each module is recommended to clearly diferanciate between each individual mcnode. The default prefix in `add_prefix()` is the mcmodule name.
+
+```{r}
+imports_wif<-add_prefix(imports_wif)
+```
+
 ## Some functions that can be used without mcmodules
 
-mc_summary with data and mcmodule
+`mc_summary()` with data and mcmodule
 
-create_mcnodes
-
-# Recommended workflow
+`create_mcnodes()`
 
 # References
