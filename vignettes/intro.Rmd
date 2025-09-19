@@ -28,9 +28,9 @@ This section provides a brief introduction to risk assessment in R. Although thi
 
 ### A simple risk assessment
 
-Imagine we want to buy a heifer. We have found a good deal on a farm that we know is infected with pathogen A, a disease that your farm is free from. To reduce the risk of introducing the disease to our farm, we plan to perform a diagnostic test on the heifer before bringing her to our farm. We want to calculate the probability of introducing the disease by purchasing one heifer that tests negative.
+Imagine we want to buy a heifer. We have found a good deal on a farm that we know is infected with pathogen A, a disease that our farm is free from. To reduce the risk of introducing the disease to our farm, we plan to perform a diagnostic test on the heifer before bringing it to our farm. We want to calculate the probability of introducing the disease by purchasing one heifer that tests negative.
 
-We have data containing uncertainty about both the probability of animal infection within a herd and the test sensitivity, so we want to conduct a **stochastic** risk assessment that properly accounts for this **uncertainty**.
+We have an estimation (with some uncertainty) of both the probability of animal infection within a herd and the test sensitivity, so we want to conduct a **stochastic** risk assessment that properly accounts for this **uncertainty**.
 
 > **Risk assessment** is a technique to estimate the probability and impact of an "adverse"[^1] event. It identifies the **steps** necessary for the event to occur and assigns them a **probability**.
 >
@@ -366,7 +366,7 @@ mc_summary(mcmodule = imports, mc_name = "no_detect")
 
 ## Calculating totals
 
-Most of the following probability processes and calculations are based on Chapter 5 of the *Handbook on Import Risk Analysis for Animals and Animal Products Volume 2. Quantitative risk assessment* [@Murray2004].
+Most of the following probability calculations are based on Chapter 5 of the *Handbook on Import Risk Analysis for Animals and Animal Products Volume 2. Quantitative risk assessment* [@Murray2004].
 
 ### Single-level trials
 
