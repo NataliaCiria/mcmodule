@@ -114,6 +114,10 @@ free from. To reduce the risk of introducing the disease to our farm, we
 plan to perform a diagnostic test on the heifer before bringing her to
 our farm. We want to calculate the probability of introducing the
 disease by purchasing one heifer that tests negative.</p>
+<p>We have data containing uncertainty about both the probability of
+animal infection within a herd and the test sensitivity, so we want to
+conduct a <strong>stochastic</strong> risk assessment that properly
+accounts for this <strong>uncertainty</strong>.</p>
 <blockquote>
 <p><strong>Risk assessment</strong> is a technique to estimate the
 probability and impact of an “adverse”<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;Although in practice it is more commonly used to assess
@@ -123,11 +127,9 @@ event, judgements about whether it is adverse or not are not part of the
 probabilistic calculations.&lt;/p&gt;"><sup>1</sup></a> event. It identifies
 the <strong>steps</strong> necessary for the event to occur and assigns
 them a <strong>probability</strong>.</p>
+<p><strong>Monte Carlo simulation</strong> is a technique used to model
+and analyse uncertainty <span class="citation">(<a href="#ref-Vose2008">Vose 2008</a>)</span>.</p>
 </blockquote>
-<p>We have some uncertainty around the probability that an animal in a
-herd is infected and around the test sensitivity, so we want to conduct
-a probabilistic or <strong>stochastic</strong> risk assessment that can
-account for that <strong>uncertainty</strong>.</p>
 <p>The risk assessment for our cattle purchase can be performed using
 base R <span class="citation">(<a href="#ref-base">2024</a>)</span>
 random sampling functions, or <code>mc2d</code> <span class="citation">(<a href="#ref-mc2d">Pouillot and Delignette-Muller
@@ -305,7 +307,8 @@ go!</p>
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/NataliaCiria/mcmodule" class="external-link">mcmodule</a></span><span class="op">)</span></span></code></pre></div>
 <p>Other recommended packages to load along with mcmodule are:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span>     <span class="co"># Data manipulation</span></span>
+<code class="sourceCode R"><span><span class="co"># install.packages(c("dplyr","ggplot2","igraph","visNetwork"))</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span>     <span class="co"># Data manipulation</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span>   <span class="co"># Plots</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r.igraph.org/" class="external-link">igraph</a></span><span class="op">)</span>    <span class="co"># Network analysis</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://datastorm-open.github.io/visNetwork/" class="external-link">visNetwork</a></span><span class="op">)</span><span class="co"># Interactive network visualization</span></span></code></pre></div>
@@ -684,15 +687,16 @@ calculations.</p>
 <div class="section level3">
 <h3 id="visualizing">Visualizing<a class="anchor" aria-label="anchor" href="#visualizing"></a>
 </h3>
-<p>We can visualize an mc_module with the mc_network() function. For
-this you will need to have <code>igraph</code> <span class="citation">(<a href="#ref-igraph">Csardi and Nepusz
+<p>We can visualize an mc_module with the <code><a href="../reference/mc_network.html">mc_network()</a></code>
+function. For this you will need to have <code>igraph</code> <span class="citation">(<a href="#ref-igraph">Csardi and Nepusz
 2006</a>)</span> and <code>visNetwork</code> <span class="citation">(<a href="#ref-visnetwork">Almende B. V. and Benoit Thieurmel
-2025</a>)</span>installed.</p>
+2025</a>)</span> installed.</p>
 <p>In these network visualizations, input datasets appear in blue, input
 data files, input columns and input mcnodes appear in different shades
 of dark-grey-blue, output mcnodes in green, and total mcnodes (as we
 will see later) in orange. The numbers displayed when clicked correspond
-to the first variate of each mcnode.</p>
+to the median and the 95% confidence interval of the first variate of
+each mcnode.</p>
 <div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/mc_network.html">mc_network</a></span><span class="op">(</span><span class="va">imports</span>, legend <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <div id="htmlwidget-ac96cb3ee4656e2e9ec3" style="width:100%;height:432.632880098888px;" class="visNetwork html-widget"></div>
@@ -733,22 +737,27 @@ the actual mcnode is a large array of numbers with dimensions
 <div class="section level3">
 <h3 id="calculating-totals">Calculating totals<a class="anchor" aria-label="anchor" href="#calculating-totals"></a>
 </h3>
+<p>Most of the following probability processes and calculations are
+based on Chapter 5 of the <em>Handbook on Import Risk Analysis for
+Animals and Animal Products Volume 2. Quantitative risk assessment</em>
+<span class="citation">(<a href="#ref-Murray2004">Murray
+2004</a>)</span>.</p>
 <div class="section level4">
 <h4 id="single-level-trials">Single-level trials<a class="anchor" aria-label="anchor" href="#single-level-trials"></a>
 </h4>
-<p>In <code>imports</code>, we have the probability that an infected
+<p>In <code>imports</code>, we know the probability that an infected
 animal from an infected farm goes undetected (<code>"no_detect"</code>).
-When all animals (in a variate) have the same probability, we can use
-the total number of animals selected per farm (<code>"animals_n"</code>)
-as the number of trials (<code>trials_n</code>) to determine the
-probability that at least one infected animal from an infected farm is
-not detected (<code>no_detect_set</code>).</p>
+We can use the total number of animals selected per farm
+(<code>"animals_n"</code>) as the number of trials
+(<code>trials_n</code>) to determine the probability that at least one
+infected animal from an infected farm is not detected
+(<code>no_detect_set</code>).</p>
 <p>In single-level trials, each trial is independent with the same
 probability of success
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mi>r</mi><mi>i</mi><mi>a</mi><mi>l</mi><mi>_</mi><mi>p</mi></mrow><annotation encoding="application/x-tex">trial\_p</annotation></semantics></math>).
 For a set of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mi>r</mi><mi>i</mi><mi>a</mi><mi>l</mi><mi>s</mi><mi>_</mi><mi>n</mi></mrow><annotation encoding="application/x-tex">trials\_n</annotation></semantics></math>
-trials, the probability of at least one success is:</p>
+trials, the <strong>probability of at least one success</strong> is:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>s</mi><mi>e</mi><mi>t</mi><mi>_</mi><mi>p</mi><mo>=</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>t</mi><mi>r</mi><mi>i</mi><mi>a</mi><mi>l</mi><mi>_</mi><mi>p</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>t</mi><mi>r</mi><mi>i</mi><mi>a</mi><mi>l</mi><mi>s</mi><mi>_</mi><mi>n</mi></mrow></msup></mrow><annotation encoding="application/x-tex"> set\_p= 1-(1-trial\_p)^{trials\_n} </annotation></semantics></math></p>
 <div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Probability of at least one imported animal from an infected herd is not detected </span></span>
@@ -758,10 +767,10 @@ trials, the probability of at least one success is:</p>
 <span>  trials_n <span class="op">=</span> <span class="st">"animals_n"</span>,</span>
 <span>  mctable <span class="op">=</span> <span class="va">imports_mctable</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>The <code><a href="../reference/trial_totals.html">trial_totals()</a></code> functions returns the mcmodule with
-some additional nodes: the probability and the expected number. This
-<strong>total nodes</strong> have special metadata fields, and always
-include a summary by default.</p>
+<p>The <code><a href="../reference/trial_totals.html">trial_totals()</a></code> function returns the mcmodule with
+some additional nodes: the probability of at least one success and the
+expected number of successes. These <strong>total nodes</strong> have
+special metadata fields, and always include a summary by default.</p>
 <div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Probability of at least one</span></span>
 <span><span class="va">imports</span><span class="op">$</span><span class="va">node_list</span><span class="op">$</span><span class="va">no_detect_set</span><span class="op">$</span><span class="va">summary</span></span></code></pre></div>
@@ -803,13 +812,13 @@ include a summary by default.</p>
 <div class="section level5">
 <h5 id="simple-multilevel">Simple multilevel<a class="anchor" aria-label="anchor" href="#simple-multilevel"></a>
 </h5>
-<p>Now we want to calculate the probability that at least one infected
-animal from at least one infected farm goes undetected. We need to
-consider two levels: animals and farms.</p>
+<p>We can also calculate the probability that at least one infected
+animal from at least one infected farm is not detected, but here, we
+need to consider two levels: animals and farms.</p>
 <div class="float">
-<img src="images/mcmodule_multilevel_trial_drawing.png" alt="Selection (in blue) of 4 animals from 3 farms, with a 20% regional herd prevalence and 50% within-herd prevalence."><div class="figcaption">Selection (in blue) of 4 animals from 3 farms,
-with a 20% regional herd prevalence and 50% within-herd
-prevalence.</div>
+<img src="images/mcmodule_multilevel_trial_drawing.png" alt="Selection (in blue) of 4 animals from 3 farms, with a 20% regional herd prevalence and 50% within-herd prevalence."><div class="figcaption"><em>Selection (in blue) of 4 animals from 3
+farms, with a 20% regional herd prevalence and 50% within-herd
+prevalence.</em></div>
 </div>
 <p>We import animals from <code>"farms_n"</code> farms. Each farm has a
 probability <code>"h_prev"</code> (regional herd prevalence) of being
@@ -890,10 +899,10 @@ not independent, and it should be taken into account. For more
 information about this, check: <a href="https://nataliaciria.github.io/mcmodule/articles/mcmodule.html#multilevel-trials">Multilevel
 trials</a> in the official vignette.</p>
 <div class="float">
-<img src="images/mcmodule_multilevel_trial_drawing_groups.png" alt="Selection (in blue) of 2 cows and 5 calves from 3 farms, with a 20% regional herd prevalence and 50% within-herd prevalence for adult animals and 30% within-herd prevalence for young animals."><div class="figcaption">Selection (in blue) of 2 cows and 5 calves from
-3 farms, with a 20% regional herd prevalence and 50% within-herd
+<img src="images/mcmodule_multilevel_trial_drawing_groups.png" alt="Selection (in blue) of 2 cows and 5 calves from 3 farms, with a 20% regional herd prevalence and 50% within-herd prevalence for adult animals and 30% within-herd prevalence for young animals."><div class="figcaption"><em>Selection (in blue) of 2 cows and 5 calves
+from 3 farms, with a 20% regional herd prevalence and 50% within-herd
 prevalence for adult animals and 30% within-herd prevalence for young
-animals.</div>
+animals.</em></div>
 </div>
 </div>
 </div>
@@ -1171,15 +1180,33 @@ denominator can potentially be 0 and it will return <code>Inf</code> or
 <code>NaN</code>, but we actually want that parameter to be 0.</p>
 </div>
 <div class="section level3">
+<h3 id="total-node-names">Total node names<a class="anchor" aria-label="anchor" href="#total-node-names"></a>
+</h3>
+<p>As we already saw, all totals functions: <code><a href="../reference/at_least_one.html">at_least_one()</a></code>,
+<code><a href="../reference/agg_totals.html">agg_totals()</a></code>, and <code><a href="../reference/trial_totals.html">trial_totals()</a></code> generate new
+mcnodes in the mcmodule. The names of these nodes are based on input
+mcnode names, adding some informative suffixes. Both the “root” name and
+the prefixes can be customized to have more self-describing names.</p>
+<p>[add examples]</p>
+</div>
+<div class="section level3">
+<h3 id="prefixing-mcmodules">Prefixing mcmodules<a class="anchor" aria-label="anchor" href="#prefixing-mcmodules"></a>
+</h3>
+<p>Some risk analysis models might include mcmodules that contain the
+same expression repeated multiple times. This creates problems when
+aggregating modules because duplicated names cause significant issues.
+In these cases, adding a prefix to each module is recommended to clearly
+diferanciate between each individual mcnode. The default prefix in
+<code><a href="../reference/add_prefix.html">add_prefix()</a></code> is the mcmodule name.</p>
+<div class="sourceCode" id="cb73"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">imports_wif</span><span class="op">&lt;-</span><span class="fu"><a href="../reference/add_prefix.html">add_prefix</a></span><span class="op">(</span><span class="va">imports_wif</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
 <h3 id="some-functions-that-can-be-used-without-mcmodules">Some functions that can be used without mcmodules<a class="anchor" aria-label="anchor" href="#some-functions-that-can-be-used-without-mcmodules"></a>
 </h3>
-<p>mc_summary with data and mcmodule</p>
-<p>create_mcnodes</p>
+<p><code><a href="../reference/mc_summary.html">mc_summary()</a></code> with data and mcmodule</p>
+<p><code>create_mcnodes()</code></p>
 </div>
-</div>
-<div class="section level2">
-<h2 id="recommended-workflow">Recommended workflow<a class="anchor" aria-label="anchor" href="#recommended-workflow"></a>
-</h2>
 </div>
 <div class="section level2">
 <h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
@@ -1193,6 +1220,12 @@ Visualization Using ’Vis. <span>Js</span>’ Library.”</span> <a href="https
 Csardi, Gabor, and Tamas Nepusz. 2006. <span>“The Igraph Software
 Package for Complex Network Research”</span> Complex Systems: 1695. <a href="https://igraph.org" class="external-link">https://igraph.org</a>.
 </div>
+<div id="ref-Murray2004" class="csl-entry">
+Murray, Noel. 2004. <em>Handbook on <span>Import</span>
+<span>Risk</span> <span>Analysis</span> for <span>Animals</span> and
+<span>Animal</span> <span>Products</span> <span>Volume</span> 2
+<span>Quantitative</span> Risk Assessment</em>. Vol. 2. <a href="https://rr-africa.woah.org/app/uploads/2018/03/handbook_on_import_risk_analysis_-_oie_-_vol_ii.pdf" class="external-link">https://rr-africa.woah.org/app/uploads/2018/03/handbook_on_import_risk_analysis_-_oie_-_vol_ii.pdf</a>.
+</div>
 <div id="ref-mc2d" class="csl-entry">
 Pouillot, R., and M.-L. Delignette-Muller. 2010. <span>“Evaluating
 Variability and Uncertainty in Microbial Quantitative Risk Assessment
@@ -1201,6 +1234,10 @@ Using Two r Packages”</span> 142: 330–40.
 <div id="ref-base" class="csl-entry">
 R Core Team. 2024. <span>“R: A Language and Environment for Statistical
 Computing.”</span> <a href="https://www.R-project.org/" class="external-link">https://www.R-project.org/</a>.
+</div>
+<div id="ref-Vose2008" class="csl-entry">
+Vose, David. 2008. <em>Risk Analysis, a Quantitative Guide</em>.
+Chichester, England: John Wiley &amp; Sons.
 </div>
 </div>
 </div>
