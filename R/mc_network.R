@@ -164,6 +164,7 @@ get_node_table <- function(mcmodule, variate = 1) {
 #' @param variate Integer specifying which variate to extract (default: 1)
 #' @param color_pal Custom color palette for nodes (optional)
 #' @param color_by Column name to determine node colors (optional)
+#' @param inputs Show mcnode inputs: columns, data table and original data set (optional)
 #' @return A data frame formatted for visNetwork with columns:
 #'   \itemize{
 #'     \item id: Unique node identifier
@@ -176,45 +177,19 @@ get_node_table <- function(mcmodule, variate = 1) {
 #' \dontrun{
 #' nodes_df <- visNetwork_nodes(imports_mcmodule)
 #' }
-visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL) {
+visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL, inputs = FALSE) {
 
   nodes <- get_node_table(mcmodule = mcmodule, variate = variate)
+  if(!inputs) nodes<-nodes[!nodes$type%in%c("inputs_col","input_data","input_dataset","input_file"),]
 
-  # Assing color by selected node table column
-  if(is.null(color_by)) {
-    # Default to coloring by "type" if no color_by specified
-    color_by <- "type"
-    color_levels <- levels(as.factor(nodes[[color_by]]))
+  color <-assign_color_pal(nodes = nodes, color_pal = color_pal, color_by = color_by)
+  color_pal<-color[["pal"]]
+  color_by<-color[["by"]]
 
-    # Assign colors if palette was provided
-    if(!is.null(color_pal)) {
-      color_pal <- color_pal[1:length(color_levels)]
-      names(color_pal) <- color_levels
-    }else{
-      color_pal <- default_color_pal
-    }
-  } else {
-    # Use provided color_by column
-    color_levels <- levels(as.factor(nodes[[color_by]]))
-
-    if(is.null(color_pal)){
-      # Default color palette
-      color_pal <- default_color_pal[1:length(color_levels)]
-      names(color_pal) <- color_levels
-
-    }else if(is.null(names(color_pal))) {
-      # Default color mapping
-      color_pal <- color_pal[1:length(color_levels)]
-      names(color_pal) <- color_levels
-    } else {
-      # Use provided color mapping
-      color_pal <- color_pal[color_levels]
-    }
-  }
+  if(!"mc_func" %in% colnames(nodes)) nodes$mc_func<-NA
 
   nodes %>%
     dplyr::distinct(.data$name, .keep_all = TRUE) %>%
-    dplyr::mutate(mc_func = ifelse("mc_func" %in% colnames(nodes), .data$mc_func, NA)) %>%
     dplyr::transmute(
       id = .data$name,
       color = color_pal[.data[[color_by]]],
@@ -256,7 +231,8 @@ visNetwork_edges <- function(mcmodule) {
 #' @param variate Integer specifying which variate to visualize (default: 1)
 #' @param color_pal Custom color palette for nodes (optional)
 #' @param color_by Column name to determine node colors (optional)
-#' @param legend Add colors legend (optional)
+#' @param legend Show colors legend (optional)
+#' @param inputs Show mcnode inputs: columns, data table and original data set (optional)
 #' @return An interactive visNetwork object with features:
 #'   \itemize{
 #'     \item Highlighting of connected nodes
@@ -270,13 +246,13 @@ visNetwork_edges <- function(mcmodule) {
 #' \dontrun{
 #' network <- mc_network(imports_mcmodule)
 #' }
-mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL, legend = FALSE){
+mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL, legend = FALSE, inputs = FALSE){
   if(!all(requireNamespace("visNetwork", quietly = TRUE)&requireNamespace("igraph", quietly = TRUE))){
     stop("This function need 'visNetwork' and 'igraph' packages. Please
          install them before.")
   }
 
-  nodes <- visNetwork_nodes(mcmodule, variate = variate, color_pal = color_pal, color_by = color_by)
+  nodes <- visNetwork_nodes(mcmodule, variate = variate, color_pal = color_pal, color_by = color_by, inputs = inputs)
   edges <- visNetwork_edges(mcmodule)
 
   network<-visNetwork::visNetwork(nodes, edges, width = "100%") %>%
@@ -286,13 +262,16 @@ mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL, l
     visNetwork::visPhysics(enabled = FALSE)%>%
     visNetwork::visInteraction(dragNodes=TRUE)
 
+
   if(legend){
-    if(is.null(color_pal)) color_pal<- default_color_pal
+    color <-assign_color_pal(nodes = nodes, color_pal = color_pal, color_by = color_by,  is_legend=TRUE)
+    color_pal<-color[["pal"]]
+    color_by<-color[["by"]]
     # passing custom nodes and/or edges
     lnodes <- data.frame(label = names(color_pal), color = color_pal, shape="dot",
                          title = "Node type", font.size = 15)
     network<-network%>%
-      visLegend(addNodes = lnodes, useGroups = FALSE, ncol=2, zoom=FALSE)
+      visLegend(addNodes = lnodes, useGroups = FALSE, ncol=ifelse(nrow(lnodes)>5,2,1), zoom=FALSE)
 
     return(network)
 
@@ -360,14 +339,64 @@ generate_node_title <- function(name, module, value, expression, param, inputs) 
 
 # Default color palette if none provided
 default_color_pal<-c(
-    input_file = "#577A9E",  # Dark blue
-    inputs_col = "#89A3BE",  # Medium blue
-    in_node = "#BDCCDB",     # Light blue
-    out_node = "#18BC9C",    # Teal
-    trials_n = "#F9CF8B",    # Light orange
-    subsets_n = "#DBCEB3",    # Light orange
-    subsets_p = "#C1B9A5",    # Light orange
-    total = "#F39C12",       # Orange
-    agg_total = "#ED7427",   # Dark orange
-    prev_node = "#E74C3C"    # Red
+  input_dataset = "#B0DFF9",
+  input_data = "#B0DFF9",
+  input_file = "#B0DFF9",
+  inputs_col = "#B0DFF9",
+  in_node = "#6ABDEB",
+  out_node = "#A4CF96",
+  trials_n = "#FAE4CB",
+  subsets_n = "#FAE4CB",
+  subsets_p = "#FAE4CB",
+  total = "#F39200",
+  agg_total = "#C17816"
   )
+
+default_color_legend<-c(
+  inputs = "#B0DFF9",
+  in_node = "#6ABDEB",
+  out_node = "#A4CF96",
+  trials_info = "#FAE4CB",
+  total = "#F39200",
+  agg_total = "#C17816"
+)
+
+assign_color_pal<-function(nodes, color_pal, color_by, is_legend=FALSE){
+  # Assign color by selected node table column
+  if(is.null(color_by)) {
+    # Default to coloring by "type" if no color_by specified
+    color_by <- "type"
+    color_levels <- levels(as.factor(nodes[[color_by]]))
+
+    # Assign colors if palette was not provided
+    if(is.null(color_pal)) {
+      color_pal <- if(is_legend) default_color_legend else default_color_pal
+      color_pal<- if(is_legend) color_pal[color_pal%in%nodes$color] else color_pal[names(color_pal)%in%color_levels]
+    }else if(!is_legend){
+      color_pal <- color_pal[1:length(color_levels)]
+      names(color_pal) <- color_levels
+    }else{
+      color_pal <- color_pal[1:length(default_color_legend)]
+      names(color_pal) <- names(default_color_legend)
+      color_pal<- color_pal[color_pal%in%nodes$color]
+    }
+  } else {
+    # Use provided color_by column
+    color_levels <- levels(as.factor(nodes[[color_by]]))
+
+    if(is.null(color_pal)){
+      # Default color palette
+      color_pal <- default_color_legend
+      names(color_pal) <- color_levels
+    }else if(is.null(names(color_pal))) {
+      # Default color mapping
+      color_pal <- color_pal[1:length(color_levels)]
+      names(color_pal) <- color_levels
+    } else {
+      # Use provided color mapping
+      color_pal <- color_pal[color_levels]
+    }
+  }
+
+  return(list(pal=color_pal,by=color_by))
+}
