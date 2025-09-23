@@ -101,27 +101,20 @@
 <p>Build the mcmodule with <code><a href="reference/eval_module.html">eval_module()</a></code>, creating the stochastic nodes and evaluating the expression</p>
 <p><code>{r} example_mcmodule &lt;- eval_module(   exp = c(example = example_exp),          # Model expression(s)   data = example_data,                     # Input data   mctable = example_mctable,               # Node definitions   data_keys = example_data_keys            # Data keys for matching )</code></p>
 </li>
-</ol>
-<p>Once you have created a mcmodule object, you can use other package functions to summarize and visualize mcnodes, calculate totals, and combine them with other mcmodules, for example:</p>
+<li>
+<p>Once you have created a mcmodule object, you can use other package functions to summarize and visualize mcnodes, calculate totals, and combine them with other mcmodules</p>
 <p>```{r} # Summarize the ‘result’ node mc_summary(example_mcmodule, “result”)</p>
-</div>
-</div>
-<div class="section level1">
-<h1 id="get-result-aggregated-by-category-1">Get ‘result’ aggregated by category 1<a class="anchor" aria-label="anchor" href="#get-result-aggregated-by-category-1"></a>
-</h1>
+<h1 id="get-result-aggregated-by-category-1">Get ‘result’ aggregated by category 1</h1>
 <p>example_mcmodule&lt;-example_mcmodule%&gt;% agg_totals( mc_name = “result”, agg_keys = c(“category_1”) )</p>
-</div>
-<div class="section level1">
-<h1 id="print-aggregated-result">Print aggregated ‘result’<a class="anchor" aria-label="anchor" href="#print-aggregated-result"></a>
-</h1>
+<h1 id="print-aggregated-result">Print aggregated ‘result’</h1>
 <p>example_mcmodule<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mi>o</mi><mi>d</mi><msub><mi>e</mi><mi>l</mi></msub><mi>i</mi><mi>s</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">node_list</annotation></semantics></math>result_agg$summary</p>
-</div>
-<div class="section level1">
-<h1 id="visualize-the-mcmodule">Visualize the mcmodule<a class="anchor" aria-label="anchor" href="#visualize-the-mcmodule"></a>
-</h1>
+<h1 id="visualize-the-mcmodule">Visualize the mcmodule</h1>
 <p>mc_network(example_mcmodule, legend = TRUE) ```</p>
+</li>
+</ol>
 <p><img src="images/mc_network_example.png"></p>
 <p>Further documentation and examples can be found in the <a href="https://nataliaciria.github.io/mcmodule/articles/mcmodule.html">vignette</a> and in the <a href="https://nataliaciria.github.io/mcmodule/articles/intro.html">introduction</a> article.</p>
+</div>
 <div class="section level2">
 <h2 id="citations">Citations<a class="anchor" aria-label="anchor" href="#citations"></a>
 </h2>
@@ -129,7 +122,6 @@
 <p>Ciria, N. (2024). mcmodule: Modular Monte Carlo Risk Analysis. R package version 1.0.0. <a href="https://github.com/NataliaCiria/mcmodule" class="external-link uri">https://github.com/NataliaCiria/mcmodule</a></p>
 </div>
 </div>
-
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
