@@ -81,59 +81,46 @@
 <h2 id="set-up-an-mcmodel">Set up an mcmodel<a class="anchor" aria-label="anchor" href="#set-up-an-mcmodel"></a>
 </h2>
 <ol style="list-style-type: decimal">
-<li><p>Create a data frame with input parameters</p></li>
-<li><p>Define the keys that uniquely identify each row in your data.</p></li>
-<li><p>Define Monte Carlo node table (mctable) indicating how to build the stochastic nodes.</p></li>
-<li><p>Write model expression indicating how to combine the parameters.</p></li>
-<li><p>Build the model with <code><a href="reference/eval_module.html">eval_module()</a></code>, creating the stochastic nodes and evaluating the expression.</p></li>
+<li>
+<p>Create a data frame with input parameter</p>
+<p><code>{r} example_data  &lt;- data.frame(   category_1 = c("a", "b", "a", "b"),      # Category 1 (e.g., type)   category_2 = c("blue", "blue", "red", "red"), # Category 2 (e.g., group)   x_min = c(0.07, 0.3, 0.2, 0.5),          # Minimum value for parameter x   x_max = c(0.08, 0.4, 0.3, 0.6),          # Maximum value for parameter x   y = c(0.01, 0.02, 0.03, 0.04)            # Value for parameter y )</code></p>
+</li>
+<li>
+<p>Define the keys that uniquely identify each row in your data</p>
+<p><code>{r} example_data_keys &lt;- list(   example_data = list(     cols = names(example_data),             # All columns in the data     keys = c("category_1", "category_2")   # Unique identifiers for each row   ) )</code></p>
+</li>
+<li>
+<p>Define Monte Carlo node table (mctable) indicating how to build the stochastic nodes (you can use this csv template)</p>
+<p><code>{r} example_mctable &lt;- data.frame(   mcnode = c("x", "y"),                    # Names of the nodes   description = c("Probability x", "Probability y"), # Descriptions   mc_func = c("runif", NA),                # Distribution function for x, none for y   from_variable = c(NA, NA),               # Source variable (not used here)   transformation = c(NA, NA),              # Transformation (not used here)   sensi_analysis = c(FALSE, FALSE)         # Include in sensitivity analysis )</code></p>
+</li>
+<li>
+<p>Write model expression indicating how to combine the parameters</p>
+<p><code>{r} example_exp &lt;- quote({   result &lt;- x * y                     # Calculate result as product of x and y })</code></p>
+</li>
+<li>
+<p>Build the mcmodule with <code><a href="reference/eval_module.html">eval_module()</a></code>, creating the stochastic nodes and evaluating the expression</p>
+<p><code>{r} example_mcmodule &lt;- eval_module(   exp = c(example = example_exp),          # Model expression(s)   data = example_data,                     # Input data   mctable = example_mctable,               # Node definitions   data_keys = example_data_keys            # Data keys for matching )</code></p>
+</li>
 </ol>
-<p>```{r} # Example: Building a simple mcmodule</p>
+<p>Once you have created a mcmodule object, you can use other package functions to summarize and visualize mcnodes, calculate totals, and combine them with other mcmodules, for example:</p>
+<p>```{r} # Summarize the ‘result’ node mc_summary(example_mcmodule, “result”)</p>
 </div>
 </div>
 <div class="section level1">
-<h1 id="create-a-data-frame-with-example-parameters-for-two-categories">Create a data frame with example parameters for two categories<a class="anchor" aria-label="anchor" href="#create-a-data-frame-with-example-parameters-for-two-categories"></a>
+<h1 id="get-result-aggregated-by-category-1">Get ‘result’ aggregated by category 1<a class="anchor" aria-label="anchor" href="#get-result-aggregated-by-category-1"></a>
 </h1>
-<p>example_data &lt;- data.frame( category_1 = c(“a”, “b”, “a”, “b”), # Category 1 (e.g., type) category_2 = c(“blue”, “blue”, “red”, “red”), # Category 2 (e.g., group) x_min = c(0.07, 0.3, 0.2, 0.5), # Minimum value for parameter x x_max = c(0.08, 0.4, 0.3, 0.6), # Maximum value for parameter x y = c(0.01, 0.02, 0.03, 0.04) # Value for parameter y )</p>
+<p>example_mcmodule&lt;-example_mcmodule%&gt;% agg_totals( mc_name = “result”, agg_keys = c(“category_1”) )</p>
 </div>
 <div class="section level1">
-<h1 id="define-the-keys-for-each-dataset-used-for-matching-and-aggregation">Define the keys for each dataset (used for matching and aggregation)<a class="anchor" aria-label="anchor" href="#define-the-keys-for-each-dataset-used-for-matching-and-aggregation"></a>
+<h1 id="print-aggregated-result">Print aggregated ‘result’<a class="anchor" aria-label="anchor" href="#print-aggregated-result"></a>
 </h1>
-<p>example_data_keys &lt;- list( example_data = list( cols = names(example_data), # All columns in the data keys = c(“category_1”, “category_2”) # Unique identifiers for each row ) )</p>
+<p>example_mcmodule<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mi>o</mi><mi>d</mi><msub><mi>e</mi><mi>l</mi></msub><mi>i</mi><mi>s</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">node_list</annotation></semantics></math>result_agg$summary</p>
 </div>
 <div class="section level1">
-<h1 id="create-a-table-describing-the-monte-carlo-nodes-to-be-built-from-the-data">Create a table describing the Monte Carlo nodes to be built from the data<a class="anchor" aria-label="anchor" href="#create-a-table-describing-the-monte-carlo-nodes-to-be-built-from-the-data"></a>
+<h1 id="visualize-the-mcmodule">Visualize the mcmodule<a class="anchor" aria-label="anchor" href="#visualize-the-mcmodule"></a>
 </h1>
-<p>example_mctable &lt;- data.frame( mcnode = c(“x”, “y”), # Names of the nodes description = c(“Probability x”, “Probability y”), # Descriptions mc_func = c(“runif”, NA), # Distribution function for x, none for y from_variable = c(NA, NA), # Source variable (not used here) transformation = c(NA, NA), # Transformation (not used here) sensi_analysis = c(FALSE, FALSE) # Include in sensitivity analysis )</p>
-</div>
-<div class="section level1">
-<h1 id="define-the-model-expression-using-the-nodes">Define the model expression using the nodes<a class="anchor" aria-label="anchor" href="#define-the-model-expression-using-the-nodes"></a>
-</h1>
-<p>example_exp &lt;- quote({ result &lt;- x * y # Calculate result as product of x and y })</p>
-</div>
-<div class="section level1">
-<h1 id="build-the-mcmodule-using-the-input-data-node-table-and-expression">Build the mcmodule using the input data, node table, and expression<a class="anchor" aria-label="anchor" href="#build-the-mcmodule-using-the-input-data-node-table-and-expression"></a>
-</h1>
-<p>example_mcmodule &lt;- eval_module( exp = c(example = example_exp), # Model expression(s) data = example_data, # Input data mctable = example_mctable, # Node definitions data_keys = example_data_keys # Data keys for matching )</p>
-<pre><code>
-Once you have created a mcmodule object, you can use other package functions to summarize and visualize mcnodes, calculate totals, and combine them with other mcmodules, for example:
-
-```{r}
-# Summarize the 'result' node
-mc_summary(example_mcmodule, "result")
-
-# Get 'result' aggregated by category 1
-example_mcmodule&lt;-example_mcmodule%&gt;%
-  agg_totals(
-    mc_name = "result",
-    agg_keys = c("category_1")
-  )
-
-# Print aggregated 'result'
-example_mcmodule$node_list$result_agg$summary
-
-# Visualize the mcmodule
-mc_network(example_mcmodule, legend = TRUE)</code></pre>
-<p><img src="images/mc_network_example.png" style="display: block; margin: 1em auto" fig-align="center" width="300"></p>
+<p>mc_network(example_mcmodule, legend = TRUE) ```</p>
+<p><img src="images/mc_network_example.png"></p>
 <p>Further documentation and examples can be found in the <a href="https://nataliaciria.github.io/mcmodule/articles/mcmodule.html">vignette</a> and in the <a href="https://nataliaciria.github.io/mcmodule/articles/intro.html">introduction</a> article.</p>
 <div class="section level2">
 <h2 id="citations">Citations<a class="anchor" aria-label="anchor" href="#citations"></a>
