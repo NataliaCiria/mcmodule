@@ -51,7 +51,8 @@ includes interactive features for exploring model structure and relationships.</
 <span>  variate <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  color_pal <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  color_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  legend <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  legend <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  inputs <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -76,7 +77,11 @@ includes interactive features for exploring model structure and relationships.</
 
 
 <dt id="arg-legend">legend<a class="anchor" aria-label="anchor" href="#arg-legend"></a></dt>
-<dd><p>Add colors legend (optional)</p></dd>
+<dd><p>Show colors legend (optional)</p></dd>
+
+
+<dt id="arg-inputs">inputs<a class="anchor" aria-label="anchor" href="#arg-inputs"></a></dt>
+<dd><p>Show non-node inputs: data-sets, data-frames and columns (optional)</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -91,7 +96,7 @@ includes interactive features for exploring model structure and relationships.</
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="va">network</span> <span class="op">&lt;-</span> <span class="fu">mc_network</span><span class="op">(</span><span class="va">imports_mcmodule</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">network</span> <span class="op">&lt;-</span> <span class="fu">mc_network</span><span class="op">(</span>mcmodule<span class="op">=</span><span class="va">imports_mcmodule</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

@@ -46,7 +46,13 @@ Includes styling and formatting for network visualization.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">visNetwork_nodes</span><span class="op">(</span><span class="va">mcmodule</span>, variate <span class="op">=</span> <span class="fl">1</span>, color_pal <span class="op">=</span> <span class="cn">NULL</span>, color_by <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">visNetwork_nodes</span><span class="op">(</span></span>
+<span>  <span class="va">mcmodule</span>,</span>
+<span>  variate <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  color_pal <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  color_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  inputs <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -68,12 +74,16 @@ Includes styling and formatting for network visualization.</p>
 <dt id="arg-color-by">color_by<a class="anchor" aria-label="anchor" href="#arg-color-by"></a></dt>
 <dd><p>Column name to determine node colors (optional)</p></dd>
 
+
+<dt id="arg-inputs">inputs<a class="anchor" aria-label="anchor" href="#arg-inputs"></a></dt>
+<dd><p>Include non-node inputs: data-sets, data-frames and columns (optional)</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame formatted for visNetwork with columns:</p><ul><li><p>id: Unique node identifier</p></li>
 <li><p>color: Node color based on type/category</p></li>
-<li><p>module: Module association</p></li>
+<li><p>grouping: Module association</p></li>
 <li><p>expression: Node expression or type</p></li>
 <li><p>title: Hover text containing node details</p></li>
 </ul></div>
@@ -81,7 +91,7 @@ Includes styling and formatting for network visualization.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="va">nodes_df</span> <span class="op">&lt;-</span> <span class="fu">visNetwork_nodes</span><span class="op">(</span><span class="va">imports_mcmodule</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">nodes_df</span> <span class="op">&lt;-</span> <span class="fu">visNetwork_nodes</span><span class="op">(</span>mcmodule<span class="op">=</span><span class="va">imports_mcmodule</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
