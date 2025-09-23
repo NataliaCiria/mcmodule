@@ -75,25 +75,25 @@ devtools::install_github("NataliaCiria/mcmodule")
     )
     ```
 
-Once you have created a mcmodule object, you can use other package functions to summarize and visualize mcnodes, calculate totals, and combine them with other mcmodules, for example:
+6.  Once you have created a mcmodule object, you can use other package functions to summarize and visualize mcnodes, calculate totals, and combine them with other mcmodules
 
-```{r}
-# Summarize the 'result' node
-mc_summary(example_mcmodule, "result")
+    ```{r}
+    # Summarize the 'result' node
+    mc_summary(example_mcmodule, "result")
 
-# Get 'result' aggregated by category 1
-example_mcmodule<-example_mcmodule%>%
-  agg_totals(
-    mc_name = "result",
-    agg_keys = c("category_1")
-  )
+    # Get 'result' aggregated by category 1
+    example_mcmodule<-example_mcmodule%>%
+      agg_totals(
+        mc_name = "result",
+        agg_keys = c("category_1")
+      )
 
-# Print aggregated 'result'
-example_mcmodule$node_list$result_agg$summary
+    # Print aggregated 'result'
+    example_mcmodule$node_list$result_agg$summary
 
-# Visualize the mcmodule
-mc_network(example_mcmodule, legend = TRUE)
-```
+    # Visualize the mcmodule
+    mc_network(example_mcmodule, legend = TRUE)
+    ```
 
 ![](images/mc_network_example.png)
 
