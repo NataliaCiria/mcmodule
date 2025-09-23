@@ -22,7 +22,7 @@ devtools::install_github("NataliaCiria/mcmodule")
 
 1.  Create a data frame with input parameter
 
-    ```{r}
+    ```         
     example_data  <- data.frame(
       category_1 = c("a", "b", "a", "b"),      # Category 1 (e.g., type)
       category_2 = c("blue", "blue", "red", "red"), # Category 2 (e.g., group)
@@ -34,7 +34,7 @@ devtools::install_github("NataliaCiria/mcmodule")
 
 2.  Define the keys that uniquely identify each row in your data
 
-    ```{r}
+    ```         
     example_data_keys <- list(
       example_data = list(
         cols = names(example_data),             # All columns in the data
@@ -45,7 +45,7 @@ devtools::install_github("NataliaCiria/mcmodule")
 
 3.  Define Monte Carlo node table (mctable) indicating how to build the stochastic nodes (you can use this csv template)
 
-    ```{r}
+    ```         
     example_mctable <- data.frame(
       mcnode = c("x", "y"),                    # Names of the nodes
       description = c("Probability x", "Probability y"), # Descriptions
@@ -58,7 +58,7 @@ devtools::install_github("NataliaCiria/mcmodule")
 
 4.  Write model expression indicating how to combine the parameters
 
-    ```{r}
+    ```         
     example_exp <- quote({
       result <- x * y                     # Calculate result as product of x and y
     })
@@ -66,7 +66,7 @@ devtools::install_github("NataliaCiria/mcmodule")
 
 5.  Build the mcmodule with `eval_module()`, creating the stochastic nodes and evaluating the expression
 
-    ```{r}
+    ```         
     example_mcmodule <- eval_module(
       exp = c(example = example_exp),          # Model expression(s)
       data = example_data,                     # Input data
@@ -77,7 +77,7 @@ devtools::install_github("NataliaCiria/mcmodule")
 
 6.  Once you have created a mcmodule object, you can use other package functions to summarize and visualize mcnodes, calculate totals, and combine them with other mcmodules
 
-    ```{r}
+    ```         
     # Summarize the 'result' node
     mc_summary(example_mcmodule, "result")
 
@@ -95,7 +95,7 @@ devtools::install_github("NataliaCiria/mcmodule")
     mc_network(example_mcmodule, legend = TRUE)
     ```
 
-![](images/mc_network_example.png)
+![](man/figures/mc_network_example.png)
 
 Further documentation and examples can be found in the [vignette](https://nataliaciria.github.io/mcmodule/articles/mcmodule.html) and in the [introduction](https://nataliaciria.github.io/mcmodule/articles/intro.html) article.
 
