@@ -4,10 +4,12 @@
 \alias{get_edge_table}
 \title{Generate Edge Table for Network Construction}
 \usage{
-get_edge_table(mcmodule)
+get_edge_table(mcmodule, inputs = FALSE)
 }
 \arguments{
 \item{mcmodule}{An mcmodule object containing node relationships}
+
+\item{inputs}{Include non-node inputs: data-sets, data-frames and columns (optional)}
 }
 \value{
 A data frame with columns node_from and node_to representing network edges

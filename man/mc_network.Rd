@@ -9,7 +9,8 @@ mc_network(
   variate = 1,
   color_pal = NULL,
   color_by = NULL,
-  legend = FALSE
+  legend = FALSE,
+  inputs = FALSE
 )
 }
 \arguments{
@@ -21,7 +22,9 @@ mc_network(
 
 \item{color_by}{Column name to determine node colors (optional)}
 
-\item{legend}{Add colors legend (optional)}
+\item{legend}{Show colors legend (optional)}
+
+\item{inputs}{Show non-node inputs: data-sets, data-frames and columns (optional)}
 }
 \value{
 An interactive visNetwork object with features:
@@ -39,6 +42,6 @@ includes interactive features for exploring model structure and relationships.
 }
 \examples{
 \dontrun{
-network <- mc_network(imports_mcmodule)
+network <- mc_network(mcmodule=imports_mcmodule)
 }
 }

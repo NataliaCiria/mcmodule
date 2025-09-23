@@ -4,10 +4,12 @@
 \alias{visNetwork_edges}
 \title{Generate visNetwork Edge Table}
 \usage{
-visNetwork_edges(mcmodule)
+visNetwork_edges(mcmodule, inputs = FALSE)
 }
 \arguments{
 \item{mcmodule}{An mcmodule object}
+
+\item{inputs}{Include non-node inputs: data-sets, data-frames and columns (optional)}
 }
 \value{
 A data frame containing edge information for visNetwork

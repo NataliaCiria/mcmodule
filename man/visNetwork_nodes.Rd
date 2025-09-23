@@ -4,7 +4,13 @@
 \alias{visNetwork_nodes}
 \title{Generate Network Node Table for Visualization}
 \usage{
-visNetwork_nodes(mcmodule, variate = 1, color_pal = NULL, color_by = NULL)
+visNetwork_nodes(
+  mcmodule,
+  variate = 1,
+  color_pal = NULL,
+  color_by = NULL,
+  inputs = FALSE
+)
 }
 \arguments{
 \item{mcmodule}{An mcmodule object containing the network structure}
@@ -14,13 +20,15 @@ visNetwork_nodes(mcmodule, variate = 1, color_pal = NULL, color_by = NULL)
 \item{color_pal}{Custom color palette for nodes (optional)}
 
 \item{color_by}{Column name to determine node colors (optional)}
+
+\item{inputs}{Include non-node inputs: data-sets, data-frames and columns (optional)}
 }
 \value{
 A data frame formatted for visNetwork with columns:
 \itemize{
 \item id: Unique node identifier
 \item color: Node color based on type/category
-\item module: Module association
+\item grouping: Module association
 \item expression: Node expression or type
 \item title: Hover text containing node details
 }
@@ -31,6 +39,6 @@ Includes styling and formatting for network visualization.
 }
 \examples{
 \dontrun{
-nodes_df <- visNetwork_nodes(imports_mcmodule)
+nodes_df <- visNetwork_nodes(mcmodule=imports_mcmodule)
 }
 }

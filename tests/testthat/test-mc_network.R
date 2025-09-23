@@ -2,7 +2,7 @@ suppressMessages({
   test_that("get_edge_table works", {
     # Create test mcmodule
     edges <- get_edge_table(imports_mcmodule)
-    expect_true(all(names(imports_mcmodule$node_list)%in%edges$node_to))
+    expect_true(all(names(imports_mcmodule$node_list)%in%c(edges$node_to,edges$node_from)))
     expect_true(all(c("node_from", "node_to") %in% colnames(edges)))
   })
 
@@ -15,7 +15,7 @@ suppressMessages({
     nodes <- visNetwork_nodes(imports_mcmodule)
     edges <- visNetwork_edges(imports_mcmodule)
 
-    expect_true(all(c("id", "color", "module", "expression", "title") %in% colnames(nodes)))
+    expect_true(all(c("id", "color", "grouping", "expression", "title") %in% colnames(nodes)))
     expect_true(all(c("from", "to", "id") %in% colnames(edges)))
 
     # With mcnode inptus
@@ -36,22 +36,30 @@ suppressMessages({
     imports_network_4<-mc_network(imports_mcmodule, legend = TRUE)
     expect_equal(imports_network_4$x$legend$nodes$label,c("in_node", "out_node"))
 
-    # With custom palette
-    imports_network_5<-mc_network(imports_mcmodule, color_pal = c("red","green","blue","yellow","orange"))
-    expect_true(all(imports_network_5$x$nodes$color%in%c("red","green","blue","yellow","orange")))
+    # With custom colour_by + legend + without mcnode inputs
+    imports_network_5<-mc_network(imports_mcmodule, inputs = TRUE, legend = TRUE, color_by="module")
+    expect_equal(imports_network_5$x$legend$nodes$label,c("imports"))
 
-    #TODO
+    # With custom palette
+    imports_network_6<-mc_network(imports_mcmodule, color_pal = c("red","green","blue","yellow","orange"))
+    expect_true(all(imports_network_6$x$nodes$color%in%c("red","red","red","green","green", "green", "green")))
+
     # With custom palette + legend
     imports_network_7<-mc_network(imports_mcmodule, legend = TRUE, color_pal = c("red","green","blue","yellow","orange"))
     expect_equal(imports_network_7$x$legend$nodes$label,c("in_node", "out_node"))
 
     # With custom palette + with mcnode inputs
     imports_network_8<-mc_network(imports_mcmodule, inputs = TRUE, color_pal = c("red","green","blue","yellow","orange"))
-    expect_equal(imports_network_8$x$legend$nodes$label,c("inputs", "in_node", "out_node"))
+    expect_equal(imports_network_8$x$nodes$color[1:11],
+                 c(rep(c(in_node = "red"), 3),
+                   rep(c(out_node = "orange"), 4),
+                   rep(c(inputs_col = "yellow"), 2),
+                   rep(c(input_data = "green"), 1),
+                   rep(c(input_dataset = "blue"), 1)))
 
     # With custom palette + with mcnode inputs + legend
     imports_network_9<-mc_network(imports_mcmodule, inputs = TRUE, legend=TRUE, color_pal = c("red","green","blue","yellow","orange"))
-    expect_equal(imports_network_9$x$legend$nodes$label,c("inputs", "in_node", "out_node"))
+    expect_equal(imports_network_9$x$legend$nodes$label,c("in_node", "input_data", "input_dataset", "inputs_col", "out_node"))
 
 
   })

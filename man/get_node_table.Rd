@@ -4,12 +4,14 @@
 \alias{get_node_table}
 \title{Generate Node Table for Network Construction}
 \usage{
-get_node_table(mcmodule, variate = 1)
+get_node_table(mcmodule, variate = 1, inputs = FALSE)
 }
 \arguments{
 \item{mcmodule}{An mcmodule object containing node information}
 
 \item{variate}{Integer indicating which variate to extract (default: 1)}
+
+\item{inputs}{Include non-node inputs: data-sets, data-frames and columns (optional)}
 }
 \value{
 A data frame containing node information and attributes

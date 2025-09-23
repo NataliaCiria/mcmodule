@@ -4,11 +4,12 @@
 #' Each row represents a directed edge from one node to another.
 #'
 #' @param mcmodule An mcmodule object containing node relationships
+#' @param inputs Include non-node inputs: data-sets, data-frames and columns (optional)
 #' @return A data frame with columns node_from and node_to representing network edges
 #' @examples
 #' edge_table <- get_edge_table(imports_mcmodule)
 #' @export
-get_edge_table <- function(mcmodule) {
+get_edge_table <- function(mcmodule,inputs=FALSE) {
   node_list <- mcmodule$node_list
   edge_table <- data.frame()
 
@@ -16,7 +17,7 @@ get_edge_table <- function(mcmodule) {
 
   for (i in seq_along(node_list)) {
     node_to <- names(node_list)[i]
-    if ("inputs_col"%in%names(node_list[[i]])) {
+    if (inputs&"inputs_col"%in%names(node_list[[i]])) {
       node_from <- node_list[[i]][["inputs_col"]]
       dataset_from <- node_list[[i]][["input_dataset"]]
       data_from <- node_list[[i]][["data_name"]]
@@ -34,7 +35,7 @@ get_edge_table <- function(mcmodule) {
       edge_table_inputs <- NULL
     }
 
-    if (!length(node_from) > 0) node_from <- NA
+    if (!length(node_from) > 0) next
 
     edge_table_i <- data.frame(node_from, node_to)
     edge_table <- rbind(edge_table, edge_table_i, edge_table_inputs)
@@ -52,11 +53,12 @@ get_edge_table <- function(mcmodule) {
 #'
 #' @param mcmodule An mcmodule object containing node information
 #' @param variate Integer indicating which variate to extract (default: 1)
+#' @param inputs Include non-node inputs: data-sets, data-frames and columns (optional)
 #' @return A data frame containing node information and attributes
 #' @examples
 #' node_table <- get_node_table(imports_mcmodule)
 #' @export
-get_node_table <- function(mcmodule, variate = 1) {
+get_node_table <- function(mcmodule, variate = 1, inputs=FALSE) {
   data <- mcmodule$data
   node_list <- mcmodule$node_list
   node_table <- data.frame()
@@ -92,60 +94,62 @@ get_node_table <- function(mcmodule, variate = 1) {
   }
 
   # Process non-node information (data-sets, data-frames and columns)
-  for (i in 1:length(node_list)) {
-    node <- node_list[[i]]
+  if(inputs){
+    for (i in 1:length(node_list)) {
+      node <- node_list[[i]]
 
-    if (length(node[["inputs_col"]]) > 0) {
-      inputs_col <- node[["inputs_col"]]
-      if (is.list(data)) {
-        value_col <- c()
-        for (j in 1:length(data)) {
-          data_name <- names(data)[j]
-          data_j <- data[[j]]
-          if (all(inputs_col %in% names(data_j))) {
-            value_j <- as.character(unlist(data_j[variate, inputs_col]))
-            value_col <- value_j
+      if (length(node[["inputs_col"]]) > 0) {
+        inputs_col <- node[["inputs_col"]]
+        if (is.list(data)) {
+          value_col <- c()
+          for (j in 1:length(data)) {
+            data_name <- names(data)[j]
+            data_j <- data[[j]]
+            if (all(inputs_col %in% names(data_j))) {
+              value_j <- as.character(unlist(data_j[variate, inputs_col]))
+              value_col <- value_j
+            }
           }
+        } else {
+          value_col <- as.character(unlist(data[variate, inputs_col]))
         }
-      } else {
-        value_col <- as.character(unlist(data[variate, inputs_col]))
-      }
 
-      if (is.null(value_col)) {
-        value_col <- "Not Found"
-      }
+        if (is.null(value_col)) {
+          value_col <- "Not Found"
+        }
 
-      inputs_col_table <- data.frame(
-        name = node[["inputs_col"]],
-        type = "inputs_col",
-        inputs = paste(c(node[["data_name"]],node[["input_dataset"]]), sep = ", ", collapse = ", "),
-        input_data = node[["data_name"]],
-        value = value_col
-      )
-
-      node_table <- dplyr::bind_rows(node_table, inputs_col_table)
-
-      input_data_table <- data.frame(
-        name = node[["data_name"]],
-        type = "input_data"
-      )
-
-      node_table <- dplyr::bind_rows(node_table, input_data_table)
-
-      if(!is.null(node[["input_dataset"]])){
-        input_dataset_table <- data.frame(
-          name = node[["input_dataset"]],
-          type = "input_dataset"
+        inputs_col_table <- data.frame(
+          name = node[["inputs_col"]],
+          type = "inputs_col",
+          inputs = paste(c(node[["data_name"]],node[["input_dataset"]]), sep = ", ", collapse = ", "),
+          input_data = node[["data_name"]],
+          value = value_col
         )
 
-        inputs_col_table$input_dataset<-node[["input_dataset"]]
+        node_table <- dplyr::bind_rows(node_table, inputs_col_table)
 
         input_data_table <- data.frame(
-          inputs = node[["input_dataset"]],
-          input_dataset = node[["input_dataset"]]
+          name = node[["data_name"]],
+          type = "input_data"
         )
 
-        node_table <- dplyr::bind_rows(node_table, input_dataset_table)
+        node_table <- dplyr::bind_rows(node_table, input_data_table)
+
+        if(!is.null(node[["input_dataset"]])){
+          input_dataset_table <- data.frame(
+            name = node[["input_dataset"]],
+            type = "input_dataset"
+          )
+
+          inputs_col_table$input_dataset<-node[["input_dataset"]]
+
+          input_data_table <- data.frame(
+            inputs = node[["input_dataset"]],
+            input_dataset = node[["input_dataset"]]
+          )
+
+          node_table <- dplyr::bind_rows(node_table, input_dataset_table)
+        }
       }
     }
   }
@@ -164,23 +168,22 @@ get_node_table <- function(mcmodule, variate = 1) {
 #' @param variate Integer specifying which variate to extract (default: 1)
 #' @param color_pal Custom color palette for nodes (optional)
 #' @param color_by Column name to determine node colors (optional)
-#' @param inputs Show mcnode inputs: columns, data table and original data set (optional)
+#' @param inputs Include non-node inputs: data-sets, data-frames and columns (optional)
 #' @return A data frame formatted for visNetwork with columns:
 #'   \itemize{
 #'     \item id: Unique node identifier
 #'     \item color: Node color based on type/category
-#'     \item module: Module association
+#'     \item grouping: Module association
 #'     \item expression: Node expression or type
 #'     \item title: Hover text containing node details
 #'   }
 #' @examples
 #' \dontrun{
-#' nodes_df <- visNetwork_nodes(imports_mcmodule)
+#' nodes_df <- visNetwork_nodes(mcmodule=imports_mcmodule)
 #' }
 visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL, inputs = FALSE) {
 
-  nodes <- get_node_table(mcmodule = mcmodule, variate = variate)
-  if(!inputs) nodes<-nodes[!nodes$type%in%c("inputs_col","input_data","input_dataset","input_file"),]
+  nodes <- get_node_table(mcmodule = mcmodule, variate = variate, inputs = inputs)
 
   color <-assign_color_pal(nodes = nodes, color_pal = color_pal, color_by = color_by)
   color_pal<-color[["pal"]]
@@ -190,17 +193,20 @@ visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by =
 
   nodes %>%
     dplyr::distinct(.data$name, .keep_all = TRUE) %>%
-    dplyr::transmute(
+    dplyr::mutate(
       id = .data$name,
       color = color_pal[.data[[color_by]]],
-      module = ifelse(is.na(.data$module), .data$type, .data$module),
+      color_by = .data[[color_by]],
+      grouping = ifelse(is.na(.data$module), .data$type, .data$module),
       expression = ifelse(
         .data$type == "in_node",
         ifelse(is.na(.data$keys), "user", ifelse(is.na(.data$mc_func), "mcdata", .data$mc_func)),
         .data$node_exp
       ),
-      title = generate_node_title(.data$name, .data$module, .data$value, .data$expression, .data$param, .data$inputs)
-    )
+      title = generate_node_title(.data$name, .data$grouping, .data$value, .data$expression, .data$param, .data$inputs)
+    )%>%
+  dplyr::select(id,color,color_by,type,any_of(color_by),grouping,expression,title)
+
 }
 
 #' Generate visNetwork Edge Table
@@ -208,13 +214,14 @@ visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by =
 #' Creates a formatted edge table suitable for visualization with visNetwork.
 #'
 #' @param mcmodule An mcmodule object
+#' @param inputs Include non-node inputs: data-sets, data-frames and columns (optional)
 #' @return A data frame containing edge information for visNetwork
 #' @examples
 #' \dontrun{
 #' vis_edges <- visNetwork_edges(imports_mcmodule)
 #' }
-visNetwork_edges <- function(mcmodule) {
-  get_edge_table(mcmodule) %>%
+visNetwork_edges <- function(mcmodule, inputs = FALSE) {
+  get_edge_table(mcmodule = mcmodule, inputs = inputs) %>%
     transmute(
       from = .data$node_from,
       to = .data$node_to,
@@ -232,7 +239,7 @@ visNetwork_edges <- function(mcmodule) {
 #' @param color_pal Custom color palette for nodes (optional)
 #' @param color_by Column name to determine node colors (optional)
 #' @param legend Show colors legend (optional)
-#' @param inputs Show mcnode inputs: columns, data table and original data set (optional)
+#' @param inputs Show non-node inputs: data-sets, data-frames and columns (optional)
 #' @return An interactive visNetwork object with features:
 #'   \itemize{
 #'     \item Highlighting of connected nodes
@@ -244,7 +251,7 @@ visNetwork_edges <- function(mcmodule) {
 #' @export
 #' @examples
 #' \dontrun{
-#' network <- mc_network(imports_mcmodule)
+#' network <- mc_network(mcmodule=imports_mcmodule)
 #' }
 mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL, legend = FALSE, inputs = FALSE){
   if(!all(requireNamespace("visNetwork", quietly = TRUE)&requireNamespace("igraph", quietly = TRUE))){
@@ -256,7 +263,7 @@ mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL, l
   edges <- visNetwork_edges(mcmodule)
 
   network<-visNetwork::visNetwork(nodes, edges, width = "100%") %>%
-    visNetwork::visOptions(highlightNearest = list(enabled =TRUE, degree = 2), nodesIdSelection = TRUE,selectedBy="module")%>%
+    visNetwork::visOptions(highlightNearest = list(enabled =TRUE, degree = 2), nodesIdSelection = TRUE,selectedBy= if(is.null(color_by)) "grouping" else color_by)%>%
     visNetwork::visEdges(arrows = "to")%>%
     visNetwork::visIgraphLayout(layout ="layout_with_sugiyama", maxiter=500)%>%
     visNetwork::visPhysics(enabled = FALSE)%>%
@@ -271,7 +278,7 @@ mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL, l
     lnodes <- data.frame(label = names(color_pal), color = color_pal, shape="dot",
                          title = "Node type", font.size = 15)
     network<-network%>%
-      visLegend(addNodes = lnodes, useGroups = FALSE, ncol=ifelse(nrow(lnodes)>5,2,1), zoom=FALSE)
+      visNetwork::visLegend(addNodes = lnodes, useGroups = FALSE, ncol=ifelse(nrow(lnodes)>5,2,1), zoom=FALSE)
 
     return(network)
 
@@ -306,12 +313,12 @@ format_percentage_summary <- function(summary_value) {
   return(result)
 }
 
-generate_node_title <- function(name, module, value, expression, param, inputs) {
+generate_node_title <- function(name, grouping, value, expression, param, inputs) {
   paste0(
     '<p style="text-align: center;"><strong><span style="font-size: 18px;"><u>',
     name,
     '</u><br></span></strong><span style="font-size: 12px;">',
-    module,
+    grouping,
     '</span></p>
     <p style="text-align: center;"><strong>',
     ifelse(is.na(value),"",value),
@@ -372,14 +379,11 @@ assign_color_pal<-function(nodes, color_pal, color_by, is_legend=FALSE){
     if(is.null(color_pal)) {
       color_pal <- if(is_legend) default_color_legend else default_color_pal
       color_pal<- if(is_legend) color_pal[color_pal%in%nodes$color] else color_pal[names(color_pal)%in%color_levels]
-    }else if(!is_legend){
+    }else{
       color_pal <- color_pal[1:length(color_levels)]
       names(color_pal) <- color_levels
-    }else{
-      color_pal <- color_pal[1:length(default_color_legend)]
-      names(color_pal) <- names(default_color_legend)
-      color_pal<- color_pal[color_pal%in%nodes$color]
     }
+
   } else {
     # Use provided color_by column
     color_levels <- levels(as.factor(nodes[[color_by]]))
@@ -387,6 +391,7 @@ assign_color_pal<-function(nodes, color_pal, color_by, is_legend=FALSE){
     if(is.null(color_pal)){
       # Default color palette
       color_pal <- default_color_legend
+      color_pal <- color_pal[1:length(color_levels)]
       names(color_pal) <- color_levels
     }else if(is.null(names(color_pal))) {
       # Default color mapping
