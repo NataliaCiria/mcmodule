@@ -83,36 +83,69 @@
 <ol style="list-style-type: decimal">
 <li>
 <p>Create a data frame with input parameter</p>
-<p><code>{r} example_data  &lt;- data.frame(   category_1 = c("a", "b", "a", "b"),      # Category 1 (e.g., type)   category_2 = c("blue", "blue", "red", "red"), # Category 2 (e.g., group)   x_min = c(0.07, 0.3, 0.2, 0.5),          # Minimum value for parameter x   x_max = c(0.08, 0.4, 0.3, 0.6),          # Maximum value for parameter x   y = c(0.01, 0.02, 0.03, 0.04)            # Value for parameter y )</code></p>
+<pre><code><span><span class="va">example_data</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  category_1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"a"</span>, <span class="st">"b"</span><span class="op">)</span>,      <span class="co"># Category 1 (e.g., type)</span></span>
+<span>  category_2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"blue"</span>, <span class="st">"blue"</span>, <span class="st">"red"</span>, <span class="st">"red"</span><span class="op">)</span>, <span class="co"># Category 2 (e.g., group)</span></span>
+<span>  x_min <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.07</span>, <span class="fl">0.3</span>, <span class="fl">0.2</span>, <span class="fl">0.5</span><span class="op">)</span>,          <span class="co"># Minimum value for parameter x</span></span>
+<span>  x_max <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.08</span>, <span class="fl">0.4</span>, <span class="fl">0.3</span>, <span class="fl">0.6</span><span class="op">)</span>,          <span class="co"># Maximum value for parameter x</span></span>
+<span>  y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.01</span>, <span class="fl">0.02</span>, <span class="fl">0.03</span>, <span class="fl">0.04</span><span class="op">)</span>            <span class="co"># Value for parameter y</span></span>
+<span><span class="op">)</span></span></code></pre>
 </li>
 <li>
 <p>Define the keys that uniquely identify each row in your data</p>
-<p><code>{r} example_data_keys &lt;- list(   example_data = list(     cols = names(example_data),             # All columns in the data     keys = c("category_1", "category_2")   # Unique identifiers for each row   ) )</code></p>
+<pre><code><span><span class="va">example_data_keys</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  example_data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">example_data</span><span class="op">)</span>,             <span class="co"># All columns in the data</span></span>
+<span>    keys <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"category_1"</span>, <span class="st">"category_2"</span><span class="op">)</span>   <span class="co"># Unique identifiers for each row</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre>
 </li>
 <li>
 <p>Define Monte Carlo node table (mctable) indicating how to build the stochastic nodes (you can use this csv template)</p>
-<p><code>{r} example_mctable &lt;- data.frame(   mcnode = c("x", "y"),                    # Names of the nodes   description = c("Probability x", "Probability y"), # Descriptions   mc_func = c("runif", NA),                # Distribution function for x, none for y   from_variable = c(NA, NA),               # Source variable (not used here)   transformation = c(NA, NA),              # Transformation (not used here)   sensi_analysis = c(FALSE, FALSE)         # Include in sensitivity analysis )</code></p>
+<pre><code><span><span class="va">example_mctable</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  mcnode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x"</span>, <span class="st">"y"</span><span class="op">)</span>,                    <span class="co"># Names of the nodes</span></span>
+<span>  description <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Probability x"</span>, <span class="st">"Probability y"</span><span class="op">)</span>, <span class="co"># Descriptions</span></span>
+<span>  mc_func <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"runif"</span>, <span class="cn">NA</span><span class="op">)</span>,                <span class="co"># Distribution function for x, none for y</span></span>
+<span>  from_variable <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="cn">NA</span><span class="op">)</span>,               <span class="co"># Source variable (not used here)</span></span>
+<span>  transformation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="cn">NA</span><span class="op">)</span>,              <span class="co"># Transformation (not used here)</span></span>
+<span>  sensi_analysis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">FALSE</span>, <span class="cn">FALSE</span><span class="op">)</span>         <span class="co"># Include in sensitivity analysis</span></span>
+<span><span class="op">)</span></span></code></pre>
 </li>
 <li>
 <p>Write model expression indicating how to combine the parameters</p>
-<p><code>{r} example_exp &lt;- quote({   result &lt;- x * y                     # Calculate result as product of x and y })</code></p>
+<pre><code><span><span class="va">example_exp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/substitute.html" class="external-link">quote</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="va">result</span> <span class="op">&lt;-</span> <span class="va">x</span> <span class="op">*</span> <span class="va">y</span>                     <span class="co"># Calculate result as product of x and y</span></span>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre>
 </li>
 <li>
 <p>Build the mcmodule with <code><a href="reference/eval_module.html">eval_module()</a></code>, creating the stochastic nodes and evaluating the expression</p>
-<p><code>{r} example_mcmodule &lt;- eval_module(   exp = c(example = example_exp),          # Model expression(s)   data = example_data,                     # Input data   mctable = example_mctable,               # Node definitions   data_keys = example_data_keys            # Data keys for matching )</code></p>
+<pre><code><span><span class="va">example_mcmodule</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/eval_module.html">eval_module</a></span><span class="op">(</span></span>
+<span>  exp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>example <span class="op">=</span> <span class="va">example_exp</span><span class="op">)</span>,          <span class="co"># Model expression(s)</span></span>
+<span>  data <span class="op">=</span> <span class="va">example_data</span>,                     <span class="co"># Input data</span></span>
+<span>  mctable <span class="op">=</span> <span class="va">example_mctable</span>,               <span class="co"># Node definitions</span></span>
+<span>  data_keys <span class="op">=</span> <span class="va">example_data_keys</span>            <span class="co"># Data keys for matching</span></span>
+<span><span class="op">)</span></span></code></pre>
 </li>
 <li>
 <p>Once you have created a mcmodule object, you can use other package functions to summarize and visualize mcnodes, calculate totals, and combine them with other mcmodules</p>
-<p>```{r} # Summarize the ‘result’ node mc_summary(example_mcmodule, “result”)</p>
-<h1 id="get-result-aggregated-by-category-1">Get ‘result’ aggregated by category 1</h1>
-<p>example_mcmodule&lt;-example_mcmodule%&gt;% agg_totals( mc_name = “result”, agg_keys = c(“category_1”) )</p>
-<h1 id="print-aggregated-result">Print aggregated ‘result’</h1>
-<p>example_mcmodule<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mi>o</mi><mi>d</mi><msub><mi>e</mi><mi>l</mi></msub><mi>i</mi><mi>s</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">node_list</annotation></semantics></math>result_agg$summary</p>
-<h1 id="visualize-the-mcmodule">Visualize the mcmodule</h1>
-<p>mc_network(example_mcmodule, legend = TRUE) ```</p>
+<pre><code><span><span class="co"># Summarize the 'result' node</span></span>
+<span><span class="fu"><a href="reference/mc_summary.html">mc_summary</a></span><span class="op">(</span><span class="va">example_mcmodule</span>, <span class="st">"result"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Get 'result' aggregated by category 1</span></span>
+<span><span class="va">example_mcmodule</span><span class="op">&lt;-</span><span class="va">example_mcmodule</span><span class="op">%&gt;%</span></span>
+<span>  <span class="fu"><a href="reference/agg_totals.html">agg_totals</a></span><span class="op">(</span></span>
+<span>    mc_name <span class="op">=</span> <span class="st">"result"</span>,</span>
+<span>    agg_keys <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"category_1"</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Print aggregated 'result'</span></span>
+<span><span class="va">example_mcmodule</span><span class="op">$</span><span class="va">node_list</span><span class="op">$</span><span class="va">result_agg</span><span class="op">$</span><span class="va">summary</span></span>
+<span></span>
+<span><span class="co"># Visualize the mcmodule</span></span>
+<span><span class="fu"><a href="reference/mc_network.html">mc_network</a></span><span class="op">(</span><span class="va">example_mcmodule</span>, legend <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre>
 </li>
 </ol>
-<p><img src="images/mc_network_example.png"></p>
+<p><img src="reference/figures/mc_network_example.png"></p>
 <p>Further documentation and examples can be found in the <a href="https://nataliaciria.github.io/mcmodule/articles/mcmodule.html">vignette</a> and in the <a href="https://nataliaciria.github.io/mcmodule/articles/intro.html">introduction</a> article.</p>
 </div>
 <div class="section level2">
