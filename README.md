@@ -18,9 +18,7 @@ Install latest development version from GitHub (requires `devtool` package)
 devtools::install_github("NataliaCiria/mcmodule")
 ```
 
-## Usage
-
-This example demonstrates how to set up a simple risk model using the mcmodule package.
+## Set up an mcmodel
 
 1.  Create a data frame with input parameters
 
