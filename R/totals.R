@@ -535,7 +535,7 @@ trial_totals <- function(mcmodule,
 
       mc_row <- mctable[mctable$mcnode %in% mc_name, ]
 
-      create_mc_nodes(data, mctable = mc_row)
+      create_mcnodes(data, mctable = mc_row)
 
       mc_node <- get(mc_name)
 

@@ -193,7 +193,7 @@ eval_module <- function(exp, data, param_names = NULL,
 
     # Create mcnodes for the current expression
     mctable_i = mctable[mctable$mcnode%in%names(node_list_i)[grepl("in_node", node_list_i)],]
-    if(nrow(mctable_i) > 0) create_mc_nodes(data = data, mctable = mctable_i)
+    if(nrow(mctable_i) > 0) create_mcnodes(data = data, mctable = mctable_i)
 
     # Evaluate current expression
     eval(exp_i)

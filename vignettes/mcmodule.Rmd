@@ -22,200 +22,399 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup, include = FALSE}
+# Getting started
+
+This is a gentle and casual welcome to Monte Carlo risk analysis and [`mcmodule`](https://nataliaciria.github.io/mcmodule/) R package. For a more technical approach you can read the package official [vignette](https://nataliaciria.github.io/mcmodule/articles/mcmodule.html).
+
+Formally, `mcmodule` is a framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to make working with multiple risk pathways, variates, and scenarios easier. The package includes tools for creating stochastic objects from data frames, visualizing results, and performing uncertainty, sensitivity, and convergence analysis.
+
+For me, `mcmodule` was a little set of custom functions that was born out of necessity and grew out of obsession. I developed this new R package because I could not find any suitable tools for creating complex risk analysis models involving thousands of parameters, hundreds of cases, dozens of scenarios, and multiple pathways in R (or in any other software accessible to epidemiologists like me). Eventually, the effort and lessons learned from building smooth, large-scale risk analysis in R went beyond what I could keep just for our [farmR!SK](https://github.com/VetEpi-UAB/farmrisk) project. Now, I hope this package can help other epidemiologists (and risk modelers from other disciplines), not only to save a few hours of work, but also to be ambitious and design complex risk pathways knowing that it will be feasible to evaluate them in R.
+
+## Risk assessment
+
+This section provides a brief introduction to risk assessment in R. Although this package is not intended for beginners in risk assessment, it can help you understand the logic behind mcmodule and its purpose.
+
+### A simple risk assessment
+
+Imagine we want to buy a heifer. We have found a good deal on a farm that we know is infected with pathogen A, a disease that our farm is free from. To reduce the risk of introducing the disease to our farm, we plan to perform a diagnostic test on the heifer before bringing it to our farm. We want to calculate the probability of introducing the disease by purchasing one heifer that tests negative.
+
+We have an estimation (with some uncertainty) of both the probability of animal infection within a herd and the test sensitivity, so we want to conduct a **stochastic** risk assessment that properly accounts for this **uncertainty**.
+
+> **Risk assessment** is a technique to estimate the probability and impact of an "adverse"[^1] event. It identifies the **steps** necessary for the event to occur and assigns them a **probability**.
+>
+> **Monte Carlo simulation** is a technique used to model and analyse uncertainty [@Vose2008].
+
+[^1]: Although in practice it is more commonly used to assess adverse events (that's why they're called "risks"), these quantitative techniques can obviously also be used to estimate the probability of any event, judgements about whether it is adverse or not are not part of the probabilistic calculations.
+
+The risk assessment for our cattle purchase can be performed using base R [@base] random sampling functions, or `mc2d` [@mc2d], a package provides additional probability distributions (such as rpert) and other useful tools for analysing stochastic (Monte-Carlo) simulations.
+
+```{r, warning=FALSE, message=FALSE}
+library(mc2d)
+set.seed(123)
+n_iterations <- 10000
+
+# Within-herd prevalence
+w_prev <- mcstoc(runif, min = 0.15, max = 0.2, 
+                 nsu = n_iterations, type="U")
+# Test sensitivity
+test_sensi <- mcstoc(rpert, min = 0.89, mode = 0.9, max = 0.91, 
+                     nsu = n_iterations, type="U")
+# Probability an animal is tested in origin
+test_origin <- mcdata(1, type="0") #Yes
+
+
+# EXPRESSIONS
+# Probability that an animal in an infected herd is infected (a = animal)
+infected <- w_prev
+# Probability an animal is tested and is a false negative 
+# (test specificity assumed to be 100%)
+false_neg <- infected * test_origin * (1 - test_sensi)
+# Probability an animal is not tested
+no_test <- infected * (1 - test_origin)
+# Probability an animal is not detected
+no_detect <- false_neg + no_test
+
+mc_model<-mc(w_prev, infected, test_origin, test_sensi, 
+             false_neg, no_test, no_detect)
+
+# RESULT
+hist(mc_model)
+no_detect
+```
+
+### Multiple risk assessments at once
+
+In the previous example, we calculated the risk for one specific case. However, we know that this farm is also positive for pathogen B, so it would be also interesting to calculate the risk of introducing it as well. Pathogen B has different within-herd prevalence and test sensitivity than Pathogen A.
+
+To estimate the risk for both pathogens with our previous models, we could:
+
+-   Copy and paste the code twice with different parameters (against all good coding practices)
+
+-   Wrap the code in a function and call it twice using each pathogen's parameters as arguments
+
+-   Create a loop
+
+While these options work, they become messy or computationally intensive when the number of parameters or different situations to simulate increases.
+
+The package `mc2d` offers a clever solution to this scalability problem: variates. In this package, parameters are stored as **mcnode** class objects. These objects are arrays of numbers that represent random variables and have three dimensions: **variability × uncertainty × variates**.
+
+![](images/mcmodule_node_dimensions.png){fig-align="center"}
+
+In the previous example, our stochastic nodes only had uncertainty dimension. However, we can now use the **variates** dimension to calculate the risk of introduction of both pathogens at the same time.
+
+```{r}
+set.seed(123)
+n_iterations <- 10000
+
+# Within-herd prevalence
+w_prev_min <- mcdata(c(a = 0.15, b = 0.45), nvariates = 2, type="0")
+w_prev_max <- mcdata(c(a = 0.2, b = 0.6), nvariates = 2, type="0")
+
+w_prev <- mcstoc(runif, min = w_prev_min, max = w_prev_max, 
+                 nsu = n_iterations, nvariates = 2, type="U")
+
+# Test sensitivity
+test_sensi_min <- mcdata(c(a = 0.89, b = 0.80), nvariates = 2, type = "0")
+test_sensi_mode <- mcdata(c(a = 0.9, b = 0.85), nvariates = 2, type = "0")
+test_sensi_max <- mcdata(c(a = 0.91, b = 0.90), nvariates = 2, type = "0")
+
+test_sensi <- mcstoc(rpert, min = test_sensi_min, 
+                     mode = test_sensi_mode, max = test_sensi_max, 
+                     nsu = n_iterations, nvariates = 2, type="U")
+
+# Probability an animal is tested in origin
+test_origin <- mcdata(c(a = 1, b = 1), nvariates = 2, type="0")
+
+
+# EXPRESSIONS
+# Probability that an animal in an infected herd is infected (a = animal)
+infected <- w_prev
+# Probability an animal is tested and is a false negative 
+# (test specificity assumed to be 100%)
+false_neg <- infected * test_origin * (1 - test_sensi)
+# Probability an animal is not tested
+no_test <- infected * (1 - test_origin)
+# Probability an animal is not detected
+no_detect <- false_neg + no_test
+
+mc_model<-mc(w_prev, infected, test_origin, test_sensi, 
+             false_neg, no_test, no_detect)
+
+# RESULT
+no_detect
+```
+
+Instead of manually typing the parameter values, you can also use columns from a data table in `mcdata()`. A useful template for setting up risk analysis models using `mc2d`, with custom functions to facilitate data manipulation and visualization, can be found in this repository: <https://github.com/NataliaCiria/risk_analysis_template>.
+
+## When to use mcmodule?
+
+The `mc2d` multivariate approach works well for basic multivariate risk analysis. However, if instead of purchasing one cow, you're dealing with multiple cattle purchases, from different farms, across different pathogens, scenarios, and age categories, or modeling multiple risk pathways with different what-if scenarios, this approach becomes unwieldy.
+
+`mcmodule` addresses these challenges by providing functions for **multivariate operations** and **modular management** of the risk model. It automates the process of creating mcnodes and assigns metadata to them (making it easy to identify which variate corresponds to which data row). Thanks to this mcnode metadata, it enables row-matching between nodes with different variates, combines probabilities across variates, and calculates multilevel trials. As your risk analysis grows, you can create separate modules for different pathways, each with independent parameters, expressions, and scenarios that can later be connected into a complete model.
+
+This package is particularly useful for:
+
+-   **Working with complex models** that involve multiple pathways, pathogens, or scenarios simultaneously
+
+-   **Dealing with large parameter sets** (hundreds or thousands of parameters)
+
+-   **Handling different numbers of variates** across different parts of your model that need to be combined
+
+-   **Creating modular risk assessments** where different components need to be developed independently but later integrated (for example in collaborative projects)
+
+-   **Performing sophisticated sensitivity analyses** across multiple model components
+
+However, for simpler analyses, such as single pathway models, exploratory work, small models with few parameters, one-off analyses or learning risk assessment `mcmodule`'s additional structure may be unnecessary.
+
+## Installing mcmodule
+
+Now let's explore this new package! It's about to be submitted to CRAN, but since it's not there yet, we'll install it from GitHub instead.
+
+```{r, eval=FALSE}
+# install.packages("devtools")
+devtools::install_github("NataliaCiria/mcmodule")
+```
+
+And we load the package in our R session. Easy-peasy, ready to go!
+
+```{r}
 library(mcmodule)
 ```
 
-> *Work in progress!* 🏗
+Other recommended packages to load along with mcmodule are:
 
-# Introduction
+```{r, warning=FALSE, message=FALSE}
+# install.packages(c("dplyr","ggplot2","igraph","visNetwork"))
+library(dplyr)     # Data manipulation
+library(ggplot2)   # Plots
+library(igraph)    # Network analysis
+library(visNetwork)# Interactive network visualization
+```
 
-This guide presents a flexible approach for building risk assessment models with Monte Carlo simulations in R. The framework is **multivariate**, allowing simultaneous analysis of multiple variates (different categories or groups), and **modular,** breaking complex systems into manageable components.
+# Building an mcmodule
 
-The `mc2d` R package [@mc2d] provides tools to build and analyse models involving multiple variables and uncertainties based on Monte Carlo simulations. However, these tools are limited when handling multiple variates, and complex models can be difficult to analyse and interpret. The `mcmodule` package builds on the R package mc2d to enhance model flexibility. This new package provides:
+To quickly understand the key components of an mcmodule, we'll start by building one using the animal imports example included in the package. For a more detailed view of each component, refer to the [model elements](https://nataliaciria.github.io/mcmodule/articles/mcmodule.html#model-elements) section in the package vignette.
 
-1.  Tools to add metadata to model elements for better traceability and debugging
-2.  Tools to handle complex multivariate variables
-3.  A framework to break down Monte Carlo models into smaller, reusable components (modules) that can be analysed independently before integration
+## Data
 
-# Multivariate Monte-Carlo simulations
+Let's consider a scenario where we want to evaluate the risk of introducing pathogen A and pathogen B into our region from animal imports from different regions (north, south, east, and west). We have gathered the following data:
 
-| *This section draws from the [mc2d](https://cran.r-project.org/package=mc2d) package vignette, with adaptations for modular Monte Carlo simulations.*
+-   `animal_imports`: number of animal imports with their mean and standard deviation values per region, and the number of exporting farms in each region.
 
-Quantitative risk analysis is the numerical assessment of risk to facilitate decision making in the face of uncertainty. Monte Carlo simulation is a technique used to model and analyse uncertainty [@Vose2008]. In typical two-dimensional Monte Carlo simulation, one dimension represents variability and the other represents uncertainty. However, in this framework, we take a different approach where:
+    ```{r}
+    animal_imports
+    ```
 
--   We combine **variability** and **uncertainty** into one dimension (***u***)
+-   `prevalence_region`: estimates for both herd and within-herd prevalence ranges for pathogens A and B, as well as an indicator of how often tests are performed in origin
 
--   We use **variates** (representing different groups or categories) in the other dimension (***i***)
+    ```{r}
+    prevalence_region
+    ```
 
-This approach enables us to track multiple values across groups simultaneously using variates and to handle cases where values must be aggregated by animal movements, farms, or other grouped entities. Although it would be technically possible to separate variability and uncertainty, the exponential increase in computational and programming requirements would make it impractical in models of this size.
+-   `test_sensitivity`: estimates of test sensitivity values for pathogen A and B
 
-In this framework, an mcnode is an array of **dimensions (*u* × 1 × *i*)**, where u is the dimension of variability and uncertainty combined, and i is the number of variates. As most of the input parameters are uncertain, we will use the term "uncertainty dimension" throughout this document to refer to the combined dimension of variability and uncertainty.
+    ```{r}
+    test_sensitivity
+    ```
 
-![Structure of an mcnode containing u uncertainty iterations and i variates.](images/mcmodule_mcnode_definition.png){fig-align="center" style="display: block; margin: 1em auto" width="40%"}
+Now we will use `dplyr::left_join()` to create our imports module data:
 
-For example, if we are buying a number of cows and heifers from a specific region, a mcnode for herd prevalence would have:
+```{r}
+imports_data<-prevalence_region%>%
+   left_join(animal_imports)%>%
+   left_join(test_sensitivity)%>%
+   relocate(pathogen, origin, test_origin)
+```
 
--   Multiple variates (rows), each representing a specific animal category-disease combination. The variables that define and distinguish these variates are called **keys**.
+## Data keys
 
--   Probability values generated through a PERT distribution (rpert), using minimum, mode, and maximum parameters across *u* iterations (columns) to model the uncertainty in these estimates.
+From now on we will use only the merged `imports_data` table. However, it is useful to understand which input dataset each parameter comes from, as each dataset provides information for different keys. In this context, keys are fields that (combined) uniquely identify each row in a table. In our example:
 
-![An mcnode representing herd prevalence of three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR), and bovine viral diarrhea (BVD), and two animal categories (cows and heifers). The herd prevalence is the same for both animal categories, but values differ due to the stochastic nature of random sampling from the PERT distribution.](images/mcmodule_mcnode_example.png){fig-align="center" style="display: block; margin: 1em auto" width="85%"}
+-   `animal_imports` provided information by region of `"origin"`
 
-## Scenarios
+-   `prevalence_region` provided information by `"pathogen"` and region of `"origin"`
 
-This framework enables the creation and comparison of scenarios. For comparisons, you need a baseline scenario (scenario "0") and one or more alternative scenarios. Variates within a scenario are called "groups." While not every scenario needs to contain all baseline groups, any groups present in alternative scenarios must exist in the baseline.
+-   `test_sensitivity` provided information by `"pathogen"` only
 
-The scenario id, group id, and row number are the three mcnode properties that enable row matching and row aggregation operations.
+The resulting merged table, `imports_data`, will therefore have two keys: `"pathogen"` and `"origin"`. However, not all parameters will use both keys, for example, `"test_sensi"` only has information by `"pathogen"`. Knowing the keys for each parameter is crucial when performing multivariate operations, such as [calculating totals](https://nataliaciria.github.io/mcmodule/articles/intro.html#calculating-totals).
 
-![An mcnode representing the probability of a farm being infected in a baseline scenario ("0", in blue) and in a what-if scenario where there is a control plan implemented ("a", in green).](images/mcmodule_mcnode_scenarios.png){fig-align="center" style="display: block; margin: 1em auto" width="70%"}
+To make these relationships explicit in the model, we need to provide the data keys. These are defined in a list with one element for each input dataset, specifying both the columns and the keys for each dataset.
 
-## Multivariate nodes operations
+```{r}
+imports_data_keys <- list(
+  animal_imports =  list(
+    cols = names(animal_imports),
+    keys = "origin"
+  ),
+  prevalence_region = list(
+    cols = names(prevalence_region),
+    keys = c("pathogen", "origin")
+  ),
+  test_sensitivity = list(
+    cols = names(test_sensitivity),
+    keys = "pathogen"
+  )
+)
+```
 
-### Element-wise operations {#sec-element-wise-operations}
+## mcnodes table
 
-Most operations in this model are element-wise, meaning each calculation occurs independently on matching elements across nodes. These operations preserve node dimensions while applying functions (such as multiplication or addition) to corresponding elements, allowing uncertainties and variates to propagate through the calculations.
+With values and keys established, we still need some information to build our stochastic parameters. The mcnode table specifies how to build mcnodes from the data table. It specifies which parameters are included in the model, the type of parameters (those with an mc_func are stochastic), and what columns to look for in the data table to build this mcnodes (the name of the mcnode, or another variable in the data columns), as well as transformations that are usefull to encode categorical data values into mcnodes that must always be numeric.
+
+-   mcnode: Name of the Monte Carlo node (required)
+
+-   description: Description of the parameter
+
+-   mc_func: Probability distribution
+
+-   from_variable: Column name, if it comes from a column with a name different to the mcnode
+
+-   transformation: Transformation to be applied to the original column values
+
+-   sensi_analysis: Whether to include in sensitivity analysis
+
+Here we have the `imports_mctable` for our example. While the mctable can be hard-coded in R, it's more efficient to prepare it in a CSV or other external file. This approach also allows the table to be included as part of the model documentation.
+
+```{r, echo = FALSE}
+# Display the table with horizontal scrolling
+imports_mctable %>%
+  mutate(transformation=ifelse(mcnode=="test_origin", 'ifelse(value == "always", 1, ifelse(value == "sometimes", 0.5, ifelse(value == "never", 0, NA)))',transformation)) %>%
+  knitr::kable()
+```
+
+The data table and the mctable must complement each other:
+
+-   mcnodes without a `mc_func` (like `farms_n`), needs the matching column name (`"farms_n"`) in the data table
+
+-   mcnodes with an `mc_func`, you need **columns for each probability distribution argument in the** **data table**. For example:
+
+    -   `h_prev` with `runif` distribution requires `"h_prev_min"` and `"h_prev_max"`
+
+    -   `animals_n` with `rnorm` distribution requires `"animals_n_mean"` and `"animals_n_sd"`
+
+For encoding categorical variables as mcnodes (or any other data transformation), you can use any R code with `value` as a placeholder for the mcnode name or column name (specified in `from_variable`)
+
+## Expressions
+
+Finally, we need to write the model's mathematical expression. This expressions should ideally include only arithmetic operations, not R functions (with some exceptions that will be covered later in "[tricks and tweaks](https://nataliaciria.github.io/mcmodule/articles/intro.html#tricks-and-tweaks)"). We'll wrap them using `quote()` so they aren't executed immediately but stored for later evaluation with `eval_model()`.
+
+```{r}
+imports_exp<-quote({
+  # Probability that an animal in an infected herd is infected (a = animal)
+  infected <- w_prev
+  # Probability an animal is tested and is a false negative 
+  # (test specificity assumed to be 100%)
+  false_neg <- infected * test_origin * (1 - test_sensi)
+  # Probability an animal is not tested
+  no_test <- infected * (1 - test_origin)
+  # Probability an animal is not detected
+  no_detect <- false_neg + no_test
+})
+```
+
+## Evaluating an mcmodule
+
+With all components in place, we're now ready to create our first mcmodule using `eval_module()`.
+
+```{r}
+imports<-eval_module(
+  exp = c(imports=imports_exp),
+  data = imports_data,
+  mctable = imports_mctable,
+  data_keys = imports_data_keys
+)
+```
+
+```{r}
+class(imports)
+```
+
+An mcmodule is an S3 object class, and it is essentially a list that contains all risk assessment components in a structured format.
+
+```{r}
+names(imports)
+```
+
+The mcmodule contains the input `data` and mathematical expressions (`exp`) that ensure traceability. All input and calculated parameters are stored in `node_list`. Each node contains not only the mcnode itself but also important metadata: node type (input or output), source dataset and columns, keys, calculation method, and more. The specific metadata varies depending on the node's characteristics. Here are a few examples:
+
+```{r}
+imports$node_list$w_prev
+imports$node_list$no_detect
+```
+
+And now that we have an mcmodule, we can begin exploring its possibilities!
+
+## Understanding mcnodes operations
+
+When arithmetic operations are performed between nodes in mcmodule, they are applied on matching elements and keep the original dimensions, allowing uncertainties and variates to propagate through the calculations.
 
 ![](images/mcmodule_mcnode_element-wise_operation.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
 
-### Row matching {#sec-row-matching}
+# Working with an mcmodule
 
-Row matching operations align nodes to ensure they have compatible dimensions and properly matched rows for element-wise calculations. This is especially important when working with nodes containing different scenarios. The matching process may require reordering, duplicating, or adding rows to either or both nodes.
+## Visualizing
 
-Row matching between nodes is needed in the following cases and their combinations:
+We can visualize an mc_module with the `mc_network()` function. For this you will need to have `igraph` [@igraph] and `visNetwork` [@visnetwork] installed.
 
-#### Group matching
+In these network visualizations, input datasets appear in blue, input data files, input columns and input mcnodes appear in different shades of dark-grey-blue, output mcnodes in green, and total mcnodes (as we will see later) in orange. The numbers displayed when clicked correspond to the median and the 95% confidence interval of the first variate of each mcnode.
 
-Nodes with same scenarios/dimensions but different group order
+```{r}
+mc_network(imports, legend = TRUE)
+```
 
-1.  Check if keys that define groups are in a different order
+## Summarizing {#sec-calculating-totals}
 
-![](images/mcmodule_group_match_1.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
+In the imports mcmodule, we can already see the raw mcnode results for the probability of an imported animal not being detected (`no_detect`). However, it's difficult to determine which pathogen or region these results refer to. The `mc_summary()` function solves this problem by linking mcnode results with their key columns in the data.
 
-2.  Assign common group ids, based on keys
+> Note that while the printed summary looks similar to the raw mcnode, it's actually just a dataframe containing statistical measures, whereas the actual mcnode is a large array of numbers with dimensions (uncertainty × 1 × variates),
 
-![](images/mcmodule_group_match_2.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
+```{r}
+mc_summary(mcmodule = imports, mc_name = "no_detect")
+```
 
-3.  Reorder rows to align group ids. This is similar to dplyr `left_join`
+## Calculating totals
 
-![](images/mcmodule_group_match_3.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
+Most of the following probability calculations are based on Chapter 5 of the *Handbook on Import Risk Analysis for Animals and Animal Products Volume 2. Quantitative risk assessment* [@Murray2004].
 
-#### Scenario matching
+### Single-level trials
 
-Nodes with same groups but different scenarios. The general rule for these operations is that when no scenario is specified, it is assumed that a variable takes the values from the baseline scenario.
+In `imports`, we know the probability that an infected animal from an infected farm goes undetected (`"no_detect"`). We can use the total number of animals selected per farm (`"animals_n"`) as the number of trials (`trials_n`) to determine the probability that at least one infected animal from an infected farm is not detected (`no_detect_set`).
 
-1.  Check if scenarios are different
-
-![](images/mcmodule_scenario_match_1.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
-
-2.  For missing scenarios, duplicate the baseline scenario (scenario "0")
-
-![](images/mcmodule_scenario_match_2.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
-
-3.  When nodes matched by scenario are used in an element-wise operation, the resulting node will contain all scenarios from both input nodes. This is conceptually similar to a dplyr `full_join`, except that any unmatched rows use values from the baseline scenario.
-
-![](images/mcmodule_scenario_match_3.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
-
-#### Null matching
-
-When nodes contain different scenarios and groups, some groups may be missing from certain nodes. These missing groups (called "null" variates) are assigned a probability of 0. This operation typically complements scenario matching.
-
-1.  Check for missing groups
-
-![](images/mcmodule_null_matching_1.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
-
-2.  Add null variates with probability 0 for any missing groups (and apply scenario matching)
-
-![](images/mcmodule_null_matching_2.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
-
-1.  When nodes are matched by scenario in an element-wise operation, the resulting node will contain all groups from both input nodes
-
-![](images/mcmodule_null_matching_3.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
-
-### Combined probabilities
-
-A special type of element-wise operation that automatically deals with row matching. Combines probabilities of multiple events assuming independence, using the formula:
-
-$$ P(A \cup B) = 1 - (1-P(A))(1-P(B))$$
-
-### Row aggregation {#sec-row-aggregation}
-
-Row aggregation operations combine values across multiple rows (variates) in an mcnode using specific criteria. These operations calculate overall probabilities or sum quantities across groups.
-
-#### Probabilities
-
-Some events can occur independently across multiple variates of the same node. For example, a disease might be present in animals from different regions or farms. To calculate the probability of an **event occurring in at least one variate** within a subset, we first group the data by aggregation keys (*agg_keys*). Then, for each subset, we use the standard probability formula for independent trials to find the probability of the event occurring in at least one variate.
-
-$$
-p\_{agg}=1-\prod_{p\subseteq S}(1-p)
-$$
-
-Where:
-
--   *S* represents the subset of variates included in the aggregation
-
--   *p* represents the probability of an event occurring
-
--   *p_agg* represents the probability of occurrence in at least one variate of S
-
-![Row aggregation by pathogen. The calculation is performed element-wise across subset variates to maintain uncertainty propagation.](images/mcmodule_row_aggregation_p.png){fig-align="center" style="display: block; margin: 1em auto" width="100%"}
-
-If scenarios are being simulated, scenario id must always be included as an aggregation key, as probabilities are not calculated across different what-if scenarios.
-
-You can also keep all variariates, with their corresponding aggregated values, to ensure dimensions compatibility in further calculations.
-
-![Default row aggregation and row aggregation keeping all variates](images/mcmodule_keep_variates.png){fig-align="center" style="display: block; margin: 1em auto" width="80%"}
-
-#### Quantities
-
-When working with quantities (such as number of animals or farms), we calculate totals by summing values across variates within each subset.
-
-$$ n\_{agg}=\sum_{n\subseteq S} n $$
-
-Where:
-
--   *S* represents the subset of variates included in the aggregation
-
--   *n* represents the quantity value
-
--   *n_agg* represents the sum of quantities across all variates in *S*
-
-### Trials
-
-In this framework, nodes typically represent the probability of **success for a** **single trial with a binary outcome** (success/failure). A trial is one instance where an event might occur, for example, an animal, farm, batch, animal movement, or farm visit. Each trial has two possible outcomes, such as whether an animal is infected or not, or whether a test is positive or negative. In **single-level** trials, all trials are independent and have the same probability of success[^1].
-
-[^1]: In this context, a "success" refers to the occurrence of an event of interest, which may actually represent an undesirable outcome such as the presence of a disease or a positive test result for a pathogen.
-
-Some probability processes follow a hierarchical structure where events occur at different levels. For example, when animals are purchased from multiple farms, we must consider both the probability of a farm being infected and the probability of an individual animal within that farm being infected. This means infection probabilities for animals from the same farm are not independent. In **multilevel** trials, trials are organized into subsets, with each subset having its own selection probability. A subset represents a group sharing specific characteristics, for example, animals from the same farm or with the same health status.
-
-Most of the following probability processes and calculations are based on Chapter 5 of the *Handbook on Import Risk Analysis for Animals and Animal Products Volume 2. Quantitative risk assessment* [@Murray2004].
-
-#### Single-level trials
-
-In single-level trials, each trial is independent with the same probability of success ($trial\_p$). For a set of $trials\_n$ trials, the probability of at least one success is:
+In single-level trials, each trial is independent with the same probability of success ($trial\_p$). For a set of $trials\_n$ trials, the **probability of at least one success** is:
 
 $$ set\_p= 1-(1-trial\_p)^{trials\_n} $$
 
-In `imports_mcmodule`, we have the probability that an infected animal from an infected farm goes undetected ($no\_detect\_a$). When all animals (in a variate) have the same probability, we can use the total number of animals selected per farm ($animals\_n$) as the number of trials (`trials_n`) to determine the probability that at least one infected animal from one farm is not detected ($no\_detect\_set$). Note that while $animals\_n$ isn't defined as an mcnode in `imports_mcmodule` (not used in `imports_mcmodule$model_exp`), it can be automatically generated in `trial_totals()` because it's included in `imports_mctable` and the required data exists in `imports_mcmodule$data`.
-
 ```{r}
-# Single-level trial
-imports_mcmodule <- trial_totals(
-  mcmodule = imports_mcmodule,
-  mc_names = "no_detect_a", # trial_p
+# Probability of at least one imported animal from an infected herd is not detected 
+imports <- trial_totals(
+  mcmodule = imports,
+  mc_names = "no_detect",
   trials_n = "animals_n",
   mctable = imports_mctable
 )
-
-# Probability that at least one infected animal from an infected farm is not detected
-mc_summary(imports_mcmodule,"no_detect_a_set")[,-1]
 ```
 
-#### Multilevel trials
+The `trial_totals()` function returns the mcmodule with some additional nodes: the probability of at least one success and the expected number of successes. These **total nodes** have special metadata fields, and always include a summary by default.
 
-**Simple multilevel**
+```{r}
+# Probability of at least one
+imports$node_list$no_detect_set$summary
 
-In multilevel trials, we account for hierarchical structures where trials are organized into subsets. For example, when considering animals ($trials\_n$) from different farms ($subset\_n$), we must account for both the farm's selection probability ($subset\_p$) and the individual animal's probability of success ($trial\_p$).
+# Expected number of animals
+imports$node_list$no_detect_set_n$summary
+```
+
+### Multilevel trials
+
+#### Simple multilevel
+
+We can also calculate the probability that at least one infected animal from at least one infected farm is not detected, but here, we need to consider two levels: animals and farms.
+
+![*Selection (in blue) of 4 animals from 3 farms, with a 20% regional herd prevalence and 50% within-herd prevalence.*](images/mcmodule_multilevel_trial_drawing.png)
+
+We import animals from `"farms_n"` farms. Each farm has a probability `"h_prev"` (regional herd prevalence) of being infected. From each farm, we import `"animals_n"` animals. In an infected farm, each animal has a probability `"w_prev"` (within-herd prevalence) of being infected. We've already used this to calculate `"no_detect"`, which is the probability that an infected animal is not detected.
+
+![](images/mcmodule_multilevel_trial_diagram.png)
 
 The probability of at least one success in this hierarchical structure is given by:
 
@@ -233,72 +432,202 @@ Where:
 
 -   *set_p* represents the probability of a at least one trial of at least one subsetbeing a success
 
-When considering animals (`trials_n`) from different farms (`subset_n`, we must account for both the farm’s probability of being infected (`subsets_p`) and the individual animal’s probability of being infected (`trial_p`).
-
-![](images/mcmodule_multilevel_trial_drawing.png)
-
-![](images/mcmodule_multilevel_trial_diagram.png)
-
 ```{r}
-# Simple multilevel trial
-imports_mcmodule <- trial_totals(
-  mcmodule = imports_mcmodule,
-  mc_names = "no_detect_a", # trial_p
+# Probability of at least one animal from at least one herd being is not detected (probability of a herd being infected: h_prev)
+imports <- trial_totals(
+  mcmodule = imports,
+  mc_names = "no_detect",
   trials_n = "animals_n",
   subsets_n = "farms_n",
   subsets_p = "h_prev",
-  mctable = imports_mctable
+  mctable = imports_mctable,
 )
 
-# Probability that at least one infected animal from at least one farm is not detected
-mc_summary(imports_mcmodule,"no_detect_a_set", digits=2)[,-1]
+# Result
+imports$node_list$no_detect_set$summary
+```
 
+It also provides the probability of at least one and the expected number of infected animals by subset (in this case a farm)
+
+```{r}
+# Probability of at least one in a farm
+imports$node_list$no_detect_subset$summary
 ```
 
 **Multiple group multilevel trials**
 
-In multiple group multilevel trials, several variates (groups) can belong to the same subset. For example, when selecting animals of different categories (cow, calf, heifer, bull) from the same farm, their infection probabilities are not independent. You should include aggregation keys for groups that are not independent to calculate their trial probabilities, for example, aggregating variates for different animal categories by farm. For this calculation, the subset_p and subset_n values must be identical across all variates being aggregated.
+This `trial_totals()` application out of the scope of the introduction to `mcmodule`, but there are cases where we might have several variates from the same subset. For example we could deal with different animal categories (cow, calf, bull...) from the same farm. Here the infection probability of animals within the same farm is not independent, and it should be taken into account. For more information about this, check: [Multilevel trials](https://nataliaciria.github.io/mcmodule/articles/mcmodule.html#multilevel-trials) in the official vignette.
 
-$$
-trial\_p\_agg=1-\prod_{trial\_p\subseteq S}(1-trial\_p)^{trial\_n}
-$$
+![*Selection (in blue) of 2 cows and 5 calves from 3 farms, with a 20% regional herd prevalence and 50% within-herd prevalence for adult animals and 30% within-herd prevalence for young animals.*](images/mcmodule_multilevel_trial_drawing_groups.png)
 
-$$ set\_p\_agg = 1-(1-subset\_p \cdot trial\_p\_agg)^{subset\_n}  $$
+### Aggregated totals
 
-Where:
+Until this point, all mcnode operations were element-wise, keeping the original dimensions, and allowing uncertainties and variates to propagate through the calculations. However, sometimes, we need to aggregate variates to calculate totals, for example, to total risk of introducing a pathogen across all regions. In this case, we want to preserve the uncertainty dimension but reduce the variates dimension. With `agg_totals()` we can calculate overall probabilities or sum quantities across groups.
 
--   S represents the variates included in the aggregation
+```{r}
+imports <- agg_totals(
+  mcmodule = imports,
+  mc_name = "no_detect_set",
+  agg_keys = "pathogen"
+)
 
--   *trials_p* represents the probability of success of a trial in a subset
+# Result
+imports$node_list$no_detect_set_agg$summary
+```
 
--   *trials_n* represents the number of trials in subset
+Now we can visualize our mcmodule again and see all these new nodes created by the totals functions.
 
--   *trials_p* *\_agg* represents the probability of success of at least one variate in at least one of the aggregated variates
+```{r}
+mc_network(imports, legend = TRUE)
+```
 
--   *subset_p* represents the probability of a subset being selected
+# Working with what-if scenarios
 
--   *subset_n* represents the number of subsets
+So far, we've only tested our model using current data. But risk analysis is most useful when comparing different scenarios. In our example, we could compare the baseline risk with the risk if tests were always performed in all regions.
 
--   *set_p_agg* represents the probability of success of a at least one trial in at least one of the aggregated variates in at least one subset
+For this, we only need to add a column called "scenario_id". This name is important as it is used to will recognize it specifically for scenario comparisons, not as regular variate categories. The baseline scenario should be called "0". What-if scenarios can have any name, and they can modify any of the values in the dataset.
 
-As with row aggregation, you can keep all variates to maintain dimensions compatibility in further calculations.
+```{r}
+imports_data<-imports_data%>%
+  mutate(scenario_id = "0")
 
-![](images/mcmodule_multilevel_trial_drawing_groups.png)
+imports_data_wif<-imports_data%>%
+  mutate(scenario_id = "always_test",
+         test_origin = "always")%>%
+  bind_rows(imports_data)%>%
+  relocate(scenario_id)
 
-# Model elements
+imports_data_wif[,1:6]
+```
 
-## Expressions
+Now we create the mcmodule and calculate the totals. Note that, as the first input and the output of most of the functions to work with mcmodules are mcmodules, we can use the pipe `%>%` to simplify this processs.
 
-## Data
+```{r}
+imports_wif<-eval_module(
+  exp = c(imports=imports_exp),
+  data = imports_data_wif,
+  mctable = imports_mctable,
+  data_keys = imports_data_keys
+  )%>%
+  trial_totals(
+    mc_names = "no_detect",
+    trials_n = "animals_n",
+    subsets_n = "farms_n",
+    subsets_p = "h_prev",
+    mctable = imports_mctable,
+  )%>%
+  agg_totals(
+    mc_name = "no_detect_set",
+    agg_keys = c("pathogen", "scenario_id")
+  )
 
-## Nodes
+# Result
+imports_wif$node_list$no_detect_set_agg$summary
+```
 
-### Input nodes
+# Working with multiple mcmodules
 
-### Nodes metadata
+## Inputs from previous mcmodules
 
-## Modules
+Now that we know the probability of an infected imported animal not being detected, we want to estimate the probability that an imported animal ends up infecting another animal via direct contact
 
-### Estructure
+```{r}
+#  Create pathogen data table
+transmission_data  <-data.frame(pathogen=c("a","b"),
+                            inf_dc_min=c(0.05,0.3),
+                            inf_dc_max=c(0.08,0.4))
 
-### Modules metadata
+transmission_data_keys <-list(transmission_data = list(cols=c("pathogen", "inf_dc_min","inf_dc_max"),
+                                         keys=c("pathogen")))
+
+transmission_mctable  <- data.frame(mcnode = c("inf_dc"),
+                               description = c("Probability of infection via direct contact"),
+                               mc_func = c("runif"),
+                               from_variable = c(NA),
+                               transformation = c(NA),
+                               sensi_analysis = c(FALSE))
+dir_contact_exp<-quote({
+  dir_contact <- no_detect * inf_dc
+})
+
+transmission <- eval_module(
+  exp = c(dir_contact = dir_contact_exp),
+  data = transmission_data,
+  mctable =transmission_mctable,
+  data_keys = transmission_data_keys,
+  prev_mcmodule = imports_wif)
+
+mc_network(transmission, legend = TRUE)
+```
+
+## Combining mcmodules
+
+```{r}
+intro<-combine_modules(imports_wif,transmission)
+intro<-at_least_one(intro, c("no_detect","dir_contact"), name="total")
+intro$node_list$total$summary
+
+mc_network(intro, legend = TRUE)
+```
+
+# Tricks and tweaks {#sec-tricks-and-tweaks}
+
+## Remove mcnode NAs
+
+```{r}
+sample_mcnode <- mcstoc(runif,
+               min = mcdata(c(NA, 0.2, -Inf), type = "0", nvariates = 3),
+               max = mcdata(c(NA, 0.3, Inf), type = "0", nvariates = 3),
+               nvariates = 3
+)
+
+# Replace NA and Inf with 0
+clean_mcnode <- mcnode_na_rm(sample_mcnode)
+```
+
+Useful to include in expressions were there is a division with a denominator can potentially be 0 and it will return `Inf` or `NaN`, but we actually want that parameter to be 0.
+
+## Total node names
+
+As we already saw, all totals functions: `at_least_one()`, `agg_totals()`, and `trial_totals()` generate new mcnodes in the mcmodule. The names of these nodes are based on input mcnode names, adding some informative suffixes. Both the "root" name and the prefixes can be customized to have more self-describing names.
+
+```{r}
+# at_least_one() with custom name
+intro <- at_least_one(intro, c("no_detect", "dir_contact"), name = "custom_total")
+
+# agg_totals() with custom name
+intro <- agg_totals(intro, "no_detect_set", name = "custom_agg")
+
+# agg_totals() with custom suffix
+intro <- agg_totals(intro, "no_detect_set", agg_keys=c("scenario_id", "pathogen"),
+                    agg_suffix = "aggregated")
+```
+
+## Prefixing mcmodules
+
+Some risk analysis models might include mcmodules that contain the same expression repeated multiple times. This creates problems when aggregating modules because duplicated names cause significant issues. In these cases, adding a prefix to each module is recommended to clearly diferanciate between each individual mcnode. The default prefix in `add_prefix()` is the mcmodule name.
+
+```{r}
+imports_wif<-add_prefix(imports_wif)
+```
+
+## Functions that don't need mcmodules
+
+`create_mcnodes()`
+
+```{r}
+# Example: create_mcnodes() from a data frame and mctable
+create_mcnodes(data = prevalence_region, mctable = imports_mctable)
+
+# Nodes are created in the environment
+h_prev
+```
+
+`mc_summary()` with data and mcmodule
+
+```{r}
+# Example: mc_summary() with data and mcnode directly
+mc_summary(data = prevalence_region , mcnode = h_prev, keys_names = c("pathogen", "origin"))
+```
+
+# References

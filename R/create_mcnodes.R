@@ -15,10 +15,10 @@
 #' @return No return value, creates MC nodes in the specified environment
 #' @import mc2d
 #' @examples
-#' create_mc_nodes(data = imports_data, mctable = imports_mctable)
+#' create_mcnodes(data = imports_data, mctable = imports_mctable)
 #'
 #' @export
-create_mc_nodes <- function(data, mctable = set_mctable(), envir = parent.frame()) {
+create_mcnodes <- function(data, mctable = set_mctable(), envir = parent.frame()) {
   # Validate that mctable has required columns
   valid_mctable <- all(c("mcnode", "mc_func") %in% names(mctable))
   if (!valid_mctable) stop("mctable must contain 'mcnode' and 'mc_func' columns")

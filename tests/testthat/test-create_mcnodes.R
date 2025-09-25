@@ -1,11 +1,11 @@
 suppressMessages({
   # Unit test for Monte Carlo nodes creation
-  test_that("create_mc_nodes works", {
+  test_that("create_mcnodes works", {
     # Test that function fails without mctable parameter
-    expect_error(create_mc_nodes(data = imports_data))
+    expect_error(create_mcnodes(data = imports_data))
 
     # Create nodes with both required parameters
-    create_mc_nodes(data = imports_data, mctable = imports_mctable)
+    create_mcnodes(data = imports_data, mctable = imports_mctable)
 
     # Verify dimensions of h_prev match expected values
     expect_equal(dim(h_prev), c(ndvar(), 1, nrow(imports_data)))
@@ -19,7 +19,7 @@ suppressMessages({
 
     # Test node creation after setting mctable
     set_mctable(imports_mctable)
-    expect_no_error(create_mc_nodes(data = imports_data))
+    expect_no_error(create_mcnodes(data = imports_data))
     reset_mctable()
   })
 })
