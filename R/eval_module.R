@@ -29,6 +29,8 @@ eval_module <- function(exp, data, param_names = NULL,
 
   data_name <- deparse(substitute(data))
 
+  mctable<-check_mctable(mctable)
+
   # Convert single expression to list format
   if (is.list(exp)) {
     exp_list <- exp

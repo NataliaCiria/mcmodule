@@ -30,6 +30,9 @@ create_mc_nodes <- function(data, mctable = set_mctable(), envir = parent.frame(
   data_mc_inputs <- grepl(paste(paste0("\\<", mctable$mcnode, ".*"), collapse = "|"), names(data))
   if (!any(data_mc_inputs)) stop("data must contain columns matching mctable 'mcnode' names")
 
+  # Check and clean mctable
+  mctable<-check_mctable(mctable)
+
   # Process each Monte Carlo node defined in mctable
   for (i in 1:length(mctable$mcnode)) {
     # Extract current mcnode configuration

@@ -42,14 +42,18 @@
 set_mctable <- function(data = NULL) {
   # Check if mctable exists, if not create with default values
   if (!exists("mctable", envir = .pkgglobalenv)) {
-    assign("mctable", data.frame(
-      mcnode = character(),
-      description = character(),
-      mc_func = character(),
-      from_variable = character(),
-      transformation = character(),
-      sensi_analysis = logical()
-    ), envir = .pkgglobalenv)
+    assign(
+      "mctable",
+      data.frame(
+        mcnode = character(),
+        description = character(),
+        mc_func = character(),
+        from_variable = character(),
+        transformation = character(),
+        sensi_analysis = logical()
+      ),
+      envir = .pkgglobalenv
+    )
   }
 
   # Get current mctable
@@ -57,46 +61,16 @@ set_mctable <- function(data = NULL) {
 
   # If data provided, perform checks and auto-fill
   if (!is.null(data)) {
-    if (is.data.frame(data)) {
-      # Check if mcnode column exists
-      if (!"mcnode" %in% colnames(data)) {
-        stop("mcnode column not found in the mctable")
-      }
-
-      # Check required columns and auto-fill if missing
-      required_cols <- c("description", "mc_func", "from_variable", "transformation", "sensi_analysis")
-      missing_cols <- required_cols[!required_cols %in% colnames(data)]
-
-      if (length(missing_cols) > 0) {
-        warning(
-          "The following columns were not specified and will be filled with default values: ",
-          paste(missing_cols, collapse = ", ")
-        )
-
-        # Add missing columns with default values
-        for (col in missing_cols) {
-          if (col == "sensi_analysis") {
-            data[[col]] <- FALSE
-          } else {
-            data[[col]] <- NA
-          }
-        }
-      }
-
-      assign("mctable", data, envir = .pkgglobalenv)
-      message("mctable set to ", deparse(substitute(data)))
-    } else {
-      stop("Data must be a data frame")
-    }
-  }else{
+    data_name<-deparse(substitute(data))
+    data <- check_mctable(data)
+    assign("mctable", data, envir = .pkgglobalenv)
+    message("mctable set to ", data_name)
+  } else{
     # Return current mctable
     return(get("mctable", envir = .pkgglobalenv))
   }
 }
 
-#' Reset Monte Carlo Inputs Table
-#'
-#' @description
 #' Resets the Monte Carlo inputs table
 #'
 #' @return An empty data frame with the standard mctable structure
@@ -114,4 +88,44 @@ reset_mctable <- function() {
   )
   assign("mctable", empty_mctable, envir = .pkgglobalenv)
   return(get("mctable", envir = .pkgglobalenv))
+}
+
+
+#' Checks mctable data
+#'
+#' @param data A data frame containing MC table information. Must contain an 'mcnode' column.
+#'
+#' @return A data frame with the standard mctable structure
+
+check_mctable <- function(data) {
+  # If data provided, perform checks and auto-fill
+  if (is.data.frame(data)) {
+    # Check if mcnode column exists
+    if (!"mcnode" %in% colnames(data)) {
+      stop("mcnode column not found in the mctable")
+    }
+    # Check required columns and auto-fill if missing
+    required_cols <- c("description",
+                       "mc_func",
+                       "from_variable",
+                       "transformation",
+                       "sensi_analysis")
+    missing_cols <- required_cols[!required_cols %in% colnames(data)]
+    if (length(missing_cols) > 0) {
+      warning(
+        paste(missing_cols, collapse = ", "), " not specified"
+      )
+      # Add missing columns with default values
+      for (col in missing_cols) {
+        if (col == "sensi_analysis") {
+          data[[col]] <- FALSE
+        } else {
+          data[[col]] <- NA
+        }
+      }
+    }
+    return(data)
+  } else {
+    stop("Data must be a data frame")
+  }
 }
