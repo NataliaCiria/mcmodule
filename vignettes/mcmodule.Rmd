@@ -1,7 +1,6 @@
 ---
 title: "mcmodule"
 subtitle: "Modular Monte-Carlo Risk Analysis"
-author: "Natalia Ciria"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{mcmodule-vignette}

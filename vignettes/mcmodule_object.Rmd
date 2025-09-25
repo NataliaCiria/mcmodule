@@ -1,6 +1,5 @@
 ---
 title: "The mcmodule object"
-author: "Natalia Ciria"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{The mcmodule object-vignette}

@@ -1,3 +1,3 @@
-# mcmodule (development version)
+# mcmodule 1.0.0
 
 * Initial CRAN submission.
