@@ -11,6 +11,7 @@
 <url><loc>https://nataliaciria.github.io/mcmodule/reference/agg_totals.html</loc></url>
 <url><loc>https://nataliaciria.github.io/mcmodule/reference/animal_imports.html</loc></url>
 <url><loc>https://nataliaciria.github.io/mcmodule/reference/at_least_one.html</loc></url>
+<url><loc>https://nataliaciria.github.io/mcmodule/reference/check_mctable.html</loc></url>
 <url><loc>https://nataliaciria.github.io/mcmodule/reference/combine_modules.html</loc></url>
 <url><loc>https://nataliaciria.github.io/mcmodule/reference/create_mc_nodes.html</loc></url>
 <url><loc>https://nataliaciria.github.io/mcmodule/reference/eval_module.html</loc></url>
@@ -31,10 +32,6 @@
 <url><loc>https://nataliaciria.github.io/mcmodule/reference/mc_network.html</loc></url>
 <url><loc>https://nataliaciria.github.io/mcmodule/reference/mc_summary.html</loc></url>
 <url><loc>https://nataliaciria.github.io/mcmodule/reference/mc_summary_keys.html</loc></url>
-<url><loc>https://nataliaciria.github.io/mcmodule/reference/mcmodule_converg.html</loc></url>
-<url><loc>https://nataliaciria.github.io/mcmodule/reference/mcmodule_index.html</loc></url>
-<url><loc>https://nataliaciria.github.io/mcmodule/reference/mcmodule_rel_change.html</loc></url>
-<url><loc>https://nataliaciria.github.io/mcmodule/reference/mcmodule_spearman.html</loc></url>
 <url><loc>https://nataliaciria.github.io/mcmodule/reference/mcnode_na_rm.html</loc></url>
 <url><loc>https://nataliaciria.github.io/mcmodule/reference/node_list_summary.html</loc></url>
 <url><loc>https://nataliaciria.github.io/mcmodule/reference/prevalence_region.html</loc></url>
