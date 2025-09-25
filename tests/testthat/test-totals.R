@@ -167,12 +167,12 @@ suppressMessages({
     expect_error(agg_totals(test_module, "nonexistent_node"))
   })
   # Helper function to setup the test module
-  setup_test_module <- function() {
+  setup_test_mcmodule <- function() {
     # Test module with mock data including:
     # - p_1_x and p_1_y: Two probability nodes with uniform distribution
     # - p_2: Another probability node for subset calculations
     # - times_n: Number of trials for each category/scenario combination
-    list(
+    mcmodule<-list(
       node_list = list(
         p_1_x = list(
           mcnode = mcstoc(runif,
@@ -218,10 +218,8 @@ suppressMessages({
         )
       )
     )
-  }
 
-  # Helper function to setup the test mctable
-  setup_test_mctable <- function() {
+    # Setup the test mctable
     test_mctable <- data.frame(
       mcnode = c("sites_n"),
       description = c("Number of sites"),
@@ -231,12 +229,13 @@ suppressMessages({
       sensi_analysis = c(FALSE)
     )
     set_mctable(test_mctable)
+
+    return(mcmodule)
   }
 
   test_that("trial_totals basic functionality works", {
     # Create a test module with mock data
-    test_module <- setup_test_module()
-    setup_test_mctable()
+    test_module <- setup_test_mcmodule()
 
     # Basic trial_totals with two probability nodes
     result <- trial_totals(
@@ -253,8 +252,7 @@ suppressMessages({
 
   test_that("trial_totals works with subset probabilities", {
     # Create a test module with mock data
-    test_module <- setup_test_module()
-    setup_test_mctable()
+    test_module <- setup_test_mcmodule()
 
     # Add sites_n as subset probability (multilevel: hierarchical_p)
     result <- trial_totals(
@@ -271,8 +269,7 @@ suppressMessages({
 
   test_that("trial_totals works with both subset types", {
     # Create a test module with mock data
-    test_module <- setup_test_module()
-    setup_test_mctable()
+    test_module <- setup_test_mcmodule()
 
     # Test with single probability node and both subset types
     result <- trial_totals(
@@ -290,8 +287,7 @@ suppressMessages({
 
   test_that("trial_totals handles custom level suffixes", {
     # Create a test module with mock data
-    test_module <- setup_test_module()
-    setup_test_mctable()
+    test_module <- setup_test_mcmodule()
 
     # Test with custom level suffix
     result <- trial_totals(
@@ -322,8 +318,7 @@ suppressMessages({
 
   test_that("trial_totals handles scenario aggregation", {
     # Create a test module with mock data
-    test_module <- setup_test_module()
-    setup_test_mctable()
+    test_module <- setup_test_mcmodule()
 
     # Test with custom suffix and scenario_id aggregation
     result <- trial_totals(
@@ -356,8 +351,7 @@ suppressMessages({
 
   test_that("trial_totals works with custom name parameter", {
     # Create a test module with mock data
-    test_module <- setup_test_module()
-    setup_test_mctable()
+    test_module <- setup_test_mcmodule()
 
     # Test aggregation with multiple probability nodes when name is provided
     result <- trial_totals(
@@ -382,8 +376,7 @@ suppressMessages({
 
   test_that("trial_totals keeps variates when requested", {
     # Create a test module with mock data
-    test_module <- setup_test_module()
-    setup_test_mctable()
+    test_module <- setup_test_mcmodule()
 
     # Test with keep_variates option
     result <- trial_totals(
@@ -395,6 +388,7 @@ suppressMessages({
       agg_keys = "scenario_id",
       keep_variates = TRUE
     )
+
     expect_equal(dim(result$node_list$p_1_all_agg_set$mcnode), c(1001,1,4))
     expect_true(result$node_list$p_2_agg$keep_variates)
 
@@ -403,8 +397,7 @@ suppressMessages({
 
   test_that("trial_totals handles error cases", {
     # Create a test module with mock data
-    test_module <- setup_test_module()
-    setup_test_mctable()
+    test_module <- setup_test_mcmodule()
 
     # Expect error: node not found in mcmodule
     expect_error({

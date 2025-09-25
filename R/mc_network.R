@@ -191,9 +191,9 @@ visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by =
 
   if(!"mc_func" %in% colnames(nodes)) nodes$mc_func<-NA
 
-  nodes %>%
+  nodes<-nodes %>%
     dplyr::distinct(.data$name, .keep_all = TRUE) %>%
-    dplyr::mutate(
+    dplyr::transmute(
       id = .data$name,
       color = color_pal[.data[[color_by]]],
       color_by = .data[[color_by]],
@@ -203,10 +203,12 @@ visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by =
         ifelse(is.na(.data$keys), "user", ifelse(is.na(.data$mc_func), "mcdata", .data$mc_func)),
         .data$node_exp
       ),
-      title = generate_node_title(.data$name, .data$grouping, .data$value, .data$expression, .data$param, .data$inputs)
-    )%>%
-  dplyr::select(id,color,color_by,type,any_of(color_by),grouping,expression,title)
+      title = generate_node_title(.data$name, .data$grouping, .data$value, .data$expression, .data$param, .data$inputs),
+      type = .data$type)
 
+  if(!color_by%in%names(nodes)) nodes[[color_by]]<-nodes$color_by
+
+  return(nodes)
 }
 
 #' Generate visNetwork Edge Table

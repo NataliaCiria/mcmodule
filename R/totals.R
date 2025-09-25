@@ -270,7 +270,6 @@ agg_totals <- function(mcmodule,
     agg_keys <- "scenario_id"
     message("Keys to aggregate by not provided, using 'scenario_id' by default")
   }
-
   # Extract module name and node data
   mcnode <- mcmodule$node_list[[mc_name]][["mcnode"]]
   key_col <- mc_keys(mcmodule, mc_name, agg_keys)
@@ -332,9 +331,6 @@ agg_totals <- function(mcmodule,
       } else {
         total_agg <- agg_index * total_lev
       }
-
-      new_agg_keys <- mcmodule$node_list[[mc_name]][["keys"]]
-      key_data <- mc_keys(mcmodule, mc_name)[new_agg_keys]
     } else {
       # One row per result
       if (i != 1) {
@@ -342,9 +338,18 @@ agg_totals <- function(mcmodule,
       } else {
         total_agg <- total_lev
       }
-      new_agg_keys <- agg_keys
-      key_data <- unique(key_col)
     }
+  }
+
+  # Generate new data
+  if (keep_variates) {
+    # One row per original variate
+    new_agg_keys <- mcmodule$node_list[[mc_name]][["keys"]]
+    key_data <- mc_keys(mcmodule, mc_name)[new_agg_keys]
+  } else {
+    # One row per result
+    new_agg_keys <- agg_keys
+    key_data <- unique(key_col)
   }
 
   # Add description and node_expression
