@@ -223,7 +223,6 @@ Other recommended packages to load along with mcmodule are:
 ```{r, warning=FALSE, message=FALSE}
 # install.packages(c("dplyr","ggplot2","igraph","visNetwork"))
 library(dplyr) # Data manipulation
-library(ggplot2) # Plots
 library(igraph) # Network analysis
 library(visNetwork) # Interactive network visualization
 ```
