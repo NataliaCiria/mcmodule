@@ -21,13 +21,46 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Getting started
+# Introduction
 
-This is a gentle and casual welcome to Monte Carlo risk analysis and [`mcmodule`](https://nataliaciria.github.io/mcmodule/) R package. For a more technical approach you can read the package official [vignette](https://nataliaciria.github.io/mcmodule/articles/mcmodule.html).
+`mcmodule` is a framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to make working with multiple risk pathways, variates, and scenarios easier. It was developed by epidemiologists, for the [farmR!SK](https://farmrisk.eu/) project, and now it aims to help epidemiologists and other risk modellers save time and evaluate ambitious, complex risk pathways in R.
 
-Formally, `mcmodule` is a framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to make working with multiple risk pathways, variates, and scenarios easier. The package includes tools for creating stochastic objects from data frames, visualizing results, and performing uncertainty, sensitivity, and convergence analysis.
+The `mc2d` R package [@mc2d] provides tools to build and analyse models involving multiple variables and uncertainties based on Monte Carlo simulations. The `mcmodule` package builds on the R package `mc2d` to enhance model flexibility. This new package provides tools for:
 
-For me, `mcmodule` was a little set of custom functions that was born out of necessity and grew out of obsession. I developed this new R package because I could not find any suitable tools for creating complex risk analysis models involving thousands of parameters, hundreds of cases, dozens of scenarios, and multiple pathways in R (or in any other software accessible to epidemiologists like me). Eventually, the effort and lessons learned from building smooth, large-scale risk analysis in R went beyond what I could keep just for our [farmR!SK](https://github.com/VetEpi-UAB/farmrisk) project. Now, I hope this package can help other epidemiologists (and risk modelers from other disciplines), not only to save a few hours of work, but also to be ambitious and design complex risk pathways knowing that it will be feasible to evaluate them in R.
+1.  Automate the creation of mcnodes
+2.  Organizing risk analysis in independent flexible modules
+3.  Perform multivariate mcnode operations
+4.  Visualizing risk analysis models
+
+## Multivariate Monte-Carlo simulations
+
+| *This section draws from the [mc2d](https://cran.r-project.org/package=mc2d) package vignette, with adaptations for modular Monte Carlo simulations.*
+
+Quantitative risk analysis is the numerical assessment of risk to facilitate decision making in the face of uncertainty. Monte Carlo simulation is a technique used to model and analyse uncertainty [@Vose2008]. In `mc2d`, parameters are stored as **mcnode** class objects. These objects are arrays of numbers that represent random variables and have three dimensions: **variability × uncertainty × variates**.
+
+![](images/mcmodule_node_dimensions.png){fig-align="center"}
+
+In this `mcmodule`, we take a simplified approach where:
+
+-   We combine **variability** and **uncertainty** into one dimension[^1] (***u***)
+
+-   We use **variates** (representing different groups or categories) in the other dimension (***i***)
+
+[^1]: It would be technically possible to separate variability and uncertainty in `mcmodule`, but we have not included this functionality yet because of the exponential increase in computational and programming requirements
+
+This approach enables us to track multiple values across groups simultaneously using variates and to handle cases where values must be aggregated by animal movements, farms, or other grouped entities.
+
+In this framework, an mcnode is an array of **dimensions (*u* × 1 × *i*)**, where *u* is the dimension of variability and uncertainty combined, and i is the number of variates. We will use the term "uncertainty dimension" to refer to the combined dimension of variability and uncertainty.
+
+> **Example**
+>
+> If we are buying a number of cows and heifers from a specific region, an mcnode for herd prevalence would have:
+>
+> -   Multiple variates (rows), each representing a specific animal category-disease combination. The variables that define and distinguish these variates are called **keys**.
+>
+> -   Probability values generated through a PERT distribution (rpert), using minimum, mode, and maximum parameters across *u* iterations (columns) to model the uncertainty in these estimates.
+>
+> ![*An mcnode representing herd prevalence of three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR), and bovine viral diarrhea (BVD), and two animal categories (cows and heifers). The herd prevalence is the same for both animal categories, but values differ due to the stochastic nature of random sampling from the PERT distribution.*](images/mcmodule_mcnode_example.png){fig-align="center" style="display: block; margin: 1em auto" width="85%"}
 
 ## Risk assessment
 
@@ -35,15 +68,9 @@ This section provides a brief introduction to risk assessment in R. Although thi
 
 ### A simple risk assessment
 
-Imagine we want to buy a heifer. We have found a good deal on a farm that we know is infected with pathogen A, a disease that our farm is free from. To reduce the risk of introducing the disease to our farm, we plan to perform a diagnostic test on the heifer before bringing it to our farm. We want to calculate the probability of introducing the disease by purchasing one heifer that tests negative.
+Consider a scenario where we need to purchase a cow from a farm that we know is infected with a disease our farm is free from. To reduce the risk of introducing the disease to our farm, we plan to perform a diagnostic test on the cow before bringing it to our farm. We want to calculate the probability of introducing the disease by purchasing one cow that tests negative.
 
 We have an estimation (with some uncertainty) of both the probability of animal infection within a herd and the test sensitivity, so we want to conduct a **stochastic** risk assessment that properly accounts for this **uncertainty**.
-
-> **Risk assessment** is a technique to estimate the probability and impact of an "adverse"[^1] event. It identifies the **steps** necessary for the event to occur and assigns them a **probability**.
->
-> **Monte Carlo simulation** is a technique used to model and analyse uncertainty [@Vose2008].
-
-[^1]: Although in practice it is more commonly used to assess adverse events (that's why they're called "risks"), these quantitative techniques can obviously also be used to estimate the probability of any event, judgements about whether it is adverse or not are not part of the probabilistic calculations.
 
 The risk assessment for our cattle purchase can be performed using base R [@base] random sampling functions, or `mc2d` [@mc2d], a package provides additional probability distributions (such as rpert) and other useful tools for analysing stochastic (Monte-Carlo) simulations.
 
@@ -95,11 +122,7 @@ To estimate the risk for both pathogens with our previous models, we could:
 
 While these options work, they become messy or computationally intensive when the number of parameters or different situations to simulate increases.
 
-The package `mc2d` offers a clever solution to this scalability problem: variates. In this package, parameters are stored as **mcnode** class objects. These objects are arrays of numbers that represent random variables and have three dimensions: **variability × uncertainty × variates**.
-
-![](images/mcmodule_node_dimensions.png){fig-align="center"}
-
-In the previous example, our stochastic nodes only had uncertainty dimension. However, we can now use the **variates** dimension to calculate the risk of introduction of both pathogens at the same time.
+The package `mc2d` offers a clever solution to this scalability problem: variates. In the previous example, our stochastic nodes only had uncertainty dimension. However, we can now use the **variates** dimension to calculate the risk of introduction of both pathogens at the same time.
 
 ```{r}
 set.seed(123)
@@ -143,11 +166,9 @@ mc_model<-mc(w_prev, infected, test_origin, test_sensi,
 no_detect
 ```
 
-Instead of manually typing the parameter values, you can also use columns from a data table in `mcdata()`. A useful template for setting up risk analysis models using `mc2d`, with custom functions to facilitate data manipulation and visualization, can be found in this repository: <https://github.com/NataliaCiria/risk_analysis_template>.
-
 ## When to use mcmodule?
 
-The `mc2d` multivariate approach works well for basic multivariate risk analysis. However, if instead of purchasing one cow, you're dealing with multiple cattle purchases, from different farms, across different pathogens, scenarios, and age categories, or modeling multiple risk pathways with different what-if scenarios, this approach becomes unwieldy.
+The `mc2d` multivariate approach works well for basic multivariate risk analysis. However, if instead of purchasing one cow, you're dealing with multiple cattle purchases, from different farms, across different pathogens, scenarios, and age categories, or modelling multiple risk pathways with different what-if scenarios, this approach becomes unwieldy.
 
 `mcmodule` addresses these challenges by providing functions for **multivariate operations** and **modular management** of the risk model. It automates the process of creating mcnodes and assigns metadata to them (making it easy to identify which variate corresponds to which data row). Thanks to this mcnode metadata, it enables row-matching between nodes with different variates, combines probabilities across variates, and calculates multilevel trials. As your risk analysis grows, you can create separate modules for different pathways, each with independent parameters, expressions, and scenarios that can later be connected into a complete model.
 
@@ -167,17 +188,19 @@ However, for simpler analyses, such as single pathway models, exploratory work, 
 
 ## Installing mcmodule
 
-Now let's explore this new package! It's about to be submitted to CRAN, but since it's not there yet, we'll install it from GitHub instead.
+Now let's explore the package! We can install it from CRAN:
+
+```{r, eval=FALSE}
+install.packages("mcmodule")
+library("mcmodule")
+```
+
+Or install latest development version from GitHub (requires `devtool` package):
 
 ```{r, eval=FALSE}
 # install.packages("devtools")
 devtools::install_github("NataliaCiria/mcmodule")
-```
-
-And we load the package in our R session. Easy-peasy, ready to go!
-
-```{r}
-library(mcmodule)
+library("mcmodule")
 ```
 
 Other recommended packages to load along with mcmodule are:
@@ -283,7 +306,7 @@ imports_mctable %>%
 
 The data table and the mctable must complement each other:
 
--   mcnodes without a `mc_func` (like `farms_n`), needs the matching column name (`"farms_n"`) in the data table
+-   mcnodes without an `mc_func` (like `farms_n`), needs the matching column name (`"farms_n"`) in the data table
 
 -   mcnodes with an `mc_func`, you need **columns for each probability distribution argument in the** **data table**. For example:
 
@@ -484,7 +507,7 @@ mc_network(imports, legend = TRUE)
 
 So far, we've only tested our model using current data. But risk analysis is most useful when comparing different scenarios. In our example, we could compare the baseline risk with the risk if tests were always performed in all regions.
 
-For this, we only need to add a column called "scenario_id". This name is important as it is used to will recognize it specifically for scenario comparisons, not as regular variate categories. The baseline scenario should be called "0". What-if scenarios can have any name, and they can modify any of the values in the dataset.
+For this, we only need to add a column called "scenario_id". This name is important as it is used to will recognize it specifically for scenario comparisons, not as regular variate categories. The baseline scenario should be called "0". What-if scenarios can have any name, and they can modify any of the values in the dataset. While not every scenario needs to contain all baseline groups, any groups present in alternative scenarios must exist in the baseline.
 
 ```{r}
 imports_data<-imports_data%>%
