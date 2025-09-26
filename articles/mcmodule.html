@@ -84,13 +84,12 @@ ambitious, complex risk pathways in R.</p>
 <p>The <code>mc2d</code> R package <span class="citation">(<a href="#ref-mc2d">Pouillot and Delignette-Muller 2010</a>)</span>
 provides tools to build and analyse models involving multiple variables
 and uncertainties based on Monte Carlo simulations. The
-<code>mcmodule</code> package builds on the R package <code>mc2d</code>
-to enhance model flexibility. This new package provides tools for:</p>
+<code>mcmodule</code> package includes additional tools to:</p>
 <ol style="list-style-type: decimal">
-<li>Automate the creation of mcnodes</li>
-<li>Organizing risk analysis in independent flexible modules</li>
+<li>Organize risk analysis in independent flexible modules</li>
 <li>Perform multivariate mcnode operations</li>
-<li>Visualizing risk analysis models</li>
+<li>Automate the creation of mcnodes</li>
+<li>Visualize risk analysis models</li>
 </ol>
 <div class="section level3">
 <h3 id="multivariate-monte-carlo-simulations">Multivariate Monte-Carlo simulations<a class="anchor" aria-label="anchor" href="#multivariate-monte-carlo-simulations"></a>
@@ -100,14 +99,14 @@ vignette, with adaptations for modular Monte Carlo
 simulations.</em></div>
 <p>Quantitative risk analysis is the numerical assessment of risk to
 facilitate decision making in the face of uncertainty. Monte Carlo
-simulation is a technique used to model and analyse uncertainty <span class="citation">(<a href="#ref-Vose2008">Vose 2008</a>)</span>. In
-<code>mc2d</code>, parameters are stored as <strong>mcnode</strong>
-class objects. These objects are arrays of numbers that represent random
-variables and have three dimensions: <strong>variability × uncertainty ×
-variates</strong>.</p>
+simulation is a technique used to model and analyse uncertainty <span class="citation">(<a href="#ref-Vose2008">Vose 2008</a>)</span>.</p>
+<p>In <code>mc2d</code>, parameters are stored as
+<strong>mcnode</strong> class objects. These objects are arrays of
+numbers that represent random variables and have three dimensions:
+<strong>variability × uncertainty × variates</strong>.</p>
 <p><img src="images/mcmodule_node_dimensions.png" fig-align="center"></p>
-<p>In this <code>mcmodule</code>, we take a simplified approach
-where:</p>
+<p>In the <code>mcmodule</code> framework an mcnode is an array of
+<strong>dimensions (<em>u</em> × 1 × <em>i</em>)</strong>:</p>
 <ul>
 <li><p>We combine <strong>variability</strong> and
 <strong>uncertainty</strong> into one dimension<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;It would be technically possible to separate variability
@@ -118,26 +117,21 @@ and programming requirements&lt;/p&gt;"><sup>1</sup></a>
 <li><p>We use <strong>variates</strong> (representing different groups
 or categories) in the other dimension
 (<strong><em>i</em></strong>)</p></li>
+<li><p>The variables that define and distinguish these variates are
+called <strong>keys</strong> and are stored as metadata</p></li>
 </ul>
-<p>This approach enables us to track multiple values across groups
-simultaneously using variates and to handle cases where values must be
-aggregated by animal movements, farms, or other grouped entities.</p>
-<p>In this framework, an mcnode is an array of <strong>dimensions
-(<em>u</em> × 1 × <em>i</em>)</strong>, where <em>u</em> is the
-dimension of variability and uncertainty combined, and i is the number
-of variates. We will use the term “uncertainty dimension” to refer to
-the combined dimension of variability and uncertainty.</p>
+<p>In this document we will use the term “uncertainty dimension” to
+refer to the combined dimension of variability and uncertainty.</p>
 <blockquote>
 <p><strong>Example</strong></p>
 <p>If we are buying a number of cows and heifers from a specific region,
 an mcnode for herd prevalence would have:</p>
 <ul>
-<li><p>Multiple variates (rows), each representing a specific animal
-category-disease combination. The variables that define and distinguish
-these variates are called <strong>keys</strong>.</p></li>
-<li><p>Probability values generated through a PERT distribution (rpert),
-using minimum, mode, and maximum parameters across <em>u</em> iterations
-(columns) to model the uncertainty in these estimates.</p></li>
+<li><p>Multiple variates (rows), defined by two keys: “animal category”
+and “pathogen”</p></li>
+<li><p>Probability values generated through a PERT distribution, using
+minimum, mode, and maximum parameters across <em>u</em> iterations
+(columns) to model the uncertainty in these estimates</p></li>
 </ul>
 <div class="float">
 <img src="images/mcmodule_mcnode_example.png" style="display: block; margin: 1em auto;width:85.0%" fig-align="center" alt="An mcnode representing herd prevalence of three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR), and bovine viral diarrhea (BVD), and two animal categories (cows and heifers). The herd prevalence is the same for both animal categories, but values differ due to the stochastic nature of random sampling from the PERT distribution."><div class="figcaption"><em>An mcnode representing herd prevalence of
@@ -154,8 +148,8 @@ sampling from the PERT distribution.</em></div>
 </h3>
 <p>This section provides a brief introduction to risk assessment in R.
 Although this package is not intended for beginners in risk assessment,
-it can help you understand the logic behind mcmodule and its
-purpose.</p>
+it can help you understand the logic behind <code>mcmodule</code> and
+its purpose.</p>
 <div class="section level4">
 <h4 id="a-simple-risk-assessment">A simple risk assessment<a class="anchor" aria-label="anchor" href="#a-simple-risk-assessment"></a>
 </h4>
@@ -348,8 +342,7 @@ may be unnecessary.</p>
 </h2>
 <p>To quickly understand the key components of an mcmodule, we’ll start
 by building one using the animal imports example included in the
-package. For a more detailed view of each component, refer to the <a href="https://nataliaciria.github.io/mcmodule/articles/mcmodule.html#model-elements">model
-elements</a> section in the package vignette.</p>
+package.</p>
 <div class="section level3">
 <h3 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a>
 </h3>
@@ -767,7 +760,9 @@ the actual mcnode is a large array of numbers with dimensions
 </h3>
 <p>Most of the following probability calculations are based on Chapter 5
 of the <em>Handbook on Import Risk Analysis for Animals and Animal
-Products Volume 2. Quantitative risk assessment</em> <span class="citation">(<a href="#ref-Murray2004">Murray 2004</a>)</span>.</p>
+Products Volume 2. Quantitative risk assessment</em> <span class="citation">(<a href="#ref-Murray2004">Murray 2004</a>)</span>.
+More details can be found on the <a href="https://nataliaciria.github.io/mcmodule/articles/multivariate_operations.html"><em>Multivariate
+operations</em></a> vignette.</p>
 <div class="section level4">
 <h4 id="single-level-trials">Single-level trials<a class="anchor" aria-label="anchor" href="#single-level-trials"></a>
 </h4>
@@ -922,8 +917,8 @@ might have several variates from the same subset. For example we could
 deal with different animal categories (cow, calf, bull…) from the same
 farm. Here the infection probability of animals within the same farm is
 not independent, and it should be taken into account. For more
-information about this, check: <a href="https://nataliaciria.github.io/mcmodule/articles/mcmodule.html#multilevel-trials">Multilevel
-trials</a> in the official vignette.</p>
+information about this, check: <a href="https://nataliaciria.github.io/mcmodule/articles/multivariate_operations.html#multilevel-trials">Multilevel
+trials</a> in the <em>Multivariate operations</em> vignette.</p>
 <div class="float">
 <img src="images/mcmodule_multilevel_trial_drawing_groups.png" alt="Selection (in blue) of 2 cows and 5 calves from 3 farms, with a 20% regional herd prevalence and 50% within-herd prevalence for adult animals and 30% within-herd prevalence for young animals."><div class="figcaption"><em>Selection (in blue) of 2 cows and 5 calves
 from 3 farms, with a 20% regional herd prevalence and 50% within-herd
