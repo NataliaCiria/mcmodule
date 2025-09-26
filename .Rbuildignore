@@ -6,3 +6,4 @@
 ^pkgdown$
 ^\.github$
 ^pkgdown/
+^CRAN-SUBMISSION$
