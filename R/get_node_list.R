@@ -11,7 +11,10 @@
 #' @return A list of class "mcnode_list" containing node information
 #'
 #' @examples
-#' mcmodule:::get_node_list(exp = imports_exp, mctable = imports_mctable, data_keys = imports_data_keys)
+#' mcmodule:::get_node_list(
+#'   exp = imports_exp,
+#'   mctable = imports_mctable,
+#'   data_keys = imports_data_keys)
 get_node_list <- function(exp, param_names = NULL,
                           mctable = set_mctable(), data_keys = set_data_keys()) {
   module <- gsub("_exp", "", deparse(substitute(exp)))

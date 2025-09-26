@@ -22,7 +22,7 @@ devtools::install_github("NataliaCiria/mcmodule")
 
 1.  Create a data frame with input parameter
 
-``` r         
+``` r
 example_data  <- data.frame(
   category_1 = c("a", "b", "a", "b"),      # Category 1 (e.g., type)
   category_2 = c("blue", "blue", "red", "red"), # Category 2 (e.g., group)
@@ -34,7 +34,7 @@ example_data  <- data.frame(
 
 2.  Define the keys that uniquely identify each row in your data
 
-``` r         
+``` r
 example_data_keys <- list(
   example_data = list(
     cols = names(example_data),             # All columns in the data
@@ -45,7 +45,7 @@ example_data_keys <- list(
 
 3.  Define Monte Carlo node table (mctable) indicating how to build the stochastic nodes (you can use this csv template)
 
-``` r         
+``` r
 example_mctable <- data.frame(
   mcnode = c("x", "y"),                    # Names of the nodes
   description = c("Probability x", "Probability y"), # Descriptions
@@ -58,7 +58,7 @@ example_mctable <- data.frame(
 
 4.  Write model expression indicating how to combine the parameters
 
-``` r         
+``` r
 example_exp <- quote({
   result <- x * y                     # Calculate result as product of x and y
 })
@@ -66,7 +66,7 @@ example_exp <- quote({
 
 5.  Build the mcmodule with `eval_module()`, creating the stochastic nodes and evaluating the expression
 
-``` r         
+``` r
 example_mcmodule <- eval_module(
   exp = c(example = example_exp),          # Model expression(s)
   data = example_data,                     # Input data
@@ -77,7 +77,7 @@ example_mcmodule <- eval_module(
 
 6.  Once you have created a mcmodule object, you can use other package functions to summarize and visualize mcnodes, calculate totals, and combine them with other mcmodules
 
-``` r         
+``` r
 # Summarize the 'result' node
 mc_summary(example_mcmodule, "result")
 
@@ -104,3 +104,15 @@ Further documentation and examples can be found in the [vignette](https://natali
 If you use `mcmodule` in your research, please cite:
 
 Ciria, N. (2024). mcmodule: Modular Monte Carlo Risk Analysis. R package version 1.0.0. <https://github.com/NataliaCiria/mcmodule>
+
+## License
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+## Acknowledgements
+
+`mcmodule` was developed with support from:
+
+-   [BIOSECURE](https://biosecure.eu/), a European Union’s HORIZON Europe FARM2FORK project
+
+-   [Universitat Autònoma de Barcelona](https://www.uab.cat/)

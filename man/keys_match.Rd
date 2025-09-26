@@ -23,7 +23,6 @@ List containing:
 Match and align keys between two datasets
 }
 \examples{
-\dontrun{
 x <- data.frame(
   type = c("1", "2"),
   category = c("a", "b"),
@@ -36,6 +35,5 @@ y <- data.frame(
    scenario_id = c(0, 2)
  )
 
-keys_match(x, y)
-}
+mcmodule:::keys_match(x, y)
 }

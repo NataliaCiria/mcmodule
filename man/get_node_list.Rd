@@ -28,7 +28,8 @@ Creates a list of nodes based on a given model expression, handling input,
 output, and previous nodes with their properties and relationships.
 }
 \examples{
-\dontrun{
-get_node_list(exp = imports_exp, mctable = imports_mctable, data_keys = imports_data_keys)
-}
+mcmodule:::get_node_list(
+  exp = imports_exp,
+  mctable = imports_mctable,
+  data_keys = imports_data_keys)
 }
