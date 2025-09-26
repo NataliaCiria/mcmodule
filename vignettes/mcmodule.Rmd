@@ -26,46 +26,48 @@ library(mcmodule)
 
 `mcmodule` is a framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to make working with multiple risk pathways, variates, and scenarios easier. It was developed by epidemiologists, for the [farmR!SK](https://farmrisk.eu/) project, and now it aims to help epidemiologists and other risk modellers save time and evaluate ambitious, complex risk pathways in R.
 
-The `mc2d` R package [@mc2d] provides tools to build and analyse models involving multiple variables and uncertainties based on Monte Carlo simulations. The `mcmodule` package builds on the R package `mc2d` to enhance model flexibility. This new package provides tools for:
+The `mc2d` R package [@mc2d] provides tools to build and analyse models involving multiple variables and uncertainties based on Monte Carlo simulations. The `mcmodule` package includes additional tools to:
 
-1.  Automate the creation of mcnodes
-2.  Organizing risk analysis in independent flexible modules
-3.  Perform multivariate mcnode operations
-4.  Visualizing risk analysis models
+1.  Organize risk analysis in independent flexible modules
+2.  Perform multivariate mcnode operations
+3.  Automate the creation of mcnodes
+4.  Visualize risk analysis models
 
 ## Multivariate Monte-Carlo simulations
 
 | *This section draws from the [mc2d](https://cran.r-project.org/package=mc2d) package vignette, with adaptations for modular Monte Carlo simulations.*
 
-Quantitative risk analysis is the numerical assessment of risk to facilitate decision making in the face of uncertainty. Monte Carlo simulation is a technique used to model and analyse uncertainty [@Vose2008]. In `mc2d`, parameters are stored as **mcnode** class objects. These objects are arrays of numbers that represent random variables and have three dimensions: **variability × uncertainty × variates**.
+Quantitative risk analysis is the numerical assessment of risk to facilitate decision making in the face of uncertainty. Monte Carlo simulation is a technique used to model and analyse uncertainty [@Vose2008].
+
+In `mc2d`, parameters are stored as **mcnode** class objects. These objects are arrays of numbers that represent random variables and have three dimensions: **variability × uncertainty × variates**.
 
 ![](images/mcmodule_node_dimensions.png){fig-align="center"}
 
-In this `mcmodule`, we take a simplified approach where:
+In the `mcmodule` framework an mcnode is an array of **dimensions (*u* × 1 × *i*)**:
 
 -   We combine **variability** and **uncertainty** into one dimension[^1] (***u***)
 
 -   We use **variates** (representing different groups or categories) in the other dimension (***i***)
 
+-   The variables that define and distinguish these variates are called **keys** and are stored as metadata
+
 [^1]: It would be technically possible to separate variability and uncertainty in `mcmodule`, but we have not included this functionality yet because of the exponential increase in computational and programming requirements
 
-This approach enables us to track multiple values across groups simultaneously using variates and to handle cases where values must be aggregated by animal movements, farms, or other grouped entities.
-
-In this framework, an mcnode is an array of **dimensions (*u* × 1 × *i*)**, where *u* is the dimension of variability and uncertainty combined, and i is the number of variates. We will use the term "uncertainty dimension" to refer to the combined dimension of variability and uncertainty.
+In this document we will use the term "uncertainty dimension" to refer to the combined dimension of variability and uncertainty.
 
 > **Example**
 >
 > If we are buying a number of cows and heifers from a specific region, an mcnode for herd prevalence would have:
 >
-> -   Multiple variates (rows), each representing a specific animal category-disease combination. The variables that define and distinguish these variates are called **keys**.
+> -   Multiple variates (rows), defined by two keys: "animal category" and "pathogen"
 >
-> -   Probability values generated through a PERT distribution (rpert), using minimum, mode, and maximum parameters across *u* iterations (columns) to model the uncertainty in these estimates.
+> -   Probability values generated through a PERT distribution, using minimum, mode, and maximum parameters across *u* iterations (columns) to model the uncertainty in these estimates
 >
 > ![*An mcnode representing herd prevalence of three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR), and bovine viral diarrhea (BVD), and two animal categories (cows and heifers). The herd prevalence is the same for both animal categories, but values differ due to the stochastic nature of random sampling from the PERT distribution.*](images/mcmodule_mcnode_example.png){fig-align="center" style="display: block; margin: 1em auto" width="85%"}
 
 ## Risk assessment
 
-This section provides a brief introduction to risk assessment in R. Although this package is not intended for beginners in risk assessment, it can help you understand the logic behind mcmodule and its purpose.
+This section provides a brief introduction to risk assessment in R. Although this package is not intended for beginners in risk assessment, it can help you understand the logic behind `mcmodule` and its purpose.
 
 ### A simple risk assessment
 
@@ -216,7 +218,7 @@ library(visNetwork)# Interactive network visualization
 
 # Building an mcmodule
 
-To quickly understand the key components of an mcmodule, we'll start by building one using the animal imports example included in the package. For a more detailed view of each component, refer to the [model elements](https://nataliaciria.github.io/mcmodule/articles/mcmodule.html#model-elements) section in the package vignette.
+To quickly understand the key components of an mcmodule, we'll start by building one using the animal imports example included in the package.
 
 ## Data
 
@@ -397,7 +399,7 @@ mc_summary(mcmodule = imports, mc_name = "no_detect")
 
 ## Calculating totals
 
-Most of the following probability calculations are based on Chapter 5 of the *Handbook on Import Risk Analysis for Animals and Animal Products Volume 2. Quantitative risk assessment* [@Murray2004].
+Most of the following probability calculations are based on Chapter 5 of the *Handbook on Import Risk Analysis for Animals and Animal Products Volume 2. Quantitative risk assessment* [@Murray2004]. More details can be found on the [*Multivariate operations*](https://nataliaciria.github.io/mcmodule/articles/multivariate_operations.html) vignette.
 
 ### Single-level trials
 
@@ -479,7 +481,7 @@ imports$node_list$no_detect_subset$summary
 
 **Multiple group multilevel trials**
 
-This `trial_totals()` application out of the scope of the introduction to `mcmodule`, but there are cases where we might have several variates from the same subset. For example we could deal with different animal categories (cow, calf, bull...) from the same farm. Here the infection probability of animals within the same farm is not independent, and it should be taken into account. For more information about this, check: [Multilevel trials](https://nataliaciria.github.io/mcmodule/articles/mcmodule.html#multilevel-trials) in the official vignette.
+This `trial_totals()` application out of the scope of the introduction to `mcmodule`, but there are cases where we might have several variates from the same subset. For example we could deal with different animal categories (cow, calf, bull...) from the same farm. Here the infection probability of animals within the same farm is not independent, and it should be taken into account. For more information about this, check: [Multilevel trials](https://nataliaciria.github.io/mcmodule/articles/multivariate_operations.html#multilevel-trials) in the *Multivariate operations* vignette.
 
 ![*Selection (in blue) of 2 cows and 5 calves from 3 farms, with a 20% regional herd prevalence and 50% within-herd prevalence for adult animals and 30% within-herd prevalence for young animals.*](images/mcmodule_multilevel_trial_drawing_groups.png)
 
