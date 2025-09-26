@@ -39,7 +39,7 @@ The `mc2d` R package [@mc2d] provides tools to build and analyse models involvin
 
 Quantitative risk analysis is the numerical assessment of risk to facilitate decision making in the face of uncertainty. Monte Carlo simulation is a technique used to model and analyse uncertainty [@Vose2008].
 
-In `mc2d`, parameters are stored as **mcnode** class objects. These objects are arrays of numbers that represent random variables and have three dimensions: **variability × uncertainty × variates**. For more information, see the [mc2d](https://cran.r-project.org/web/packages/mc2d/vignettes/docmcEnglish.pdf) package vignette.
+In `mc2d`, parameters are stored as **mcnode** class objects. These objects are arrays of numbers that represent random variables and have three dimensions: **variability × uncertainty × variates**. For more information, see the [mc2d](https://CRAN.R-project.org/package=mc2d) package vignette.
 
 ![](images/mcmodule_node_dimensions.png){fig-align="center"}
 
@@ -63,7 +63,7 @@ In this document we will use the term "uncertainty dimension" to refer to the co
 >
 > -   Probability values generated through a PERT distribution, using minimum, mode, and maximum parameters across *u* iterations (columns) to model the uncertainty in these estimates
 >
-> ![*An mcnode representing herd prevalence of three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR), and bovine viral diarrhea (BVD), and two animal categories (cows and heifers). The herd prevalence is the same for both animal categories, but values differ due to the stochastic nature of random sampling from the PERT distribution.*](images/mcmodule_mcnode_example.png){fig-align="center" style="display: block; margin: 1em auto" width="85%"}
+> ![*An mcnode representing herd prevalence of three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR), and bovine viral diarrhoea (BVD), and two animal categories (cows and heifers). The herd prevalence is the same for both animal categories, but values differ due to the stochastic nature of random sampling from the PERT distribution.*](images/mcmodule_mcnode_example.png){fig-align="center" style="display: block; margin: 1em auto" width="85%"}
 
 ## Risk assessment
 
@@ -75,7 +75,7 @@ Consider a scenario where we need to purchase a cow from a farm that we know is 
 
 We have an estimation (with some uncertainty) of both the probability of animal infection within a herd and the test sensitivity, so we want to conduct a **stochastic** risk assessment that properly accounts for this **uncertainty**.
 
-The risk assessment for our cattle purchase can be performed using base R [@base] random sampling functions, or `mc2d` [@mc2d], a package provides additional probability distributions (such as rpert) and other useful tools for analysing stochastic (Monte-Carlo) simulations.
+The risk assessment for our cattle purchase can be performed using base R [@base] random sampling functions, or `mc2d` [@mc2d], a package provides additional probability distributions (such as `rpert`) and other useful tools for analysing stochastic (Monte-Carlo) simulations.
 
 ```{r, warning=FALSE, message=FALSE}
 library(mc2d)

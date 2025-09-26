@@ -105,10 +105,6 @@ If you use `mcmodule` in your research, please cite:
 
 Ciria, N. (2024). mcmodule: Modular Monte Carlo Risk Analysis. R package version 1.0.0. <https://github.com/NataliaCiria/mcmodule>
 
-## License
-
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-
 ## Acknowledgements
 
 `mcmodule` was developed with support from:
