@@ -81,9 +81,167 @@ output, and previous nodes with their properties and relationships.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="fu">get_node_list</span><span class="op">(</span>exp <span class="op">=</span> <span class="va">imports_exp</span>, mctable <span class="op">=</span> <span class="va">imports_mctable</span>, data_keys <span class="op">=</span> <span class="va">imports_data_keys</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">mcmodule</span><span class="fu">:::</span><span class="fu">get_node_list</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  exp <span class="op">=</span> <span class="va">imports_exp</span>,</span></span>
+<span class="r-in"><span>  mctable <span class="op">=</span> <span class="va">imports_mctable</span>,</span></span>
+<span class="r-in"><span>  data_keys <span class="op">=</span> <span class="va">imports_data_keys</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $w_prev</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $w_prev$type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "in_node"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $w_prev$mc_func</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "runif"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $w_prev$description</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Within herd prevalence"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $w_prev$inputs_col</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "w_prev_min" "w_prev_max"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $w_prev$input_dataset</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "prevalence_region"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $w_prev$keys</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "pathogen" "origin"  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $w_prev$module</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "imports"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $w_prev$mc_name</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "w_prev"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_origin</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_origin$type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "in_node"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_origin$description</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Probability of the animals being tested in origin"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_origin$inputs_col</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "test_origin"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_origin$input_dataset</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "prevalence_region"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_origin$keys</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "pathogen" "origin"  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_origin$module</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "imports"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_origin$mc_name</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "test_origin"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_sensi</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_sensi$type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "in_node"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_sensi$mc_func</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "rpert"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_sensi$description</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Test sensitivity"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_sensi$inputs_col</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "test_sensi_min"  "test_sensi_mode" "test_sensi_max" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_sensi$input_dataset</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "test_sensitivity"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_sensi$keys</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "pathogen"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_sensi$module</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "imports"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $test_sensi$mc_name</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "test_sensi"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $inf_a</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $inf_a$node_exp</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "w_prev"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $inf_a$type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "out_node"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $inf_a$inputs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "w_prev"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $inf_a$module</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "imports"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $inf_a$mc_name</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "inf_a"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $inf_a$keys</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "pathogen" "origin"  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $false_neg_a</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $false_neg_a$node_exp</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "inf_a * test_origin * (1 - test_sensi)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $false_neg_a$type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "out_node"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $false_neg_a$inputs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "inf_a"       "test_origin" "test_sensi" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $false_neg_a$module</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "imports"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $false_neg_a$mc_name</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "false_neg_a"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $false_neg_a$keys</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "pathogen" "origin"  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $no_test_a</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $no_test_a$node_exp</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "inf_a * (1 - test_origin)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $no_test_a$type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "out_node"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $no_test_a$inputs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "inf_a"       "test_origin"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $no_test_a$module</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "imports"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $no_test_a$mc_name</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "no_test_a"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $no_test_a$keys</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "pathogen" "origin"  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $no_detect_a</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $no_detect_a$node_exp</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "false_neg_a + no_test_a"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $no_detect_a$type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "out_node"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $no_detect_a$inputs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "false_neg_a" "no_test_a"  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $no_detect_a$module</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "imports"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $no_detect_a$mc_name</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "no_detect_a"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $no_detect_a$keys</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "pathogen" "origin"  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"class")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "mcnode_list"</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
