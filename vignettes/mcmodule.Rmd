@@ -24,7 +24,7 @@ library(mcmodule)
 
 # Introduction
 
-`mcmodule` is a framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to make working with multiple risk pathways, variates, and scenarios easier. It was developed by epidemiologists, for the [farmR!SK](https://farmrisk.eu/) project, and now it aims to help epidemiologists and other risk modellers save time and evaluate ambitious, complex risk pathways in R.
+`mcmodule` is a framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to make working with multiple risk pathways, variates, and scenarios easier. It was developed by epidemiologists, for the [farmrisk](https://github.com/VetEpi-UAB/farmrisk) project, and now it aims to help epidemiologists and other risk modellers save time and evaluate ambitious, complex risk pathways in R.
 
 The `mc2d` R package [@mc2d] provides tools to build and analyse models involving multiple variables and uncertainties based on Monte Carlo simulations. The `mcmodule` package includes additional tools to:
 
@@ -35,11 +35,9 @@ The `mc2d` R package [@mc2d] provides tools to build and analyse models involvin
 
 ## Multivariate Monte-Carlo simulations
 
-| *This section draws from the [mc2d](https://cran.r-project.org/package=mc2d) package vignette, with adaptations for modular Monte Carlo simulations.*
-
 Quantitative risk analysis is the numerical assessment of risk to facilitate decision making in the face of uncertainty. Monte Carlo simulation is a technique used to model and analyse uncertainty [@Vose2008].
 
-In `mc2d`, parameters are stored as **mcnode** class objects. These objects are arrays of numbers that represent random variables and have three dimensions: **variability × uncertainty × variates**.
+In `mc2d`, parameters are stored as **mcnode** class objects. These objects are arrays of numbers that represent random variables and have three dimensions: **variability × uncertainty × variates**. For more information, see the [mc2d](https://cran.r-project.org/web/packages/mc2d/vignettes/docmcEnglish.pdf) package vignette.
 
 ![](images/mcmodule_node_dimensions.png){fig-align="center"}
 
@@ -525,7 +523,7 @@ imports_data_wif<-imports_data%>%
 imports_data_wif[,1:6]
 ```
 
-Now we create the mcmodule and calculate the totals. Note that, as the first input and the output of most of the functions to work with mcmodules are mcmodules, we can use the pipe `%>%` to simplify this processs.
+Now we create the mcmodule and calculate the totals. Note that, as the first input and the output of most of the functions to work with mcmodules are mcmodules, we can use the pipe `%>%` to simplify this process.
 
 ```{r}
 imports_wif<-eval_module(
@@ -533,7 +531,9 @@ imports_wif<-eval_module(
   data = imports_data_wif,
   mctable = imports_mctable,
   data_keys = imports_data_keys
-  )%>%
+  )
+
+imports_wif<-imports_wif%>%
   trial_totals(
     mc_names = "no_detect",
     trials_n = "animals_n",
