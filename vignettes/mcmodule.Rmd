@@ -294,7 +294,9 @@ With values and keys established, we still need some information to build our st
 
 -   transformation: Transformation to be applied to the original column values
 
--   sensi_analysis: Whether to include in sensitivity analysis
+-   sensi_analysis: Whether to include in sensitivity analysis[^2]
+
+[^2]: This column is aspirational, as functions for uncertainty, sensitivity, and convergence analysis are currently under development and will be included in the next package version.
 
 Here we have the `imports_mctable` for our example. While the mctable can be hard-coded in R, it's more efficient to prepare it in a CSV or other external file. This approach also allows the table to be included as part of the model documentation.
 
