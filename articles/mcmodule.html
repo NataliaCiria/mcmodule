@@ -39,8 +39,7 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/mcmodule_object.html">The mcmodule object</a></li>
-    <li><a class="dropdown-item" href="../articles/multivariate_operations.html">Multivariate operations</a></li>
+<li><a class="dropdown-item" href="../articles/multivariate_operations.html">Multivariate operations</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -74,31 +73,82 @@ Analysis</h3>
     
     
 <div class="section level2">
-<h2 id="getting-started">Getting started<a class="anchor" aria-label="anchor" href="#getting-started"></a>
+<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p>This is a gentle and casual welcome to Monte Carlo risk analysis and
-<a href="https://nataliaciria.github.io/mcmodule/"><code>mcmodule</code></a>
-R package. For a more technical approach you can read the package
-official <a href="https://nataliaciria.github.io/mcmodule/articles/mcmodule.html">vignette</a>.</p>
-<p>Formally, <code>mcmodule</code> is a framework for building modular
-Monte Carlo risk analysis models. It extends the capabilities of
-<code>mc2d</code> to make working with multiple risk pathways, variates,
-and scenarios easier. The package includes tools for creating stochastic
-objects from data frames, visualizing results, and performing
-uncertainty, sensitivity, and convergence analysis.</p>
-<p>For me, <code>mcmodule</code> was a little set of custom functions
-that was born out of necessity and grew out of obsession. I developed
-this new R package because I could not find any suitable tools for
-creating complex risk analysis models involving thousands of parameters,
-hundreds of cases, dozens of scenarios, and multiple pathways in R (or
-in any other software accessible to epidemiologists like me).
-Eventually, the effort and lessons learned from building smooth,
-large-scale risk analysis in R went beyond what I could keep just for
-our <a href="https://github.com/VetEpi-UAB/farmrisk" class="external-link">farmR!SK</a>
-project. Now, I hope this package can help other epidemiologists (and
-risk modelers from other disciplines), not only to save a few hours of
-work, but also to be ambitious and design complex risk pathways knowing
-that it will be feasible to evaluate them in R.</p>
+<p><code>mcmodule</code> is a framework for building modular Monte Carlo
+risk analysis models. It extends the capabilities of <code>mc2d</code>
+to make working with multiple risk pathways, variates, and scenarios
+easier. It was developed by epidemiologists, for the <a href="https://farmrisk.eu/" class="external-link">farmR!SK</a> project, and now it aims to
+help epidemiologists and other risk modellers save time and evaluate
+ambitious, complex risk pathways in R.</p>
+<p>The <code>mc2d</code> R package <span class="citation">(<a href="#ref-mc2d">Pouillot and Delignette-Muller 2010</a>)</span>
+provides tools to build and analyse models involving multiple variables
+and uncertainties based on Monte Carlo simulations. The
+<code>mcmodule</code> package builds on the R package <code>mc2d</code>
+to enhance model flexibility. This new package provides tools for:</p>
+<ol style="list-style-type: decimal">
+<li>Automate the creation of mcnodes</li>
+<li>Organizing risk analysis in independent flexible modules</li>
+<li>Perform multivariate mcnode operations</li>
+<li>Visualizing risk analysis models</li>
+</ol>
+<div class="section level3">
+<h3 id="multivariate-monte-carlo-simulations">Multivariate Monte-Carlo simulations<a class="anchor" aria-label="anchor" href="#multivariate-monte-carlo-simulations"></a>
+</h3>
+<div class="line-block"><em>This section draws from the <a href="https://cran.r-project.org/package=mc2d" class="external-link">mc2d</a> package
+vignette, with adaptations for modular Monte Carlo
+simulations.</em></div>
+<p>Quantitative risk analysis is the numerical assessment of risk to
+facilitate decision making in the face of uncertainty. Monte Carlo
+simulation is a technique used to model and analyse uncertainty <span class="citation">(<a href="#ref-Vose2008">Vose 2008</a>)</span>. In
+<code>mc2d</code>, parameters are stored as <strong>mcnode</strong>
+class objects. These objects are arrays of numbers that represent random
+variables and have three dimensions: <strong>variability × uncertainty ×
+variates</strong>.</p>
+<p><img src="images/mcmodule_node_dimensions.png" fig-align="center"></p>
+<p>In this <code>mcmodule</code>, we take a simplified approach
+where:</p>
+<ul>
+<li><p>We combine <strong>variability</strong> and
+<strong>uncertainty</strong> into one dimension<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;It would be technically possible to separate variability
+and uncertainty in &lt;code&gt;mcmodule&lt;/code&gt;, but we have not included this
+functionality yet because of the exponential increase in computational
+and programming requirements&lt;/p&gt;"><sup>1</sup></a>
+(<strong><em>u</em></strong>)</p></li>
+<li><p>We use <strong>variates</strong> (representing different groups
+or categories) in the other dimension
+(<strong><em>i</em></strong>)</p></li>
+</ul>
+<p>This approach enables us to track multiple values across groups
+simultaneously using variates and to handle cases where values must be
+aggregated by animal movements, farms, or other grouped entities.</p>
+<p>In this framework, an mcnode is an array of <strong>dimensions
+(<em>u</em> × 1 × <em>i</em>)</strong>, where <em>u</em> is the
+dimension of variability and uncertainty combined, and i is the number
+of variates. We will use the term “uncertainty dimension” to refer to
+the combined dimension of variability and uncertainty.</p>
+<blockquote>
+<p><strong>Example</strong></p>
+<p>If we are buying a number of cows and heifers from a specific region,
+an mcnode for herd prevalence would have:</p>
+<ul>
+<li><p>Multiple variates (rows), each representing a specific animal
+category-disease combination. The variables that define and distinguish
+these variates are called <strong>keys</strong>.</p></li>
+<li><p>Probability values generated through a PERT distribution (rpert),
+using minimum, mode, and maximum parameters across <em>u</em> iterations
+(columns) to model the uncertainty in these estimates.</p></li>
+</ul>
+<div class="float">
+<img src="images/mcmodule_mcnode_example.png" style="display: block; margin: 1em auto;width:85.0%" fig-align="center" alt="An mcnode representing herd prevalence of three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR), and bovine viral diarrhea (BVD), and two animal categories (cows and heifers). The herd prevalence is the same for both animal categories, but values differ due to the stochastic nature of random sampling from the PERT distribution."><div class="figcaption"><em>An mcnode representing herd prevalence of
+three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis
+(IBR), and bovine viral diarrhea (BVD), and two animal categories (cows
+and heifers). The herd prevalence is the same for both animal
+categories, but values differ due to the stochastic nature of random
+sampling from the PERT distribution.</em></div>
+</div>
+</blockquote>
+</div>
 <div class="section level3">
 <h3 id="risk-assessment">Risk assessment<a class="anchor" aria-label="anchor" href="#risk-assessment"></a>
 </h3>
@@ -109,28 +159,16 @@ purpose.</p>
 <div class="section level4">
 <h4 id="a-simple-risk-assessment">A simple risk assessment<a class="anchor" aria-label="anchor" href="#a-simple-risk-assessment"></a>
 </h4>
-<p>Imagine we want to buy a heifer. We have found a good deal on a farm
-that we know is infected with pathogen A, a disease that our farm is
-free from. To reduce the risk of introducing the disease to our farm, we
-plan to perform a diagnostic test on the heifer before bringing it to
-our farm. We want to calculate the probability of introducing the
-disease by purchasing one heifer that tests negative.</p>
+<p>Consider a scenario where we need to purchase a cow from a farm that
+we know is infected with a disease our farm is free from. To reduce the
+risk of introducing the disease to our farm, we plan to perform a
+diagnostic test on the cow before bringing it to our farm. We want to
+calculate the probability of introducing the disease by purchasing one
+cow that tests negative.</p>
 <p>We have an estimation (with some uncertainty) of both the probability
 of animal infection within a herd and the test sensitivity, so we want
 to conduct a <strong>stochastic</strong> risk assessment that properly
 accounts for this <strong>uncertainty</strong>.</p>
-<blockquote>
-<p><strong>Risk assessment</strong> is a technique to estimate the
-probability and impact of an “adverse”<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;Although in practice it is more commonly used to assess
-adverse events (that’s why they’re called “risks”), these quantitative
-techniques can obviously also be used to estimate the probability of any
-event, judgements about whether it is adverse or not are not part of the
-probabilistic calculations.&lt;/p&gt;"><sup>1</sup></a> event. It identifies
-the <strong>steps</strong> necessary for the event to occur and assigns
-them a <strong>probability</strong>.</p>
-<p><strong>Monte Carlo simulation</strong> is a technique used to model
-and analyse uncertainty <span class="citation">(<a href="#ref-Vose2008">Vose 2008</a>)</span>.</p>
-</blockquote>
 <p>The risk assessment for our cattle purchase can be performed using
 base R <span class="citation">(<a href="#ref-base">2024</a>)</span>
 random sampling functions, or <code>mc2d</code> <span class="citation">(<a href="#ref-mc2d">Pouillot and Delignette-Muller
@@ -195,15 +233,10 @@ pathogen’s parameters as arguments</p></li>
 intensive when the number of parameters or different situations to
 simulate increases.</p>
 <p>The package <code>mc2d</code> offers a clever solution to this
-scalability problem: variates. In this package, parameters are stored as
-<strong>mcnode</strong> class objects. These objects are arrays of
-numbers that represent random variables and have three dimensions:
-<strong>variability × uncertainty × variates</strong>.</p>
-<p><img src="images/mcmodule_node_dimensions.png" fig-align="center"></p>
-<p>In the previous example, our stochastic nodes only had uncertainty
-dimension. However, we can now use the <strong>variates</strong>
-dimension to calculate the risk of introduction of both pathogens at the
-same time.</p>
+scalability problem: variates. In the previous example, our stochastic
+nodes only had uncertainty dimension. However, we can now use the
+<strong>variates</strong> dimension to calculate the risk of
+introduction of both pathogens at the same time.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">n_iterations</span> <span class="op">&lt;-</span> <span class="fl">10000</span></span>
@@ -247,11 +280,6 @@ same time.</p>
 <span><span class="co">#&gt;   node    mode nsv   nsu nva variate    min   mean median    max Nas type outm</span></span>
 <span><span class="co">#&gt; 1    x numeric   1 10000   2       1 0.0139 0.0175 0.0174 0.0217   0    U each</span></span>
 <span><span class="co">#&gt; 2    x numeric   1 10000   2       2 0.0477 0.0787 0.0783 0.1178   0    U each</span></span></code></pre></div>
-<p>Instead of manually typing the parameter values, you can also use
-columns from a data table in <code><a href="https://rdrr.io/pkg/mc2d/man/mcnode.html" class="external-link">mcdata()</a></code>. A useful template
-for setting up risk analysis models using <code>mc2d</code>, with custom
-functions to facilitate data manipulation and visualization, can be
-found in this repository: <a href="https://github.com/NataliaCiria/risk_analysis_template" class="external-link uri">https://github.com/NataliaCiria/risk_analysis_template</a>.</p>
 </div>
 </div>
 <div class="section level3">
@@ -260,7 +288,7 @@ found in this repository: <a href="https://github.com/NataliaCiria/risk_analysis
 <p>The <code>mc2d</code> multivariate approach works well for basic
 multivariate risk analysis. However, if instead of purchasing one cow,
 you’re dealing with multiple cattle purchases, from different farms,
-across different pathogens, scenarios, and age categories, or modeling
+across different pathogens, scenarios, and age categories, or modelling
 multiple risk pathways with different what-if scenarios, this approach
 becomes unwieldy.</p>
 <p><code>mcmodule</code> addresses these challenges by providing
@@ -296,16 +324,16 @@ may be unnecessary.</p>
 <div class="section level3">
 <h3 id="installing-mcmodule">Installing mcmodule<a class="anchor" aria-label="anchor" href="#installing-mcmodule"></a>
 </h3>
-<p>Now let’s explore this new package! It’s about to be submitted to
-CRAN, but since it’s not there yet, we’ll install it from GitHub
-instead.</p>
+<p>Now let’s explore the package! We can install it from CRAN:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"NataliaCiria/mcmodule"</span><span class="op">)</span></span></code></pre></div>
-<p>And we load the package in our R session. Easy-peasy, ready to
-go!</p>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"mcmodule"</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://github.com/NataliaCiria/mcmodule" class="external-link">"mcmodule"</a></span><span class="op">)</span></span></code></pre></div>
+<p>Or install latest development version from GitHub (requires
+<code>devtool</code> package):</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/NataliaCiria/mcmodule" class="external-link">mcmodule</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"NataliaCiria/mcmodule"</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://github.com/NataliaCiria/mcmodule" class="external-link">"mcmodule"</a></span><span class="op">)</span></span></code></pre></div>
 <p>Other recommended packages to load along with mcmodule are:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages(c("dplyr","ggplot2","igraph","visNetwork"))</span></span>
@@ -524,7 +552,7 @@ origin (true = unknown)</td>
 </table>
 <p>The data table and the mctable must complement each other:</p>
 <ul>
-<li><p>mcnodes without a <code>mc_func</code> (like
+<li><p>mcnodes without an <code>mc_func</code> (like
 <code>farms_n</code>), needs the matching column name
 (<code>"farms_n"</code>) in the data table</p></li>
 <li>
@@ -951,7 +979,9 @@ always performed in all regions.</p>
 name is important as it is used to will recognize it specifically for
 scenario comparisons, not as regular variate categories. The baseline
 scenario should be called “0”. What-if scenarios can have any name, and
-they can modify any of the values in the dataset.</p>
+they can modify any of the values in the dataset. While not every
+scenario needs to contain all baseline groups, any groups present in
+alternative scenarios must exist in the baseline.</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imports_data</span><span class="op">&lt;-</span><span class="va">imports_data</span><span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>scenario_id <span class="op">=</span> <span class="st">"0"</span><span class="op">)</span></span>
