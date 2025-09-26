@@ -104,8 +104,8 @@ simulation is a technique used to model and analyse uncertainty <span class="cit
 <strong>mcnode</strong> class objects. These objects are arrays of
 numbers that represent random variables and have three dimensions:
 <strong>variability × uncertainty × variates</strong>. For more
-information, see the <a href="https://cran.r-project.org/web/packages/mc2d/vignettes/docmcEnglish.pdf" class="external-link">mc2d</a>
-package vignette.</p>
+information, see the <a href="https://CRAN.R-project.org/package=mc2d" class="external-link">mc2d</a> package
+vignette.</p>
 <p><img src="images/mcmodule_node_dimensions.png" fig-align="center"></p>
 <p>In the <code>mcmodule</code> framework an mcnode is an array of
 <strong>dimensions (<em>u</em> × 1 × <em>i</em>)</strong>:</p>
@@ -136,9 +136,9 @@ minimum, mode, and maximum parameters across <em>u</em> iterations
 (columns) to model the uncertainty in these estimates</p></li>
 </ul>
 <div class="float">
-<img src="images/mcmodule_mcnode_example.png" style="display: block; margin: 1em auto;width:85.0%" fig-align="center" alt="An mcnode representing herd prevalence of three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR), and bovine viral diarrhea (BVD), and two animal categories (cows and heifers). The herd prevalence is the same for both animal categories, but values differ due to the stochastic nature of random sampling from the PERT distribution."><div class="figcaption"><em>An mcnode representing herd prevalence of
+<img src="images/mcmodule_mcnode_example.png" style="display: block; margin: 1em auto;width:85.0%" fig-align="center" alt="An mcnode representing herd prevalence of three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis (IBR), and bovine viral diarrhoea (BVD), and two animal categories (cows and heifers). The herd prevalence is the same for both animal categories, but values differ due to the stochastic nature of random sampling from the PERT distribution."><div class="figcaption"><em>An mcnode representing herd prevalence of
 three pathogens, tuberculosis (TB), infectious bovine rhinotracheitis
-(IBR), and bovine viral diarrhea (BVD), and two animal categories (cows
+(IBR), and bovine viral diarrhoea (BVD), and two animal categories (cows
 and heifers). The herd prevalence is the same for both animal
 categories, but values differ due to the stochastic nature of random
 sampling from the PERT distribution.</em></div>
@@ -169,8 +169,8 @@ accounts for this <strong>uncertainty</strong>.</p>
 base R <span class="citation">(<a href="#ref-base">2024</a>)</span>
 random sampling functions, or <code>mc2d</code> <span class="citation">(<a href="#ref-mc2d">Pouillot and Delignette-Muller
 2010</a>)</span>, a package provides additional probability
-distributions (such as rpert) and other useful tools for analysing
-stochastic (Monte-Carlo) simulations.</p>
+distributions (such as <code>rpert</code>) and other useful tools for
+analysing stochastic (Monte-Carlo) simulations.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">mc2d</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
