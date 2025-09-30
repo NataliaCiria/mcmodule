@@ -257,8 +257,10 @@ visNetwork_edges <- function(mcmodule, inputs = FALSE) {
 #' }
 mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL, legend = FALSE, inputs = FALSE){
   if(!all(requireNamespace("visNetwork", quietly = TRUE)&requireNamespace("igraph", quietly = TRUE))){
-    stop("This function need 'visNetwork' and 'igraph' packages. Please
-         install them before.")
+    stop(
+    "This function needs 'visNetwork' and 'igraph' packages.
+    Install them using:
+         install.packages(c('visNetwork','igraph'))")
   }
 
   nodes <- visNetwork_nodes(mcmodule, variate = variate, color_pal = color_pal, color_by = color_by, inputs = inputs)
