@@ -342,9 +342,9 @@ suppressMessages({
       agg_keys = "scenario_id",
     )
 
-    expect_true("p_1_all_agg_set" %in% names(result$node_list))
+    expect_true("p_1_all_hag_set" %in% names(result$node_list))
     expect_equal(dim(result$node_list$p_1_all$mcnode), c(1001,1,4))
-    expect_equal(dim(result$node_list$p_1_all_agg_set$mcnode), c(1001,1,2))
+    expect_equal(dim(result$node_list$p_1_all_hag_set$mcnode), c(1001,1,2))
 
     reset_mctable()
   })
@@ -364,12 +364,12 @@ suppressMessages({
       name="p_total"
     )
 
-    expect_true("p_1_x_agg_set" %in% names(result$node_list))
-    expect_true("p_total_agg" %in% names(result$node_list))
+    expect_true("p_1_x_hag_set" %in% names(result$node_list))
+    expect_true("p_total_hag" %in% names(result$node_list))
     expect_true("p_total" %in% names(result$node_list))
 
     expect_equal(dim(result$node_list$p_total$mcnode), c(1001,1,4))
-    expect_equal(dim(result$node_list$p_total_agg$mcnode), c(1001,1,2))
+    expect_equal(dim(result$node_list$p_total_hag$mcnode), c(1001,1,2))
 
     reset_mctable()
   })
@@ -389,8 +389,8 @@ suppressMessages({
       keep_variates = TRUE
     )
 
-    expect_equal(dim(result$node_list$p_1_all_agg_set$mcnode), c(1001,1,4))
-    expect_true(result$node_list$p_2_agg$keep_variates)
+    expect_equal(dim(result$node_list$p_1_all_hag_set$mcnode), c(1001,1,4))
+    expect_true(result$node_list$p_2_hag$keep_variates)
 
     reset_mctable()
   })

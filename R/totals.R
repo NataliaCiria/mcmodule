@@ -283,7 +283,7 @@ agg_totals <- function(mcmodule,
   } else if (is.null(agg_suffix)) {
     name
   } else {
-    if(agg_suffix == "") name else paste0(name, "_", agg_suffix)
+    paste0(name, "_", agg_suffix)
   }
 
   # Add prefix if provided
@@ -435,7 +435,7 @@ agg_totals <- function(mcmodule,
 #' @param level_suffix A list of suffixes for each hierarchical level (default: c(trial="trial",subset="subset",set="set"))
 #' @param mctable Data frame containing Monte Carlo nodes definitions (default: set_mctable())
 #' @param agg_keys Column names for aggregation (optional)
-#' @param agg_suffix Suffix for aggregated node names (default: "agg")
+#' @param agg_suffix Suffix for aggregated node names (default: "hag")
 #' @param keep_variates whether to preserve individual values (default: FALSE)
 #' @param summary Include summary statistics if TRUE (default: TRUE)
 #'
@@ -474,6 +474,7 @@ trial_totals <- function(mcmodule,
                          agg_suffix = NULL,
                          keep_variates = FALSE,
                          summary = TRUE) {
+
   module_name <- deparse(substitute(mcmodule))
 
   # Check if mcnodes are in mcmodule
@@ -511,19 +512,18 @@ trial_totals <- function(mcmodule,
     level_suffix[suffix] <- suffix
   }
 
-  if (is.null(agg_suffix))
-    agg_suffix <- "agg"
+  hag_suffix <- if(is.null(agg_suffix)||agg_suffix=="") "hag" else agg_suffix
 
   data <- mcmodule$data[[data_name]]
 
   # Function for individual mcnode creation and processing
-  process_mcnode <- function(mc_name,
+  process_trial_mcnode <- function(mc_name,
                              node_type,
                              mcmodule,
                              data,
                              module_name,
                              agg_keys,
-                             agg_suffix,
+                             hag_suffix,
                              mctable,
                              keep_variates,
                              agg_func = NULL) {
@@ -560,7 +560,6 @@ trial_totals <- function(mcmodule,
       }
     }
 
-
     if (!is.null(agg_keys)) {
       # Aggregate node if agg_keys provided
       messages <- character(0)
@@ -570,7 +569,7 @@ trial_totals <- function(mcmodule,
             mcmodule = mcmodule,
             mc_name = mc_name,
             agg_keys = agg_keys,
-            agg_suffix = agg_suffix,
+            agg_suffix = hag_suffix,
             agg_func = agg_func,
             keep_variates = keep_variates
           )
@@ -584,7 +583,7 @@ trial_totals <- function(mcmodule,
         message(messages)
       # Change mcnode name to agg version name
       mc_name_name <- deparse(substitute(mc_name))
-      agg_mc_name <- if(agg_suffix=="") mc_name else paste0(mc_name, "_", agg_suffix)
+      agg_mc_name <-  paste0(mc_name, "_", hag_suffix)
       assign(mc_name_name, agg_mc_name, envir = parent.frame())
       # Add agg_keys to metadata
       mcmodule$node_list[[agg_mc_name]][["agg_keys"]] <- agg_keys
@@ -597,14 +596,14 @@ trial_totals <- function(mcmodule,
 
   # Process all nodes
 
-  mcmodule <- process_mcnode(
+  mcmodule <- process_trial_mcnode(
     trials_n,
     "trials_n",
     mcmodule,
     data,
     module_name,
     agg_keys,
-    agg_suffix,
+    hag_suffix,
     mctable,
     keep_variates
   )
@@ -617,14 +616,14 @@ trial_totals <- function(mcmodule,
     subsets_n <- "1"
     hierarchical_n <- FALSE
   } else {
-    mcmodule <- process_mcnode(
+    mcmodule <- process_trial_mcnode(
       subsets_n,
       "subsets_n",
       mcmodule,
       data,
       module_name,
       agg_keys,
-      agg_suffix,
+      hag_suffix,
       mctable,
       keep_variates,
       agg_func = "avg"
@@ -641,14 +640,14 @@ trial_totals <- function(mcmodule,
     hierarchical_p <- FALSE
   } else {
     multilevel <- TRUE
-    mcmodule <- process_mcnode(
+    mcmodule <- process_trial_mcnode(
       subsets_p,
       "subsets_p",
       mcmodule,
       data,
       module_name,
       agg_keys,
-      agg_suffix,
+      hag_suffix,
       mctable,
       keep_variates,
       agg_func = "avg"
@@ -817,7 +816,7 @@ trial_totals <- function(mcmodule,
             mcmodule = mcmodule,
             mc_name = mc_name,
             agg_keys = agg_keys,
-            agg_suffix = agg_suffix,
+            agg_suffix = hag_suffix,
             keep_variates = keep_variates
           )
         },
@@ -831,11 +830,11 @@ trial_totals <- function(mcmodule,
 
       # Generate name for aggregated node
       if (!is.null(name) && length(mc_names) == 1) {
-        agg_mc_name <- if(agg_suffix=="") name else paste0(name, "_", agg_suffix)
-        names(mcmodule$node_list)[names(mcmodule$node_list) %in% paste0(mc_name, "_", agg_suffix)] <-
+        agg_mc_name <- paste0(name, "_", hag_suffix)
+        names(mcmodule$node_list)[names(mcmodule$node_list) %in% paste0(mc_name, "_", hag_suffix)] <-
           agg_mc_name
       } else {
-        agg_mc_name <- if(agg_suffix=="") mc_name else paste0(mc_name, "_", agg_suffix)
+        agg_mc_name <- paste0(mc_name, "_", hag_suffix)
       }
 
       # Change mcnode name to agg version name
@@ -867,9 +866,13 @@ trial_totals <- function(mcmodule,
         sub(paste0("^", prefix), "", name)
       }
     } else{
-      sub(paste0("^", prefix), "", mc_name)
+       sub(paste0("^", prefix), "", mc_name)
     }
 
+    # Remove hag_suffix if agg_suffix==""
+    if(!is.null(agg_suffix)&&agg_suffix==""){
+      mc_name_no_prefix<- sub(paste0("_",hag_suffix,"$"), "", mc_name_no_prefix)
+    }
 
     # Process levels
     all_levels <- if (hierarchical_n) {
