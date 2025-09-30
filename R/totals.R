@@ -861,7 +861,11 @@ trial_totals <- function(mcmodule,
     # Remove prefix (to avoid prefix duplication)
     mc_name_no_prefix  <- if (length(mc_names) == 1 &&
                               !is.null(name)) {
-      sub(paste0("^", prefix), "", name)
+      if(!is.null(agg_keys)){
+        sub(paste0("^", prefix), "", agg_mc_name)
+      }else{
+        sub(paste0("^", prefix), "", name)
+      }
     } else{
       sub(paste0("^", prefix), "", mc_name)
     }
