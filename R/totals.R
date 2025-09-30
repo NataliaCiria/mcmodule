@@ -283,7 +283,7 @@ agg_totals <- function(mcmodule,
   } else if (is.null(agg_suffix)) {
     name
   } else {
-    paste0(name, "_", agg_suffix)
+    if(agg_suffix == "") name else paste0(name, "_", agg_suffix)
   }
 
   # Add prefix if provided
@@ -471,7 +471,7 @@ trial_totals <- function(mcmodule,
                                           set = "set"),
                          mctable = set_mctable(),
                          agg_keys = NULL,
-                         agg_suffix = "agg",
+                         agg_suffix = NULL,
                          keep_variates = FALSE,
                          summary = TRUE) {
   module_name <- deparse(substitute(mcmodule))
@@ -584,13 +584,13 @@ trial_totals <- function(mcmodule,
         message(messages)
       # Change mcnode name to agg version name
       mc_name_name <- deparse(substitute(mc_name))
-      assign(mc_name_name, paste0(mc_name, "_", agg_suffix), envir = parent.frame())
+      agg_mc_name <- if(agg_suffix=="") mc_name else paste0(mc_name, "_", agg_suffix)
+      assign(mc_name_name, agg_mc_name, envir = parent.frame())
       # Add agg_keys to metadata
-      mcmodule$node_list[[paste0(mc_name, "_", agg_suffix)]][["agg_keys"]] <- agg_keys
+      mcmodule$node_list[[agg_mc_name]][["agg_keys"]] <- agg_keys
       # Reassign mcmodule name (defaults to "mcmodule")
-      mcmodule$node_list[[paste0(mc_name, "_", agg_suffix)]][["module"]] <- module_name
-      mcmodule$node_list[[mc_name]][["module"]] <- module_name
-      mcmodule$node_list[[mc_name]][["keep_variates"]] <- keep_variates
+      mcmodule$node_list[[agg_mc_name]][["module"]] <- module_name
+      mcmodule$node_list[[agg_mc_name]][["keep_variates"]] <- keep_variates
     }
     return(mcmodule)
   }
@@ -831,11 +831,11 @@ trial_totals <- function(mcmodule,
 
       # Generate name for aggregated node
       if (!is.null(name) && length(mc_names) == 1) {
-        agg_mc_name <- paste0(name, "_", agg_suffix)
+        agg_mc_name <- if(agg_suffix=="") name else paste0(name, "_", agg_suffix)
         names(mcmodule$node_list)[names(mcmodule$node_list) %in% paste0(mc_name, "_", agg_suffix)] <-
           agg_mc_name
       } else {
-        agg_mc_name <- paste0(mc_name, "_", agg_suffix)
+        agg_mc_name <- if(agg_suffix=="") mc_name else paste0(mc_name, "_", agg_suffix)
       }
 
       # Change mcnode name to agg version name
