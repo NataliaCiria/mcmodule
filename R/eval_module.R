@@ -104,7 +104,7 @@ eval_module <- function(exp, data, param_names = NULL,
             mc_names = prev_nodes
           )
 
-          # Handle dimension matching
+          # Find largest mcnode for dimension matching
           if (length(prev_node_list_i) > 0) {
             dim_prev_nodes <- sapply(
               names(prev_node_list_i),
@@ -115,6 +115,10 @@ eval_module <- function(exp, data, param_names = NULL,
 
           }
 
+          #Check if all prev_nodes are found in prev_mcmodule
+          missing_prev_nodes<-prev_nodes[!prev_nodes%in%names(prev_node_list_i)]
+          if(length(missing_prev_nodes)>0) stop(paste(missing_prev_nodes),"not found in prev_mcmodule")
+
           # Process each previous node
           for (k in 1:length(prev_nodes)) {
             mc_name <- prev_nodes[k]
@@ -123,6 +127,7 @@ eval_module <- function(exp, data, param_names = NULL,
 
             # Match if previous node data is not equal to new data
             if(!(nrow(prev_data) == nrow(data)&&
+                 ncol(prev_data) == ncol(data) &&
                  all(names(prev_data) == names(data))&&
                  all(prev_data==data,na.rm=TRUE))) {
 
