@@ -150,9 +150,7 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
   keys_y <- mc_keys(mcmodule, mc_name_y, keys_names)
 
   # If nodes do not have the same keys but both nodes come from the same data, keys are inferred from data
-  if(data_name_x==data_name_y&&
-     nrow(keys_x) == nrow(keys_y)&&
-     ncol(keys_x) != ncol(keys_y)&&
+  if(nrow(keys_x) == nrow(keys_y)&&
      all(keys_x[intersect(names(keys_x),names(keys_y))]==keys_y[intersect(names(keys_x),names(keys_y))],na.rm=TRUE)){
 
     # Find keys that are only pressent in one of the mcnodes
@@ -310,9 +308,7 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
 
 
   # If nodes do not have the same keys but both nodes come from the same data, keys are inferred from data
-  if(data_name_x==data_name_y&&
-     nrow(keys_x) == nrow(keys_y)&&
-     ncol(keys_x) != ncol(keys_y)&&
+  if(nrow(keys_x) == nrow(keys_y)&&
      all(keys_x[intersect(names(keys_x),names(keys_y))]==keys_y[intersect(names(keys_x),names(keys_y))],na.rm=TRUE)){
 
     # Return nodes as they are if they already match
