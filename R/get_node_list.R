@@ -30,10 +30,16 @@ get_node_list <- function(exp, param_names = NULL,
 
     # Extract input node names
     exp1 <- gsub("_", "975UNDERSCORE2023", node_exp)
+    exp1 <- gsub("::", "975DOUBLEDOT2025", exp1)
+
     exp2 <- gsub("[^[:alnum:]]", ",", exp1)
+
     exp3 <- gsub("975UNDERSCORE2023", "_", exp2)
+    exp3 <- gsub("975DOUBLEDOT2025", "::", exp3)
+
     exp4 <- c(strsplit(exp3, split = ",")[[1]])
     exp4 <- exp4[!exp4 %in% ""]
+
     if(any(suppressWarnings(as.numeric(exp4))%in%c(Inf,-Inf))) warning("Inputs called 'inf' or '-inf' are assumed to be infinite (numeric) and are not parsed as mcnodes")
     exp5 <- suppressWarnings(exp4[is.na(as.numeric(exp4))])
     inputs <- unique(exp5)
@@ -45,15 +51,10 @@ get_node_list <- function(exp, param_names = NULL,
     }
 
     # Filter function inputs
-    inputs <- inputs[!inputs %in% "mcnode_na_rm"]
-    fun_input <- c()
-    if (length(inputs) > 0) {
-      for (j in 1:length(inputs)) {
-        input_name <- inputs[j]
-        is_fun <- if (exists(input_name)) is.function(get(input_name)) else FALSE
-        if (is_fun) fun_input <- c(fun_input, input_name)
-      }
-    }
+    capture_fun <- gregexpr('(([A-Za-z.][A-Za-z0-9._]*::)?[A-Za-z.][A-Za-z0-9._]*)\\(', node_exp, perl = TRUE)
+    starts <- attr(capture_fun[[1]], "capture.start")[, 1]
+    lens   <- attr(capture_fun[[1]], "capture.length")[, 1]
+    fun_input <- if (length(starts)) substring(node_exp, starts, starts + lens - 1) else character(0)
 
     inputs <- inputs[!inputs %in% fun_input]
     all_nodes <- unique(c(all_nodes, node_name, inputs))
