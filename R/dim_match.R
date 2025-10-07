@@ -413,7 +413,7 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
 #'
 #' @param x First dataset to match
 #' @param y Second dataset to match
-#' @param by Grouping variable(s) to match on, defaults to "hg" (homogeneous groups)
+#' @param by Grouping variable(s) to match on, defaults to NULL
 #' @return List containing matched datasets with aligned scenario IDs:
 #'   - First element: matched version of dataset x
 #'   - Second element: matched version of dataset y
@@ -421,14 +421,12 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
 #' x <- data.frame(
 #'   category = c("a", "b", "a", "b"),
 #'   scenario_id = c(0, 0, 1, 1),
-#'   hg = c(1, 2, 1, 2),
 #'   value = 1:4
 #' )
 #'
 #' y <- data.frame(
 #'   category = c("a", "b", "a", "b"),
 #'   scenario_id = c(0, 0, 2, 2),
-#'   hg = c(1, 2, 1, 2),
 #'   value = 5:8
 #' )
 #'
