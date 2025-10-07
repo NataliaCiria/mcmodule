@@ -86,16 +86,16 @@ at_least_one <- function(mcmodule,
   p_all <- 0
   keys_names <- c()
 
+  # Check that data_name, dimensions and keys are identical for all nodes
   if (length(data_name) == 1 &&
-      length(unique(nodes_dim)) == 1 && all(!nodes_agg)) {
+      length(unique(nodes_dim)) == 1 &&
+      all(!nodes_agg) &&
+      length(unique(nodes_keys)) == 1) {
+
+    data <- nodes_keys[[1]]
+
+    # Loop to get the combined probability of all mcnodes
     for (i in seq_along(mc_names)) {
-      # Check that node keys are identical for all nodes
-      if (i > 1) {
-        if (!identical(nodes_keys[[i]], data)) {
-          stop("nodes_keys are not equal for all nodes")
-        }
-      }
-      data <- nodes_keys[[i]]
       mc_name <- mc_names[i]
       p_i <- mcmodule$node_list[[mc_name]][["mcnode"]]
       keys_names <- unique(c(keys_names, names(nodes_keys[[i]])))
@@ -103,9 +103,10 @@ at_least_one <- function(mcmodule,
       # Update combined probability
       p_all <- 1 - ((1 - p_all) * (1 - p_i))
     }
+
   } else {
     if (!length(mc_names) == 2) {
-      stop("To aggregate mc_names without hg index provide exactly two mc_nodes")
+      stop("To aggregate mc_names with different data_name or keys, provide exactly two mc_nodes")
     }
 
     # Get keys for both nodes
