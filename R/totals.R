@@ -678,6 +678,9 @@ trial_totals <- function(mcmodule,
       paste0(name, "_", all_suffix)
     }
 
+    # Update module name metadata (defaults to mcmodule)
+    mcmodule$node_list[[p_all_mc_name]][["module"]] <- module_name
+
     mc_names <- c(mc_names, p_all_mc_name)
   }
 
