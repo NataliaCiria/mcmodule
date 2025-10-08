@@ -37,8 +37,3 @@ A data frame formatted for visNetwork with columns:
 Creates a formatted node table for visualization with visNetwork.
 Includes styling and formatting for network visualization.
 }
-\examples{
-\dontrun{
-nodes_df <- visNetwork_nodes(mcmodule=imports_mcmodule)
-}
-}

@@ -177,10 +177,6 @@ get_node_table <- function(mcmodule, variate = 1, inputs=FALSE) {
 #'     \item expression: Node expression or type
 #'     \item title: Hover text containing node details
 #'   }
-#' @examples
-#' \dontrun{
-#' nodes_df <- visNetwork_nodes(mcmodule=imports_mcmodule)
-#' }
 visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL, inputs = FALSE) {
 
   nodes <- get_node_table(mcmodule = mcmodule, variate = variate, inputs = inputs)
@@ -218,10 +214,6 @@ visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by =
 #' @param mcmodule An mcmodule object
 #' @param inputs Include non-node inputs: data-sets, data-frames and columns (optional)
 #' @return A data frame containing edge information for visNetwork
-#' @examples
-#' \dontrun{
-#' vis_edges <- visNetwork_edges(imports_mcmodule)
-#' }
 visNetwork_edges <- function(mcmodule, inputs = FALSE) {
   get_edge_table(mcmodule = mcmodule, inputs = inputs) %>%
     transmute(
@@ -252,7 +244,7 @@ visNetwork_edges <- function(mcmodule, inputs = FALSE) {
 #'   }
 #' @export
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' network <- mc_network(mcmodule=imports_mcmodule)
 #' }
 mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL, legend = FALSE, inputs = FALSE){

@@ -17,8 +17,3 @@ A data frame containing edge information for visNetwork
 \description{
 Creates a formatted edge table suitable for visualization with visNetwork.
 }
-\examples{
-\dontrun{
-vis_edges <- visNetwork_edges(imports_mcmodule)
-}
-}

@@ -41,7 +41,7 @@ Generates an interactive network visualization using visNetwork library. The vis
 includes interactive features for exploring model structure and relationships.
 }
 \examples{
-\dontrun{
+\donttest{
 network <- mc_network(mcmodule=imports_mcmodule)
 }
 }

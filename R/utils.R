@@ -5,8 +5,7 @@
 #' @param y Optional second dataset
 #' @return Dataframe or list of dataframes with added group IDs
 #' @import dplyr
-#' @examples
-#'mcmodule:::add_group_id(imports_data, by = c("pathogen", "origin"))
+
 add_group_id <- function(x, y = NULL, by = NULL) {
   if (!is.null(y)) {
     if (is.null(by)) {
@@ -95,20 +94,6 @@ add_group_id <- function(x, y = NULL, by = NULL) {
 #'   \item{y}{Second dataset with group IDs}
 #'   \item{xy}{Matched datasets with aligned group and scenario IDs}
 #' @import dplyr
-#' @examples
-#' x <- data.frame(
-#'   type = c("1", "2"),
-#'   category = c("a", "b"),
-#'   scenario_id = c(0, 1)
-#' )
-#'
-#' y <- data.frame(
-#'    type = c("1", "2"),
-#'    category = c("c", "d"),
-#'    scenario_id = c(0, 2)
-#'  )
-#'
-#' mcmodule:::keys_match(x, y)
 keys_match <- function(x, y, keys_names = NULL) {
   # Add common group ids
   keys_list <- add_group_id(x, y, keys_names)

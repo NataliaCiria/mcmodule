@@ -22,8 +22,6 @@ knitr::opts_chunk$set(
 library(mcmodule)
 ```
 
-> *Work in progress!* 🏗
-
 # Introduction
 
 `mcmodule` is a framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to make working with multiple risk pathways, variates, and scenarios easier. It was developed by epidemiologists, for the [farmrisk](https://github.com/VetEpi-UAB/farmrisk) project, and now it aims to help epidemiologists and other risk modellers save time and evaluate ambitious, complex risk pathways in R.
