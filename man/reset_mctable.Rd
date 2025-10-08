@@ -2,7 +2,7 @@
 % Please edit documentation in R/set_mctable.R
 \name{reset_mctable}
 \alias{reset_mctable}
-\title{Reset Monte Carlo Inputs Table}
+\title{Resets the Monte Carlo inputs table}
 \usage{
 reset_mctable()
 }
