@@ -353,5 +353,31 @@ suppressMessages({
     # Check row number
     expect_equal(result$keys_xy$g_row.y,c(1,1,1,2,2,2))
   })
+
+  test_that("mc_match_data works with custom keys_names", {
+    # Create test data
+    test_data  <-data.frame(pathogen=c("a","b","a","b"),
+                            origin=c("nord","nord","nord","nord"),
+                            scenario_id=c("0","0","no_product_imports","no_product_imports"),
+                            contaminated=c(0.1,0.5,0.1,0.5),
+                            imported=c(1,1,0.1,0.1),
+                            products_n=c(1500,1500,0,0))
+
+    result_default<-mc_match_data(imports_mcmodule,"no_detect_a", test_data)
+    result_custom<-mc_match_data(imports_mcmodule,"no_detect_a", test_data, keys_names = c("pathogen"))
+
+    # Check dimensions
+    expect_equal(dim(result_default$test_data_match),c(8,6))
+    expect_equal(dim(result_custom$test_data_match),c(12,6))
+
+    # Check new keys column names are included in the result
+    expect_true(all(c("pathogen","origin")%in%names(result_default$keys_xy)))
+    expect_true(!"origin"%in%names(result_custom$keys_xy))
+
+    # Check row number
+    expect_equal(result_default$keys_xy$g_row.y,c(1,NA,NA,2,NA,NA,3,4))
+    expect_equal(result_custom$keys_xy$g_row.y,c(1,1,1,2,2,2,3,3,3,4,4,4))
+
+  })
 })
 

@@ -11,7 +11,8 @@ eval_module(
   prev_mcmodule = NULL,
   summary = FALSE,
   mctable = set_mctable(),
-  data_keys = set_data_keys()
+  data_keys = set_data_keys(),
+  match_keys = NULL
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ eval_module(
 \item{mctable}{Monte Carlo configuration table}
 
 \item{data_keys}{List of key columns for each dataset}
+
+\item{match_keys}{Keys to match prev_mcmodule mcnodes and data by}
 }
 \value{
 An mcmodule object containing data, expressions, and nodes

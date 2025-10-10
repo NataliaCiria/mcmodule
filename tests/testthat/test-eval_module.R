@@ -208,5 +208,62 @@ suppressMessages({
     expect_equal(nrow(summary), 6)
     expect_true(all(c("pathogen", "origin") %in% names(summary)))
   })
+
+  test_that("eval_mcmodule dim match works with custom match_keys", {
+    #  Create test data
+    contamination_data  <-data.frame(pathogen=c("a","b","a","b"),
+                            origin=c("nord","nord","nord","nord"),
+                            scenario_id=c("0","0","heat_treatment","heat_treatment"),
+                            contaminated=c(0.1,0.5,0.01,0.05))
+
+    contamination_data_keys <- list(contamination_data = list(cols=c("pathogen", "origin","contaminated"),
+                                                            keys=c("pathogen", "origin")))
+
+    contamination_mctable  <- data.frame(mcnode = c("contaminated"),
+                                        description = c("Probability of being contaminated"),
+                                        mc_func = c(NA),
+                                        from_variable = c(NA),
+                                        transformation = c(NA),
+                                        sensi_analysis = c(FALSE))
+
+    # Test expression
+    contamination_exp <- quote({
+      introduction_risk <- no_detect_a * contaminated
+    })
+
+    # Evaluate module with previous module
+    result_default <- eval_module(
+      exp = c(contamination = contamination_exp),
+      data = contamination_data,
+      mctable = contamination_mctable,
+      data_keys = contamination_data_keys,
+      prev_mcmodule = imports_mcmodule
+    )
+
+    # Evaluate module with previous module with CUSTOM MATCH KEYS
+    result_custom <- eval_module(
+      exp = c(contamination = contamination_exp),
+      data = contamination_data,
+      mctable = contamination_mctable,
+      data_keys = contamination_data_keys,
+      prev_mcmodule = imports_mcmodule,
+      match_keys = c("pathogen")
+    )
+
+    # Verify dimensions
+    expect_equal(dim(result_default$node_list$introduction_risk$mcnode)[3], 8)
+    expect_equal(dim(result_custom$node_list$introduction_risk$mcnode)[3], 12)
+
+    # Verify keys are correctly combined
+    expect_equal(result_custom$node_list$introduction_risk$keys, c("pathogen", "origin"))
+
+    # Verify input tracking
+    expect_equal(result_custom$node_list$introduction_risk$inputs, c("no_detect_a", "contaminated"))
+
+    # Verify no null matches in the dimension matching process
+    summary <- mc_summary(result_custom, "introduction_risk")
+    expect_equal(nrow(summary), 12)
+    expect_true(all(c("pathogen", "origin") %in% names(summary)))
+  })
 })
 
