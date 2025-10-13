@@ -82,6 +82,30 @@ suppressMessages({
 
   })
 
+  test_that("mc_keys with NA key works", {
+    # Create mock module
+    test_module <- list(
+      node_list = list(
+        test_node = list(
+          data_name = "test_data",
+          keys = c("key1", "key2", "key3")
+        )
+      ),
+      data = list(
+        test_data = data.frame(
+          key1 = c("A", "B","A", "B","A", "B"),
+          key2 = c(NA, NA,NA, NA,NA,NA),
+          key3 = c("red", "green","yellow","blue","orange","black"),
+          value = c(10, 20)
+        )
+      )
+    )
+
+    # Test with specified keys
+    expect_message(mc_keys(test_module, "test_node", c("key1", "key2")),"3 variates per group")
+
+  })
+
   test_that("mc_match group matching works", {
     test_module <- list(
       node_list = list(

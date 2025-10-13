@@ -62,6 +62,11 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
   scenario_0<- if(any(data$scenario_id=="0")) "0" else data$scenario_id[1]
   if (any(duplicated(data[data$scenario_id == scenario_0, keys_names]))) {
     data_0<-data[data$scenario_id == scenario_0, keys_names]
+    # Remove key columns that are all NA
+    na_cols<-sapply(data_0, function(x) all(is.na(x)))
+    if(any(na_cols)){
+      data_0 <- data_0[, !na_cols]
+    }
     if(length(data_0)==1&&is.data.frame(data_0)){
       var_groups<-max(table(apply(data_0 , 1 , paste , collapse = "-" )), na.rm=TRUE)
     }else{
