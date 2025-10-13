@@ -63,12 +63,12 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
   if (any(duplicated(data[data$scenario_id == scenario_0, keys_names]))) {
     data_0<-data[data$scenario_id == scenario_0, keys_names]
     if(length(data_0)==1&&is.data.frame(data_0)){
-      var_groups<-max(table(apply(data_0 , 1 , paste , collapse = "-" )))
+      var_groups<-max(table(apply(data_0 , 1 , paste , collapse = "-" )), na.rm=TRUE)
     }else{
       if(is.data.frame(data_0)&&ncol(data_0)<1){
         var_groups<- "Unknown"
       }else{
-        var_groups <- max(table(data_0))
+        var_groups <- max(table(data_0), na.rm=TRUE)
       }
     }
     message(paste0(var_groups," variates per group for ", mc_name))
