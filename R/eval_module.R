@@ -106,17 +106,6 @@ eval_module <- function(exp, data, param_names = NULL,
             mc_names = prev_nodes
           )
 
-          # Find largest mcnode for dimension matching
-          if (length(prev_node_list_i) > 0) {
-            dim_prev_nodes <- sapply(
-              names(prev_node_list_i),
-              function(mc_name) dim(prev_node_list_i[[mc_name]][["mcnode"]])[3]
-            )
-            mc_name_max <- names(prev_node_list_i)[which.max(unlist(dim_prev_nodes))]
-            agg_keys_max <- prev_node_list_i[[mc_name_max]][["agg_keys"]]
-
-          }
-
           #Check if all prev_nodes are found in prev_mcmodule
           missing_prev_nodes<-prev_nodes[!prev_nodes%in%names(prev_node_list_i)]
           if(length(missing_prev_nodes)>0) stop(paste(missing_prev_nodes)," not found in prev_mcmodule")
@@ -133,6 +122,7 @@ eval_module <- function(exp, data, param_names = NULL,
                  all(names(prev_data) == names(data))&&
                  all(prev_data==data,na.rm=TRUE))) {
 
+              # Match previous node with current data and update data
               if (is.null(prev_node_list_i[[mc_name]][["agg_keys"]])||prev_node_list_i[[mc_name]][["keep_variates"]]) {
                 match_prev <- mc_match_data(prev_mcmodule, mc_name, data, keys_names = match_keys)
                 match_prev_mcnode<-match_prev[[1]]
@@ -141,35 +131,27 @@ eval_module <- function(exp, data, param_names = NULL,
                 assign(mc_name, match_prev_mcnode)
 
               } else {
+                # Match previous aggregated node with current data and update data
                 agg_keys <- prev_node_list_i[[mc_name]][["agg_keys"]]
 
                 if(!is.null(match_keys)){
-                  if (!all(agg_keys_max%in%match_keys)) {
-                    warning("Using match_keys (",match_keys,") instead of: ", agg_keys_max)
-                    agg_keys_max<-match_keys
+                  if (!all(agg_keys%in%match_keys)) {
+                    warning("Using match_keys (", paste(match_keys, collapse = ", "),") instead of: ", paste(agg_keys, collapse = ", "))
+                    agg_keys<-match_keys
                   }
                 }
 
-                if (!all(agg_keys_max%in%agg_keys)) {
-                  stop("agg_keys do not match: ", agg_keys, " vs ", match_keys)
-                }
+                message("Matching agg prev_nodes dimensions by: ", paste(agg_keys, collapse = ", "))
 
-                message("Matching agg prev_nodes dimensions by largest node: ", mc_name_max)
-
-                match_agg_prev <- mc_match(
+                match_agg_prev <- mc_match_data(
                   mcmodule = prev_mcmodule,
-                  mc_name_x = mc_name_max,
-                  mc_name_y = mc_name,
-                  keys_names = agg_keys
-                )
+                  mc_name = mc_name,
+                  data = data,
+                  keys_names = agg_keys)
 
-                match_prev_mcnode_max <- match_agg_prev[[1]]
-                match_prev_mcnode <- match_agg_prev[[2]]
-                data <- match_agg_prev[[3]]
+                match_prev_mcnode<-match_agg_prev[[1]]
+                data<-match_agg_prev[["data_match"]]
 
-                data_name <- paste0(mc_name_max, "+", mc_name)
-
-                assign(mc_name_max, match_prev_mcnode_max)
                 assign(mc_name, match_prev_mcnode)
               }
             }
@@ -231,7 +213,11 @@ eval_module <- function(exp, data, param_names = NULL,
       if (((!is.null(prev_mcmodule))|(length(exp)>1)) &
         node_list[[mc_name]][["type"]] == "out_node") {
         keys_names <- unique(unlist(lapply(inputs, function(x) {
-          node_list[[x]][["keys"]]
+          if(is.null(node_list[[x]][["agg_keys"]])){
+            node_list[[x]][["keys"]]
+          }else{
+            node_list[[x]][["agg_keys"]]
+          }
         })))
         node_list[[mc_name]][["keys"]] <- keys_names
       }
