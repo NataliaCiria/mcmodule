@@ -143,7 +143,7 @@ eval_module <- function(exp, data, param_names = NULL,
               } else {
                 agg_keys <- prev_node_list_i[[mc_name]][["agg_keys"]]
 
-                if(!null(match_keys)){
+                if(!is.null(match_keys)){
                   if (!all(agg_keys_max%in%match_keys)) {
                     warning("Using match_keys (",match_keys,") instead of: ", agg_keys_max)
                     agg_keys_max<-match_keys
