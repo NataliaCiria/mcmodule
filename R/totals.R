@@ -135,7 +135,9 @@ at_least_one <- function(mcmodule,
 
   # Add prefix if provided
   if (!is.null(prefix) && prefix != "") {
-    p_all_mc_name <- paste0(prefix, "_", sub(paste0("^", prefix), "", p_all_mc_name))
+    prefix<-paste0(sub("_$","",prefix),"_")
+    p_all_mc_name <- paste0(prefix, sub(paste0("^", prefix), "", p_all_mc_name))
+    prefix<-sub("_$","",prefix)
   }
 
   # Add new node to module
@@ -260,7 +262,7 @@ agg_totals <- function(mcmodule,
 
   # Check if mcnode is in mcmodule
   if (!mc_name %in% names(mcmodule$node_list)) {
-    stop(mc_name, "not found in", module_name)
+    stop(mc_name, " not found in ", module_name)
   }
 
 
@@ -289,7 +291,9 @@ agg_totals <- function(mcmodule,
 
   # Add prefix if provided
   if (!is.null(prefix) && prefix != "") {
+    prefix<-paste0(sub("_$","",prefix),"_")
     agg_mc_name <- paste0(prefix, "_" , sub(paste0("^", prefix), "", agg_mc_name))
+    prefix<-sub("_$","",prefix)
   }
 
   # Extract variates
@@ -862,6 +866,7 @@ trial_totals <- function(mcmodule,
     # If no combined (all) probabilities use new name,
     # else, it was already generated in at_least_one
     # Remove prefix (to avoid prefix duplication)
+    prefix<-paste0(sub("_$","",prefix),"_")
     mc_name_no_prefix  <- if (length(mc_names) == 1 &&
                               !is.null(name)) {
       if(!is.null(agg_keys)){
@@ -872,6 +877,7 @@ trial_totals <- function(mcmodule,
     } else{
        sub(paste0("^", prefix), "", mc_name)
     }
+    prefix<-sub("_$","",prefix)
 
     # Remove hag_suffix if agg_suffix==""
     if(!is.null(agg_suffix)&&agg_suffix==""){
