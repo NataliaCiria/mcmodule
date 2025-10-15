@@ -114,7 +114,23 @@ eval_module <- function(exp, data, param_names = NULL,
           for (k in 1:length(prev_nodes)) {
             mc_name <- prev_nodes[k]
             node_list_i[[mc_name]] <- prev_node_list_i[[mc_name]]
-            prev_data<-prev_mcmodule_i$data[[prev_node_list_i[[mc_name]]$data_name]]
+            data_name_i<-prev_node_list_i[[mc_name]]$data_name
+
+            # Check if there are multiple data names
+            if(length(data_name_i)>1){
+              # Filter data names that exist in the previous module's data
+              prev_data_name<-names(prev_mcmodule_i$data)[names(prev_mcmodule_i$data)%in%data_name_i]
+
+              # Select data corresponding to the last data name
+              prev_data<-prev_mcmodule_i$data[[prev_data_name[length(prev_data_name)]]]
+
+              message("Multiple data_names in ", mc_name, ": ", paste(data_name_i, sep=", "),
+                      "Using: ", prev_data_name[length(prev_data_name)])
+            }else{
+              # If there's only one data name
+              prev_data<-prev_mcmodule_i$data[[prev_node_list_i[[mc_name]]$data_name]]
+            }
+
 
             # Match if previous node data is not equal to new data
             if(!(nrow(prev_data) == nrow(data)&&
