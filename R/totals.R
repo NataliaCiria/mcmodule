@@ -494,12 +494,23 @@ trial_totals <- function(mcmodule,
     ))
   }
 
-  nodes_data_name <- sapply(mc_names, function(x)
-    mcmodule$node_list[[x]][["data_name"]])
-  data_name <- unique(nodes_data_name)
+  nodes_data_name <- lapply(mc_names, function(x) {
+    mcmodule$node_list[[x]][["data_name"]]
+  })
 
-  if (length(data_name) > 1)
+  # Get the first node's data_name as reference
+  reference_data_name <- sort(nodes_data_name[[1]])
+
+  # Check if all nodes have the same set of data_names
+  all_equal <- all(sapply(nodes_data_name, function(x) {
+    identical(sort(x), reference_data_name)
+  }))
+
+  if (!all_equal) {
     stop("data_name is not equal for all nodes")
+  }
+
+  data_name <- reference_data_name
 
   if (!is.null(name) &&
       length(mc_names) > 1 &&
