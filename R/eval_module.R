@@ -124,8 +124,8 @@ eval_module <- function(exp, data, param_names = NULL,
               # Select data corresponding to the last data name
               prev_data<-prev_mcmodule_i$data[[prev_data_name[length(prev_data_name)]]]
 
-              message("Multiple data_names in ", mc_name, ": ", paste(data_name_i, sep=", "),
-                      "Using: ", prev_data_name[length(prev_data_name)])
+              message("Multiple data_names in ", mc_name, ": ", paste(data_name_i, collapse=", "),
+                      " - Using: ", prev_data_name[length(prev_data_name)])
             }else{
               # If there's only one data name
               prev_data<-prev_mcmodule_i$data[[prev_node_list_i[[mc_name]]$data_name]]

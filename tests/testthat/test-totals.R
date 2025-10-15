@@ -166,6 +166,7 @@ suppressMessages({
     expect_error(agg_totals(test_module, "test_node", agg_func = "invalid"))
     expect_error(agg_totals(test_module, "nonexistent_node"))
   })
+
   # Helper function to setup the test module
   setup_test_mcmodule <- function() {
     # Test module with mock data including:
@@ -604,6 +605,20 @@ suppressMessages({
 
     # Error for missing node
     expect_error(trial_totals(module, mc_names = "missing", trials_n = "times_n"), "not found")
+  })
+
+  test_that("at_least_one match works with agg mcmodules", {
+    # Create a test module with mock data
+    test_module <- setup_test_mcmodule()
+    test_module <- agg_totals(test_module, c("p_1_x"), agg_keys=c("scenario_id", "category"))
+    test_module <- agg_totals(test_module, c("p_2"), agg_keys=c("scenario_id", "category"))
+
+    # At least one with agg mcmodules
+    result <- at_least_one(test_module, c("p_1_x_agg", "p_2_agg"), name = "p_combined")
+
+    # Check aggregated keys
+    expect_equal(result$node_list$p_combined$agg_keys, c("scenario_id", "category"))
+
   })
 
 
