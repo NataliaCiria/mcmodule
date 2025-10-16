@@ -3,6 +3,6 @@ bibentry(
   title = "mcmodule: Modular Monte Carlo Risk Analysis" ,
   author = "Natalia Ciria",
   year = 2025 ,
-  note = "R package version 1.0.0.",
-  url = "https://CRAN.R-project.org/package=mcmodule"
+  note = "R package version 1.1.0.",
+  url = "https://nataliaciria.github.io/mcmodule/"
 )

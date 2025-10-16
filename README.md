@@ -1,5 +1,13 @@
 # mcmodule <img src="man/figures/logo.png" align="right" height="139"/>
 
+<!-- badges: start -->
+
+[![R-CMD-check](https://github.com/VetEpi-UAB/mcmodule/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/VetEpi-UAB/mcmodule/actions/workflows/R-CMD-check.yaml)
+
+[![Codecov test coverage](https://codecov.io/gh/VetEpi-UAB/mcmodule/graph/badge.svg)](https://app.codecov.io/gh/VetEpi-UAB/mcmodule)
+
+<!-- badges: end -->
+
 Framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to facilitate working with multiple risk pathways, variates and scenarios. It provides tools to organize risk analysis in independent flexible modules, perform multivariate mcnode operations, automate the creation of mcnodes and visualize risk analysis models.
 
 ## Installation
@@ -103,7 +111,7 @@ Further documentation and examples can be found in the [vignette](https://natali
 
 If you use `mcmodule` in your research, please cite:
 
-Ciria, N. (2025). mcmodule: Modular Monte Carlo Risk Analysis. R package version 1.0.0. <https://CRAN.R-project.org/package=mcmodule>
+Ciria, N. (2025). mcmodule: Modular Monte Carlo Risk Analysis. R package version 1.1.0. <https://nataliaciria.github.io/mcmodule/>
 
 ## Acknowledgements
 
