@@ -17,7 +17,7 @@ trial_totals(
   level_suffix = c(trial = "trial", subset = "subset", set = "set"),
   mctable = set_mctable(),
   agg_keys = NULL,
-  agg_suffix = "agg",
+  agg_suffix = NULL,
   keep_variates = FALSE,
   summary = TRUE
 )
@@ -47,7 +47,7 @@ trial_totals(
 
 \item{agg_keys}{Column names for aggregation (optional)}
 
-\item{agg_suffix}{Suffix for aggregated node names (default: "agg")}
+\item{agg_suffix}{Suffix for aggregated node names (default: "hag")}
 
 \item{keep_variates}{whether to preserve individual values (default: FALSE)}
 

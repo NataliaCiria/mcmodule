@@ -62,13 +62,18 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
   scenario_0<- if(any(data$scenario_id=="0")) "0" else data$scenario_id[1]
   if (any(duplicated(data[data$scenario_id == scenario_0, keys_names]))) {
     data_0<-data[data$scenario_id == scenario_0, keys_names]
+    # Remove key columns that are all NA
+    na_cols<-sapply(data_0, function(x) all(is.na(x)))
+    if(any(na_cols)){
+      data_0 <- data_0[, !na_cols]
+    }
     if(length(data_0)==1&&is.data.frame(data_0)){
-      var_groups<-max(table(apply(data_0 , 1 , paste , collapse = "-" )))
+      var_groups<-max(table(apply(data_0 , 1 , paste , collapse = "-" )), na.rm=TRUE)
     }else{
       if(is.data.frame(data_0)&&ncol(data_0)<1){
         var_groups<- "Unknown"
       }else{
-        var_groups <- max(table(data_0))
+        var_groups <- max(table(data_0), na.rm=TRUE)
       }
     }
     message(paste0(var_groups," variates per group for ", mc_name))
@@ -150,9 +155,7 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
   keys_y <- mc_keys(mcmodule, mc_name_y, keys_names)
 
   # If nodes do not have the same keys but both nodes come from the same data, keys are inferred from data
-  if(data_name_x==data_name_y&&
-     nrow(keys_x) == nrow(keys_y)&&
-     ncol(keys_x) != ncol(keys_y)&&
+  if(nrow(keys_x) == nrow(keys_y)&&
      all(keys_x[intersect(names(keys_x),names(keys_y))]==keys_y[intersect(names(keys_x),names(keys_y))],na.rm=TRUE)){
 
     # Find keys that are only pressent in one of the mcnodes
@@ -310,9 +313,7 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
 
 
   # If nodes do not have the same keys but both nodes come from the same data, keys are inferred from data
-  if(data_name_x==data_name_y&&
-     nrow(keys_x) == nrow(keys_y)&&
-     ncol(keys_x) != ncol(keys_y)&&
+  if(nrow(keys_x) == nrow(keys_y)&&
      all(keys_x[intersect(names(keys_x),names(keys_y))]==keys_y[intersect(names(keys_x),names(keys_y))],na.rm=TRUE)){
 
     # Return nodes as they are if they already match
@@ -417,7 +418,7 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
 #'
 #' @param x First dataset to match
 #' @param y Second dataset to match
-#' @param by Grouping variable(s) to match on, defaults to "hg" (homogeneous groups)
+#' @param by Grouping variable(s) to match on, defaults to NULL
 #' @return List containing matched datasets with aligned scenario IDs:
 #'   - First element: matched version of dataset x
 #'   - Second element: matched version of dataset y
@@ -425,14 +426,12 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
 #' x <- data.frame(
 #'   category = c("a", "b", "a", "b"),
 #'   scenario_id = c(0, 0, 1, 1),
-#'   hg = c(1, 2, 1, 2),
 #'   value = 1:4
 #' )
 #'
 #' y <- data.frame(
 #'   category = c("a", "b", "a", "b"),
 #'   scenario_id = c(0, 0, 2, 2),
-#'   hg = c(1, 2, 1, 2),
 #'   value = 5:8
 #' )
 #'

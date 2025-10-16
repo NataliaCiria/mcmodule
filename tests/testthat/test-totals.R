@@ -166,6 +166,7 @@ suppressMessages({
     expect_error(agg_totals(test_module, "test_node", agg_func = "invalid"))
     expect_error(agg_totals(test_module, "nonexistent_node"))
   })
+
   # Helper function to setup the test module
   setup_test_mcmodule <- function() {
     # Test module with mock data including:
@@ -342,9 +343,9 @@ suppressMessages({
       agg_keys = "scenario_id",
     )
 
-    expect_true("p_1_all_agg_set" %in% names(result$node_list))
+    expect_true("p_1_all_hag_set" %in% names(result$node_list))
     expect_equal(dim(result$node_list$p_1_all$mcnode), c(1001,1,4))
-    expect_equal(dim(result$node_list$p_1_all_agg_set$mcnode), c(1001,1,2))
+    expect_equal(dim(result$node_list$p_1_all_hag_set$mcnode), c(1001,1,2))
 
     reset_mctable()
   })
@@ -364,12 +365,12 @@ suppressMessages({
       name="p_total"
     )
 
-    expect_true("p_1_x_agg_set" %in% names(result$node_list))
-    expect_true("p_total_agg" %in% names(result$node_list))
+    expect_true("p_1_x_hag_set" %in% names(result$node_list))
+    expect_true("p_total_hag" %in% names(result$node_list))
     expect_true("p_total" %in% names(result$node_list))
 
     expect_equal(dim(result$node_list$p_total$mcnode), c(1001,1,4))
-    expect_equal(dim(result$node_list$p_total_agg$mcnode), c(1001,1,2))
+    expect_equal(dim(result$node_list$p_total_hag$mcnode), c(1001,1,2))
 
     reset_mctable()
   })
@@ -389,8 +390,8 @@ suppressMessages({
       keep_variates = TRUE
     )
 
-    expect_equal(dim(result$node_list$p_1_all_agg_set$mcnode), c(1001,1,4))
-    expect_true(result$node_list$p_2_agg$keep_variates)
+    expect_equal(dim(result$node_list$p_1_all_hag_set$mcnode), c(1001,1,4))
+    expect_true(result$node_list$p_2_hag$keep_variates)
 
     reset_mctable()
   })
@@ -592,12 +593,32 @@ suppressMessages({
 
     # Custom name with agg_keys
     mod8 <- trial_totals(module, mc_names = "p_1", trials_n = "times_n",
-                         name = "custom_trial", agg_keys = "category")
+                         name = "custom_trial", agg_suffix = "hag", agg_keys = "category")
 
-    expect_true("custom_trial_set" %in% names(mod8$node_list))
+    expect_true("custom_trial_hag_set" %in% names(mod8$node_list))
+
+    # Custom name with agg_keys but no agg_suffix
+    mod9 <- trial_totals(module, mc_names = "p_1", trials_n = "times_n",
+                         name = "custom_trial", agg_suffix = "", agg_keys = "category")
+
+    expect_true("custom_trial_set" %in% names(mod9$node_list))
 
     # Error for missing node
     expect_error(trial_totals(module, mc_names = "missing", trials_n = "times_n"), "not found")
+  })
+
+  test_that("at_least_one match works with agg mcmodules", {
+    # Create a test module with mock data
+    test_module <- setup_test_mcmodule()
+    test_module <- agg_totals(test_module, c("p_1_x"), agg_keys=c("scenario_id", "category"))
+    test_module <- agg_totals(test_module, c("p_2"), agg_keys=c("scenario_id", "category"))
+
+    # At least one with agg mcmodules
+    result <- at_least_one(test_module, c("p_1_x_agg", "p_2_agg"), name = "p_combined")
+
+    # Check aggregated keys
+    expect_equal(result$node_list$p_combined$agg_keys, c("scenario_id", "category"))
+
   })
 
 
