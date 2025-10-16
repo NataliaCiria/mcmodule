@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">mcmodule</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,8 +37,19 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.1.0" id="mcmodule-110">mcmodule 1.1.0<a class="anchor" aria-label="anchor" href="#mcmodule-110"></a></h2>
+<ul><li>
+<strong>Re-submission to CRAN</strong>: Removed unexported function examples.</li>
+</ul><!-- --><ul><li><p><strong>Bug Fixes:</strong> Fixed missing agg_suffix handling, improved dimension matching for aggregated nodes, resolved prefix issues in combined probability nodes.</p></li>
+<li><p><strong>Feature Enhancements:</strong> Added match_keys parameter to eval_module for flexible data-mcnode matching, implemented multiple prev_data data_name support, and improved R function handling within mcmodule expressions. Enhanced trial_totals() to support agg suffix skipping, improved agg_keys combination with at_least_one, and added NA removal in key columns</p></li>
+<li><p><strong>Code Quality:</strong> Deprecated all “hg” references, sanitized prefix arguments to avoid double underscores, and enhanced checks for at_least_one conditions</p></li>
+<li><p><strong>Documentation:</strong> Updated documentation and improved error messages for missing prev_nodes and mc_keys handling</p></li>
+<li><p><strong>Testing</strong>: Added tests for totals custom names and various dimension matching scenarios</p></li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.1" id="mcmodule-101">mcmodule 1.0.1<a class="anchor" aria-label="anchor" href="#mcmodule-101"></a></h2>
-</div>
+<ul><li>Re-submissionto CRAN: Removed unexported function examples, replaced “\dontrun” with “\donttest”, added vignette link to DESCRIPTION, and included citation file.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.0" id="mcmodule-100">mcmodule 1.0.0<a class="anchor" aria-label="anchor" href="#mcmodule-100"></a></h2>
 <ul><li>Initial CRAN submission.</li>
