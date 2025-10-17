@@ -2,9 +2,9 @@
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/VetEpi-UAB/mcmodule/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/VetEpi-UAB/mcmodule/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/NataliaCiria/mcmodule/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/NataliaCiria/mcmodule/actions/workflows/R-CMD-check.yaml)
 
-[![Codecov test coverage](https://codecov.io/gh/VetEpi-UAB/mcmodule/graph/badge.svg)](https://app.codecov.io/gh/VetEpi-UAB/mcmodule)
+[![Codecov test coverage](https://codecov.io/gh/NataliaCiria/mcmodule/graph/badge.svg)](https://app.codecov.io/gh/VNataliaCiria/mcmodule)
 
 <!-- badges: end -->
 
