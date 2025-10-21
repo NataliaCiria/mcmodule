@@ -496,7 +496,7 @@ trial_totals <- function(mcmodule,
   }
 
   # Get data_name for all mc_nodes
-  mc_inputs_names<-c(mc_names,trials_n,subsets_n,subsets_p)
+  mc_inputs_names<-c(mc_names, trials_n, subsets_n, subsets_p)
   nodes_data_name <- lapply(mc_inputs_names, function(x) {
     mcmodule$node_list[[x]][["data_name"]]
   })
@@ -710,9 +710,19 @@ trial_totals <- function(mcmodule,
     mcmodule$node_list[[p_all_mc_name]][["module"]] <- module_name
 
     mc_names <- c(mc_names, p_all_mc_name)
+
+    # mc_match if several data names are provided
+    if(length(data_name)>1){
+      for(i in mc_inputs_names){
+        print(i)
+        mc_match_i<-mc_match(mcmodule, p_all_mc_name, i)[[2]]
+        # TODO do not assign name "i" assing "trials_n_mc"
+        assign(i, mc_match_i)
+      }
+    }
+
   }
 
-  #TODO ADD HERE NODE MATCHING
 
   # Helper function to add metadata to nodes
   add_mc_metadata <- function(node_list,
