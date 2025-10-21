@@ -36,8 +36,10 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
     node[["keys"]]
   }
 
-  # Get data based on node type (aggregated or regular)
-  data <- if (!is.null(node[["agg_keys"]])&&!node[["keep_variates"]]) {
+  # Get data based on node type:
+  # - Aggregated mcnodes and mcnodes that have more than one data_name use summary
+  # - Else they use data_name
+  data <- if ((!is.null(node[["agg_keys"]])&&!node[["keep_variates"]])||length(node[["data_name"]])>1) {
     node[["summary"]]
   } else {
     mcmodule$data[[node[["data_name"]]]]
