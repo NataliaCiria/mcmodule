@@ -798,7 +798,8 @@ trials, the <strong>probability of at least one success</strong> is:</p>
 <span>  mc_names <span class="op">=</span> <span class="st">"no_detect"</span>,</span>
 <span>  trials_n <span class="op">=</span> <span class="st">"animals_n"</span>,</span>
 <span>  mctable <span class="op">=</span> <span class="va">imports_mctable</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; data_name is not equal for all nodes, using 'no_detect' data_name 'imports_data' for node creation</span></span></code></pre></div>
 <p>The <code><a href="../reference/trial_totals.html">trial_totals()</a></code> function returns the mcmodule with
 some additional nodes: the probability of at least one success and the
 expected number of successes. These <strong>total nodes</strong> have
@@ -885,6 +886,7 @@ of at least one subset being a success</p></li>
 <span>  subsets_p <span class="op">=</span> <span class="st">"h_prev"</span>,</span>
 <span>  mctable <span class="op">=</span> <span class="va">imports_mctable</span>,</span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; data_name is not equal for all nodes, using 'animals_n' data_name 'imports_data' for node creation</span></span>
 <span></span>
 <span><span class="co"># Result</span></span>
 <span><span class="va">imports</span><span class="op">$</span><span class="va">node_list</span><span class="op">$</span><span class="va">no_detect_set</span><span class="op">$</span><span class="va">summary</span></span>
@@ -1042,6 +1044,7 @@ workflow</p>
 <span>    mc_name <span class="op">=</span> <span class="st">"no_detect_set"</span>,</span>
 <span>    agg_keys <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pathogen"</span>, <span class="st">"scenario_id"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
+<span><span class="co">#&gt; data_name is not equal for all nodes, using 'no_detect' data_name 'imports_data_wif' for node creation</span></span>
 <span><span class="co">#&gt; 3 variates per group for no_detect_set</span></span>
 <span></span>
 <span><span class="co"># Result</span></span>
