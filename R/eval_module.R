@@ -33,6 +33,9 @@ eval_module <- function(exp, data, param_names = NULL,
 
   mctable<-check_mctable(mctable)
 
+  # Validate that data is not empty
+  if (nrow(data) < 1) stop("data has 0 rows")
+
   # Convert single expression to list format
   if (is.list(exp)) {
     exp_list <- exp
