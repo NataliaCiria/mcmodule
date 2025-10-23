@@ -687,8 +687,10 @@ suppressMessages({
       name = "p_combined_3")
 
     # Check data_names and dimensions
-    #expect_equal(test_module$node_list$p_combined_3$data_name, c("test_data", "data_x"))
-    #expect_equal(test_module$node_list$p_combined_3$summary$category, c("A", "B", "A", "B"))
+    expect_equal(test_module$node_list$p_combined_3_set$data_name, c("test_data", "data_x"))
+    expect_equal(test_module$node_list$p_combined_3_set$summary$category, c("A", "B", "A", "B"))
+    expect_equal(dim(test_module$node_list$p_b$mcnode)[3], 2)
+    expect_equal(dim(test_module$node_list$p_b_set$mcnode)[3], 4)
 
   })
 

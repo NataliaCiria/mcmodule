@@ -496,7 +496,10 @@ trial_totals <- function(mcmodule,
   }
 
   # Get data_name for all mc_nodes
-  mc_inputs_names<-c(mc_names, trials_n, subsets_n, subsets_p)
+  names(mc_names)<-c(paste0("mc_name_",1:length(mc_names)))
+  mc_trial_names<-c(trials_n = trials_n, subsets_n = subsets_n, subsets_p = subsets_p)
+  mc_inputs_names<-c(mc_names, mc_trial_names)
+
   nodes_data_name <- lapply(mc_inputs_names, function(x) {
     mcmodule$node_list[[x]][["data_name"]]
   })
@@ -709,17 +712,17 @@ trial_totals <- function(mcmodule,
     # Update module name metadata (defaults to mcmodule)
     mcmodule$node_list[[p_all_mc_name]][["module"]] <- module_name
 
-    mc_names <- c(mc_names, p_all_mc_name)
-
     # mc_match if several data names are provided
     if(length(data_name)>1){
-      for(i in mc_inputs_names){
-        print(i)
-        mc_match_i<-mc_match(mcmodule, p_all_mc_name, i)[[2]]
-        # TODO do not assign name "i" assing "trials_n_mc"
-        assign(i, mc_match_i)
+      for(i in seq_along(mc_inputs_names)){
+        mc_match_i<-mc_match(mcmodule, p_all_mc_name, mc_inputs_names[i])[[2]]
+        mc_name_i<-paste0(names(mc_inputs_names)[i], "_mc")
+        assign(mc_name_i, mc_match_i)
       }
     }
+
+    mc_names <- c(mc_names, mc_name_all = p_all_mc_name)
+
 
   }
 
@@ -897,7 +900,13 @@ trial_totals <- function(mcmodule,
       keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
     }
 
-    p_a <- mcmodule$node_list[[mc_name]][["mcnode"]]
+    if(length(data_name)>1&&mc_name%in%mc_inputs_names){
+      mc_name_matched<-paste0(names(mc_inputs_names)[mc_inputs_names%in%mc_name], "_mc")
+      p_a <- get(mc_name_matched)
+    }else{
+      p_a <- mcmodule$node_list[[mc_name]][["mcnode"]]
+    }
+
 
     # If no combined (all) probabilities use new name,
     # else, it was already generated in at_least_one
