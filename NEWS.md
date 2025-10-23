@@ -1,3 +1,5 @@
+# mcmodule (development version)
+
 # mcmodule 1.1.0
 
 -   **Re-submission to CRAN**: Removed unexported function examples.
