@@ -33,6 +33,9 @@ eval_module <- function(exp, data, param_names = NULL,
 
   mctable<-check_mctable(mctable)
 
+  # Validate that data is not empty
+  if (nrow(data) < 1) stop("data has 0 rows")
+
   # Convert single expression to list format
   if (is.list(exp)) {
     exp_list <- exp
@@ -108,7 +111,7 @@ eval_module <- function(exp, data, param_names = NULL,
 
           #Check if all prev_nodes are found in prev_mcmodule
           missing_prev_nodes<-prev_nodes[!prev_nodes%in%names(prev_node_list_i)]
-          if(length(missing_prev_nodes)>0) stop(paste(missing_prev_nodes)," not found in prev_mcmodule")
+          if(length(missing_prev_nodes)>0) stop(paste0(missing_prev_nodes, collapse = ", ")," not found in prev_mcmodule")
 
           # Process each previous node
           for (k in 1:length(prev_nodes)) {

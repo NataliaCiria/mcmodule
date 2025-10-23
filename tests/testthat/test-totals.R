@@ -607,7 +607,7 @@ suppressMessages({
     expect_error(trial_totals(module, mc_names = "missing", trials_n = "times_n"), "not found")
   })
 
-  test_that("at_least_one match works with agg mcmodules", {
+  test_that("at_least_one match works with agg mcnodes", {
     # Create a test module with mock data
     test_module <- setup_test_mcmodule()
     test_module <- agg_totals(test_module, c("p_1_x"), agg_keys=c("scenario_id", "category"))
@@ -618,6 +618,79 @@ suppressMessages({
 
     # Check aggregated keys
     expect_equal(result$node_list$p_combined$agg_keys, c("scenario_id", "category"))
+
+  })
+
+  test_that("totals work with mcnodes with multiple data_name", {
+    # Create a test modules with mock data
+    test_module_1 <- setup_test_mcmodule()
+    test_module_2 <- list(
+      node_list = list(
+        p_a = list(
+          mcnode = mcstoc(runif,
+                          min = mcdata(c(0.1, 0.2), type = "0", nvariates = 2),
+                          max = mcdata(c(0.2, 0.3), type = "0", nvariates = 2),
+                          nvariates = 2
+          ),
+          data_name = "data_x",
+          keys = c("category")
+        ),
+        p_b = list(
+          mcnode = mcstoc(runif,
+                          min = mcdata(c(0.4, 0.5), type = "0", nvariates = 2),
+                          max = mcdata(c(0.6, 0.7), type = "0", nvariates = 2),
+                          nvariates = 2
+          ),
+          data_name = "data_x",
+          keys = c("category")
+        ),
+        times_n = list(
+          mcnode = mcdata(c(3, 4), type = "0", nvariates = 2),
+          data_name = "data_x",
+          keys = c("category")
+        )
+      ),
+      data = list(
+        data_x = data.frame(
+          category = c("A", "B"),
+          scenario_id = c("0", "0"),
+          times_n = c(3, 4)
+        )
+      )
+    )
+
+    test_module<-combine_modules(test_module_1, test_module_2)
+
+    # At least one with agg mcmodules
+    test_module <- at_least_one(test_module, c("p_2", "p_a"), name = "p_combined_1")
+
+    # Check both data_names are stored
+    expect_equal(test_module$node_list$p_combined_1$data_name, c("test_data", "data_x"))
+    expect_equal(test_module$node_list$p_combined_1$summary$category, c("A", "B", "A", "B"))
+
+    # Combine in at_least_one
+    test_module <- at_least_one(
+      mcmodule = test_module,
+      mc_names = c("p_combined_1", "p_b"),
+      name = "p_combined_2")
+
+    # Check both data_names are stored and dimensions
+    expect_equal(test_module$node_list$p_combined_2$data_name, c("test_data", "data_x"))
+    expect_equal(test_module$node_list$p_combined_2$summary$category, c("A", "B", "A", "B"))
+
+
+    # Combine in trial_totals
+    test_module <- trial_totals(
+      mcmodule = test_module,
+      mc_names = c("p_combined_1", "p_b"),
+      trials_n = "times_n",
+      name = "p_combined_3")
+
+    # Check data_names and dimensions
+    expect_equal(test_module$node_list$p_combined_3_set$data_name, c("test_data", "data_x"))
+    expect_equal(test_module$node_list$p_combined_3_set$summary$category, c("A", "B", "A", "B"))
+    expect_equal(dim(test_module$node_list$p_b$mcnode)[3], 2)
+    expect_equal(dim(test_module$node_list$p_b_set$mcnode)[3], 4)
 
   })
 
