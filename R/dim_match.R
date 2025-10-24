@@ -36,12 +36,57 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
     node[["keys"]]
   }
 
-  # Get data based on node type:
-  # - Aggregated mcnodes and mcnodes that have more than one data_name use summary
-  # - Else they use data_name
-  data <- if ((!is.null(node[["agg_keys"]])&&!node[["keep_variates"]])||length(node[["data_name"]])>1) {
+  # Get data based on node aggregation and data_names:
+  # 1. Aggregated mcnodes and mcnodes use "summary"
+  # 2. Nodes with multiple data_names:
+  #    - Use "summary" if all agg_keys are found in "summary"
+  #    - Use "data" corresponding to last data_name if not found in "summary"
+  # 3. Otherwise, use "data" corresponding to data_name
+
+  data <- if (!is.null(node[["agg_keys"]]) && !node[["keep_variates"]]) {
+    if(is.null(node[["summary"]])) stop(mc_name, " summary is needed for aggregated mcnodes")
+    # Case 1: Aggregated nodes
     node[["summary"]]
+
+  } else if (length(node[["data_name"]]) > 1) {
+    # Case 2: Multiple data_names
+    if(is.null(node[["summary"]])) stop(mc_name, " summary is needed for mcnodes with multiple data_names")
+
+    if (all(keys_names %in% names(node[["summary"]]))) {
+      # All keys found in summary
+      node[["summary"]]
+
+    } else {
+      # Check last data_name
+      ref_data_name <- node[["data_name"]][length(node[["data_name"]])]
+      common_keys <- intersect(
+        names(mcmodule$data[[ref_data_name]]),
+        names(node[["summary"]])
+      )
+
+      # Verify data consistency
+      if (all(mcmodule$data[[ref_data_name]][common_keys] == node[["summary"]][common_keys])) {
+        message(
+          mc_name, " has multiple data_name (",
+          paste0(unique(unlist(node[["data_name"]])), collapse = ", "),
+          "), using '", ref_data_name, "' for mc_keys"
+        )
+        mcmodule$data[[ref_data_name]]
+
+      } else {
+        # Identify missing agg_keys
+        missing_agg_keys <- setdiff(keys_names, names(node[["summary"]]))
+
+        stop(
+          "Data mismatch detected for node '", mc_name, "': ",
+          "Common keys between '", ref_data_name, "' and 'summary' have different values. ",
+          "Missing agg_keys in summary: ", paste0(missing_agg_keys, collapse = ", ")
+        )
+      }
+    }
+
   } else {
+    # Case 3: Single data_name
     mcmodule$data[[node[["data_name"]]]]
   }
 
