@@ -517,8 +517,14 @@ trial_totals <- function(mcmodule,
 
   if (!all_equal) {
     ref_data_name <- mcmodule$node_list[[ref_mcnode]][["data_name"]]
-    message("data_name is not equal for all nodes, using '", ref_mcnode,"' data_name '", ref_data_name, "' for node creation")
-  }else {
+
+    if(length(ref_data_name)>1){
+      ref_data_name <- ref_data_name[length(ref_data_name)]
+    }
+
+    message("data_name is not equal for all nodes, using '", ref_mcnode,"' data_name '", paste0(ref_data_name, collapase= ", "), "' for node creation")
+
+  }else{
     ref_data_name <- if(length(data_name)>1){
       ref_data_name <- data_name[length(data_name)]
       message("mcnodes have multiple data_name"," ('",paste0(unique(unlist(nodes_data_name)), collapse=", '"),"'), using '", ref_data_name, "' for node creation")
