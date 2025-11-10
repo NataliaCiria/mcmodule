@@ -623,8 +623,7 @@ suppressMessages({
 
   test_that("totals work with mcnodes with multiple data_name", {
     # Create a test modules with mock data
-    test_module_1 <- setup_test_mcmodule()
-    test_module_2 <- list(
+    test_module_1 <- list(
       node_list = list(
         p_a = list(
           mcnode = mcstoc(runif,
@@ -659,13 +658,15 @@ suppressMessages({
       )
     )
 
+    test_module_2 <- setup_test_mcmodule()
+
     test_module<-combine_modules(test_module_1, test_module_2)
 
     # At least one with agg mcmodules
-    test_module <- at_least_one(test_module, c("p_2", "p_a"), name = "p_combined_1")
+    test_module <- at_least_one(test_module, c("p_a", "p_2"), name = "p_combined_1")
 
     # Check both data_names are stored
-    expect_equal(test_module$node_list$p_combined_1$data_name, c("test_data", "data_x"))
+    expect_equal(test_module$node_list$p_combined_1$data_name, c("data_x", "test_data"))
     expect_equal(test_module$node_list$p_combined_1$summary$category, c("A", "B", "A", "B"))
 
     # Combine in at_least_one
@@ -675,9 +676,8 @@ suppressMessages({
       name = "p_combined_2")
 
     # Check both data_names are stored and dimensions
-    expect_equal(test_module$node_list$p_combined_2$data_name, c("test_data", "data_x"))
+    expect_equal(test_module$node_list$p_combined_2$data_name, c("data_x", "test_data"))
     expect_equal(test_module$node_list$p_combined_2$summary$category, c("A", "B", "A", "B"))
-
 
     # Combine in trial_totals
     test_module <- trial_totals(
@@ -687,7 +687,7 @@ suppressMessages({
       name = "p_combined_3")
 
     # Check data_names and dimensions
-    expect_equal(test_module$node_list$p_combined_3_set$data_name, c("test_data", "data_x"))
+    expect_equal(test_module$node_list$p_combined_3_set$data_name, c("data_x", "test_data"))
     expect_equal(test_module$node_list$p_combined_3_set$summary$category, c("A", "B", "A", "B"))
     expect_equal(dim(test_module$node_list$p_b$mcnode)[3], 2)
     expect_equal(dim(test_module$node_list$p_b_set$mcnode)[3], 4)

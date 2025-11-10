@@ -485,6 +485,7 @@ agg_totals <- function(
 #' @param agg_suffix Suffix for aggregated node names (default: "hag")
 #' @param keep_variates whether to preserve individual values (default: FALSE)
 #' @param summary Include summary statistics if TRUE (default: TRUE)
+#' @param data_name Optional custom data name for output nodes (default: NULL)
 #'
 #' @return
 #' Updated mcmodule object containing:
@@ -519,7 +520,8 @@ trial_totals <- function(
   agg_keys = NULL,
   agg_suffix = NULL,
   keep_variates = FALSE,
-  summary = TRUE
+  summary = TRUE,
+  data_name = NULL
 ) {
   module_name <- deparse(substitute(mcmodule))
 
@@ -544,51 +546,105 @@ trial_totals <- function(
   )
   mc_inputs_names <- c(mc_names, mc_trial_names)
 
+  mc_inputs_names <- mc_inputs_names[
+    !is.null(mc_inputs_names) & mc_inputs_names != "1"
+  ]
   nodes_data_name <- lapply(mc_inputs_names, function(x) {
     mcmodule$node_list[[x]][["data_name"]]
   })
-  data_name <- unique(unlist(nodes_data_name))
-  data_name <- data_name[!is.na(data_name) & nzchar(data_name)]
+  names(nodes_data_name) <- mc_inputs_names
 
-  # Get the trials_n data_name as reference if possible
-  ref_mcnode <- if (trials_n %in% names(mcmodule$node_list)) {
-    trials_n
-  } else {
-    mc_names[1]
-  }
-  ref_data_name <- sort(mcmodule$node_list[[ref_mcnode]][["data_name"]])
+  # For each node, get its data_names (for error/message context)
+  node_data_names <- lapply(mc_inputs_names, function(x) {
+    mcmodule$node_list[[x]][["data_name"]]
+  })
+  names(node_data_names) <- mc_inputs_names
 
-  # Check if all nodes have the same set of data_names
-  all_equal <- all(sapply(nodes_data_name, function(x) {
-    identical(sort(x), ref_data_name)
-  }))
+  # Filter out NULL, NA, and "" data_names for each node
+  filtered_node_data_names <- lapply(nodes_data_name, function(x) {
+    x[!is.null(x) & !is.na(x) & nzchar(x)]
+  })
 
+  # Only keep nodes that have at least one valid data_name
+  filtered_node_data_names <- Filter(
+    function(x) length(x) > 0,
+    filtered_node_data_names
+  )
+
+  # Check if all remaining nodes have the same set of data_names
+  all_equal <- length(unique(lapply(filtered_node_data_names, function(x) {
+    paste(sort(x), collapse = ",")
+  }))) ==
+    1
+
+  # All unique data_names across all nodes
+  all_data_names <- unique(unlist(filtered_node_data_names))
+
+  # Determine which data_name to use
   if (!all_equal) {
-    # reference data_name from the trials node (or chosen ref) and sanitise
-    ref_data_name <- mcmodule$node_list[[ref_mcnode]][["data_name"]]
-    ref_data_name <- ref_data_name[
-      !is.na(ref_data_name) & nzchar(ref_data_name)
+    # Gather all available data_names across all nodes
+    available_data_names <- unique(unlist(node_data_names))
+    available_data_names <- available_data_names[
+      !is.na(available_data_names) & nzchar(available_data_names)
     ]
-    if (length(ref_data_name) > 1) {
-      ref_data_name <- ref_data_name[length(ref_data_name)]
-    }
-    message(sprintf(
-      "data_name is not equal for all nodes, using '%s' data_name '%s' for node creation",
-      ref_mcnode,
-      paste(ref_data_name, collapse = ", ")
-    ))
-  } else {
-    if (length(data_name) > 1) {
-      all_names <- unique(unlist(nodes_data_name))
-      all_names <- all_names[!is.na(all_names) & nzchar(all_names)]
-      ref_data_name <- data_name[length(data_name)]
+    if (!is.null(data_name)) {
+      # User provided data_name: check it exists in any node
+      if (!data_name %in% available_data_names) {
+        stop(sprintf(
+          "Provided data_name '%s' not found in available data_names for nodes: %s",
+          data_name,
+          paste(available_data_names, collapse = ", ")
+        ))
+      }
+      ref_data_name <- data_name
       message(sprintf(
-        "mcnodes have multiple data_name ('%s'), using '%s' for node creation",
-        paste(all_names, collapse = "', '"),
+        "Using data_name '%s' for node creation.",
         ref_data_name
       ))
     } else {
-      ref_data_name <- data_name
+      # Default to the last available data_name
+      ref_data_name <- available_data_names[length(available_data_names)]
+      # Indicate which nodes have which data_names
+      node_names_with_multiple <- names(node_data_names)[sapply(
+        node_data_names,
+        function(x) length(x) > 1
+      )]
+      msg <- sprintf(
+        "data_name is not equal for all nodes, using data_name '%s' for node creation (can be manually set with data_name argument).",
+        ref_data_name
+      )
+      if (length(node_names_with_multiple) > 0) {
+        msg <- paste0(
+          msg,
+          " Nodes with multiple data_names: ",
+          paste(node_names_with_multiple, collapse = ", "),
+          "."
+        )
+      }
+      message(msg)
+    }
+  } else {
+    # All nodes have the same data_name(s)
+    if (!is.null(data_name)) {
+      message(
+        "data_name argument was provided but not used because all nodes have the same data_name."
+      )
+    }
+    if (length(all_data_names) > 1) {
+      # Indicate which nodes have multiple data_names
+      node_names_with_multiple <- names(node_data_names)[sapply(
+        node_data_names,
+        function(x) length(x) > 1
+      )]
+      ref_data_name <- all_data_names[length(all_data_names)]
+      message(sprintf(
+        "mcnodes have multiple data_name ('%s') for node(s) '%s', using '%s' for node creation (can be manually set with data_name argument)",
+        paste(all_data_names, collapse = "', '"),
+        paste(node_names_with_multiple, collapse = ", "),
+        ref_data_name
+      ))
+    } else {
+      ref_data_name <- all_data_names
     }
   }
 
@@ -633,6 +689,7 @@ trial_totals <- function(
     hag_suffix,
     mctable,
     keep_variates,
+    ref_data_name,
     agg_func = NULL
   ) {
     if (mc_name %in% names(mcmodule$node_list)) {
@@ -719,7 +776,8 @@ trial_totals <- function(
     agg_keys,
     hag_suffix,
     mctable,
-    keep_variates
+    keep_variates,
+    ref_data_name
   )
   trials_n_mc <- mcmodule$node_list[[trials_n]][["mcnode"]]
 
@@ -739,6 +797,7 @@ trial_totals <- function(
       hag_suffix,
       mctable,
       keep_variates,
+      ref_data_name,
       agg_func = "avg"
     )
     subsets_n_mc <- mcmodule$node_list[[subsets_n]][["mcnode"]]
@@ -763,6 +822,7 @@ trial_totals <- function(
       hag_suffix,
       mctable,
       keep_variates,
+      ref_data_name,
       agg_func = "avg"
     )
     subsets_p_mc <- mcmodule$node_list[[subsets_p]][["mcnode"]]
@@ -792,12 +852,17 @@ trial_totals <- function(
 
     # Update module name metadata (defaults to mcmodule)
     mcmodule$node_list[[p_all_mc_name]][["module"]] <- module_name
-
     # mc_match if several data names are provided
-    if (length(data_name) > 1) {
+    if (!all_equal) {
       for (i in seq_along(mc_inputs_names)) {
         mc_match_i <- mc_match(mcmodule, p_all_mc_name, mc_inputs_names[i])[[2]]
         mc_name_i <- paste0(names(mc_inputs_names)[i], "_mc")
+        message(
+          "assigned ",
+          mc_name_i,
+          " dimensions: ",
+          paste0(dim(mc_match_i), collapse = "-")
+        )
         assign(mc_name_i, mc_match_i)
       }
     }
@@ -829,7 +894,7 @@ trial_totals <- function(
       module = module_name,
       keys = keys_names,
       scenario = data$scenario_id,
-      data_name = data_name,
+      data_name = ref_data_name,
       prefix = prefix,
       total_type = total_type
     )
@@ -994,7 +1059,7 @@ trial_totals <- function(
       keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
     }
 
-    if (length(data_name) > 1 && mc_name %in% mc_inputs_names) {
+    if (!all_equal && mc_name %in% mc_inputs_names) {
       mc_name_matched <- paste0(
         names(mc_inputs_names)[mc_inputs_names %in% mc_name],
         "_mc"
