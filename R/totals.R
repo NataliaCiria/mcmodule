@@ -485,7 +485,7 @@ agg_totals <- function(
 #' @param agg_suffix Suffix for aggregated node names (default: "hag")
 #' @param keep_variates whether to preserve individual values (default: FALSE)
 #' @param summary Include summary statistics if TRUE (default: TRUE)
-#' @param data_name Optional custom data name for output nodes (default: NULL)
+#' @param data_name Data name used to create trials_n, subsets_n and subsets_p nodes if they don't exist in mcmodule (optional)
 #'
 #' @return
 #' Updated mcmodule object containing:
