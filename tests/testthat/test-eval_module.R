@@ -545,9 +545,15 @@ suppressMessages({
         mctable = mctable,
         prev_mcmodule = prev_mcmodule
       ),
-      "Using the last one for prev_match"
+      "Using summary to match dimensions"
     )
 
     expect_true("value" %in% names(result_mcmodule$node_list))
+    expect_true("result" %in% names(result_mcmodule$node_list))
+    expect_equal(
+      result_mcmodule$node_list$result$inputs,
+      c("prev_value_x", "prev_value_y", "value")
+    )
+    expect_equal(result_mcmodule$node_list$result$data_name, c("current_data"))
   })
 })

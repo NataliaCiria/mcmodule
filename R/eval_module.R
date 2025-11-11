@@ -44,7 +44,7 @@ eval_module <- function(
 
   # Validate that data is not empty
   if (nrow(data) < 1) {
-    stop("data has 0 rows")
+    stop(sprintf("data '%s' has 0 rows", data_name))
   }
 
   # Determine default for overwrite_keys when not explicitly provided:
@@ -66,15 +66,15 @@ eval_module <- function(
     data_keys_local <- list(cols = names(data), keys = keys)
     data_keys <- list()
     data_keys[[data_name]] <- data_keys_local
-    message(
-      "data_keys overwritten for ",
-      data_name,
-      if (!is.null(keys)) {
-        paste0(" with keys: ", paste(keys, collapse = ", "))
-      } else {
-        ""
-      }
-    )
+    if (!is.null(keys)) {
+      message(sprintf(
+        "data_keys overwritten for %s with keys: %s",
+        data_name,
+        paste(keys, collapse = ", ")
+      ))
+    } else {
+      message(sprintf("data_keys overwritten for %s", data_name))
+    }
     # When overwritten, we do not need to forward keys separately
     keys_arg <- NULL
   } else {
@@ -115,11 +115,10 @@ eval_module <- function(
     # Process nodes requiring previous module inputs
     if (length(prev_nodes) > 0) {
       if (is.null(prev_mcmodule)) {
-        stop(
-          "prev_mcmodule for ",
-          paste(prev_nodes, collapse = ", "),
-          " needed but not provided"
-        )
+        stop(sprintf(
+          "prev_mcmodule for %s needed but not provided",
+          paste(prev_nodes, collapse = ", ")
+        ))
       } else {
         prev_mcmodule_list <- if (inherits(prev_mcmodule, "mcmodule")) {
           list(prev_mcmodule)
@@ -171,10 +170,10 @@ eval_module <- function(
             !prev_nodes %in% names(prev_node_list_i)
           ]
           if (length(missing_prev_nodes) > 0) {
-            stop(
-              paste0(missing_prev_nodes, collapse = ", "),
-              " not found in prev_mcmodule"
-            )
+            stop(sprintf(
+              "%s not found in prev_mcmodule",
+              paste0(missing_prev_nodes, collapse = ", ")
+            ))
           }
 
           # Process each previous node
@@ -189,38 +188,28 @@ eval_module <- function(
                 prev_node_list_i[[mc_name]][["keep_variates"]]
             ) {
               data_name_k <- prev_node_list_i[[mc_name]]$data_name
+
               if (length(data_name_k) > 1) {
-                # Filter data names that exist in the previous module's data
-                prev_data_name <- names(prev_mcmodule_i$data)[
-                  names(prev_mcmodule_i$data) %in% data_name_k
-                ]
-                if (length(prev_data_name) == 0) {
-                  stop(
-                    "None of the data_names in ", mc_name, " found in prev_mcmodule$data: ",
-                    paste(data_name_k, collapse = ", ")
-                  )
-                }
-                # Select last data_name by default
-                prev_data <- prev_mcmodule_i$data[[prev_data_name[length(prev_data_name)]]]
-                message(
-                  "Multiple data_names in ",
-                  mc_name, "(", paste(data_name_k, collapse = ", "),
-                  "). Using the last one for prev_match: ",
-                  prev_data_name[length(prev_data_name)]
-                )
+                message(sprintf(
+                  "Multiple data_name found for %s: %s. Using summary to match dimensions.",
+                  mc_name,
+                  paste(data_name_k, collapse = ", ")
+                ))
+                prev_data <- NULL
               } else {
                 prev_data <- prev_mcmodule_i$data[[data_name_k]]
               }
 
-              # Match if previous node data is not equal to new data
+              # Match if previous node data is not equal to new data or if node has multiple data_names
               # IF IT PASSES ALL THE CHECKS IT ALREADY MATCHES AND NO MATCH IS NEEDED
               if (
-                !(nrow(prev_data) == nrow(data) &&
-                  ncol(prev_data) == ncol(data) &&
-                  nrow(prev_data) ==
-                    dim(prev_mcmodule$node_list[[mc_name]]$mcnode)[[3]] &&
-                  all(names(prev_data) == names(data)) &&
-                  all(prev_data == data, na.rm = TRUE))
+                is.null(prev_data) ||
+                  !(nrow(prev_data) == nrow(data) &&
+                    ncol(prev_data) == ncol(data) &&
+                    nrow(prev_data) ==
+                      dim(prev_mcmodule$node_list[[mc_name]]$mcnode)[[3]] &&
+                    all(names(prev_data) == names(data)) &&
+                    all(prev_data == data, na.rm = TRUE))
               ) {
                 match_prev <- mc_match_data(
                   prev_mcmodule,
@@ -239,20 +228,19 @@ eval_module <- function(
 
               if (!is.null(match_keys)) {
                 if (!all(agg_keys %in% match_keys)) {
-                  warning(
-                    "Using match_keys (",
+                  message(sprintf(
+                    "Using match_keys (%s) instead of: %s",
                     paste(match_keys, collapse = ", "),
-                    ") instead of: ",
                     paste(agg_keys, collapse = ", ")
-                  )
+                  ))
                   agg_keys <- match_keys
                 }
               }
 
-              message(
-                "Matching agg prev_nodes dimensions by: ",
+              message(sprintf(
+                "Matching agg prev_nodes dimensions by: %s",
                 paste(agg_keys, collapse = ", ")
-              )
+              ))
 
               match_agg_prev <- mc_match_data(
                 mcmodule = prev_mcmodule,
@@ -308,7 +296,7 @@ eval_module <- function(
 
     # Evaluate current expression
     eval(exp_i)
-    message("\n", module, " evaluated")
+    message(sprintf("%s evaluated", module))
 
     # Update node metadata
     for (j in 1:length(node_list)) {
@@ -406,11 +394,10 @@ eval_module <- function(
   names(mcmodule$data) <- data_name
   class(mcmodule) <- "mcmodule"
 
-  message(
-    "\nmcmodule created (expressions: ",
-    paste(names(exp), collapse = ", "),
-    ")"
-  )
+  message(sprintf(
+    "mcmodule created (expressions: %s)",
+    paste(names(exp), collapse = ", ")
+  ))
 
   return(mcmodule)
 }

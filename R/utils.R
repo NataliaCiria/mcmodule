@@ -147,7 +147,8 @@ keys_match <- function(x, y, keys_names = NULL) {
   keys_xy <- dplyr::full_join(
     keys_x,
     keys_y,
-    by = c("g_id", "scenario_id", keys_names)
+    by = c("g_id", "scenario_id", keys_names),
+    relationship = "many-to-many"
   )
   keys_xy <- dplyr::relocate(
     keys_xy,
@@ -160,7 +161,8 @@ keys_match <- function(x, y, keys_names = NULL) {
   temp_xy_0 <- dplyr::full_join(
     keys_xy,
     keys_y,
-    by = c("g_id", "scenario_id", keys_names)
+    by = c("g_id", "scenario_id", keys_names),
+    relationship = "many-to-many"
   )
 
   temp_xy_0 <- dplyr::filter(temp_xy_0, .data$scenario_id == "0")
