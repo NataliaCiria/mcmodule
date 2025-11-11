@@ -466,4 +466,94 @@ suppressMessages({
       sort(c("pathogen", "origin"))
     )
   })
+
+  test_that("eval_module handles prev_nodes with multiple data_names needing matching", {
+    # Mock previous modules with different data_names
+    prev_data_x <- data.frame(id = 1:3, value_x = c(0.1, 0.2, 0.3))
+    prev_data_y <- data.frame(id = 1:3, value_y = c(0.2, 0.4, 0.5))
+    names(prev_data_x) <- c("id", "value_x")
+    names(prev_data_y) <- c("id", "value_y")
+
+    prev_node_list <- list(
+      prev_value_x = list(
+        mcnode = mcdata(prev_data_x$value_x, type = "0", nvariates = 3),
+        data_name = "prev_data_x",
+        agg_keys = NULL,
+        keep_variates = TRUE,
+        type = "prev_node",
+        keys = "id"
+      ),
+      prev_value_y = list(
+        mcnode = mcdata(prev_data_y$value_y, type = "0", nvariates = 3),
+        data_name = c("prev_data_x", "prev_data_y"),
+        agg_keys = NULL,
+        keep_variates = TRUE,
+        type = "prev_node",
+        keys = "id"
+      )
+    )
+
+    class(prev_node_list) <- "mcnode_list"
+
+    prev_mcmodule <- list(
+      data = list(
+        prev_data_x = prev_data_x,
+        prev_data_y = prev_data_y
+      ),
+      node_list = prev_node_list
+    )
+
+    class(prev_mcmodule) <- "mcmodule"
+
+    # Current data
+    current_data <- data.frame(id = 1:3, value = c(0.01, 0.02, 0.03))
+    current_exp <- quote({
+      result <- prev_value_x * prev_value_y * value
+    })
+
+    mctable <- data.frame(
+      mcnode = "value",
+      description = "value node",
+      mc_func = NA,
+      from_variable = NA,
+      transformation = NA,
+      sensi_analysis = FALSE
+    )
+
+    # Run eval_module with both previous modules
+    expect_error(
+      eval_module(
+        exp = c(current = current_exp),
+        data = current_data,
+        mctable = mctable,
+        prev_mcmodule = prev_mcmodule
+      ),
+      "summary is needed for mcnodes with multiple data_names"
+    )
+
+    # Add Summary
+    prev_mcmodule$node_list$prev_value_y$summary <- mc_summary(
+      mcnode = prev_mcmodule$node_list$prev_value_y$mcnode,
+      data = prev_data_y,
+      keys_names = "id"
+    )
+
+    expect_message(
+      result_mcmodule <- eval_module(
+        exp = c(current = current_exp),
+        data = current_data,
+        mctable = mctable,
+        prev_mcmodule = prev_mcmodule
+      ),
+      "Using summary to match dimensions"
+    )
+
+    expect_true("value" %in% names(result_mcmodule$node_list))
+    expect_true("result" %in% names(result_mcmodule$node_list))
+    expect_equal(
+      result_mcmodule$node_list$result$inputs,
+      c("prev_value_x", "prev_value_y", "value")
+    )
+    expect_equal(result_mcmodule$node_list$result$data_name, c("current_data"))
+  })
 })
