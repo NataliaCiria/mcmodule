@@ -610,8 +610,16 @@ trial_totals <- function(
         assign(mc_name_i, mc_match_i)
       }
     }
-
+    ref_mc_name <- p_all_mc_name
     mc_names <- c(mc_names, mc_name_all = p_all_mc_name)
+  } else {
+    ref_mc_name <- mc_names[1]
+    if (!combine_prob && length(mc_names) > 1) {
+      message(sprintf(
+        "Using '%s' as reference node for mc_match",
+        ref_mc_name
+      ))
+    }
   }
 
   # Determine which data_name to use
@@ -856,7 +864,7 @@ trial_totals <- function(
 
   # mc_match if several data names are provided
   trials_n_mc <- if (!all_equal) {
-    mc_match(mcmodule, p_all_mc_name, trials_n)[[2]]
+    mc_match(mcmodule, ref_mc_name, trials_n)[[2]]
   } else {
     mcmodule$node_list[[trials_n]][["mcnode"]]
   }
@@ -883,7 +891,7 @@ trial_totals <- function(
 
     # mc_match if several data names are provided
     subsets_n_mc <- if (!all_equal) {
-      mc_match(mcmodule, p_all_mc_name, subsets_n)[[2]]
+      mc_match(mcmodule, ref_mc_name, subsets_n)[[2]]
     } else {
       mcmodule$node_list[[subsets_n]][["mcnode"]]
     }
@@ -915,7 +923,7 @@ trial_totals <- function(
 
     # mc_match if several data names are provided
     subsets_p_mc <- if (!all_equal) {
-      mc_match(mcmodule, p_all_mc_name, subsets_p)[[2]]
+      mc_match(mcmodule, ref_mc_name, subsets_p)[[2]]
     } else {
       mcmodule$node_list[[subsets_p]][["mcnode"]]
     }
