@@ -708,25 +708,39 @@ trial_totals <- function(
     }
   } else {
     # All nodes have the same data_name(s)
+    # If user provided a valid data_name, use it; otherwise fall back to current logic
     if (!is.null(data_name)) {
-      message(sprintf(
-        "data_name argument was provided but not used because all nodes have the same data_name."
-      ))
+      if (data_name %in% all_data_names) {
+        ref_data_name <- data_name
+        message(sprintf(
+          "Using provided data_name '%s' for node creation.",
+          ref_data_name
+        ))
+      } else {
+        stop(sprintf(
+          "Provided data_name '%s' not found in available data_names: '%s'.",
+          data_name,
+          paste(all_data_names, collapse = "', '")
+        ))
+      }
     }
-    if (length(all_data_names) > 1) {
-      node_names_with_multiple <- names(node_data_names)[sapply(
-        node_data_names,
-        function(x) length(x) > 1
-      )]
-      ref_data_name <- all_data_names[length(all_data_names)]
-      message(sprintf(
-        "mcnodes have multiple data_name ('%s') for node(s) '%s', using '%s' for node creation (can be manually set with data_name argument)",
-        paste(all_data_names, collapse = "', '"),
-        paste(node_names_with_multiple, collapse = ", "),
-        ref_data_name
-      ))
-    } else {
-      ref_data_name <- all_data_names
+
+    if (!exists("ref_data_name")) {
+      if (length(all_data_names) > 1) {
+        node_names_with_multiple <- names(node_data_names)[sapply(
+          node_data_names,
+          function(x) length(x) > 1
+        )]
+        ref_data_name <- all_data_names[length(all_data_names)]
+        message(sprintf(
+          "mcnodes have multiple data_name ('%s') for node(s) '%s', using '%s' for node creation (can be manually set with data_name argument)",
+          paste(all_data_names, collapse = "', '"),
+          paste(node_names_with_multiple, collapse = ", "),
+          ref_data_name
+        ))
+      } else {
+        ref_data_name <- all_data_names
+      }
     }
   }
 
