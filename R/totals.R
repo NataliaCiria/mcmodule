@@ -126,7 +126,7 @@ at_least_one <- function(
     for (i in seq_along(mc_names)) {
       mc_name <- mc_names[i]
       p_i <- mcmodule$node_list[[mc_name]][["mcnode"]]
-      keys_names <- unique(c(keys_names, names(nodes_keys[[i]])))
+      keys_names <- nodes_common_keys_names
 
       # Update combined probability
       p_all <- 1 - ((1 - p_all) * (1 - p_i))
