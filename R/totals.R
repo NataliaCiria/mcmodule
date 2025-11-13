@@ -647,9 +647,9 @@ trial_totals <- function(
   # Determine which data_name to use
   if (!all_equal) {
     #If a combined probability node was created, use its data_name
-    if (!is.null(mcmodule$node_list[[p_all_mc_name]])) {
-      p_all_data_names <- mcmodule$node_list[[p_all_mc_name]][["data_name"]]
-      if (length(p_all_data_names) > 1) {
+    if (!is.null(mcmodule$node_list[[ref_mc_name]])) {
+      ref_data_names <- mcmodule$node_list[[ref_mc_name]][["data_name"]]
+      if (length(ref_data_names) > 1) {
         if (!is.null(data_name)) {
           # User provided data_name: check it exists in any node
           if (!data_name %in% all_data_names) {
@@ -666,7 +666,7 @@ trial_totals <- function(
           ))
         } else {
           # Default to the last available data_name
-          ref_data_name <- p_all_data_names[length(p_all_data_names)]
+          ref_data_name <- ref_data_names[length(ref_data_names)]
           # Indicate which nodes have which data_names
           node_names_with_multiple <- names(node_data_names)[sapply(
             node_data_names,
@@ -687,7 +687,7 @@ trial_totals <- function(
           message(sprintf("%s", msg))
         }
       } else {
-        ref_data_name <- p_all_data_names
+        ref_data_name <- ref_data_names
       }
       # If no combined probability node, handle data_name selection
     } else {
