@@ -71,23 +71,45 @@ at_least_one <- function(
     ))
   }
 
+  # Extract data_name for each node in mc_names
   nodes_data_name <- lapply(mc_names, function(x) {
     mcmodule$node_list[[x]][["data_name"]]
   })
+  # Get unique, non-empty data_names
   data_name <- unique(unlist(nodes_data_name))
   data_name <- data_name[!is.na(data_name) & nzchar(data_name)]
 
+  # Get the third dimension size (number of variates) for each node
   nodes_dim <- sapply(mc_names, function(x) {
     dim(mcmodule$node_list[[x]][["mcnode"]])[3]
   })
+
+  # Check if each node is aggregated (has agg_keys)
   nodes_agg <- sapply(mc_names, function(x) {
     !is.null(mcmodule$node_list[[x]][["agg_keys"]])
   })
+
+  # Key names that are common to all nodes
+  nodes_common_keys_names <- Reduce(
+    intersect,
+    lapply(mc_names, function(x) {
+      names(mc_keys(mcmodule, x))
+    })
+  )
+
+  # List of key values for each node, using only the common keys
+  nodes_common_keys <- lapply(mc_names, function(x) {
+    mc_keys(mcmodule, x)[nodes_common_keys_names]
+  })
+  names(nodes_common_keys) <- mc_names
+
+  # List of key values for each node
   nodes_keys <- lapply(mc_names, function(x) {
     mc_keys(mcmodule, x)
   })
   names(nodes_keys) <- mc_names
 
+  # Initialize combined probability and keys_names vector
   p_all <- 0
   keys_names <- c()
 
@@ -96,9 +118,9 @@ at_least_one <- function(
     length(data_name) == 1 &&
       length(unique(nodes_dim)) == 1 &&
       all(!nodes_agg) &&
-      length(unique(nodes_keys)) == 1
+      length(unique(nodes_common_keys)) == 1
   ) {
-    data <- nodes_keys[[1]]
+    data <- nodes_common_keys[[1]]
 
     # Loop to get the combined probability of all mcnodes
     for (i in seq_along(mc_names)) {
