@@ -143,6 +143,20 @@ keys_match <- function(x, y, keys_names = NULL) {
   keys_x <- keys_list$x[c("g_id", "g_row", "scenario_id", keys_names)]
   keys_y <- keys_list$y[c("g_id", "g_row", "scenario_id", keys_names)]
 
+  # If keys_x and keys_y are identical return them directly
+  if (identical(as.data.frame(keys_x), as.data.frame(keys_y))) {
+    keys_xy <- dplyr::mutate(
+      keys_x,
+      g_row.x = .data$g_row,
+      g_row = NULL
+    )
+    keys_xy <- dplyr::bind_cols(
+      keys_xy,
+      dplyr::transmute(keys_y, g_row.y = .data$g_row)
+    )
+    return(list(x = keys_x, y = keys_y, xy = keys_xy))
+  }
+
   # Group and scenario matching
   keys_xy <- dplyr::full_join(
     keys_x,
