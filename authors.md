@@ -14,7 +14,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/NataliaCiria/mcmodule/blob/main/inst/CITATION)
+[`inst/CITATION`](https://github.com/NataliaCiria/mcmodule/blob/v1.1.1/inst/CITATION)
 
 Ciria N (2025). *mcmodule: Modular Monte Carlo Risk Analysis*. R package
 version 1.1.0., <https://nataliaciria.github.io/mcmodule/>.

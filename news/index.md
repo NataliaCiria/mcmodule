@@ -2,6 +2,8 @@
 
 ## mcmodule 1.1.1
 
+CRAN release: 2025-11-25
+
 ### New features
 
 - [`eval_module()`](https://nataliaciria.github.io/mcmodule/reference/eval_module.md)
