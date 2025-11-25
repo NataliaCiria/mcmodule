@@ -1,5 +1,7 @@
 # Changelog
 
+## mcmodule (development version)
+
 ## mcmodule 1.1.1
 
 CRAN release: 2025-11-25
