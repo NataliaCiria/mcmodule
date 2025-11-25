@@ -2,6 +2,19 @@
 
 0 errors | 0 warnings | 1 note
 
-*  Resubmission
-  All examples from unexported functions have been removed
-  Some bugs and enhancements developed since the first submission have been included: version number increased to 1.1.0
+## Submission
+
+This is a minor release that:
+
+* Adds support for mcnodes with multiple data names across core 
+functions
+
+* Adds new arguments for flexible key handling in `eval_module()`
+
+* Fixes several bugs
+
+See NEWS.md for detailed changes.
+
+## Downstream dependencies
+
+There are currently no downstream dependencies for this package.
