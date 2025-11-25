@@ -2,6 +2,45 @@
 
 ## mcmodule (development version)
 
+## mcmodule 1.1.1
+
+### New features
+
+- [`eval_module()`](https://nataliaciria.github.io/mcmodule/reference/eval_module.md)
+  gains `keys` and `overwrite_keys` arguments to add keys that aren’t in
+  `data_keys` or replace existing keys
+  ([\#23](https://github.com/NataliaCiria/mcmodule/issues/23)).
+
+- Core functions
+  ([`eval_module()`](https://nataliaciria.github.io/mcmodule/reference/eval_module.md),
+  [`trial_totals()`](https://nataliaciria.github.io/mcmodule/reference/trial_totals.md),
+  `dim_match()`,
+  [`at_least_one()`](https://nataliaciria.github.io/mcmodule/reference/at_least_one.md),
+  [`mc_match()`](https://nataliaciria.github.io/mcmodule/reference/mc_match.md),
+  [`create_mcnodes()`](https://nataliaciria.github.io/mcmodule/reference/create_mcnodes.md),
+  [`get_node_list()`](https://nataliaciria.github.io/mcmodule/reference/get_node_list.md))
+  now support mcnodes with multiple data names, with clear messages
+  indicating defaults
+  ([\#19](https://github.com/NataliaCiria/mcmodule/issues/19)).
+
+### Minor improvements and bug fixes
+
+- [`keys_match()`](https://nataliaciria.github.io/mcmodule/reference/keys_match.md)
+  now returns early when keys already match, improving performance and
+  fixing ocasional bugs
+  [\#28](https://github.com/NataliaCiria/mcmodule/issues/28).
+
+- [`create_mcnodes()`](https://nataliaciria.github.io/mcmodule/reference/create_mcnodes.md)
+  and
+  [`eval_module()`](https://nataliaciria.github.io/mcmodule/reference/eval_module.md)
+  provide clearer error messages for invalid or missing data
+  ([\#18](https://github.com/NataliaCiria/mcmodule/issues/18)).
+
+- [`mc_match()`](https://nataliaciria.github.io/mcmodule/reference/mc_match.md)
+  and
+  [`mc_match_data()`](https://nataliaciria.github.io/mcmodule/reference/mc_match_data.md)
+  include improved scenario baseline checks and error messages.
+
 ## mcmodule 1.1.0
 
 CRAN release: 2025-10-22
