@@ -121,6 +121,10 @@ create_mcnodes <- function(data, mctable = set_mctable(), envir = parent.frame()
           if (length(matched) == 0) {
             stop(paste0("Parameter '", param, "' for ", mc_name, " does not have a matching column in data"))
           }
+          if (length(matched) > 1) {
+            warning(paste0("Multiple columns match parameter '", param, "' for ", mc_name, ", using first match"))
+            matched <- matched[1]
+          }
           matched
         })
         mc_parameters_exp <- paste(paste0(parameters_available, " = envir$", matched_inputs), collapse = ", ")
