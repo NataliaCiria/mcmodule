@@ -26,15 +26,19 @@ mcmodule_nas <- function(mcmodule) {
 
   node_names <- names(mcmodule$node_list)
 
-  # Extract mcnode objects from each node
-  mcnodes_na <- sapply(mcmodule$node_list[node_names], "[[", "mcnode")
+  # Handle empty node_list
+  if (length(node_names) == 0) {
+    return(character(0))
+  }
 
-  # Check for NA values in each mcnode
-  mcnodes_na <- sapply(mcnodes_na, "is.na")
-
-  # Check if any NA values exist in each mcnode
-  mcnodes_na <- sapply(mcnodes_na, "any")
+  # Check each node for NA values in its mcnode
+  has_nas <- sapply(mcmodule$node_list[node_names], function(node) {
+    if (is.null(node[["mcnode"]])) {
+      return(FALSE)
+    }
+    any(is.na(node[["mcnode"]]))
+  })
 
   # Return names of nodes containing NAs
-  return(names(mcnodes_na[mcnodes_na]))
+  return(names(has_nas[has_nas]))
 }
