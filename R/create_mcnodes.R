@@ -114,8 +114,21 @@ create_mcnodes <- function(data, mctable = set_mctable(), envir = parent.frame()
         }
 
         # Prepare expressions for Monte Carlo node creation
-        mc_parameters_exp <- paste(paste0(parameters_available, " = envir$", mc_inputs), collapse = ", ")
-        mc_na_rm_parameters_exp <- paste(paste0(parameters_available, " = ", "mcnode_na_rm(envir$", mc_inputs, ")"), collapse = ", ")
+        # Match each parameter to its corresponding column name
+        matched_inputs <- sapply(parameters_available, function(param) {
+          param_name <- paste(mc_name, param, sep = "_")
+          matched <- mc_inputs[mc_inputs == param_name]
+          if (length(matched) == 0) {
+            stop(paste0("Parameter '", param, "' for ", mc_name, " does not have a matching column in data"))
+          }
+          if (length(matched) > 1) {
+            warning(paste0("Multiple columns match parameter '", param, "' for ", mc_name, ", using first match"))
+            matched <- matched[1]
+          }
+          matched
+        })
+        mc_parameters_exp <- paste(paste0(parameters_available, " = envir$", matched_inputs), collapse = ", ")
+        mc_na_rm_parameters_exp <- paste(paste0(parameters_available, " = ", "mcnode_na_rm(envir$", matched_inputs, ")"), collapse = ", ")
 
         mc_func_exp <- paste0("func = ", mc_func)
         mcstoc_exp <- paste0("mcstoc(", mc_func_exp, ", type = 'V', ", mc_parameters_exp, ", nvariates = ", nrow(data), ")")
