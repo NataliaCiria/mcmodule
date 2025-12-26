@@ -1,20 +1,8 @@
 test_that("which_mcnode works with custom test function", {
-  # Create test mcmodule with proper mcnodes
-  test_mcnode_neg <- mcstoc(runif,
-    min = mcdata(c(-1, -2, -3), type = "0", nvariates = 3),
-    max = mcdata(c(0, -1, -2), type = "0", nvariates = 3),
-    nvariates = 3
-  )
-  test_mcnode_pos <- mcstoc(runif,
-    min = mcdata(c(1, 2, 3), type = "0", nvariates = 3),
-    max = mcdata(c(2, 3, 4), type = "0", nvariates = 3),
-    nvariates = 3
-  )
-  test_mcnode_large <- mcstoc(runif,
-    min = mcdata(c(100, 200, 300), type = "0", nvariates = 3),
-    max = mcdata(c(150, 250, 350), type = "0", nvariates = 3),
-    nvariates = 3
-  )
+  # Create test mcmodule with proper mcnodes using mcdata
+  test_mcnode_neg <- mcdata(c(-1, -2, -3), type = "0", nvariates = 3)
+  test_mcnode_pos <- mcdata(c(1, 2, 3), type = "0", nvariates = 3)
+  test_mcnode_large <- mcdata(c(100, 200, 300), type = "0", nvariates = 3)
   
   test_mcmodule <- list(
     node_list = list(
@@ -68,11 +56,7 @@ test_that("which_mcnode handles empty node_list", {
 })
 
 test_that("which_mcnode handles NULL mcnodes", {
-  test_mcnode_valid <- mcstoc(runif,
-    min = mcdata(c(1, 2, 3), type = "0", nvariates = 3),
-    max = mcdata(c(2, 3, 4), type = "0", nvariates = 3),
-    nvariates = 3
-  )
+  test_mcnode_valid <- mcdata(c(1, 2, 3), type = "0", nvariates = 3)
   
   test_mcmodule <- list(
     node_list = list(
@@ -97,22 +81,10 @@ test_that("which_mcnode_na works with mcmodule without NAs", {
 })
 
 test_that("which_mcnode_na detects NAs in mcnodes", {
-  # Create test mcnodes with proper mc2d objects
-  test_mcnode_na <- mcstoc(runif,
-    min = mcdata(c(0.1, NA, 0.3, 0.4, 0.5), type = "0", nvariates = 5),
-    max = mcdata(c(0.2, 0.4, 0.5, 0.6, 0.7), type = "0", nvariates = 5),
-    nvariates = 5
-  )
-  test_mcnode_clean <- mcstoc(runif,
-    min = mcdata(c(0.1, 0.2, 0.3, 0.4, 0.5), type = "0", nvariates = 5),
-    max = mcdata(c(0.2, 0.3, 0.4, 0.5, 0.6), type = "0", nvariates = 5),
-    nvariates = 5
-  )
-  test_mcnode_all_na <- mcstoc(runif,
-    min = mcdata(c(NA, NA, NA), type = "0", nvariates = 3),
-    max = mcdata(c(NA, NA, NA), type = "0", nvariates = 3),
-    nvariates = 3
-  )
+  # Create test mcnodes with mcdata
+  test_mcnode_na <- mcdata(c(0.1, NA, 0.3, 0.4, 0.5), type = "0", nvariates = 5)
+  test_mcnode_clean <- mcdata(c(0.1, 0.2, 0.3, 0.4, 0.5), type = "0", nvariates = 5)
+  test_mcnode_all_na <- mcdata(c(NA, NA, NA), type = "0", nvariates = 3)
   
   test_mcmodule <- list(
     node_list = list(
@@ -133,16 +105,8 @@ test_that("which_mcnode_na detects NAs in mcnodes", {
 
 test_that("which_mcnode_na returns empty vector when no NAs present", {
   # Create test mcnodes without NAs
-  test_mcnode1 <- mcstoc(runif,
-    min = mcdata(c(0.1, 0.2, 0.3), type = "0", nvariates = 3),
-    max = mcdata(c(0.2, 0.3, 0.4), type = "0", nvariates = 3),
-    nvariates = 3
-  )
-  test_mcnode2 <- mcstoc(runif,
-    min = mcdata(c(0.4, 0.5, 0.6), type = "0", nvariates = 3),
-    max = mcdata(c(0.5, 0.6, 0.7), type = "0", nvariates = 3),
-    nvariates = 3
-  )
+  test_mcnode1 <- mcdata(c(0.1, 0.2, 0.3), type = "0", nvariates = 3)
+  test_mcnode2 <- mcdata(c(0.4, 0.5, 0.6), type = "0", nvariates = 3)
   
   test_mcmodule <- list(
     node_list = list(
@@ -159,12 +123,8 @@ test_that("which_mcnode_na returns empty vector when no NAs present", {
 })
 
 test_that("which_mcnode_na works with mcnode matrix objects", {
-  # Create an mcnode with matrix structure containing NA
-  test_mcnode <- mcstoc(runif,
-    min = mcdata(c(0.1, NA), type = "0", nvariates = 2),
-    max = mcdata(c(0.2, 0.4), type = "0", nvariates = 2),
-    nvariates = 2
-  )
+  # Create an mcnode containing NA
+  test_mcnode <- mcdata(c(0.1, NA), type = "0", nvariates = 2)
   
   test_mcmodule <- list(
     node_list = list(
@@ -181,26 +141,10 @@ test_that("which_mcnode_na works with mcnode matrix objects", {
 
 test_that("which_mcnode_inf detects infinite values", {
   # Create test mcnodes with Inf values
-  test_mcnode_inf <- mcstoc(runif,
-    min = mcdata(c(0.1, 0.2, Inf, 0.4), type = "0", nvariates = 4),
-    max = mcdata(c(0.2, 0.3, Inf, 0.5), type = "0", nvariates = 4),
-    nvariates = 4
-  )
-  test_mcnode_neginf <- mcstoc(runif,
-    min = mcdata(c(0.1, -Inf, 0.3, 0.4), type = "0", nvariates = 4),
-    max = mcdata(c(0.2, 0.3, 0.4, 0.5), type = "0", nvariates = 4),
-    nvariates = 4
-  )
-  test_mcnode_clean <- mcstoc(runif,
-    min = mcdata(c(0.1, 0.2, 0.3, 0.4), type = "0", nvariates = 4),
-    max = mcdata(c(0.2, 0.3, 0.4, 0.5), type = "0", nvariates = 4),
-    nvariates = 4
-  )
-  test_mcnode_both <- mcstoc(runif,
-    min = mcdata(c(Inf, -Inf, 0), type = "0", nvariates = 3),
-    max = mcdata(c(Inf, -Inf, 1), type = "0", nvariates = 3),
-    nvariates = 3
-  )
+  test_mcnode_inf <- mcdata(c(0.1, 0.2, Inf, 0.4), type = "0", nvariates = 4)
+  test_mcnode_neginf <- mcdata(c(0.1, -Inf, 0.3, 0.4), type = "0", nvariates = 4)
+  test_mcnode_clean <- mcdata(c(0.1, 0.2, 0.3, 0.4), type = "0", nvariates = 4)
+  test_mcnode_both <- mcdata(c(Inf, -Inf, 0), type = "0", nvariates = 3)
   
   test_mcmodule <- list(
     node_list = list(
@@ -223,16 +167,8 @@ test_that("which_mcnode_inf detects infinite values", {
 
 test_that("which_mcnode_inf returns empty vector when no Inf present", {
   # Create test mcnodes without Inf values
-  test_mcnode1 <- mcstoc(runif,
-    min = mcdata(c(0.1, 0.2, 0.3), type = "0", nvariates = 3),
-    max = mcdata(c(0.2, 0.3, 0.4), type = "0", nvariates = 3),
-    nvariates = 3
-  )
-  test_mcnode2 <- mcstoc(runif,
-    min = mcdata(c(0.4, 0.5, 0.6), type = "0", nvariates = 3),
-    max = mcdata(c(0.5, 0.6, 0.7), type = "0", nvariates = 3),
-    nvariates = 3
-  )
+  test_mcnode1 <- mcdata(c(0.1, 0.2, 0.3), type = "0", nvariates = 3)
+  test_mcnode2 <- mcdata(c(0.4, 0.5, 0.6), type = "0", nvariates = 3)
   
   test_mcmodule <- list(
     node_list = list(
@@ -258,26 +194,10 @@ test_that("which_mcnode_inf works with imports_mcmodule", {
 
 test_that("which_mcnode_na and which_mcnode_inf are independent", {
   # Create mcnodes with both NA and Inf
-  test_mcnode_na <- mcstoc(runif,
-    min = mcdata(c(0.1, NA, 0.3), type = "0", nvariates = 3),
-    max = mcdata(c(0.2, 0.4, 0.5), type = "0", nvariates = 3),
-    nvariates = 3
-  )
-  test_mcnode_inf <- mcstoc(runif,
-    min = mcdata(c(0.1, Inf, 0.3), type = "0", nvariates = 3),
-    max = mcdata(c(0.2, Inf, 0.5), type = "0", nvariates = 3),
-    nvariates = 3
-  )
-  test_mcnode_both <- mcstoc(runif,
-    min = mcdata(c(NA, Inf, 0.3), type = "0", nvariates = 3),
-    max = mcdata(c(0.2, Inf, 0.5), type = "0", nvariates = 3),
-    nvariates = 3
-  )
-  test_mcnode_clean <- mcstoc(runif,
-    min = mcdata(c(0.1, 0.2, 0.3), type = "0", nvariates = 3),
-    max = mcdata(c(0.2, 0.3, 0.4), type = "0", nvariates = 3),
-    nvariates = 3
-  )
+  test_mcnode_na <- mcdata(c(0.1, NA, 0.3), type = "0", nvariates = 3)
+  test_mcnode_inf <- mcdata(c(0.1, Inf, 0.3), type = "0", nvariates = 3)
+  test_mcnode_both <- mcdata(c(NA, Inf, 0.3), type = "0", nvariates = 3)
+  test_mcnode_clean <- mcdata(c(0.1, 0.2, 0.3), type = "0", nvariates = 3)
   
   test_mcmodule <- list(
     node_list = list(
@@ -305,11 +225,7 @@ test_that("which_mcnode_na and which_mcnode_inf are independent", {
 })
 
 test_that("which_mcnode handles errors in test function gracefully", {
-  test_mcnode <- mcstoc(runif,
-    min = mcdata(c(0.1, 0.2, 0.3), type = "0", nvariates = 3),
-    max = mcdata(c(0.2, 0.3, 0.4), type = "0", nvariates = 3),
-    nvariates = 3
-  )
+  test_mcnode <- mcdata(c(0.1, 0.2, 0.3), type = "0", nvariates = 3)
   
   test_mcmodule <- list(
     node_list = list(
