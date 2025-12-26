@@ -117,7 +117,11 @@ create_mcnodes <- function(data, mctable = set_mctable(), envir = parent.frame()
         # Match each parameter to its corresponding column name
         matched_inputs <- sapply(parameters_available, function(param) {
           param_name <- paste(mc_name, param, sep = "_")
-          mc_inputs[mc_inputs == param_name]
+          matched <- mc_inputs[mc_inputs == param_name]
+          if (length(matched) == 0) {
+            stop(paste0("Parameter '", param, "' for ", mc_name, " does not have a matching column in data"))
+          }
+          matched
         })
         mc_parameters_exp <- paste(paste0(parameters_available, " = envir$", matched_inputs), collapse = ", ")
         mc_na_rm_parameters_exp <- paste(paste0(parameters_available, " = ", "mcnode_na_rm(envir$", matched_inputs, ")"), collapse = ", ")
