@@ -27,54 +27,55 @@ get_node_list <- function(
   for (i in 2:length(exp)) {
     node_name <- deparse(exp[[i]][[2]])
     node_exp <- paste0(deparse(exp[[i]][[3]]), collapse = "")
-    out_node_list[[node_name]][["node_exp"]] <- node_exp
+    
+    # Parse expression tokens
+    parse_info <- getParseData(parse(text = node_exp))
+    inputs <- parse_info[parse_info$token == "SYMBOL", ]$text
 
-    # Extract input node names
-    exp1 <- gsub("_", "975UNDERSCORE2023", node_exp)
-    exp1 <- gsub("::", "975DOUBLEDOT2025", exp1)
+    # If node expression contains mcstoc or mcdata, note node created in-expression
+    # and validate/remove sampling function name from inputs.
+    if (any(c("mcstoc","mcdata")%in%parse_info$text)) {
+      out_node_list[[node_name]][["created_in_exp"]] <- TRUE
 
-    exp2 <- gsub("[^[:alnum:]]", ",", exp1)
+      # Stop if nvariates argument is found
+      if ("nvariates" %in% parse_info$text) {
+        stop(
+          "Remove 'nvariates' argument from:\n   ",
+          node_exp,
+          "\nNumber of variates is determined automatically based on input data rows"
+        )
+      }
 
-    exp3 <- gsub("975UNDERSCORE2023", "_", exp2)
-    exp3 <- gsub("975DOUBLEDOT2025", "::", exp3)
-
-    exp4 <- c(strsplit(exp3, split = ",")[[1]])
-    exp4 <- exp4[!exp4 %in% ""]
-
-    if (any(suppressWarnings(as.numeric(exp4)) %in% c(Inf, -Inf))) {
-      warning(
-        "Inputs called 'inf' or '-inf' are assumed to be infinite (numeric) and are not parsed as mcnodes"
-      )
-    }
-    exp5 <- suppressWarnings(exp4[is.na(as.numeric(exp4))])
-    inputs <- unique(exp5)
-
-    # Check NA removal
-    na_rm <- any(inputs %in% "mcnode_na_rm")
-    if (na_rm) {
-      out_node_list[[node_name]][["na_rm"]] <- na_rm
-    }
-
-    # Filter function inputs
-    capture_fun <- gregexpr(
-      '(([A-Za-z.][A-Za-z0-9._]*::)?[A-Za-z.][A-Za-z0-9._]*)\\(',
-      node_exp,
-      perl = TRUE
-    )
-    starts <- attr(capture_fun[[1]], "capture.start")[, 1]
-    lens <- attr(capture_fun[[1]], "capture.length")[, 1]
-    fun_input <- if (length(starts)) {
-      substring(node_exp, starts, starts + lens - 1)
-    } else {
-      character(0)
+      # If mcstoc used with a 'func' named argument, remove the function name
+      # from the inputs list so only data/symbol inputs remain.
+      if ("mcstoc" %in% parse_info$text) {
+        if ("func" %in% parse_info$text) {
+          # parse_info$text rows are token stream; the function name appears two tokens after 'func'
+          mc_func <- parse_info$text[which(parse_info$text == "func") + 2]
+          inputs <- setdiff(inputs, mc_func)
+        } else {
+          mc_func <- inputs[1]
+        }
+        out_node_list[[node_name]][["mc_func"]] <- mc_func
+      }
     }
 
-    inputs <- inputs[!inputs %in% fun_input]
+    # Detect function that removes NAs inside the node expression
+    if ("mcnode_na_rm" %in% parse_info$text) {
+      out_node_list[[node_name]][["na_rm"]] <- TRUE
+    }
+
+    # Detect if any function calls are present in the expression
+    if ("SYMBOL_FUNCTION_CALL" %in% parse_info$token) {
+      out_node_list[[node_name]][["function_call"]] <- TRUE
+    }
+
+    # Collect node names and inputs
     all_nodes <- unique(c(all_nodes, node_name, inputs))
 
-    # Set node type
+    # Set node type: numeric literal -> scalar; otherwise an output node that may depend on inputs
     out_node_list[[node_name]][["type"]] <-
-      if (!grepl("[[:alpha:]]", node_exp)) "scalar" else "out_node"
+      if (!grepl("[[:alpha:]]", node_exp) && !is.na(as.numeric(node_exp))) "scalar" else "out_node"
 
     out_node_list[[node_name]][["inputs"]] <- inputs
     out_node_list[[node_name]][["module"]] <- module
