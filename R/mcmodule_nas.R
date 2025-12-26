@@ -32,7 +32,7 @@ mcmodule_nas <- function(mcmodule) {
   }
 
   # Check each node for NA values in its mcnode
-  has_nas <- sapply(mcmodule$node_list[node_names], function(node) {
+  has_nas <- sapply(mcmodule$node_list, function(node) {
     if (is.null(node[["mcnode"]])) {
       return(FALSE)
     }

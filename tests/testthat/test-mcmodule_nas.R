@@ -1,5 +1,4 @@
-suppressMessages({
-  test_that("mcmodule_nas works with mcmodule without NAs", {
+test_that("mcmodule_nas works with mcmodule without NAs", {
     # Test with imports_mcmodule which should not have NAs
     result <- mcmodule_nas(imports_mcmodule)
 
@@ -114,4 +113,4 @@ suppressMessages({
     expect_true("mcnode_test" %in% result)
     expect_equal(length(result), 1)
   })
-})
+
