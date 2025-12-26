@@ -51,7 +51,7 @@ which_mcnode <- function(mcmodule, test_func) {
   })
 
   # Return names of nodes where test is TRUE
-  return(names(test_results[test_results]))
+  return(names(test_results[test_results == TRUE]))
 }
 
 
