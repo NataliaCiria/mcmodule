@@ -38,9 +38,9 @@ get_node_list <- function(
       out_node_list[[node_name]][["created_in_exp"]] <- TRUE
 
       # Stop if nvariates argument is found
-      if ("nvariates" %in% parse_info$text) {
+      if ("nvariate" %in% parse_info$text) {
         stop(
-          "Remove 'nvariates' argument from:\n   ",
+          "Remove 'nvariate' argument from:\n   ",
           node_exp,
           "\nNumber of variates is determined automatically based on input data rows"
         )
@@ -77,6 +77,7 @@ get_node_list <- function(
     out_node_list[[node_name]][["type"]] <-
       if (!grepl("[[:alpha:]]", node_exp) && !is.na(as.numeric(node_exp))) "scalar" else "out_node"
 
+    out_node_list[[node_name]][["node_exp"]] <- node_exp
     out_node_list[[node_name]][["inputs"]] <- inputs
     out_node_list[[node_name]][["module"]] <- module
     out_node_list[[node_name]][["mc_name"]] <- node_name

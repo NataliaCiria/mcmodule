@@ -175,6 +175,7 @@ suppressMessages({
       data_keys = test_data_keys
     )
 
+    expect_true(node_list$output_2$function_call)
     expect_true(node_list$output_2$na_rm)
     expect_equal(node_list$level$type, c("scalar"))
     expect_equal(node_list$output_3$inputs, c("output_2", "prev_value"))
@@ -223,6 +224,7 @@ suppressMessages({
       data_keys = test_data_keys
     )
 
+    expect_true(node_list$output_2$function_call)
     expect_equal(node_list$output_2$inputs, c("output_1"))
     expect_equal(node_list$output_3$inputs, c("output_2", "prev_value"))
     expect_equal(node_list$output_3$node_exp, c("(1 + output_2) * prev_value"))
@@ -268,4 +270,43 @@ suppressMessages({
 
     expect_equal(sort(node_list2$input_a$keys), sort(c("x", "y")))
   })
+
+  test_that("get_node_list deals with mcdata() and mcstoc() functions", {
+    test_exp1 <- quote({
+      input_b <- mcdata(data=c(0.5, 1.5, 2.5), type = "0")
+      result <- mcstoc(rnorm, mean= input_b, sd=input_a, type = "V")
+    })
+
+    test_mctable <- data.frame(
+      mcnode = c("input_a"),
+      mc_func = c("runif"),
+      description = c("Test input A"),
+      stringsAsFactors = FALSE
+    )
+
+    node_list1 <- get_node_list(
+      exp = test_exp1,
+      mctable = test_mctable
+    )
+
+    expect_true(node_list1$result$function_call)
+    expect_true(node_list1$result$created_in_exp)
+    expect_equal(node_list1$result$inputs, c("rnorm","input_b","input_a"))
+    expect_equal(node_list1$input_b$type, c("out_node"))
+
+    # Test error when nvariate is provided
+    test_exp2 <- quote({
+      input_b <- mcdata(data=c(0.5, 1.5, 2.5), type = "0", nvariate=3)
+      result <- mcstoc(rnorm, mean= input_b, sd=input_a, type = "V", nvariate=3)
+    })
+
+    expect_error({
+    node_list2 <- get_node_list(
+      exp = test_exp2,
+      mctable = test_mctable
+    )
+    }, "Remove 'nvariate' argument")
+
+  })
+
 })
