@@ -71,10 +71,20 @@ which_mcnode <- function(mcmodule, test_func) {
 #' which_mcnode_na(imports_mcmodule)
 #'
 #' # Create a test mcmodule with NAs
+#' test_mcnode_na <- mcstoc(runif,
+#'                min = mcdata(c(0.1, NA, 0.3), type = "0", nvariates = 3),
+#'                max = mcdata(c(0.2, 0.4, 0.5), type = "0", nvariates = 3),
+#'                nvariates = 3
+#' )
+#' test_mcnode_clean <- mcstoc(runif,
+#'                min = mcdata(c(0.1, 0.2, 0.3), type = "0", nvariates = 3),
+#'                max = mcdata(c(0.2, 0.3, 0.4), type = "0", nvariates = 3),
+#'                nvariates = 3
+#' )
 #' test_mcmodule <- list(
 #'   node_list = list(
-#'     node_a = list(mcnode = c(1, 2, NA, 4)),
-#'     node_b = list(mcnode = c(5, 6, 7, 8))
+#'     node_a = list(mcnode = test_mcnode_na),
+#'     node_b = list(mcnode = test_mcnode_clean)
 #'   )
 #' )
 #' which_mcnode_na(test_mcmodule)
@@ -103,11 +113,20 @@ which_mcnode_na <- function(mcmodule) {
 #' which_mcnode_inf(imports_mcmodule)
 #'
 #' # Create a test mcmodule with Inf values
+#' test_mcnode_inf <- mcstoc(runif,
+#'                min = mcdata(c(0.1, -Inf, 0.3), type = "0", nvariates = 3),
+#'                max = mcdata(c(Inf, 0.4, 0.5), type = "0", nvariates = 3),
+#'                nvariates = 3
+#' )
+#' test_mcnode_clean <- mcstoc(runif,
+#'                min = mcdata(c(0.1, 0.2, 0.3), type = "0", nvariates = 3),
+#'                max = mcdata(c(0.2, 0.3, 0.4), type = "0", nvariates = 3),
+#'                nvariates = 3
+#' )
 #' test_mcmodule <- list(
 #'   node_list = list(
-#'     node_a = list(mcnode = c(1, 2, Inf, 4)),
-#'     node_b = list(mcnode = c(5, -Inf, 7, 8)),
-#'     node_c = list(mcnode = c(9, 10, 11, 12))
+#'     node_a = list(mcnode = test_mcnode_inf),
+#'     node_b = list(mcnode = test_mcnode_clean)
 #'   )
 #' )
 #' which_mcnode_inf(test_mcmodule)
