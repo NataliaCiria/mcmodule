@@ -63,6 +63,7 @@ eval_module <- function(
   # If overwrite_keys is TRUE create a local data_keys entry for this data
   # (do not modify global data_keys)
   if (isTRUE(overwrite_keys)) {
+    data_keys_original <- data_keys
     data_keys_local <- list(cols = names(data), keys = keys)
     data_keys <- list()
     data_keys[[data_name]] <- data_keys_local
@@ -72,7 +73,8 @@ eval_module <- function(
         data_name,
         paste(keys, collapse = ", ")
       ))
-    } else {
+    } else if(length(data_keys_original)>0){ 
+      # Only message if data_keys were not NULL (to avoid message when both are NULL)
       message(sprintf("data_keys overwritten for %s", data_name))
     }
     # When overwritten, we do not need to forward keys separately
@@ -111,15 +113,11 @@ eval_module <- function(
     # Identify nodes requiring previous module inputs
     prev_nodes <- names(node_list_i)[grepl("prev_node", node_list_i)]
     prev_nodes <- prev_nodes[!prev_nodes %in% names(node_list)]
+    data_nodes <- prev_nodes[prev_nodes %in% names(data)]
 
     # Process nodes requiring previous module inputs
     if (length(prev_nodes) > 0) {
-      if (is.null(prev_mcmodule)) {
-        stop(sprintf(
-          "prev_mcmodule for %s needed but not provided",
-          paste(prev_nodes, collapse = ", ")
-        ))
-      } else {
+      if (!is.null(prev_mcmodule)) {
         prev_mcmodule_list <- if (inherits(prev_mcmodule, "mcmodule")) {
           list(prev_mcmodule)
         } else {
@@ -256,6 +254,45 @@ eval_module <- function(
             }
           }
         }
+      } else if (length(data_nodes) > 0) {
+        # Update prev_nodes to only those not in data
+        prev_nodes<-prev_nodes[!prev_nodes %in% names(data)]
+        # If prev_nodes are in data, create mcnodes directly from data
+        data_mctable <- data.frame(
+          mcnode = data_nodes, 
+          mc_func = NA,
+          description = NA,
+          from_variable = NA,
+          transformation = NA,
+          sensi_analysis = NA)
+        
+        create_mcnodes(data = data, mctable = data_mctable)
+        
+        # Update node list
+        node_list_i_data <- get_node_list(
+          exp = exp_i,
+          param_names = param_names,
+          mctable = data_mctable,
+          data_keys = data_keys,
+          keys = keys_arg
+        )
+      
+        node_list_i[data_nodes] <- node_list_i_data[data_nodes]
+        
+        if(nrow(mctable)==0){
+          message("Creating mcnodes from data (mctable not provided)")
+        }else{
+          message(sprintf(
+            "The following nodes are present in data but not in the mctable: %s.",
+            paste(data_nodes, collapse = ", ")
+          ))
+        }
+      } else {
+        # Error if prev_nodes are neither in prev_mcmodule nor in data
+          stop(sprintf(
+            "The following nodes are not present in data or in prev_mcmodule: %s.",
+            paste(prev_nodes, collapse = ", ")
+          ))  
       }
     }
 

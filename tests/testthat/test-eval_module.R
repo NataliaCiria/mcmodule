@@ -25,7 +25,7 @@ suppressMessages({
         mctable = imports_mctable,
         data_keys = imports_data_keys
       ),
-      "prev_mcmodule.*needed but not provided"
+      "nodes are not present in data or in prev_mcmodule"
     )
 
     # Test with multiple expressions
@@ -556,4 +556,56 @@ suppressMessages({
     )
     expect_equal(result_mcmodule$node_list$result$data_name, c("current_data"))
   })
+
+  test_that("eval_module creates input nodes from data without mctable", {
+    test_data <- data.frame(external_input = c(0.1, 0.2, 0.3))
+    test_exp <- quote({
+      result <- external_input * 2
+    })
+
+    expect_message(
+      result_mcmodule <- eval_module(
+        exp = c(test = test_exp),
+        data = test_data),
+    "Creating mcnodes from data"
+    )
+
+    expect_true("external_input" %in% names(result_mcmodule$node_list))
+    expect_true("result" %in% names(result_mcmodule$node_list))
+    expect_true(is.mcnode(result_mcmodule$node_list$external_input$mcnode))
+  })
+
+  # TODO
+  test_that("eval_module warns when inputs are in data but not in provided mctable (non-empty mctable)", {
+    test_data <- data.frame(external_input = c(0.1, 0.2, 0.3))
+    test_exp <- quote({
+      result <- external_input * 2
+    })
+
+    # mctable contains a different node, so external_input is missing from it
+    some_mctable <- data.frame(
+      mcnode = c("other_node"),
+      description = c("other"),
+      mc_func = c(NA),
+      from_variable = c(NA),
+      transformation = c(NA),
+      sensi_analysis = c(FALSE),
+      stringsAsFactors = FALSE
+    )
+
+    expect_message(
+      result_mcmodule <- eval_module(
+        exp = c(test = test_exp),
+        data = test_data,
+        mctable = some_mctable,
+        data_keys = list()
+      ),
+      "The following nodes are present in data but not in the mctable: external_input"
+    )
+
+    expect_true("external_input" %in% names(result_mcmodule$node_list))
+    expect_true("result" %in% names(result_mcmodule$node_list))
+    expect_true(is.mcnode(result_mcmodule$node_list$external_input$mcnode))
+  })
+  
 })
