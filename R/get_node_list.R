@@ -55,6 +55,7 @@ get_node_list <- function(
           inputs <- setdiff(inputs, mc_func)
         } else {
           mc_func <- inputs[1]
+          inputs <- setdiff(inputs, mc_func)
         }
         out_node_list[[node_name]][["mc_func"]] <- mc_func
       }
@@ -223,6 +224,9 @@ get_node_list <- function(
 
   # Combine all node lists (provisional list for key matching)
   node_list <- c(in_node_list, prev_node_list, out_node_list)
+  
+  # Order list in node appearance order in expression
+  node_list <- node_list[all_nodes]
 
   # Process output node keys
   for (i in names(out_node_list)) {

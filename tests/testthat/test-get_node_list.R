@@ -291,7 +291,7 @@ suppressMessages({
 
     expect_true(node_list1$result$function_call)
     expect_true(node_list1$result$created_in_exp)
-    expect_equal(node_list1$result$inputs, c("rnorm","input_b","input_a"))
+    expect_equal(node_list1$result$inputs, c("input_b","input_a"))
     expect_equal(node_list1$input_b$type, c("out_node"))
 
     # Test error when nvariate is provided

@@ -20,7 +20,8 @@ eval_module(
 \arguments{
 \item{exp}{Model expression or list of expressions to evaluate}
 
-\item{data}{Input data frame containing model parameters}
+\item{data}{Input data frame containing model parameters. The number of
+rows of \code{data} determines nvariates for mcstoc()/mcdata() used in expressions.}
 
 \item{param_names}{Named vector for parameter renaming (optional)}
 
@@ -28,7 +29,8 @@ eval_module(
 
 \item{summary}{Logical; whether to calculate summary statistics}
 
-\item{mctable}{Reference table for mcnodes, defaults to set_mctable()}
+\item{mctable}{Reference table for mcnodes. If omitted or NULL nodes that are
+present as columns in \code{data} will be created from the data.}
 
 \item{data_keys}{Data structure and keys, defaults to set_data_keys()}
 
@@ -43,15 +45,46 @@ data_keys is NULL or an empty list; otherwise FALSE.}
 An mcmodule object containing data, expressions, and nodes
 }
 \description{
-Takes a set of Monte Carlo model expressions and evaluates them and creates an mcmodule
-containing results and metadata.
+Takes a set of Monte Carlo model expressions, evaluates them, and creates an
+mcmodule containing results and metadata.
+}
+\details{
+Details:
+\itemize{
+\item mcstoc() and mcdata() may be used directly inside model expressions.
+When these are used you should NOT explicitly supply nvariates; nvariates
+will be inferred automatically as the number of rows in the input \code{data}.
+\item An explicit \code{mctable} is optional. If no mctable is provided, any model
+nodes that match column names in \code{data} will be built from the data.
+If a \code{mctable} is provided and a node is not found there but exists as a
+data column, a warning will be issued and the node will be created from
+the data column.
+\item Within expressions reference input mcnodes by their bare names (e.g.
+column1). Do not use \code{data$column1} or \code{data["column1"]}.
+}
 }
 \examples{
 # Basic usage with single expression
-eval_module(
-  exp = imports_exp,
-  data = imports_data,
-  mctable = imports_mctable,
-  data_keys = imports_data_keys
-)
+# Build a quoted expression using mcnodes defined in mctable or built with 
+# mcstoc()/mcdata within the expression (do NOT set nvariates, it is
+# inferred from nrow(data) when evaluated by eval_module()).
+expr_example <- quote({
+  # Within-herd prevalence (assigned from a pre-built mcnode w_prev)
+  inf_a <- w_prev
+
+  # Estimate of clinic sensitivity 
+  clinic_sensi <- mcstoc(runif, min = 0.6, max = 0.8)
+
+  # Probability an infected animal is tested in origin but yields a false negative and also not detected by clinic
+  false_neg_a <- inf_a * test_origin * (1 - test_sensi) * (1 - clinic_sensi)
+
+  # Probability an infected animal is not tested and also not detected by clinic
+  no_test_a <- inf_a * (1 - test_origin) * (1 - clinic_sensi)
+
+  # no_detect_a: total probability an infected animal is not detected
+  no_detect_a <- false_neg_a + no_test_a
+})
+
+# Evaluate
+eval_module(exp = expr_example, data = imports_data, mctable = imports_mctable, data_keys = imports_data_keys)
 }
