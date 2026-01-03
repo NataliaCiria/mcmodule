@@ -3,7 +3,7 @@
 #' Takes a set of Monte Carlo model expressions, evaluates them, and creates an
 #' mcmodule containing results and metadata.
 #'
-#' Details:
+#' @details 
 #' - mcstoc() and mcdata() may be used directly inside model expressions.
 #'   When these are used you should NOT explicitly supply nvariates; nvariates
 #'   will be inferred automatically as the number of rows in the input `data`.

@@ -49,7 +49,6 @@ Takes a set of Monte Carlo model expressions, evaluates them, and creates an
 mcmodule containing results and metadata.
 }
 \details{
-Details:
 \itemize{
 \item mcstoc() and mcdata() may be used directly inside model expressions.
 When these are used you should NOT explicitly supply nvariates; nvariates
