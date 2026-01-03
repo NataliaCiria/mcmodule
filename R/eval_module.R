@@ -1,14 +1,28 @@
 #' Evaluate a Monte Carlo Model Expression and create an mcmodule
 #'
-#' Takes a set of Monte Carlo model expressions and evaluates them and creates an mcmodule
-#' containing results and metadata.
+#' Takes a set of Monte Carlo model expressions, evaluates them, and creates an
+#' mcmodule containing results and metadata.
+#'
+#' @details 
+#' - mcstoc() and mcdata() may be used directly inside model expressions.
+#'   When these are used you should NOT explicitly supply nvariates; nvariates
+#'   will be inferred automatically as the number of rows in the input `data`.
+#' - An explicit `mctable` is optional. If no mctable is provided, any model
+#'   nodes that match column names in `data` will be built from the data.
+#'   If a `mctable` is provided and a node is not found there but exists as a
+#'   data column, a warning will be issued and the node will be created from
+#'   the data column.
+#' - Within expressions reference input mcnodes by their bare names (e.g.
+#'   column1). Do not use `data$column1` or `data["column1"]`.
 #'
 #' @param exp Model expression or list of expressions to evaluate
-#' @param data Input data frame containing model parameters
+#' @param data Input data frame containing model parameters. The number of
+#'   rows of `data` determines nvariates for mcstoc()/mcdata() used in expressions.
 #' @param param_names Named vector for parameter renaming (optional)
 #' @param prev_mcmodule Previous module(s) for dependent calculations
 #' @param summary Logical; whether to calculate summary statistics
-#' @param mctable Reference table for mcnodes, defaults to set_mctable()
+#' @param mctable Reference table for mcnodes. If omitted or NULL nodes that are
+#'   present as columns in `data` will be created from the data.
 #' @param data_keys Data structure and keys, defaults to set_data_keys()
 #' @param match_keys Keys to match prev_mcmodule mcnodes and data by
 #' @param keys Optional explicit keys for the input data (character vector)
@@ -20,12 +34,28 @@
 #'
 #' @examples
 #' # Basic usage with single expression
-#' eval_module(
-#'   exp = imports_exp,
-#'   data = imports_data,
-#'   mctable = imports_mctable,
-#'   data_keys = imports_data_keys
-#' )
+#' # Build a quoted expression using mcnodes defined in mctable or built with 
+#' # mcstoc()/mcdata within the expression (do NOT set nvariates, it is
+#' # inferred from nrow(data) when evaluated by eval_module()).
+#' expr_example <- quote({
+#'   # Within-herd prevalence (assigned from a pre-built mcnode w_prev)
+#'   inf_a <- w_prev
+#'
+#'   # Estimate of clinic sensitivity 
+#'   clinic_sensi <- mcstoc(runif, min = 0.6, max = 0.8)
+#' 
+#'   # Probability an infected animal is tested in origin but yields a false negative and also not detected by clinic
+#'   false_neg_a <- inf_a * test_origin * (1 - test_sensi) * (1 - clinic_sensi)
+#'
+#'   # Probability an infected animal is not tested and also not detected by clinic
+#'   no_test_a <- inf_a * (1 - test_origin) * (1 - clinic_sensi)
+#'
+#'   # no_detect_a: total probability an infected animal is not detected
+#'   no_detect_a <- false_neg_a + no_test_a
+#' })
+#'
+#' # Evaluate
+#' eval_module(exp = expr_example, data = imports_data, mctable = imports_mctable, data_keys = imports_data_keys)
 eval_module <- function(
   exp,
   data,
@@ -63,6 +93,7 @@ eval_module <- function(
   # If overwrite_keys is TRUE create a local data_keys entry for this data
   # (do not modify global data_keys)
   if (isTRUE(overwrite_keys)) {
+    data_keys_original <- data_keys
     data_keys_local <- list(cols = names(data), keys = keys)
     data_keys <- list()
     data_keys[[data_name]] <- data_keys_local
@@ -72,7 +103,8 @@ eval_module <- function(
         data_name,
         paste(keys, collapse = ", ")
       ))
-    } else {
+    } else if(length(data_keys_original)>0){ 
+      # Only message if data_keys were not NULL (to avoid message when both are NULL)
       message(sprintf("data_keys overwritten for %s", data_name))
     }
     # When overwritten, we do not need to forward keys separately
@@ -111,15 +143,11 @@ eval_module <- function(
     # Identify nodes requiring previous module inputs
     prev_nodes <- names(node_list_i)[grepl("prev_node", node_list_i)]
     prev_nodes <- prev_nodes[!prev_nodes %in% names(node_list)]
+    data_nodes <- prev_nodes[prev_nodes %in% names(data)]
 
     # Process nodes requiring previous module inputs
     if (length(prev_nodes) > 0) {
-      if (is.null(prev_mcmodule)) {
-        stop(sprintf(
-          "prev_mcmodule for %s needed but not provided",
-          paste(prev_nodes, collapse = ", ")
-        ))
-      } else {
+      if (!is.null(prev_mcmodule)) {
         prev_mcmodule_list <- if (inherits(prev_mcmodule, "mcmodule")) {
           list(prev_mcmodule)
         } else {
@@ -256,6 +284,45 @@ eval_module <- function(
             }
           }
         }
+      } else if (length(data_nodes) > 0) {
+        # Update prev_nodes to only those not in data
+        prev_nodes<-prev_nodes[!prev_nodes %in% names(data)]
+        # If prev_nodes are in data, create mcnodes directly from data
+        data_mctable <- data.frame(
+          mcnode = data_nodes, 
+          mc_func = NA,
+          description = NA,
+          from_variable = NA,
+          transformation = NA,
+          sensi_analysis = NA)
+        
+        create_mcnodes(data = data, mctable = data_mctable)
+        
+        # Update node list
+        node_list_i_data <- get_node_list(
+          exp = exp_i,
+          param_names = param_names,
+          mctable = data_mctable,
+          data_keys = data_keys,
+          keys = keys_arg
+        )
+      
+        node_list_i[data_nodes] <- node_list_i_data[data_nodes]
+        
+        if(nrow(mctable)==0){
+          message("Creating mcnodes from data (mctable not provided)")
+        }else{
+          message(sprintf(
+            "The following nodes are present in data but not in the mctable: %s.",
+            paste(data_nodes, collapse = ", ")
+          ))
+        }
+      } else {
+        # Error if prev_nodes are neither in prev_mcmodule nor in data
+          stop(sprintf(
+            "The following nodes are not present in data or in prev_mcmodule: %s.",
+            paste(prev_nodes, collapse = ", ")
+          ))  
       }
     }
 
