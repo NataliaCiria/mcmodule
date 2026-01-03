@@ -89,7 +89,13 @@ get_node_table <- function(mcmodule, variate = 1, inputs=FALSE) {
     node_table_i <- do.call(cbind.data.frame, node)
     node_table_i$name <- names(node_list)[i]
     node_table_i$value <- node_value
-    node_table_i$inputs <- ifelse(is.na(node_table_i$inputs),node_table_i$inputs_col,node_table_i$inputs)
+    # Inputs: if 'inputs' is NA, 'inputs_col'. If 'inputs_col' is NA, NA
+    # Ensure 'inputs' and 'inputs_col' exist, then prefer 'inputs' and fall back to 'inputs_col'
+    if (!"inputs" %in% names(node_table_i)) node_table_i$inputs <- NA
+    if (!"inputs_col" %in% names(node_table_i)) node_table_i$inputs_col <- NA
+
+    node_table_i$inputs <- dplyr::coalesce(node_table_i$inputs, node_table_i$inputs_col)
+
     node_table <- dplyr::bind_rows(node_table, node_table_i)
   }
 

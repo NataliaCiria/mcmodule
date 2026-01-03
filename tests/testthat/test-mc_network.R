@@ -106,4 +106,5 @@ suppressMessages({
     expect_no_error(mc_network(combined_module))
 
   })
+  
 })
