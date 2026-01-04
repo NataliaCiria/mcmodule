@@ -375,7 +375,7 @@ eval_module <- function(
 
       # Update input references
       inputs <- node_list[[mc_name]][["inputs"]]
-      node_list[[mc_name]][["param"]] <- inputs
+      node_list[[mc_name]][["exp_param"]] <- inputs
 
       inputs[inputs %in% names(new_param_names)] <-
         new_param_names[inputs[inputs %in% names(new_param_names)]]

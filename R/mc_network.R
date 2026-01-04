@@ -41,8 +41,8 @@ get_edge_table <- function(mcmodule,inputs=FALSE) {
     edge_table <- rbind(edge_table, edge_table_i, edge_table_inputs)
   }
 
-  edge_table <- unique(edge_table)
-  rownames(edge_table) <- NULL
+      edge_table <- unique(edge_table)
+      rownames(edge_table) <- NULL
   return(edge_table)
 }
 
@@ -191,7 +191,20 @@ visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by =
   color_pal<-color[["pal"]]
   color_by<-color[["by"]]
 
-  if(!"mc_func" %in% colnames(nodes)) nodes$mc_func<-NA
+  # Ensure all columns required by the subsequent transmute exist on `nodes`.
+  required_cols <- c("mc_func", "exp_param", "node_exp", "module", "type", "keys", "value", "inputs")
+  for (col in required_cols) {
+    if (!col %in% colnames(nodes)) nodes[[col]] <- NA
+  }
+
+  # Ensure the dynamic color_by column exists. Prefer an existing 'color_by' column if present.
+  if (!color_by %in% colnames(nodes)) {
+    if ("color_by" %in% colnames(nodes)) {
+      nodes[[color_by]] <- nodes[["color_by"]]
+    } else {
+      nodes[[color_by]] <- NA
+    }
+  }
 
   nodes<-nodes %>%
     dplyr::distinct(.data$name, .keep_all = TRUE) %>%
@@ -205,7 +218,7 @@ visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by =
         ifelse(is.na(.data$keys), "user", ifelse(is.na(.data$mc_func), "mcdata", .data$mc_func)),
         .data$node_exp
       ),
-      title = generate_node_title(.data$name, .data$grouping, .data$value, .data$expression, .data$param, .data$inputs),
+      title = generate_node_title(.data$name, .data$grouping, .data$value, .data$expression, .data$exp_param, .data$inputs),
       type = .data$type)
 
   if(!color_by%in%names(nodes)) nodes[[color_by]]<-nodes$color_by
@@ -223,10 +236,10 @@ visNetwork_nodes <- function(mcmodule, variate = 1, color_pal = NULL, color_by =
 visNetwork_edges <- function(mcmodule, inputs = FALSE) {
   get_edge_table(mcmodule = mcmodule, inputs = inputs) %>%
     transmute(
-      from = .data$node_from,
-      to = .data$node_to,
-      id = row_number()
-    )
+    from = .data$node_from,
+    to = .data$node_to,
+    id = row_number()
+)
 }
 
 #' Create Interactive Network Visualization
@@ -262,7 +275,7 @@ mc_network<-function(mcmodule, variate = 1, color_pal = NULL, color_by = NULL, l
   }
 
   nodes <- visNetwork_nodes(mcmodule, variate = variate, color_pal = color_pal, color_by = color_by, inputs = inputs)
-  edges <- visNetwork_edges(mcmodule)
+  edges <- visNetwork_edges(mcmodule, inputs = inputs)
 
   network<-visNetwork::visNetwork(nodes, edges, width = "100%") %>%
     visNetwork::visOptions(highlightNearest = list(enabled =TRUE, degree = 2), nodesIdSelection = TRUE,selectedBy= if(is.null(color_by)) "grouping" else color_by)%>%
@@ -315,7 +328,7 @@ format_percentage_summary <- function(summary_value) {
   return(result)
 }
 
-generate_node_title <- function(name, grouping, value, expression, param, inputs) {
+generate_node_title <- function(name, grouping, value, expression, exp_param, inputs) {
   paste0(
     '<p style="text-align: center;"><strong><span style="font-size: 18px;"><u>',
     name,
@@ -335,7 +348,7 @@ generate_node_title <- function(name, grouping, value, expression, param, inputs
         </tr>
         <tr>
           <td style="width: 50%; text-align: center;">',
-    gsub(",", "<br>", ifelse(is.na(param),"",param)),
+    gsub(",", "<br>", ifelse(is.na(exp_param),"",exp_param)),
     '</td>
           <td style="width: 50%; text-align: center;">',
     gsub(",", "<br>", ifelse(is.na(inputs),"",inputs)),
