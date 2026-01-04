@@ -8,7 +8,7 @@
 #' @param mctable Reference table for mcnodes, defaults to set_mctable()
 #' @param data_keys Data structure and keys, defaults to set_data_keys()
 #' @param keys Optional explicit keys for the input data (character vector)
-#'
+#' 
 #' @return A list of class "mcnode_list" containing node information
 get_node_list <- function(
   exp,
@@ -27,18 +27,15 @@ get_node_list <- function(
   for (i in 2:length(exp)) {
     node_name <- deparse(exp[[i]][[2]])
     node_exp <- paste0(deparse(exp[[i]][[3]]), collapse = "")
-    
-    # Parse expression tokens
-    parse_info <- getParseData(parse(text = node_exp))
-    inputs <- parse_info[parse_info$token == "SYMBOL", ]$text
 
-    # If node expression contains mcstoc or mcdata, note node created in-expression
-    # and validate/remove sampling function name from inputs.
-    if (any(c("mcstoc","mcdata")%in%parse_info$text)) {
+    # Use AST parser
+    parse_res <- ast_traverse(node_exp)
+    inputs <- parse_res$inputs
+
+    if (parse_res$created_in_exp) {
       out_node_list[[node_name]][["created_in_exp"]] <- TRUE
 
-      # Stop if nvariates argument is found
-      if ("nvariate" %in% parse_info$text) {
+      if (parse_res$nvariate) {
         stop(
           "Remove 'nvariate' argument from:\n   ",
           node_exp,
@@ -46,30 +43,13 @@ get_node_list <- function(
         )
       }
 
-      # If mcstoc used with a 'func' named argument, remove the function name
-      # from the inputs list so only data/symbol inputs remain.
-      if ("mcstoc" %in% parse_info$text) {
-        if ("func" %in% parse_info$text) {
-          # parse_info$text rows are token stream; the function name appears two tokens after 'func'
-          mc_func <- parse_info$text[which(parse_info$text == "func") + 2]
-          inputs <- setdiff(inputs, mc_func)
-        } else {
-          mc_func <- inputs[1]
-          inputs <- setdiff(inputs, mc_func)
-        }
-        out_node_list[[node_name]][["mc_func"]] <- mc_func
+      if (!is.null(parse_res$mc_func)) {
+        out_node_list[[node_name]][["mc_func"]] <- parse_res$mc_func
       }
     }
 
-    # Detect function that removes NAs inside the node expression
-    if ("mcnode_na_rm" %in% parse_info$text) {
-      out_node_list[[node_name]][["na_rm"]] <- TRUE
-    }
-
-    # Detect if any function calls are present in the expression
-    if ("SYMBOL_FUNCTION_CALL" %in% parse_info$token) {
-      out_node_list[[node_name]][["function_call"]] <- TRUE
-    }
+    if (parse_res$na_rm) out_node_list[[node_name]][["na_rm"]] <- TRUE
+    if (parse_res$function_call) out_node_list[[node_name]][["function_call"]] <- TRUE
 
     # Collect node names and inputs
     all_nodes <- unique(c(all_nodes, node_name, inputs))
@@ -245,3 +225,84 @@ get_node_list <- function(
 
   return(node_list)
 }
+
+#' AST parser for node expressions
+#'
+#' Traverse a parsed R expression (AST) and extract symbol names and flags
+#' used by get_node_list.
+#'
+#' @param expr_text Character scalar with the expression to parse (R code as text).
+#' @return A list with elements:
+#'   - inputs: character vector of symbol names considered inputs
+#'   - created_in_exp: logical; TRUE if mcstoc or mcdata was used in the expression
+#'   - mc_func: character or NULL; sampling function name detected for mcstoc/mcdata
+#'   - nvariate: logical; TRUE if a `nvariate` argument was present
+#'   - na_rm: logical; TRUE if `mcnode_na_rm` was used
+#'   - function_call: logical; TRUE if any function calls were present
+#' @keywords internal
+#' @noRd
+  ast_traverse <- function(expr_text) {
+    parsed <- tryCatch(parse(text = expr_text), error = function(e) NULL)
+    if (is.null(parsed)) return(list(
+      inputs = character(),
+      created_in_exp = FALSE,
+      mc_func = NULL,
+      nvariate = FALSE,
+      na_rm = FALSE,
+      function_call = FALSE
+    ))
+    node <- parsed[[1]]
+
+    symbols <- character()
+    function_names <- character()
+    mc_func <- NULL
+    created_in_exp <- FALSE
+    na_rm_flag <- FALSE
+    nvariate_flag <- FALSE
+    function_call_flag <- FALSE
+
+    traverse <- function(e) {
+      if (is.symbol(e)) {
+        symbols <<- c(symbols, as.character(e))
+        return()
+      }
+      if (is.atomic(e)) return()
+      if (is.call(e)) {
+        function_call_flag <<- TRUE
+        fname <- if (is.symbol(e[[1]])) as.character(e[[1]]) else paste0(deparse(e[[1]]), collapse = "")
+
+        function_names <<- c(function_names, fname)
+
+        if (fname %in% c("mcstoc", "mcdata")) {
+          created_in_exp <<- TRUE
+          nm <- names(e)
+          if (!is.null(nm) && "nvariate" %in% nm) nvariate_flag <<- TRUE
+          if (!is.null(nm) && "func" %in% nm) {
+            argval <- e[["func"]]
+            mc_func <<- if (is.symbol(argval)) as.character(argval) else paste0(deparse(argval), collapse = "")
+          } else if (length(e) >= 2) {
+            second <- e[[2]]
+            mc_func <<- if (is.symbol(second)) as.character(second) else paste0(deparse(second), collapse = "")
+          }
+        }
+
+        if (fname == "mcnode_na_rm") na_rm_flag <<- TRUE
+
+        for (i in seq_along(e)[-1]) traverse(e[[i]])
+      }
+    }
+
+    traverse(node)
+
+    inputs <- setdiff(unique(symbols), unique(function_names))
+    if (!is.null(mc_func)) inputs <- setdiff(inputs, mc_func)
+
+    list(
+      inputs = inputs,
+      created_in_exp = created_in_exp,
+      mc_func = mc_func,
+      nvariate = nvariate_flag,
+      na_rm = na_rm_flag,
+      function_call = function_call_flag
+    )
+  }

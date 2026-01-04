@@ -44,10 +44,10 @@
 #'   # Estimate of clinic sensitivity 
 #'   clinic_sensi <- mcstoc(runif, min = 0.6, max = 0.8)
 #' 
-#'   # Probability an infected animal is tested in origin but yields a false negative and also not detected by clinic
+#'   # Probability an infected animal is tested in origin and not detected 
 #'   false_neg_a <- inf_a * test_origin * (1 - test_sensi) * (1 - clinic_sensi)
 #'
-#'   # Probability an infected animal is not tested and also not detected by clinic
+#'   # Probability an infected animal is not tested and not detected 
 #'   no_test_a <- inf_a * (1 - test_origin) * (1 - clinic_sensi)
 #'
 #'   # no_detect_a: total probability an infected animal is not detected
@@ -55,7 +55,12 @@
 #' })
 #'
 #' # Evaluate
-#' eval_module(exp = expr_example, data = imports_data, mctable = imports_mctable, data_keys = imports_data_keys)
+#' eval_module(
+#'   exp = expr_example, 
+#'   data = imports_data, 
+#'   mctable = imports_mctable, 
+#'   data_keys = imports_data_keys
+#' )
 eval_module <- function(
   exp,
   data,
