@@ -35,9 +35,9 @@ get_node_list <- function(
     if (parse_res$created_in_exp) {
       out_node_list[[node_name]][["created_in_exp"]] <- TRUE
 
-      if (parse_res$nvariate) {
+      if (parse_res$nvariates) {
         stop(
-          "Remove 'nvariate' argument from:\n   ",
+          "Remove 'nvariates' argument from:\n   ",
           node_exp,
           "\nNumber of variates is determined automatically based on input data rows"
         )
@@ -236,7 +236,7 @@ get_node_list <- function(
 #'   - inputs: character vector of symbol names considered inputs
 #'   - created_in_exp: logical; TRUE if mcstoc or mcdata was used in the expression
 #'   - mc_func: character or NULL; sampling function name detected for mcstoc/mcdata
-#'   - nvariate: logical; TRUE if a `nvariate` argument was present
+#'   - nvariates: logical; TRUE if a `nvariates` argument was present
 #'   - na_rm: logical; TRUE if `mcnode_na_rm` was used
 #'   - function_call: logical; TRUE if any function calls were present
 #' @keywords internal
@@ -247,7 +247,7 @@ get_node_list <- function(
       inputs = character(),
       created_in_exp = FALSE,
       mc_func = NULL,
-      nvariate = FALSE,
+      nvariates = FALSE,
       na_rm = FALSE,
       function_call = FALSE
     ))
@@ -258,7 +258,7 @@ get_node_list <- function(
     mc_func <- NULL
     created_in_exp <- FALSE
     na_rm_flag <- FALSE
-    nvariate_flag <- FALSE
+    nvariates_flag <- FALSE
     function_call_flag <- FALSE
 
     traverse <- function(e) {
@@ -276,7 +276,7 @@ get_node_list <- function(
         if (fname %in% c("mcstoc", "mcdata")) {
           created_in_exp <<- TRUE
           nm <- names(e)
-          if (!is.null(nm) && "nvariate" %in% nm) nvariate_flag <<- TRUE
+          if (!is.null(nm) && "nvariates" %in% nm) nvariates_flag <<- TRUE
           if (!is.null(nm) && "func" %in% nm) {
             argval <- e[["func"]]
             mc_func <<- if (is.symbol(argval)) as.character(argval) else paste0(deparse(argval), collapse = "")
@@ -301,7 +301,7 @@ get_node_list <- function(
       inputs = inputs,
       created_in_exp = created_in_exp,
       mc_func = mc_func,
-      nvariate = nvariate_flag,
+      nvariates = nvariates_flag,
       na_rm = na_rm_flag,
       function_call = function_call_flag
     )

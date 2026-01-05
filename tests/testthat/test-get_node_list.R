@@ -296,8 +296,8 @@ suppressMessages({
 
     # Test error when nvariate is provided
     test_exp2 <- quote({
-      input_b <- mcdata(data=c(0.5, 1.5, 2.5), type = "0", nvariate=3)
-      result <- mcstoc(rnorm, mean= input_b, sd=input_a, type = "V", nvariate=3)
+      input_b <- mcdata(data=c(0.5, 1.5, 2.5), type = "0", nvariates=3)
+      result <- mcstoc(rnorm, mean= input_b, sd=input_a, type = "V", nvariates=3)
     })
 
     expect_error({
@@ -305,7 +305,7 @@ suppressMessages({
       exp = test_exp2,
       mctable = test_mctable
     )
-    }, "Remove 'nvariate' argument")
+    }, "Remove 'nvariates' argument")
 
   })
 
