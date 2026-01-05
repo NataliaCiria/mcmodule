@@ -3,15 +3,21 @@
 #' Takes a set of Monte Carlo model expressions, evaluates them, and creates an
 #' mcmodule containing results and metadata.
 #'
-#' @details 
+#' @details
 #' - mcstoc() and mcdata() may be used directly inside model expressions.
-#'   When these are used you should NOT explicitly supply nvariates; nvariates
+#'   When these are used you should NOT explicitly supply nvariates, nvariates
 #'   will be inferred automatically as the number of rows in the input `data`.
-#' - An explicit `mctable` is optional. If no mctable is provided, any model
-#'   nodes that match column names in `data` will be built from the data.
-#'   If a `mctable` is provided and a node is not found there but exists as a
-#'   data column, a warning will be issued and the node will be created from
-#'   the data column.
+#'   Other arguments are preserved, for example specify `type = "0"` when 
+#'   providing data without variability/uncertainty (see ?mcdata and ?mcstoc).
+#' - By design, mcmodule supports type = "V" (the default, with variability) and 
+#'   type = "0" (no variability) nodes. Expressions that specify other node
+#'   types ("U" or "VU") are not fully supported and downstream compatibility is not 
+#'   guaranteed.
+#' - An explicit `mctable` is optional but highly recommended. If no mctable is
+#'   provided, any model nodes that match column names in `data` will be built
+#'   from the data. If a `mctable` is provided and a node is not found there but
+#'   exists as a data column, a warning will be issued and the node will be created
+#'   from the data column.
 #' - Within expressions reference input mcnodes by their bare names (e.g.
 #'   column1). Do not use `data$column1` or `data["column1"]`.
 #'
@@ -364,6 +370,51 @@ eval_module <- function(
     ]
     if (nrow(mctable_i) > 0) {
       create_mcnodes(data = data, mctable = mctable_i)
+    }
+
+    # Add nvariates to mcstoc and mcdata in current expression (handle multi-line & nested calls)
+    # Only run if at least one node was created inside the expression
+    if (any(sapply(node_list_i, function(x) isTRUE(x$created_in_exp)))) {
+      add_nvariates_ast <- function(expr, data_name = "data") {
+        # Recursively walk and modify calls
+        if (is.call(expr)) {
+          # Recurse into function name if it's a call (e.g. pkg::fn)
+          # then recurse into arguments
+          for (i in seq_along(expr)) {
+            if (i == 1) next
+            expr[[i]] <- add_nvariates_ast(expr[[i]], data_name)
+          }
+
+          fn_deparsed <- paste(deparse(expr[[1]]), collapse = "")
+          is_target <- grepl("(^|::)mcdata$|(^|::)mcstoc$", fn_deparsed)
+
+          if (is_target) {
+            nm <- names(expr)
+            if (!is.null(nm) && "nvariates" %in% nm) {
+              stop("Remove 'nvariates' argument")
+            }
+            # append nvariates = nrow(data)
+            idx <- length(expr) + 1
+            expr[[idx]] <- call("nrow", as.name(data_name))
+            nms <- names(expr)
+            if (is.null(nms)) nms <- rep("", length(expr))
+            nms[idx] <- "nvariates"
+            names(expr) <- nms
+          }
+          return(expr)
+        } else if (is.expression(expr)) {
+          # expression vector: apply to each element
+          for (i in seq_along(expr)) {
+            expr[[i]] <- add_nvariates_ast(expr[[i]], data_name)
+          }
+          return(expr)
+        } else {
+          return(expr)
+        }
+      }
+
+      # modify the quoted expression in place
+      exp_i <- add_nvariates_ast(exp_i, data_name = "data")
     }
 
     # Evaluate current expression

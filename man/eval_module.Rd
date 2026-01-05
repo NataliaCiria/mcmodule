@@ -51,13 +51,19 @@ mcmodule containing results and metadata.
 \details{
 \itemize{
 \item mcstoc() and mcdata() may be used directly inside model expressions.
-When these are used you should NOT explicitly supply nvariates; nvariates
+When these are used you should NOT explicitly supply nvariates, nvariates
 will be inferred automatically as the number of rows in the input \code{data}.
-\item An explicit \code{mctable} is optional. If no mctable is provided, any model
-nodes that match column names in \code{data} will be built from the data.
-If a \code{mctable} is provided and a node is not found there but exists as a
-data column, a warning will be issued and the node will be created from
-the data column.
+Other arguments are preserved, for example specify \code{type = "0"} when
+providing data without variability/uncertainty (see ?mcdata and ?mcstoc).
+\item By design, mcmodule supports type = "V" (the default, with variability) and
+type = "0" (no variability) nodes. Expressions that specify other node
+types ("U" or "VU") are not fully supported and downstream compatibility is not
+guaranteed.
+\item An explicit \code{mctable} is optional but highly recommended. If no mctable is
+provided, any model nodes that match column names in \code{data} will be built
+from the data. If a \code{mctable} is provided and a node is not found there but
+exists as a data column, a warning will be issued and the node will be created
+from the data column.
 \item Within expressions reference input mcnodes by their bare names (e.g.
 column1). Do not use \code{data$column1} or \code{data["column1"]}.
 }

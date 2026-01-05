@@ -17,6 +17,11 @@ get_node_list <- function(
   data_keys = set_data_keys(),
   keys = NULL
 ) {
+  # Validate that exp is a quoted expression (use quote({ ... }))
+  if (!(is.call(exp) || is.expression(exp) || is.language(exp))) {
+    stop("exp must be a quoted expression, use quote({ ... })")
+  }
+
   module <- gsub("_exp", "", deparse(substitute(exp)))
 
   # Initialize lists and vectors
@@ -31,6 +36,15 @@ get_node_list <- function(
     # Use AST parser
     parse_res <- ast_traverse(node_exp)
     inputs <- parse_res$inputs
+
+    if (length(parse_res$unsupported_types) > 0) {
+      warning(
+        sprintf(
+          "mcdata/mcstoc calls with type(s) %s are not fully supported by this mcmodule version, downstream compatibility is not guaranteed",
+          paste(unique(parse_res$unsupported_types), collapse = ", ")
+        )
+      )
+    }
 
     if (parse_res$created_in_exp) {
       out_node_list[[node_name]][["created_in_exp"]] <- TRUE
@@ -249,7 +263,8 @@ get_node_list <- function(
       mc_func = NULL,
       nvariates = FALSE,
       na_rm = FALSE,
-      function_call = FALSE
+      function_call = FALSE,
+      unsupported_types = character()
     ))
     node <- parsed[[1]]
 
@@ -260,6 +275,7 @@ get_node_list <- function(
     na_rm_flag <- FALSE
     nvariates_flag <- FALSE
     function_call_flag <- FALSE
+    unsupported_types <- character()
 
     traverse <- function(e) {
       if (is.symbol(e)) {
@@ -277,12 +293,29 @@ get_node_list <- function(
           created_in_exp <<- TRUE
           nm <- names(e)
           if (!is.null(nm) && "nvariates" %in% nm) nvariates_flag <<- TRUE
+
+          # detect mc sampling function name
           if (!is.null(nm) && "func" %in% nm) {
             argval <- e[["func"]]
             mc_func <<- if (is.symbol(argval)) as.character(argval) else paste0(deparse(argval), collapse = "")
           } else if (length(e) >= 2) {
             second <- e[[2]]
             mc_func <<- if (is.symbol(second)) as.character(second) else paste0(deparse(second), collapse = "")
+          }
+
+          # detect unsupported type argument values ("U", "VU")
+          if (!is.null(nm) && "type" %in% nm) {
+            type_val <- e[["type"]]
+            type_char <- if (is.character(type_val)) {
+              type_val
+            } else if (is.symbol(type_val)) {
+              as.character(type_val)
+            } else {
+              paste0(deparse(type_val), collapse = "")
+            }
+            if (type_char %in% c("U", "VU")) {
+              unsupported_types <<- unique(c(unsupported_types, type_char))
+            }
           }
         }
 
@@ -303,6 +336,7 @@ get_node_list <- function(
       mc_func = mc_func,
       nvariates = nvariates_flag,
       na_rm = na_rm_flag,
-      function_call = function_call_flag
+      function_call = function_call_flag,
+      unsupported_types = unsupported_types
     )
   }

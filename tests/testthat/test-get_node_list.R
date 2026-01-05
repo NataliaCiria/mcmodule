@@ -273,8 +273,8 @@ suppressMessages({
 
   test_that("get_node_list deals with mcdata() and mcstoc() functions", {
     test_exp1 <- quote({
-      input_b <- mcdata(data=c(0.5, 1.5, 2.5), type = "0")
-      result <- mcstoc(rnorm, mean= input_b, sd=input_a, type = "V")
+      input_b <- mcdata(data=c(0.5, 1.5, 2.5))
+      result <- mcstoc(rnorm, mean= input_b, sd=input_a)
     })
 
     test_mctable <- data.frame(
@@ -288,7 +288,7 @@ suppressMessages({
       exp = test_exp1,
       mctable = test_mctable
     )
-
+    
     expect_true(node_list1$result$function_call)
     expect_true(node_list1$result$created_in_exp)
     expect_equal(node_list1$result$inputs, c("input_b","input_a"))
@@ -307,6 +307,59 @@ suppressMessages({
     )
     }, "Remove 'nvariates' argument")
 
+  })
+
+  test_that("get_node_list requires a quoted { } expression", {
+    expect_error(
+      get_node_list("not an expression"),
+      "exp must be a quoted expression"
+    )
+    expect_error(
+      get_node_list(123),
+      "exp must be a quoted expression"
+    )
+  })
+
+  test_that("get_node_list warns for unsupported mcnode types (U, VU)", {
+    test_exp_u <- quote({
+      input_b <- mcdata(data = c(0.5, 1.5), type = "U")
+      result <- mcstoc(rnorm, mean = input_b, sd = input_a)
+    })
+
+    test_exp_vu <- quote({
+      input_c <- mcdata(data = c(0.2, 0.8), type = "VU")
+      final <- mcstoc(rnorm, mean = input_c, sd = input_a)
+    })
+
+    test_mctable <- data.frame(
+      mcnode = c("input_a"),
+      mc_func = c("runif"),
+      description = c("Test input A"),
+      stringsAsFactors = FALSE,
+      from_variable = c(NA),
+      transformation = c(NA),
+      sensi_analysis = c(FALSE)
+    )
+
+    expect_warning(
+      node_list_u <- get_node_list(
+        exp = test_exp_u,
+        mctable = test_mctable
+      ),
+      "not fully supported by this mcmodule"
+    )
+    expect_true(node_list_u$result$created_in_exp)
+    expect_true("input_b" %in% names(node_list_u))
+
+    expect_warning(
+      node_list_vu <- get_node_list(
+        exp = test_exp_vu,
+        mctable = test_mctable
+      ),
+      "not fully supported by this mcmodule"
+    )
+    expect_true(node_list_vu$final$created_in_exp)
+    expect_true("input_c" %in% names(node_list_vu))
   })
 
 })

@@ -575,7 +575,6 @@ suppressMessages({
     expect_true(is.mcnode(result_mcmodule$node_list$external_input$mcnode))
   })
 
-  # TODO
   test_that("eval_module warns when inputs are in data but not in provided mctable (non-empty mctable)", {
     test_data <- data.frame(external_input = c(0.1, 0.2, 0.3))
     test_exp <- quote({
@@ -608,4 +607,39 @@ suppressMessages({
     expect_true(is.mcnode(result_mcmodule$node_list$external_input$mcnode))
   })
   
+  test_that("eval_module deals with mcdata() and mcstoc() functions", {
+    test_data <- data.frame(
+      category = c("a", "b"),
+      input_a_min = c(0.1, 0.2),
+      input_a_max = c(0.2, 0.3)
+    )
+
+    test_exp1 <- quote({
+      input_b <- mcdata(data=c(0.5, 1.5), type ="0")
+      input_c <- mcstoc(runif, min=0, max=1)
+      ouput_ab <- mcstoc(rnorm, mean= input_b, sd=input_a)
+      result <- ouput_ab + input_c
+    })
+
+    test_mctable <- data.frame(
+      mcnode = c("input_a"),
+      mc_func = c("runif"),
+      description = c("Test input A"),
+      stringsAsFactors = FALSE,
+      from_variable = c(NA),
+      transformation = c(NA),
+      sensi_analysis = c(FALSE)
+    )
+
+    result_mcmodule <- eval_module(
+      exp = c(test = test_exp1),
+      data = test_data,
+      mctable = test_mctable
+    )
+
+    expect_true(result_mcmodule$node_list$ouput_ab$function_call)
+    expect_true(result_mcmodule$node_list$ouput_ab$created_in_exp)
+    expect_equal(dim(result_mcmodule$node_list$ouput_ab$mcnode), dim(result_mcmodule$node_list$result$mcnode))
+    expect_equal(result_mcmodule$node_list$result$inputs, c("ouput_ab","input_c"))
+  })
 })
