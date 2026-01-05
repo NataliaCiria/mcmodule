@@ -52,7 +52,7 @@ get_node_list <- function(
     if (parse_res$function_call) out_node_list[[node_name]][["function_call"]] <- TRUE
 
     # Collect node names and inputs
-    all_nodes <- unique(c(all_nodes, node_name, inputs))
+    all_nodes <- unique(c(all_nodes, inputs, node_name))
 
     # Set node type: numeric literal -> scalar; otherwise an output node that may depend on inputs
     out_node_list[[node_name]][["type"]] <-
