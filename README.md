@@ -120,3 +120,5 @@ Ciria, N. (2025). mcmodule: Modular Monte Carlo Risk Analysis. R package version
 -   [BIOSECURE](https://biosecure.eu/), a European Union’s HORIZON Europe FARM2FORK project
 
 -   [Universitat Autònoma de Barcelona](https://www.uab.cat/)
+
+*Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union or REA. Neither the European Union nor the granting authority can be held responsible for them.*
