@@ -7,11 +7,11 @@
 #' - mcstoc() and mcdata() may be used directly inside model expressions.
 #'   When these are used you should NOT explicitly supply nvariates, nvariates
 #'   will be inferred automatically as the number of rows in the input `data`.
-#'   Other arguments are preserved, for example specify `type = "0"` when 
+#'   Other arguments are preserved, for example specify `type = "0"` when
 #'   providing data without variability/uncertainty (see ?mcdata and ?mcstoc).
-#' - By design, mcmodule supports type = "V" (the default, with variability) and 
+#' - By design, mcmodule supports type = "V" (the default, with variability) and
 #'   type = "0" (no variability) nodes. Expressions that specify other node
-#'   types ("U" or "VU") are not fully supported and downstream compatibility is not 
+#'   types ("U" or "VU") are not fully supported and downstream compatibility is not
 #'   guaranteed.
 #' - An explicit `mctable` is optional but highly recommended. If no mctable is
 #'   provided, any model nodes that match column names in `data` will be built
@@ -40,20 +40,20 @@
 #'
 #' @examples
 #' # Basic usage with single expression
-#' # Build a quoted expression using mcnodes defined in mctable or built with 
+#' # Build a quoted expression using mcnodes defined in mctable or built with
 #' # mcstoc()/mcdata within the expression (do NOT set nvariates, it is
 #' # inferred from nrow(data) when evaluated by eval_module()).
 #' expr_example <- quote({
 #'   # Within-herd prevalence (assigned from a pre-built mcnode w_prev)
 #'   inf_a <- w_prev
 #'
-#'   # Estimate of clinic sensitivity 
+#'   # Estimate of clinic sensitivity
 #'   clinic_sensi <- mcstoc(runif, min = 0.6, max = 0.8)
-#' 
-#'   # Probability an infected animal is tested in origin and not detected 
+#'
+#'   # Probability an infected animal is tested in origin and not detected
 #'   false_neg_a <- inf_a * test_origin * (1 - test_sensi) * (1 - clinic_sensi)
 #'
-#'   # Probability an infected animal is not tested and not detected 
+#'   # Probability an infected animal is not tested and not detected
 #'   no_test_a <- inf_a * (1 - test_origin) * (1 - clinic_sensi)
 #'
 #'   # no_detect_a: total probability an infected animal is not detected
@@ -62,9 +62,9 @@
 #'
 #' # Evaluate
 #' eval_module(
-#'   exp = expr_example, 
-#'   data = imports_data, 
-#'   mctable = imports_mctable, 
+#'   exp = expr_example,
+#'   data = imports_data,
+#'   mctable = imports_mctable,
 #'   data_keys = imports_data_keys
 #' )
 eval_module <- function(
@@ -114,7 +114,7 @@ eval_module <- function(
         data_name,
         paste(keys, collapse = ", ")
       ))
-    } else if(length(data_keys_original)>0){ 
+    } else if (length(data_keys_original) > 0) {
       # Only message if data_keys were not NULL (to avoid message when both are NULL)
       message(sprintf("data_keys overwritten for %s", data_name))
     }
@@ -135,12 +135,11 @@ eval_module <- function(
   }
 
   node_list <- list()
-  modules <- c()
 
   # Process each expression in the list
   for (i in 1:length(exp_list)) {
     exp_i <- exp_list[[i]]
-    module <- names(exp_list)[[i]]
+    exp_name_i <- names(exp_list)[[i]]
 
     # Get initial node list (forward keys_arg as character vector or NULL)
     node_list_i <- get_node_list(
@@ -297,18 +296,19 @@ eval_module <- function(
         }
       } else if (length(data_nodes) > 0) {
         # Update prev_nodes to only those not in data
-        prev_nodes<-prev_nodes[!prev_nodes %in% names(data)]
+        prev_nodes <- prev_nodes[!prev_nodes %in% names(data)]
         # If prev_nodes are in data, create mcnodes directly from data
         data_mctable <- data.frame(
-          mcnode = data_nodes, 
+          mcnode = data_nodes,
           mc_func = NA,
           description = NA,
           from_variable = NA,
           transformation = NA,
-          sensi_analysis = NA)
-        
+          sensi_analysis = NA
+        )
+
         create_mcnodes(data = data, mctable = data_mctable)
-        
+
         # Update node list
         node_list_i_data <- get_node_list(
           exp = exp_i,
@@ -317,12 +317,12 @@ eval_module <- function(
           data_keys = data_keys,
           keys = keys_arg
         )
-      
+
         node_list_i[data_nodes] <- node_list_i_data[data_nodes]
-        
-        if(nrow(mctable)==0){
+
+        if (nrow(mctable) == 0) {
           message("Creating mcnodes from data (mctable not provided)")
-        }else{
+        } else {
           message(sprintf(
             "The following nodes are present in data but not in the mctable: %s.",
             paste(data_nodes, collapse = ", ")
@@ -330,10 +330,10 @@ eval_module <- function(
         }
       } else {
         # Error if prev_nodes are neither in prev_mcmodule nor in data
-          stop(sprintf(
-            "The following nodes are not present in data or in prev_mcmodule: %s.",
-            paste(prev_nodes, collapse = ", ")
-          ))  
+        stop(sprintf(
+          "The following nodes are not present in data or in prev_mcmodule: %s.",
+          paste(prev_nodes, collapse = ", ")
+        ))
       }
     }
 
@@ -381,7 +381,9 @@ eval_module <- function(
           # Recurse into function name if it's a call (e.g. pkg::fn)
           # then recurse into arguments
           for (i in seq_along(expr)) {
-            if (i == 1) next
+            if (i == 1) {
+              next
+            }
             expr[[i]] <- add_nvariates_ast(expr[[i]], data_name)
           }
 
@@ -397,7 +399,9 @@ eval_module <- function(
             idx <- length(expr) + 1
             expr[[idx]] <- call("nrow", as.name(data_name))
             nms <- names(expr)
-            if (is.null(nms)) nms <- rep("", length(expr))
+            if (is.null(nms)) {
+              nms <- rep("", length(expr))
+            }
             nms[idx] <- "nvariates"
             names(expr) <- nms
           }
@@ -419,7 +423,7 @@ eval_module <- function(
 
     # Evaluate current expression
     eval(exp_i)
-    message(sprintf("%s evaluated", module))
+    message(sprintf("%s evaluated", exp_name_i))
 
     # Update node metadata
     for (j in 1:length(node_list)) {
@@ -437,7 +441,7 @@ eval_module <- function(
         new_param_names[inputs[inputs %in% names(new_param_names)]]
       node_list[[mc_name]][["inputs"]] <- inputs
 
-      # Update keys for output nodes
+      # Update keys and add exp name for output nodes
       if (
         ((!is.null(prev_mcmodule)) | (length(exp) > 1)) &
           node_list[[mc_name]][["type"]] == "out_node"
@@ -450,6 +454,7 @@ eval_module <- function(
           }
         })))
         node_list[[mc_name]][["keys"]] <- keys_names
+        node_list[[mc_name]][["exp_name"]] <- keys_names
       }
 
       # Scalar to mcnode conversion
@@ -465,13 +470,11 @@ eval_module <- function(
 
       # Set module name
       if (
-        length(node_list[[mc_name]][["module"]]) == 0 ||
-          node_list[[mc_name]][["module"]] %in% "exp_i"
+        length(node_list[[mc_name]][["exp_name_i"]]) == 0 ||
+          node_list[[mc_name]][["exp_name_i"]] %in% "exp_i"
       ) {
-        node_list[[mc_name]][["module"]] <- module
+        node_list[[mc_name]][["exp_name_i"]] <- exp_name_i
       }
-
-      modules <- unique(c(modules, node_list[[mc_name]][["module"]]))
 
       # Calculate summary statistics if requested
       if (summary & is.mcnode(mcnode)) {
@@ -510,8 +513,7 @@ eval_module <- function(
   mcmodule <- list(
     data = list(data),
     exp = exp,
-    node_list = node_list,
-    modules = modules
+    node_list = node_list
   )
 
   names(mcmodule$data) <- data_name

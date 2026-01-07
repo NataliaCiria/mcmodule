@@ -11,7 +11,7 @@ suppressMessages({
     # Check class and structure
     expect_equal(class(result), "mcmodule")
     expect_true(all(
-      c("data", "exp", "node_list", "modules") %in% names(result)
+      c("data", "exp", "node_list") %in% names(result)
     ))
 
     # Test error handling for missing prev_mcmodule
@@ -43,8 +43,8 @@ suppressMessages({
       data_keys = imports_data_keys
     )
 
-    # Verify multiple modules were created
-    expect_equal(multi_result$modules, c("imports", "additional"))
+    # Verify multiple expressions were evaluated
+    expect_equal(names(multi_result$exp), c("imports", "additional"))
 
     # Check that variables from first module are available in second
     expect_true("no_detect_a" %in% names(multi_result$node_list))
@@ -566,8 +566,9 @@ suppressMessages({
     expect_message(
       result_mcmodule <- eval_module(
         exp = c(test = test_exp),
-        data = test_data),
-    "Creating mcnodes from data"
+        data = test_data
+      ),
+      "Creating mcnodes from data"
     )
 
     expect_true("external_input" %in% names(result_mcmodule$node_list))
@@ -606,7 +607,7 @@ suppressMessages({
     expect_true("result" %in% names(result_mcmodule$node_list))
     expect_true(is.mcnode(result_mcmodule$node_list$external_input$mcnode))
   })
-  
+
   test_that("eval_module deals with mcdata() and mcstoc() functions", {
     test_data <- data.frame(
       category = c("a", "b"),
@@ -615,9 +616,9 @@ suppressMessages({
     )
 
     test_exp1 <- quote({
-      input_b <- mcdata(data=c(0.5, 1.5), type ="0")
-      input_c <- mcstoc(runif, min=0, max=1)
-      ouput_ab <- mcstoc(rnorm, mean= input_b, sd=input_a)
+      input_b <- mcdata(data = c(0.5, 1.5), type = "0")
+      input_c <- mcstoc(runif, min = 0, max = 1)
+      ouput_ab <- mcstoc(rnorm, mean = input_b, sd = input_a)
       result <- ouput_ab + input_c
     })
 
@@ -639,7 +640,13 @@ suppressMessages({
 
     expect_true(result_mcmodule$node_list$ouput_ab$function_call)
     expect_true(result_mcmodule$node_list$ouput_ab$created_in_exp)
-    expect_equal(dim(result_mcmodule$node_list$ouput_ab$mcnode), dim(result_mcmodule$node_list$result$mcnode))
-    expect_equal(result_mcmodule$node_list$result$inputs, c("ouput_ab","input_c"))
+    expect_equal(
+      dim(result_mcmodule$node_list$ouput_ab$mcnode),
+      dim(result_mcmodule$node_list$result$mcnode)
+    )
+    expect_equal(
+      result_mcmodule$node_list$result$inputs,
+      c("ouput_ab", "input_c")
+    )
   })
 })
