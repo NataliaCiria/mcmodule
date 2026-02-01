@@ -1,3 +1,59 @@
+#' Monte Carlo Module Matrix
+#'
+#' @param mcmodule A Monte Carlo module object
+#' @param mc_names Optional names of Monte Carlo nodes
+#' @return A list of matrices, one per variate simulation, with rows as uncertainty simulations and columns as mc_names
+#' @examples
+#' matrices <- mcmodule_matrix(imports_mcmodule, mc_names = c("w_prev", "test_origin", "test_sensi"))
+mcmodule_matrix <- function(mcmodule, mc_names = NULL) {
+  mc_names <- mc_names %||% names(mcmodule$node_list)
+
+  # Check that all mcnodes have 1 or the same number of uncertainty values
+  mc_uncs <- unique(sapply(mc_names, \(x) {
+    dim(mcmodule$node_list[[x]][["mcnode"]])[1]
+  }))
+  mc_uncs <- mc_uncs[mc_uncs != 1]
+
+  if (length(unique(mc_uncs)) > 1) {
+    stop(
+      "All mcnode objects must have the same number of uncertanty simulations or no uncertainty."
+    )
+  }
+
+  # Check that all mcnodes have 1 or the same number of variate simulations
+  mc_varis <- unique(sapply(mc_names, \(x) {
+    dim(mcmodule$node_list[[x]][["mcnode"]])[3]
+  }))
+  mc_varis <- mc_varis[mc_varis != 1]
+  if (length(unique(mc_varis)) > 1) {
+    stop(
+      "All mcnode objects must have the same number of variate simulations or one variate"
+    )
+  }
+
+  # Initialize list to store matrices: one j element per variate simulation
+  matrices <- vector("list", mc_varis)
+  # Intitialize matrices that will be i mc_names x u uncertainty (mc_uncs)
+  matrices <- lapply(matrices, function(x) {
+    matrix(nrow = mc_uncs, ncol = length(mc_names))
+  })
+
+  for (i in seq_along(mc_names)) {
+    mcnode_i <- mcmodule$node_list[[mc_names[i]]][["mcnode"]]
+    for (j in seq_len(dim(mcnode_i)[3])) {
+      variate_i_j <- mcnode_i[,, j]
+
+      if (length(variate_i_j) == 1) {
+        variate_i_j <- rep(variate_i_j, mc_uncs)
+      }
+
+      matrices[[j]][, i] <- variate_i_j
+    }
+  }
+  matrices
+}
+
+
 #' Monte Carlo Module Index
 #'
 #' @param mcmodule A Monte Carlo module object
