@@ -1,41 +1,56 @@
-#' Monte Carlo Module Matrix
+#' Check Monte Carlo Nodes Subset for Sensibility Analysis Readiness
 #'
 #' @param mcmodule A Monte Carlo module object
 #' @param mc_names Optional names of Monte Carlo nodes
-#' @return A list of matrices, one per variate simulation, with rows as uncertainty simulations and columns as mc_names
-#' @examples
-#' matrices <- mcmodule_matrix(imports_mcmodule, mc_names = c("w_prev", "test_origin", "test_sensi"))
-mcmodule_matrix <- function(mcmodule, mc_names = NULL) {
+#' @return If not error, vector with the number of mcnodes, variates and uncertainty simulations
+mcmodule_dim_check <- function(mcmodule, mc_names = NULL) {
   mc_names <- mc_names %||% names(mcmodule$node_list)
 
   # Check that all mcnodes have 1 or the same number of uncertainty values
-  mc_uncs <- unique(sapply(mc_names, \(x) {
+  n_uncertainty <- unique(sapply(mc_names, \(x) {
     dim(mcmodule$node_list[[x]][["mcnode"]])[1]
   }))
-  mc_uncs <- mc_uncs[mc_uncs != 1]
+  n_uncertainty <- n_uncertainty[n_uncertainty != 1]
 
-  if (length(unique(mc_uncs)) > 1) {
+  if (length(unique(n_uncertainty)) > 1) {
     stop(
       "All mcnode objects must have the same number of uncertanty simulations or no uncertainty."
     )
   }
 
   # Check that all mcnodes have 1 or the same number of variate simulations
-  mc_varis <- unique(sapply(mc_names, \(x) {
+  n_variate <- unique(sapply(mc_names, \(x) {
     dim(mcmodule$node_list[[x]][["mcnode"]])[3]
   }))
-  mc_varis <- mc_varis[mc_varis != 1]
-  if (length(unique(mc_varis)) > 1) {
+  n_variate <- n_variate[n_variate != 1]
+  if (length(unique(n_variate)) > 1) {
     stop(
       "All mcnode objects must have the same number of variate simulations or one variate"
     )
   }
 
-  # Initialize list to store matrices: one j element per variate simulation
-  matrices <- vector("list", mc_varis)
-  # Intitialize matrices that will be i mc_names x u uncertainty (mc_uncs)
+  list(
+    n_mcnodes = length(mc_names),
+    n_variate = ifelse(length(n_variate) == 0, 1, n_variate),
+    n_uncertainty = ifelse(length(n_uncertainty) == 0, 1, n_uncertainty)
+  )
+}
+
+#' Monte Carlo Module to Matrices
+#'
+#' @param mcmodule A Monte Carlo module object
+#' @param mc_names Optional names of Monte Carlo nodes
+#' @return A list of matrices, one per variate simulation, with rows as uncertainty simulations and columns as mc_names
+#' @examples
+#' matrices <- mcmodule_to_matrices(imports_mcmodule, mc_names = c("w_prev", "test_origin", "test_sensi"))
+mcmodule_to_matrices <- function(mcmodule, mc_names = NULL) {
+  mc_names <- mc_names %||% names(mcmodule$node_list)
+  dims <- mcmodule_dim_check(mcmodule, mc_names)
+  # Initialize list to store matrices: one per n_variate
+  matrices <- vector("list", dims$n_variate)
+  # Intitialize matrices (n_uncertainty x n_mcnodes)
   matrices <- lapply(matrices, function(x) {
-    matrix(nrow = mc_uncs, ncol = length(mc_names))
+    matrix(nrow = dims$n_uncertainty, ncol = dims$n_mcnodes)
   })
 
   for (i in seq_along(mc_names)) {
@@ -53,8 +68,34 @@ mcmodule_matrix <- function(mcmodule, mc_names = NULL) {
   matrices
 }
 
+#' Monte Carlo Module to mc object (as in mc2d)
+#'
+#' @param mcmodule A Monte Carlo module object
+#' @param mc_names Optional names of Monte Carlo nodes
+#' @return A list of mc objects (one per variate) combining specified Monte Carlo nodes
+mcmodule_to_mc <- function(mcmodule, mc_names = NULL) {
+  mc_names <- mc_names %||% names(mcmodule$node_list)
+  dims <- mcmodule_dim_check(mcmodule, mc_names)
+  mc_list <- vector("list", dims$n_variate)
 
-#' Monte Carlo Module Index
+  for (j in seq_len(dims$n_variate)) {
+    mc_j <- NULL
+    for (i in seq_along(mc_names)) {
+      mcnode_i <- mcmodule$node_list[[mc_names[i]]][["mcnode"]]
+      variate_i_j <- extractvar(mcnode_i, j)
+
+      if (is.null(mc_j)) {
+        mc_j <- mc(variate_i_j, name = mc_names[i])
+      } else {
+        mc_j <- mc(mc_j, mc(variate_i_j, name = mc_names[i]))
+      }
+    }
+    mc_list[[j]] <- mc_j
+  }
+  mc_list
+}
+
+#' Get Monte Carlo Module input data per expresion, keys for each variate (data row) and global data keys
 #'
 #' @param mcmodule A Monte Carlo module object
 #' @return A list containing expression data, data keys, and global keys
@@ -129,6 +170,42 @@ mcmodule_index <- function(mcmodule) {
     data_keys = data_keys,
     global_keys = global_keys
   )
+}
+
+#' Calculate Correlation Coeficients for Monte Carlo Module Inputs and Outputs (Pearson adn Spearman)
+#'
+#' @param mcmodule Monte Carlo module object
+#' @param agg_output Name of aggregated output, defaults to "total_agg"
+#' @return Data frame with correlation coefficients
+#' @export
+mcmodule_corr <- function(mcmodule, agg_output = "total_agg") {
+  exp_names <- names(mcmodule$exp)
+
+  index <- mcmodule_index(mcmodule)
+
+  corr_results <- data.frame()
+
+  # Get aggregated output
+  mc_agg <- mcmodule$node_list[[agg_output]][["mcnode"]]
+
+  pb <- txtProgressBar(min = 0, max = length(exp_names), initial = 0, style = 3)
+
+  for (h in seq_along(exp_names)) {
+    exp_h <- names(mcmodule$exp)[h]
+    # Get input (type == "in_node") mcnodes names in mcmodule$node_list for this expression (module == exp_h)
+    exp_h_inputs <- names(mcmodule$node_list)[
+      unlist(lapply(names(mcmodule$node_list), \(x) {
+        mcmodule$node_list[[x]][["module"]] == exp_h &
+          mcmodule$node_list[[x]][["type"]] == "in_node"
+      }))
+    ]
+# TODO
+    }
+    setTxtProgressBar(pb, h)
+  }
+
+  close(pb)
+  corr_results
 }
 
 #' Calculate Relative Change in Monte Carlo Module
@@ -211,7 +288,7 @@ mcmodule_spearman <- function(mcmodule, agg_output = "total_agg") {
   exp_names <- names(mcmodule$node_list)
   spearman_rho_exp <- spearman_rho_agg <- data.frame()
 
-  mcmodule_index <- mcmodule_index(mcmodule)
+  index <- mcmodule_index(mcmodule)
 
   # Get aggregated output
   mc_agg <- mcmodule$node_list[[agg_output]][["mcnode"]]
@@ -223,11 +300,11 @@ mcmodule_spearman <- function(mcmodule, agg_output = "total_agg") {
   # TODO
   # Process each expression - FOR EACH EXPRESSION WE NEED TO HAVE ONE VARIATE INDEX
   for (h in seq_along(exp_names)) {
-    expression_h <- names(mcmodule$mc_list)[h]
+    exp_h <- names(mcmodule$mc_list)[h]
     variates <- mcmodule$mc_list[[h]]
 
     data_name_h <- mcmodule_index$expression_data$data_name[
-      mcmodule_index$expression_data$expression %in% expression_h
+      mcmodule_index$expression_data$expression %in% exp_h
     ]
     data_h <- mcmodule$data[[data_name_h]]
     keys_h <- names(data_h)[
