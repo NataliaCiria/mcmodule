@@ -59,7 +59,7 @@ mcmodule_to_matrices <- function(mcmodule, mc_names = NULL) {
       variate_i_j <- mcnode_i[,, j]
 
       if (length(variate_i_j) == 1) {
-        variate_i_j <- rep(variate_i_j, mc_uncs)
+        variate_i_j <- rep(variate_i_j, dims$n_uncertainty)
       }
 
       matrices[[j]][, i] <- variate_i_j
@@ -102,59 +102,25 @@ mcmodule_to_mc <- function(mcmodule, mc_names = NULL) {
 #' @export
 mcmodule_index <- function(mcmodule) {
   # Extract module expressions and metadata
-  expression <- unlist(lapply(names(mcmodule$node_list), \(x) {
-    mcmodule$node_list[[x]][["module"]]
+  exp_name <- unlist(lapply(names(mcmodule$node_list), \(x) {
+    mcmodule$node_list[[x]][["exp_name"]] %||% NA
   }))
-  data_name <- unlist(lapply(names(mcmodule$node_list), \(x) {
+
+  data_name <- unlist(lapply(names(mcmodule$node_list)[!is.na(exp_name)], \(x) {
     mcmodule$node_list[[x]][["data_name"]] %||% NA
   }))
-  type <- unlist(lapply(names(mcmodule$node_list), \(x) {
-    mcmodule$node_list[[x]][["type"]] %||% NA
-  }))
+  names(data_name) <- exp_name[!is.na(exp_name)]
+  data_name <- data_name[!is.na(data_name) & !duplicated(data_name)]
 
-  # Extract keys
-  agg_keys_list <- lapply(names(mcmodule$node_list), \(x) {
-    mcmodule$node_list[[x]][["agg_keys"]] %||% NA
-  })
-  keys_list <- lapply(names(mcmodule$node_list), \(x) {
-    mcmodule$node_list[[x]][["keys"]] %||% NA
-  })
+  module_exp <- mcmodule_composition(mcmodule)$module_exp
 
-  # Process keys for each unique expression
-  keys <- data.frame()
-  for (i in unique(expression)) {
-    keys_list_i <- unique(unlist(keys_list[expression %in% i]))
-    agg_keys_list_i <- unique(unlist(agg_keys_list[expression %in% i]))
-
-    keys_list_i <- if (length(keys_list_i[!is.na(keys_list_i)]) < 1) {
-      NA
-    } else {
-      paste(keys_list_i[!is.na(keys_list_i)], collapse = ", ")
-    }
-    agg_keys_list_i <- if (
-      length(agg_keys_list_i[!is.na(agg_keys_list_i)]) < 1
-    ) {
-      NA
-    } else {
-      paste(agg_keys_list_i[!is.na(agg_keys_list_i)], collapse = ", ")
-    }
-
-    keys <- bind_rows(
-      keys,
-      data.frame(keys = keys_list_i, agg_keys = agg_keys_list_i, expression = i)
-    )
-  }
-
-  # Process expression data
-  expression_data <- data.frame(expression, data_name, type) %>%
-    filter(!is.na(expression) & !is.na(data_name) & !grepl("total", type)) %>%
-    select(expression, data_name) %>%
-    distinct() %>%
-    filter(!duplicated(expression))
+  # Create a data frame to store module, expression and data_name
+  module_exp$data_name <- data_name[module_exp$exp]
 
   # Process global keys
-  global_keys <- unique(unlist(keys_list))
-  global_keys <- global_keys[!is.na(global_keys)]
+  global_keys <- unique(unlist(lapply(names(mcmodule$node_list), \(x) {
+    mcmodule$node_list[[x]][["keys"]]
+  })))
 
   # Process data keys
   data_keys <- data.frame()
@@ -166,7 +132,7 @@ mcmodule_index <- function(mcmodule) {
   }
 
   list(
-    expression_data = expression_data,
+    module_exp_data = module_exp,
     data_keys = data_keys,
     global_keys = global_keys
   )
@@ -175,39 +141,127 @@ mcmodule_index <- function(mcmodule) {
 #' Calculate Correlation Coeficients for Monte Carlo Module Inputs and Outputs (Pearson adn Spearman)
 #'
 #' @param mcmodule Monte Carlo module object
-#' @param agg_output Name of aggregated output, defaults to "total_agg"
+#' @param by_exp Logical, whether to calculate correlations by expression output (default: FALSE, calculates correlation by global output)
+#' @param output Name of output, by default the last node in mcmodule$node_list
+#' @inheritParams mc2d::tornado
 #' @return Data frame with correlation coefficients
 #' @export
-mcmodule_corr <- function(mcmodule, agg_output = "total_agg") {
-  exp_names <- names(mcmodule$exp)
-
+#'
+#' @examples
+#' mcmodule<-agg_totals(mcmodule = imports_mcmodule, mc_name="no_detect_a", agg_keys= "pathogen")
+#' cor_results <- mcmodule_corr(mcmodule)
+#'
+mcmodule_corr <- function(
+  mcmodule,
+  by_exp = FALSE,
+  output = NULL,
+  method = c("spearman", "kendall", "pearson"),
+  use = "all.obs",
+  lim = c(0.025, 0.975)
+) {
   index <- mcmodule_index(mcmodule)
-
-  corr_results <- data.frame()
-
-  # Get aggregated output
-  mc_agg <- mcmodule$node_list[[agg_output]][["mcnode"]]
+  module_names <- unique(index$module_exp_data$module)
 
   pb <- txtProgressBar(min = 0, max = length(exp_names), initial = 0, style = 3)
+  # Initialize correlation data frame
+  coor <- data.frame()
 
-  for (h in seq_along(exp_names)) {
-    exp_h <- names(mcmodule$exp)[h]
+  # Process each module
+  for (h in seq_along(module_names)) {
+    exp_h <- index$module_exp_data$exp[
+      index$module_exp_data$module == module_names[h]
+    ]
     # Get input (type == "in_node") mcnodes names in mcmodule$node_list for this expression (module == exp_h)
     exp_h_inputs <- names(mcmodule$node_list)[
       unlist(lapply(names(mcmodule$node_list), \(x) {
-        mcmodule$node_list[[x]][["module"]] == exp_h &
+        mcmodule$node_list[[x]][["exp_name"]] %in%
+          exp_h &&
           mcmodule$node_list[[x]][["type"]] == "in_node"
       }))
     ]
-# TODO
+
+    if (is.null(output)) {
+      if (by_exp) {
+        exp_h_outputs <- names(mcmodule$node_list)[
+          unlist(lapply(names(mcmodule$node_list), \(x) {
+            mcmodule$node_list[[x]][["exp_name"]] %in%
+              exp_h &&
+              mcmodule$node_list[[x]][["type"]] == "out_node"
+          }))
+        ]
+        output <- exp_h_outputs[length(exp_h_outputs)]
+      } else {
+        output <- names(mcmodule$node_list)[length(mcmodule$node_list)]
+      }
     }
+
+    # Get output
+    mc_output <- mcmodule$node_list[[output]][["mcnode"]]
+    summary_output <- mcmodule$node_list[[output]][["summary"]]
+
+    data_name_h <- index$module_exp_data$data_name[
+      index$module_exp_data$exp == exp_h
+    ]
+
+    suppressMessages({
+      mc_match_data_h <- mc_match_data(
+        mcmodule,
+        output,
+        mcmodule$data[[data_name_h]]
+      )
+    })
+
+    # TODO NOTE THAT IF data is matched it means that inputs wont match the output and mc_match should be used for inputs too??
+    # Or jus skip those output variates not present in inputs??
+
+    mc_output_h <- mc_match_data_h[[1]]
+    data_h <- mc_match_data_h[[2]]
+    keys_h <- mc_match_data_h[[3]]
+
+    # Check data and keys are compatible
+    if (
+      !all(
+        keys_h[intersect(names(keys_h), names(data_h))] ==
+          data_h[intersect(names(keys_h), names(data_h))]
+      )
+    ) {
+      stop(paste0(
+        "Data and keys are not compatible for expression '",
+        exp_h,
+        "'"
+      ))
+    }
+    # Temporarily replace aggregated mcnode with matched one
+    mcmodule$node_list[[output]][["mcnode"]] <- mc_output_h
+    # Convert mcmodule to mc object with only inputs and aggregated output
+    mc_h <- mcmodule_to_mc(mcmodule, c(exp_h_inputs, output))
+    # Reestore original aggregated mcnode
+    mcmodule$node_list[[output]][["mcnode"]] <- mc_output
+
+    # Calculate correlation for this expression and variate
+    for (i in seq_along(mc_h)) {
+      tornado_h_i <- tornado(mc_h[[i]], output = output, method = method)
+      coor_h_i <- unlist(tornado_h_i)
+      names_h_i <- c(colnames(tornado_h_i[[1]][[1]]))
+      names(coor_h_i)[1:length(names_h_i)] <- names_h_i
+      coor_h_i <- as.data.frame(t(coor_h_i))
+      coor_h_i$variate <- i
+      coor_h_i$exp <- exp_h
+      coor_h_i$exp_n <- h
+      coor_h_i[index$global_keys] <- data_h[
+        i,
+        intersect(names(data_h), index$global_keys)
+      ]
+      coor <- bind_rows(coor, coor_h_i)
+    }
+
     setTxtProgressBar(pb, h)
   }
-
   close(pb)
-  corr_results
+  coor
 }
 
+# TODO!!
 #' Calculate Relative Change in Monte Carlo Module
 #'
 #' @param mcmodule_def Default mcmoduleduction module
@@ -278,134 +332,6 @@ mcmodule_rel_change <- function(
   mcmodule_rel
 }
 
-#' Calculate Spearman Correlation for Monte Carlo Module
-#'
-#' @param mcmodule Monte Carlo module object
-#' @param agg_output Name of aggregated output, defaults to "total_agg"
-#' @return Data frame with Spearman correlation results
-#' @export
-mcmodule_spearman <- function(mcmodule, agg_output = "total_agg") {
-  exp_names <- names(mcmodule$node_list)
-  spearman_rho_exp <- spearman_rho_agg <- data.frame()
-
-  index <- mcmodule_index(mcmodule)
-
-  # Get aggregated output
-  mc_agg <- mcmodule$node_list[[agg_output]][["mcnode"]]
-  summary_agg <- mcmodule$node_list[[agg_output]][["summary"]]
-  summary_agg$variate <- seq_len(nrow(summary_agg))
-
-  pb <- txtProgressBar(min = 0, max = length(exp_names), initial = 0, style = 3)
-
-  # TODO
-  # Process each expression - FOR EACH EXPRESSION WE NEED TO HAVE ONE VARIATE INDEX
-  for (h in seq_along(exp_names)) {
-    exp_h <- names(mcmodule$mc_list)[h]
-    variates <- mcmodule$mc_list[[h]]
-
-    data_name_h <- mcmodule_index$expression_data$data_name[
-      mcmodule_index$expression_data$expression %in% exp_h
-    ]
-    data_h <- mcmodule$data[[data_name_h]]
-    keys_h <- names(data_h)[
-      names(data_h) %in%
-        mcmodule_index$global_keys &
-        names(data_h) %in% names(summary_agg)
-    ]
-    data_h <- data_h[keys_h]
-
-    # Process each variate
-    for (i in seq_along(variates)) {
-      variate_i <- variates[[i]]
-
-      suppressMessages({
-        data_i <- data_h[i, ] %>% left_join(summary_agg[c("variate", keys_h)])
-      })
-
-      # Process input nodes
-      input_nodes_exp <- variate_i[
-        names(variate_i) %in% as.character(mcnode_admin$mcnode)
-      ]
-      input_exp <- NULL
-
-      for (j in seq_along(input_nodes_exp)) {
-        input_node_exp_j <- input_nodes_exp[[j]]
-        new_input_exp <- mc(input_node_exp_j, name = names(input_nodes_exp[j]))
-        input_exp <- if (is.null(input_exp)) {
-          new_input_exp
-        } else {
-          mc(input_exp, new_input_exp)
-        }
-      }
-
-      # Process outputs
-      if (!is.null(variate_i$output)) {
-        output_node_exp <- variate_i$output
-        mc_exp_i <- mc(input_exp, mc(output_node_exp, name = "output"))
-
-        suppressWarnings({
-          spearman_rho_exp_i <- as.data.frame(tornado(mc_exp_i)$value$output)
-        })
-        spearman_rho_exp_i$variate <- i
-        spearman_rho_exp_i$expression <- exp_names[[h]]
-        spearman_rho_exp_i$nest <- names(exp_names[h])
-        spearman_rho_exp <- bind_rows(spearman_rho_exp, spearman_rho_exp_i)
-      } else {
-        mc_exp_i <- input_exp
-      }
-
-      # Process aggregated outputs
-      output_node_agg <- extractvar(mc_agg, data_i$variate)
-      mc_agg_i <- if (!is.null(variate_i$output)) {
-        mc(
-          input_exp,
-          mc(output_node_exp, name = "output"),
-          mc(output_node_agg, name = "agg_output")
-        )
-      } else {
-        mc(input_exp, mc(output_node_agg, name = "agg_output"))
-      }
-
-      if (!all(dimmc(input_exp) == 1)) {
-        suppressWarnings({
-          spearman_rho_agg_i <- as.data.frame(
-            tornado(mc_agg_i)$value$agg_output
-          )
-        })
-        spearman_rho_agg_i$variate <- i
-        spearman_rho_agg_i$expression <- exp_names[[h]]
-        spearman_rho_agg_i$nest <- names(exp_names[h])
-        spearman_rho_agg <- bind_rows(spearman_rho_agg, spearman_rho_agg_i)
-      }
-    }
-    setTxtProgressBar(pb, h)
-  }
-
-  close(pb)
-
-  # Prepare final data
-  spearman_data_agg <- spearman_rho_agg %>%
-    pivot_longer(
-      -c("variate", "expression"),
-      names_to = "node",
-      values_to = "value_agg"
-    )
-
-  spearman_data_exp <- spearman_rho_exp %>%
-    pivot_longer(
-      -c("variate", "expression"),
-      names_to = "node",
-      values_to = "value_exp"
-    )
-
-  spearman_data <- spearman_data_agg %>%
-    left_join(spearman_data_exp) %>%
-    filter(!is.na(value_agg)) %>%
-    left_join(mcmodule_index$expression_data) %>%
-    left_join(mcmodule_index$data_keys)
-
-  spearman_data
-}
 #' Monte Carlo Simulation Convergence Analysis
 #'
 #' @description

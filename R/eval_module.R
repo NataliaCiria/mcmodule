@@ -454,7 +454,6 @@ eval_module <- function(
           }
         })))
         node_list[[mc_name]][["keys"]] <- keys_names
-        node_list[[mc_name]][["exp_name"]] <- keys_names
       }
 
       # Scalar to mcnode conversion
@@ -470,10 +469,10 @@ eval_module <- function(
 
       # Set module name
       if (
-        length(node_list[[mc_name]][["exp_name_i"]]) == 0 ||
-          node_list[[mc_name]][["exp_name_i"]] %in% "exp_i"
+        length(node_list[[mc_name]][["exp_name"]]) == 0 ||
+          node_list[[mc_name]][["exp_name"]] %in% "exp_i"
       ) {
-        node_list[[mc_name]][["exp_name_i"]] <- exp_name_i
+        node_list[[mc_name]][["exp_name"]] <- exp_name_i
       }
 
       # Calculate summary statistics if requested
