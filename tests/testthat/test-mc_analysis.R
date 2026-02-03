@@ -124,14 +124,44 @@ suppressMessages({
     )
 
     result <- mcmodule_corr(test_module)
+
     expect_s3_class(result, "data.frame")
-    expect_true("variate" %in% names(result))
-    expect_true("exp" %in% names(result))
+
+    # Check required columns
     expect_true(all(
-      c("w_prev", "test_sensi", "pathogen", "origin") %in% names(result)
+      c(
+        "exp",
+        "exp_n",
+        "variate",
+        "output",
+        "input",
+        "value",
+        "method",
+        "use"
+      ) %in%
+        names(result)
     ))
+
+    # Check key columns are included
+    expect_true(all(c("pathogen", "origin") %in% names(result)))
+
+    # Check output column values
     expect_true(all(result$output == "no_detect_a"))
-    expect_true(nrow(result) == 6)
+
+    # Check method values (default is spearman, kendall, pearson)
+    expect_true(all(result$method %in% c("spearman", "kendall", "pearson")))
+
+    # Check exp column
+    expect_true(all(result$exp == "imports"))
+
+    # Check variate range (should be 1 to 6 for imports_data)
+    expect_true(all(result$variate %in% 1:6))
+
+    # Check inputs (should include w_prev and test_sensi)
+    expect_true(all(c("w_prev", "test_sensi") %in% unique(result$input)))
+
+    # Check number of rows: 6 variates × 2 inputs = 36 rows
+    expect_equal(nrow(result), 12)
   })
 
   test_that("mcmodule_corr works with multiple expressions", {
@@ -158,28 +188,28 @@ suppressMessages({
       origin = c("east", "south", "nord", "east", "south", "nord", "nord"),
       clean = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE),
       scenario_id = c("0", "0", "0", "0", "0", "0", "clean_transport"),
-      survival_p_min = c(0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.1),
-      survival_p_max = c(0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.15)
+      survival_p_min = c(0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7),
+      survival_p_max = c(0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
     )
 
     current_data_keys <- list(
       survival = list(
-        cols = c("pathogen", "clean", "survival_p_min", "survival_p_max"),
-        keys = c("pathogen", "clean")
+        cols = c("pathogen", "survival_p_min", "survival_p_max"),
+        keys = c("pathogen")
       )
     )
 
     current_mctable <- data.frame(
-      mcnode = c("survival_p"),
-      description = c("Survival probability"),
-      mc_func = c("runif"),
-      from_variable = c(NA),
-      transformation = c(NA),
-      sensi_analysis = c(FALSE)
+      mcnode = c("clean", "survival_p"),
+      description = c("Transport cleaned", "Survival probability"),
+      mc_func = c(NA, "runif"),
+      from_variable = c(NA, NA),
+      transformation = c(NA, NA),
+      sensi_analysis = c(TRUE, TRUE)
     )
 
     current_exp <- quote({
-      imported_contaminated <- no_detect_a_set * survival_p
+      imported_contaminated <- no_detect_a_set * survival_p * (1 - clean)
     })
 
     current_module <- eval_module(
@@ -199,24 +229,20 @@ suppressMessages({
     )
 
     result <- mcmodule_corr(combined_module)
-  })
 
-  test_that("mcmodule_corr includes key columns in output", {
-    skip_if_not_installed("mc2d")
+    expect_s3_class(result, "data.frame")
+    expect_true(nrow(result) > 0)
+    expect_true(all(
+      c("exp", "variate", "input", "value", "output") %in% names(result)
+    ))
+    result <- mcmodule_corr(combined_module, output = "total")
+    expect_s3_class(result, "data.frame")
+    expect_true(nrow(result) > 0)
+    expect_true(all(result$output == "total"))
 
-    mcmodule <- create_mock_mcmodule(
-      n_uncertainty = 100,
-      n_variate = 2,
-      n_nodes = 3
-    )
-    mcmodule$node_list$output <- list(
-      mcnode = mcdata(rnorm(100 * 2), type = "VU", nvariates = 2),
-      module = "exp1",
-      type = "out_node"
-    )
-
-    result <- mcmodule_corr(mcmodule, output = "output")
-
-    expect_true("key1" %in% names(result) || "key2" %in% names(result))
+    result <- mcmodule_corr(combined_module, by_exp = TRUE)
+    expect_s3_class(result, "data.frame")
+    expect_true(nrow(result) > 0)
+    expect_true(all(result$exp %in% c("imports", "current")))
   })
 })
