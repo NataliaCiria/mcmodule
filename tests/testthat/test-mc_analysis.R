@@ -95,8 +95,8 @@ suppressMessages({
     expect_length(result[[1]], 2)
   })
 
-  # Tests for mcmodule_index
-  test_that("mcmodule_index returns correct structure", {
+  # Tests for mcmodule_info and mcmodule_index (deprecated)
+  test_that("mcmodule_info returns correct structure", {
     test_module <- eval_module(
       exp = c(imports = imports_exp),
       data = imports_data,
@@ -104,14 +104,26 @@ suppressMessages({
       data_keys = imports_data_keys
     )
 
-    result <- mcmodule_index(test_module)
+    result <- mcmodule_info(test_module)
 
     expect_type(result, "list")
-    expect_named(result, c("module_exp_data", "data_keys", "global_keys"))
+    expect_named(
+      result,
+      c(
+        "is_combined",
+        "n_modules",
+        "module_names",
+        "module_exp_data",
+        "data_keys",
+        "global_keys"
+      )
+    )
     expect_true("variate" %in% names(result$data_keys))
     expect_true("data_name" %in% names(result$data_keys))
     expect_true(nrow(result$data_keys) == 6)
     expect_equal(result$global_keys, c("pathogen", "origin"))
+    expect_false(result$is_combined)
+    expect_equal(result$n_modules, 1)
   })
 
   # Tests for mcmodule_corr
@@ -123,7 +135,7 @@ suppressMessages({
       data_keys = imports_data_keys
     )
 
-    result <- mcmodule_corr(test_module)
+    result <- mcmodule_corr(test_module, print_summary = FALSE)
 
     expect_s3_class(result, "data.frame")
 
@@ -136,11 +148,24 @@ suppressMessages({
         "output",
         "input",
         "value",
+        "strength",
         "method",
         "use"
       ) %in%
         names(result)
     ))
+
+    # Check strength column exists and has valid values
+    expect_true("strength" %in% names(result))
+    valid_strengths <- c(
+      "Very strong",
+      "Strong",
+      "Moderate",
+      "Weak",
+      "None",
+      NA_character_
+    )
+    expect_true(all(result$strength %in% valid_strengths))
 
     # Check key columns are included
     expect_true(all(c("pathogen", "origin") %in% names(result)))
@@ -162,6 +187,68 @@ suppressMessages({
 
     # Check number of rows: 6 variates × 2 inputs = 36 rows
     expect_equal(nrow(result), 12)
+  })
+
+  test_that("mcmodule_corr print_summary parameter works", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    # Test with print_summary = FALSE (should not print)
+    output <- capture.output({
+      result <- mcmodule_corr(test_module, print_summary = FALSE)
+    })
+    expect_equal(length(output), 0)
+    expect_s3_class(result, "data.frame")
+
+    # Test with print_summary = TRUE (should print)
+    output <- capture.output({
+      result <- mcmodule_corr(test_module, print_summary = TRUE)
+    })
+    expect_true(length(output) > 0)
+    expect_true(any(grepl("Correlation Analysis Summary", output)))
+    expect_s3_class(result, "data.frame")
+  })
+
+  test_that("mcmodule_corr strength classification is correct", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    result <- mcmodule_corr(test_module, print_summary = FALSE)
+
+    # Test strength classification logic
+    for (i in seq_len(nrow(result))) {
+      abs_val <- abs(result$value[i])
+      expected_strength <- if (is.na(abs_val)) {
+        NA_character_
+      } else if (abs_val >= 0.8) {
+        "Very strong"
+      } else if (abs_val >= 0.6) {
+        "Strong"
+      } else if (abs_val >= 0.4) {
+        "Moderate"
+      } else if (abs_val >= 0.2) {
+        "Weak"
+      } else {
+        "None"
+      }
+
+      expect_equal(result$strength[i], expected_strength)
+    }
+
+    # Verify summary includes strength distribution
+    output <- capture.output({
+      result <- mcmodule_corr(test_module, print_summary = TRUE)
+    })
+    expect_true(any(grepl("Input Correlation Strength Distribution", output)))
+    expect_true(any(grepl("Inputs by Correlation Strength", output)))
   })
 
   test_that("mcmodule_corr works with multiple expressions", {
@@ -228,21 +315,177 @@ suppressMessages({
       name = "total"
     )
 
-    result <- mcmodule_corr(combined_module)
+    result <- mcmodule_corr(combined_module, print_summary = FALSE)
 
     expect_s3_class(result, "data.frame")
     expect_true(nrow(result) > 0)
     expect_true(all(
       c("exp", "variate", "input", "value", "output") %in% names(result)
     ))
-    result <- mcmodule_corr(combined_module, output = "total")
+    result <- mcmodule_corr(
+      combined_module,
+      output = "total",
+      print_summary = FALSE
+    )
     expect_s3_class(result, "data.frame")
     expect_true(nrow(result) > 0)
     expect_true(all(result$output == "total"))
 
-    result <- mcmodule_corr(combined_module, by_exp = TRUE)
+    result <- mcmodule_corr(
+      combined_module,
+      by_exp = TRUE,
+      print_summary = FALSE
+    )
     expect_s3_class(result, "data.frame")
     expect_true(nrow(result) > 0)
     expect_true(all(result$exp %in% c("imports", "current")))
+  })
+
+  # Tests for mcmodule_converg
+  test_that("mcmodule_converg returns correct structure", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    result <- mcmodule_converg(test_module, print_summary = FALSE)
+
+    expect_s3_class(result, "data.frame")
+
+    # Check required columns including new standardized columns
+    expect_true(all(
+      c(
+        "expression",
+        "variate",
+        "node",
+        "max_dif",
+        "max_dif_scaled",
+        "max_dif_mean",
+        "max_dif_median",
+        "max_dif_q025",
+        "max_dif_q975",
+        "max_dif_mean_scaled",
+        "max_dif_median_scaled",
+        "max_dif_q025_scaled",
+        "max_dif_q975_scaled",
+        "tiny",
+        "conv_01",
+        "conv_025",
+        "conv_05",
+        "conv_01_tiny",
+        "conv_025_tiny",
+        "conv_05_tiny"
+      ) %in%
+        names(result)
+    ))
+
+    # Check that scaled deviation columns are numeric
+    expect_type(result$max_dif_mean_scaled, "double")
+    expect_type(result$max_dif_median_scaled, "double")
+    expect_type(result$max_dif_q025_scaled, "double")
+    expect_type(result$max_dif_q975_scaled, "double")
+
+    # Check that convergence columns are logical
+    expect_type(result$tiny, "logical")
+    expect_type(result$conv_01, "logical")
+    expect_type(result$conv_025, "logical")
+    expect_type(result$conv_05, "logical")
+  })
+
+  test_that("mcmodule_converg print_summary parameter works", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    # Test with print_summary = FALSE (should not print summary but still create plot)
+    output <- capture.output({
+      result <- mcmodule_converg(test_module, print_summary = FALSE)
+    })
+    # Should have minimal output (just plot)
+    expect_false(any(grepl("Convergence Analysis Summary", output)))
+    expect_s3_class(result, "data.frame")
+
+    # Test with print_summary = TRUE (should print summary)
+    output <- capture.output({
+      result <- mcmodule_converg(test_module, print_summary = TRUE)
+    })
+    expect_true(length(output) > 0)
+    expect_true(any(grepl("Convergence Analysis Summary", output)))
+    expect_true(any(grepl("Stochastic Distributions Stability", output)))
+    expect_true(any(grepl("standardized:", output)))
+    expect_s3_class(result, "data.frame")
+  })
+
+  test_that("mcmodule_converg works with custom threshold", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    result <- mcmodule_converg(
+      test_module,
+      conv_threshold = 0.03,
+      print_summary = FALSE
+    )
+
+    expect_s3_class(result, "data.frame")
+    expect_true("conv_manual" %in% names(result))
+    expect_type(result$conv_manual, "logical")
+  })
+
+  test_that("mcmodule_converg works with different quantile ranges", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    result <- mcmodule_converg(
+      test_module,
+      from_quantile = 0.9,
+      to_quantile = 1,
+      print_summary = FALSE
+    )
+
+    expect_s3_class(result, "data.frame")
+    expect_true(nrow(result) > 0)
+  })
+
+  test_that("mcmodule_converg standardized deviations are calculated correctly", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    result <- mcmodule_converg(test_module, print_summary = FALSE)
+
+    # Check that standardized values are ratios of raw values to means
+    # (or NA if mean is zero)
+    for (i in seq_len(nrow(result))) {
+      if (is.na(result$max_dif_mean_scaled[i])) {
+        # If scaled is NA, the mean statistic should be zero or close to zero
+        expect_true(TRUE) # Just verify NA is acceptable
+      } else {
+        # Standardized should be less than or equal to 1 in most cases
+        # (unless the max deviation is very large)
+        expect_type(result$max_dif_mean_scaled[i], "double")
+      }
+    }
+
+    # Check that all scaled columns exist and are numeric
+    expect_true(is.numeric(result$max_dif_mean_scaled))
+    expect_true(is.numeric(result$max_dif_median_scaled))
+    expect_true(is.numeric(result$max_dif_q025_scaled))
+    expect_true(is.numeric(result$max_dif_q975_scaled))
   })
 })

@@ -28,9 +28,9 @@ add_prefix <- function(mcmodule, prefix = NULL, rewrite_module = NULL) {
   }
 
   # Get mcmodule structure
-  composition <- mcmodule_composition(mcmodule)
-  modules <- composition$module_names
-  exps <- unique(composition$module_exp$exp)
+  info <- mcmodule_info(mcmodule)
+  modules <- info$module_names
+  exps <- unique(info$module_exp_data$exp)
   exp_and_modules <- c(modules, exps)
 
   # Get node names and modules
