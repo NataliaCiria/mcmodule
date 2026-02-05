@@ -8,7 +8,8 @@ mcmodule_converg(
   mcmodule,
   from_quantile = 0.95,
   to_quantile = 1,
-  conv_threshold = NULL
+  conv_threshold = NULL,
+  print_summary = TRUE
 )
 }
 \arguments{
@@ -19,6 +20,9 @@ mcmodule_converg(
 \item{to_quantile}{Upper bound quantile for analysis (default: 1)}
 
 \item{conv_threshold}{Optional custom convergence threshold for standardized differences}
+
+\item{print_summary}{Logical, whether to print the summary output.
+Default is TRUE.}
 }
 \value{
 A data frame with convergence statistics per node:
@@ -26,7 +30,7 @@ A data frame with convergence statistics per node:
 \item expression: Expression identifier
 \item variate: Variate identifier
 \item node: Node identifier
-\item max_std_dif: Max of standardized differences
+\item max_dif_scaled: Max of standardized differences
 \item max_dif: Max of raw differences
 \item conv_threshold: Convergence at custom threshold (TRUE/FALSE), if threshold provided
 \item conv_01: Convergence at 1\% std threshold (TRUE/FALSE)

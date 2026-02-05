@@ -4,7 +4,12 @@
 \alias{mcmodule_to_mc}
 \title{Convert Monte Carlo Module to mc2d mc Objects}
 \usage{
-mcmodule_to_mc(mcmodule, mc_names = NULL, match = FALSE)
+mcmodule_to_mc(
+  mcmodule,
+  mc_names = NULL,
+  match = FALSE,
+  variates_as_nsv = FALSE
+)
 }
 \arguments{
 \item{mcmodule}{A Monte Carlo module object}
@@ -13,12 +18,19 @@ mcmodule_to_mc(mcmodule, mc_names = NULL, match = FALSE)
 If NULL (default), includes all nodes in the module.}
 
 \item{match}{Logical, currently unused (reserved for future functionality)}
+
+\item{variates_as_nsv}{Logical, if TRUE, combines all variates into a single mc object
+by multiplying the number of variates by the number of uncertainty simulations in the
+variability dimension (nsv). If FALSE (default), returns a list with one mc object per variate.}
 }
 \value{
-A list of mc objects (one per variate) combining specified Monte Carlo nodes.
-Each mc object is compatible with mc2d package functions.
+If \code{variates_as_nsv = FALSE}, a list of mc objects (one per variate) combining
+specified Monte Carlo nodes. If \code{variates_as_nsv = TRUE}, a single mc object where all
+variates are combined into the variability dimension. Each mc object is compatible with
+mc2d package functions.
 }
 \description{
 Transforms a Monte Carlo module into a list of mc objects (from the mc2d package),
-with one mc object per variate simulation.
+with one mc object per variate simulation, or a single mc object with all variates
+combined into the variability dimension.
 }

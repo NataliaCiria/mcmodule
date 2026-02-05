@@ -95,6 +95,49 @@ suppressMessages({
     expect_length(result[[1]], 2)
   })
 
+  test_that("mcmodule_to_mc with variates_as_nsv = FALSE returns list per variate", {
+    result <- mcmodule_to_mc(
+      imports_mcmodule,
+      variates_as_nsv = FALSE
+    )
+
+    expect_type(result, "list")
+    expect_length(result, 6) # Should have 6 variates
+    expect_s3_class(result[[1]], "mc")
+
+    # Each mc object should have nsv = 1001 (number of uncertainty simulations)
+    for (i in seq_along(result)) {
+      expect_equal(dim(result[[i]][[1]])[1], 1001)
+    }
+  })
+
+  test_that("mcmodule_to_mc with variates_as_nsv = TRUE returns single mc object", {
+    result <- mcmodule_to_mc(
+      imports_mcmodule,
+      variates_as_nsv = TRUE
+    )
+
+    # Should return mc object directly, not wrapped in a list
+    expect_s3_class(result, "mc")
+
+    # The mc object should have nsv = 6 * 1001 = 6006
+    # (variates * uncertainty simulations)
+    expect_equal(dim(result[[1]])[1], 6006)
+  })
+
+  test_that("mcmodule_to_mc variates_as_nsv works with subset of nodes", {
+    result <- mcmodule_to_mc(
+      imports_mcmodule,
+      mc_names = c("w_prev", "test_origin"),
+      variates_as_nsv = TRUE
+    )
+
+    # Should return mc object directly
+    expect_s3_class(result, "mc")
+    expect_length(result, 2) # Should have 2 nodes
+    expect_equal(dim(result[[1]])[1], 6006)
+  })
+
   # Tests for mcmodule_info and mcmodule_index (deprecated)
   test_that("mcmodule_info returns correct structure", {
     test_module <- eval_module(
@@ -341,6 +384,48 @@ suppressMessages({
     expect_true(all(result$exp %in% c("imports", "current")))
   })
 
+  test_that("mcmodule_corr works with variates_as_nsv = FALSE", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    result <- mcmodule_corr(
+      test_module,
+      variates_as_nsv = FALSE,
+      print_summary = FALSE
+    )
+
+    expect_s3_class(result, "data.frame")
+    expect_true(nrow(result) > 0)
+    # With variates_as_nsv = FALSE, should have 6 variates
+    expect_true(all(result$variate %in% 1:6))
+    expect_equal(length(unique(result$variate)), 6)
+  })
+
+  test_that("mcmodule_corr works with variates_as_nsv = TRUE", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    result <- mcmodule_corr(
+      test_module,
+      variates_as_nsv = TRUE,
+      print_summary = FALSE
+    )
+
+    expect_s3_class(result, "data.frame")
+    expect_true(nrow(result) > 0)
+    # With variates_as_nsv = TRUE, should have only 1 variate (combined)
+    expect_equal(length(unique(result$variate)), 1)
+    expect_equal(unique(result$variate), 1)
+  })
+
   # Tests for mcmodule_converg
   test_that("mcmodule_converg returns correct structure", {
     test_module <- eval_module(
@@ -402,11 +487,10 @@ suppressMessages({
       data_keys = imports_data_keys
     )
 
-    # Test with print_summary = FALSE (should not print summary but still create plot)
+    # Test with print_summary = FALSE
     output <- capture.output({
       result <- mcmodule_converg(test_module, print_summary = FALSE)
     })
-    # Should have minimal output (just plot)
     expect_false(any(grepl("Convergence Analysis Summary", output)))
     expect_s3_class(result, "data.frame")
 

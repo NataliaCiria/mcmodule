@@ -85,34 +85,63 @@ mcmodule_to_matrices <- function(mcmodule, mc_names = NULL) {
 #' Convert Monte Carlo Module to mc2d mc Objects
 #'
 #' Transforms a Monte Carlo module into a list of mc objects (from the mc2d package),
-#' with one mc object per variate simulation.
+#' with one mc object per variate simulation, or a single mc object with all variates
+#' combined into the variability dimension.
 #'
 #' @param mcmodule A Monte Carlo module object
 #' @param mc_names Optional character vector of Monte Carlo node names to include.
 #'   If NULL (default), includes all nodes in the module.
 #' @param match Logical, currently unused (reserved for future functionality)
-#' @return A list of mc objects (one per variate) combining specified Monte Carlo nodes.
-#'   Each mc object is compatible with mc2d package functions.
-mcmodule_to_mc <- function(mcmodule, mc_names = NULL, match = FALSE) {
+#' @param variates_as_nsv Logical, if TRUE, combines all variates into a single mc object
+#'   by multiplying the number of variates by the number of uncertainty simulations in the
+#'   variability dimension (nsv). If FALSE (default), returns a list with one mc object per variate.
+#' @return If \code{variates_as_nsv = FALSE}, a list of mc objects (one per variate) combining
+#'   specified Monte Carlo nodes. If \code{variates_as_nsv = TRUE}, a single mc object where all
+#'   variates are combined into the variability dimension. Each mc object is compatible with
+#'   mc2d package functions.
+mcmodule_to_mc <- function(
+  mcmodule,
+  mc_names = NULL,
+  match = FALSE,
+  variates_as_nsv = FALSE
+) {
   mc_names <- mc_names %||% names(mcmodule$node_list)
   dims <- mcmodule_dim_check(mcmodule, mc_names)
-  mc_list <- vector("list", dims$n_variate)
 
-  for (j in seq_len(dims$n_variate)) {
-    mc_j <- NULL
-    for (i in seq_along(mc_names)) {
-      mcnode_i <- mcmodule$node_list[[mc_names[i]]][["mcnode"]]
-      variate_i_j <- extractvar(mcnode_i, j)
+  mc_list <- vector("list", if (variates_as_nsv) 1 else dims$n_variate)
 
-      if (is.null(mc_j)) {
-        mc_j <- mc(variate_i_j, name = mc_names[i])
+  for (i in seq_along(mc_names)) {
+    mcnode_i <- mcmodule$node_list[[mc_names[i]]][["mcnode"]]
+    if (variates_as_nsv) {
+      if (dim(mcnode_i)[1] > 1) {
+        mcnode_i <- mcdata(
+          c(unmc(mcnode_i)),
+          type = "V",
+          nsv = dims$n_variate * dims$n_uncertainty
+        )
       } else {
-        mc_j <- mc(mc_j, mc(variate_i_j, name = mc_names[i]))
+        mcnode_i <- mcdata(
+          rep(unmc(mcnode_i), dims$n_uncertainty),
+          type = "V",
+          nsv = dims$n_variate * dims$n_uncertainty
+        )
       }
     }
-    mc_list[[j]] <- mc_j
+
+    for (j in seq_len(dim(mcnode_i)[3])) {
+      variate_i_j <- extractvar(mcnode_i, j)
+      if (is.null(mc_list[[j]])) {
+        mc_list[[j]] <- mc(variate_i_j, name = mc_names[i])
+      } else {
+        mc_list[[j]] <- mc(mc_list[[j]], mc(variate_i_j, name = mc_names[i]))
+      }
+    }
   }
-  mc_list
+  if (variates_as_nsv) {
+    return(mc_list[[1]])
+  } else {
+    return(mc_list)
+  }
 }
 
 #' Calculate Correlation Coefficients for Monte Carlo Module Inputs and Outputs
@@ -128,6 +157,9 @@ mcmodule_to_mc <- function(mcmodule, mc_names = NULL, match = FALSE) {
 #'   uses the last node in mcmodule$node_list (or last expression output if by_exp = TRUE).
 #' @param all_variates Logical, whether to match input nodes to output variates.
 #'   Default is TRUE.
+#' @param variates_as_nsv Logical, if TRUE, combines all variates into a single mc object
+#'   for correlation analysis. If FALSE (default), analyzes each variate separately.
+#'   See \code{\link{mcmodule_to_mc}} for details.
 #' @param print_summary Logical, whether to print the summary output.
 #'   Default is TRUE.
 #' @inheritParams mc2d::tornado
@@ -159,6 +191,7 @@ mcmodule_corr <- function(
   output = NULL,
   by_exp = FALSE,
   all_variates = TRUE,
+  variates_as_nsv = FALSE,
   print_summary = TRUE,
   method = c("spearman", "kendall", "pearson"),
   use = "all.obs",
@@ -274,8 +307,14 @@ mcmodule_corr <- function(
     # Convert mcmodule to mc object with only inputs and output
     mc_h <- mcmodule_to_mc(
       mcmodule = mcmodule_h,
-      mc_names = c(exp_h_inputs, output_h)
+      mc_names = c(exp_h_inputs, output_h),
+      variates_as_nsv = variates_as_nsv
     )
+
+    # Wrap in list if variates_as_nsv = TRUE for consistent iteration
+    if (variates_as_nsv && inherits(mc_h, "mc")) {
+      mc_h <- list(mc_h)
+    }
 
     # Calculate correlation for this expression and variate
     for (i in seq_along(mc_h)) {
@@ -331,7 +370,7 @@ mcmodule_corr <- function(
         coor_h_i$warnings <- paste(tornado_result$warnings, collapse = "; ")
       }
 
-      coor <- bind_rows(coor, coor_h_i)
+      coor <- dplyr::bind_rows(coor, coor_h_i)
     }
   }
 
@@ -413,7 +452,7 @@ mcmodule_corr <- function(
     if (!all(is.na(coor$value))) {
       # Top n correlated inputs
       top_n <- 5
-      mean_cors <- aggregate(
+      mean_cors <- stats::aggregate(
         coor$value,
         list(input = coor$input),
         mean,
@@ -421,7 +460,7 @@ mcmodule_corr <- function(
       )
       mean_cors$abs_value <- abs(mean_cors$x)
       mean_cors <- mean_cors[order(mean_cors$abs_value, decreasing = TRUE), ]
-      mean_cors <- head(mean_cors, top_n)
+      mean_cors <- utils::head(mean_cors, top_n)
 
       cat(
         "\n- Top ",
@@ -573,7 +612,7 @@ mcmodule_converg <- function(
   mc_stat <- function(i, x) {
     c(
       mean = mean(x[1:i], na.rm = TRUE),
-      quantile(
+      stats::quantile(
         x[1:i],
         probs = c(0.5, 0.025, 0.975),
         na.rm = TRUE,
@@ -758,7 +797,7 @@ mcmodule_converg <- function(
   max_points$max_dif_scaled_pct <- max_points$max_dif_scaled * 100
 
   # Calculate mean max_dif_scaled per node for ordering
-  node_order <- aggregate(
+  node_order <- stats::aggregate(
     conv_df$max_dif_scaled,
     list(node = conv_df$node),
     max
@@ -768,47 +807,6 @@ mcmodule_converg <- function(
   # Convert node to factor with levels ordered by max difference
   conv_df$node <- factor(conv_df$node, levels = node_order$node)
   max_points$node <- factor(max_points$node, levels = node_order$node)
-
-  # Create scatter plot with ggplot2
-  plot_title <- sprintf(
-    "Divergence of the distribution in the last %.0f%% simulations",
-    (to_quantile - from_quantile) * 100
-  )
-
-  p <- ggplot2::ggplot(
-    conv_df,
-    ggplot2::aes(x = .data$max_dif_scaled_pct, y = .data$node)
-  ) +
-    ggplot2::geom_point(alpha = 0.5, size = 2) +
-    ggplot2::geom_text(
-      data = max_points,
-      ggplot2::aes(
-        x = .data$max_dif_scaled_pct,
-        y = .data$node,
-        label = .data$label
-      ),
-      hjust = -0.05,
-      size = 3,
-      inherit.aes = FALSE
-    ) +
-    ggplot2::labs(
-      title = plot_title,
-      x = "Divergence from mean of previous simulations (%)",
-      y = "Input Node"
-    ) +
-    ggplot2::expand_limits(
-      x = max(conv_df$max_dif_scaled_pct) * 1.4
-    ) +
-    ggplot2::scale_x_continuous(
-      labels = function(x) paste0(x, "%")
-    ) +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(
-      plot.title = ggplot2::element_text(hjust = 0.5, size = 12, face = "bold"),
-      plot.margin = ggplot2::margin(r = 100, unit = "pt")
-    )
-
-  print(p)
 
   if (print_summary) {
     # Print analysis results summary
@@ -936,74 +934,3 @@ mcmodule_converg <- function(
 
   return(conv_df)
 }
-
-# # TODO!!
-# #' Calculate Relative Change in Monte Carlo Module
-# #'
-# #' @param mcmodule_def Default mcmoduleduction module
-# #' @param mcmodule_alt Alternative mcmoduleduction module
-# #' @param mc_names Optional names of Monte Carlo nodes
-# #' @param mcnode_admin Monte Carlo node administration object
-# #' @return Modified mcmoduleduction module with relative changes
-# #' @export
-# mcmodule_rel_change <- function(
-#   mcmodule_def,
-#   mcmodule_alt,
-#   mc_names = NULL,
-#   mcnode_admin = mcnode_admin
-# ) {
-#   mcmodule_rel <- mcmodule_def
-#   mc_names <- mc_names %||% names(mcmodule_rel$node_list)
-#   mcmodule_rel$node_list <- mcmodule_rel$node_list[mc_names]
-
-#   pb <- txtProgressBar(min = 0, max = length(mc_names), initial = 0, style = 3)
-
-#   for (i in seq_along(mc_names)) {
-#     mcnode_def <- mcmodule_def$node_list[[mc_names[i]]][["mcnode"]]
-#     mcnode_alt <- mcmodule_alt$node_list[[mc_names[i]]][["mcnode"]]
-
-#     if (!typemcnode(mcnode_def) == "0") {
-#       mcnode_cor <- cornode(
-#         mcnode_def,
-#         mcnode_alt,
-#         target = 0.9999999,
-#         outrank = FALSE,
-#         result = FALSE
-#       )
-#       mcnode_def <- mcnode_cor[[1]]
-#       mcnode_alt <- mcnode_cor[[2]]
-#     }
-
-#     # Calculate relative change
-#     mcnode_rel <- mcnode_na_rm((mcnode_alt - mcnode_def) / mcnode_def)
-#     mcmodule_rel$node_list[[mc_names[i]]][["mcnode"]] <- mcnode_rel
-
-#     # Update summary if it exists
-#     if (!is.null(mcmodule_rel$node_list[[mc_names[i]]][["summary"]])) {
-#       summary_rel_l <- summary(mcnode_rel)[[1]]
-#       if (!is.list(summary_rel_l)) {
-#         summary_rel_l <- list(summary_rel_l)
-#       }
-
-#       summary_names <- colnames(summary_rel_l[[1]])
-#       summary_rel <- data.frame(matrix(
-#         unlist(summary_rel_l),
-#         nrow = length(summary_rel_l),
-#         byrow = TRUE
-#       ))
-#       names(summary_rel) <- summary_names
-
-#       summary_def <- mcmodule_rel$node_list[[mc_names[i]]][["summary"]]
-#       summary_def[summary_names] <- NULL
-#       mcmodule_rel$node_list[[mc_names[i]]][["summary"]] <- cbind(
-#         summary_def,
-#         summary_rel
-#       )
-#     }
-
-#     setTxtProgressBar(pb, i)
-#   }
-
-#   close(pb)
-#   mcmodule_rel
-# }

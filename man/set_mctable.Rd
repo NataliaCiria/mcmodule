@@ -22,13 +22,14 @@ The table contains the following columns:
 \item mc_func - Character. Probability distribution
 \item from_variable - Character. Variable name in the data table, if it is in a column with a name different from the mcnode
 \item transformation - Character. Transformation to be applied to the original column values
-\item sensi_analysis - Logical. Whether to include in sensitivity analysis
+\item sensi_baseline - Character. Parameters for baseline mock distribution
+\item sensi_variation - Character. OAT variation expression using 'value' placeholder
 }
 }
 \description{
 Manages a Monte Carlo inputs table in the global package environment by either setting new data
 or retrieving the current table. The table stores information about Monte Carlo nodes including
-their descriptions, functions, dependencies, and sensitivity analysis settings.
+their descriptions, functions, and dependencies.
 }
 \examples{
 # Get current MC table
@@ -39,7 +40,8 @@ mct <- data.frame(
   mcnode = c("h_prev", "w_prev"),
   description = c("Herd prevalence", "Within herd prevalence"),
   mc_func = c("runif", "runif"),
-  sensi_analysis = c(TRUE, TRUE)
+  sensi_baseline = c("min = 0, max = 1", "min = 0, max = 1"),
+  sensi_variation = c("pmin(1, pmax(0, value * 1.5))", "pmin(1, pmax(0, value * 1.5))")
 )
 set_mctable(mct)
 

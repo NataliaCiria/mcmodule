@@ -146,7 +146,7 @@ mcmodule_info <- function(mcmodule) {
       }
     })
 
-    bind_rows(result_list)
+    dplyr::bind_rows(result_list)
   }
 
   # Combined modules have nested lists in exp
@@ -202,7 +202,7 @@ mcmodule_info <- function(mcmodule) {
     data_i <- mcmodule$data[[i]][names(mcmodule$data[[i]]) %in% global_keys]
     data_i$variate <- seq_len(nrow(data_i))
     data_i$data_name <- i
-    data_keys <- bind_rows(data_keys, data_i)
+    data_keys <- dplyr::bind_rows(data_keys, data_i)
   }
 
   list(

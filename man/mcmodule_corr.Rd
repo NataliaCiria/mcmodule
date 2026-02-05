@@ -9,6 +9,8 @@ mcmodule_corr(
   output = NULL,
   by_exp = FALSE,
   all_variates = TRUE,
+  variates_as_nsv = FALSE,
+  print_summary = TRUE,
   method = c("spearman", "kendall", "pearson"),
   use = "all.obs",
   lim = c(0.025, 0.975)
@@ -24,6 +26,13 @@ uses the last node in mcmodule$node_list (or last expression output if by_exp = 
 If FALSE (default), calculates correlation by global output (last node).}
 
 \item{all_variates}{Logical, whether to match input nodes to output variates.
+Default is TRUE.}
+
+\item{variates_as_nsv}{Logical, if TRUE, combines all variates into a single mc object
+for correlation analysis. If FALSE (default), analyzes each variate separately.
+See \code{\link{mcmodule_to_mc}} for details.}
+
+\item{print_summary}{Logical, whether to print the summary output.
 Default is TRUE.}
 
 \item{method}{(for \samp{mc} objects only). A character string
@@ -50,6 +59,7 @@ Data frame with correlation coefficients and metadata. Columns include:
 \item output: Output node name
 \item input: Input node name
 \item value: Correlation coefficient value
+\item strength: Qualitative strength of association (Very strong, Strong, Moderate, Weak, None)
 \item method: Correlation method used (spearman, kendall, or pearson)
 \item use: Method for handling missing values (passed to cor())
 \item warnings: Any warnings generated during correlation calculation (if present)

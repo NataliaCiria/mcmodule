@@ -34,6 +34,10 @@
 #' @param keys Optional explicit keys for the input data (character vector)
 #' @param overwrite_keys Logical or NULL. If NULL (default) it becomes TRUE when
 #'   data_keys is NULL or an empty list; otherwise FALSE.
+#' @param use_baseline Character vector of mcnode names to override input data
+#'   using `sensi_baseline` from mctable. Defaults to NULL (no baseline override).
+#' @param use_variation Character vector of mcnode names to apply `sensi_variation`
+#'   expression after transformation and before mcnode creation. Defaults to NULL.
 #'
 #' @return An mcmodule object containing data, expressions, and nodes
 #' @export
@@ -77,7 +81,9 @@ eval_module <- function(
   data_keys = set_data_keys(),
   match_keys = NULL,
   keys = NULL,
-  overwrite_keys = NULL
+  overwrite_keys = NULL,
+  use_baseline = NULL,
+  use_variation = NULL
 ) {
   data_name <- deparse(substitute(data))
 
@@ -87,6 +93,120 @@ eval_module <- function(
   if (nrow(data) < 1) {
     stop(sprintf("data '%s' has 0 rows", data_name))
   }
+
+  # Normalize optional OAT arguments
+  use_baseline <- if (is.null(use_baseline)) {
+    character()
+  } else {
+    unique(use_baseline[!is.na(use_baseline) & use_baseline != ""])
+  }
+  use_variation <- if (is.null(use_variation)) {
+    character()
+  } else {
+    unique(use_variation[!is.na(use_variation) & use_variation != ""])
+  }
+
+  data_eval <- data
+  mctable_eval <- mctable
+
+  if (length(c(use_baseline, use_variation)) > 0) {
+    target_nodes <- unique(c(use_baseline, use_variation))
+
+    parse_param_list <- function(text_value) {
+      if (is.na(text_value) || text_value == "") {
+        return(NULL)
+      }
+      eval(parse(text = paste0("list(", text_value, ")")), envir = baseenv())
+    }
+
+    for (mc_name in target_nodes) {
+      row_idx <- which(mctable_eval$mcnode == mc_name)
+      if (length(row_idx) == 0) {
+        warning(sprintf("%s not found in mctable", mc_name))
+        next
+      }
+      row_idx <- row_idx[[1]]
+      mc_row <- mctable_eval[row_idx, ]
+
+      if (mc_name %in% use_baseline) {
+        baseline_list <- parse_param_list(as.character(mc_row$sensi_baseline))
+        if (is.null(baseline_list)) {
+          warning(sprintf("sensi_baseline not specified for %s", mc_name))
+        } else if ("value" %in% names(baseline_list)) {
+          value_name <- ifelse(
+            is.na(mc_row$from_variable),
+            mc_name,
+            as.character(mc_row$from_variable)
+          )
+          data_eval[[value_name]] <- rep(baseline_list$value, nrow(data_eval))
+        } else {
+          for (param in names(baseline_list)) {
+            param_col <- paste(mc_name, param, sep = "_")
+            data_eval[[param_col]] <- rep(
+              baseline_list[[param]],
+              nrow(data_eval)
+            )
+          }
+        }
+      }
+
+      if (mc_name %in% use_variation) {
+        transformation <- as.character(mc_row$transformation)
+        if (!is.na(transformation)) {
+          value_name <- ifelse(
+            is.na(mc_row$from_variable),
+            mc_name,
+            as.character(mc_row$from_variable)
+          )
+          if (value_name %in% names(data_eval)) {
+            assign("value", data_eval[[value_name]], envir = environment())
+            data_eval[[mc_name]] <- eval(
+              parse(text = transformation),
+              envir = environment()
+            )
+            rm("value", envir = environment())
+            mctable_eval[row_idx, "transformation"] <- NA
+          }
+        }
+
+        variation_text <- as.character(mc_row$sensi_variation)
+        if (is.na(variation_text) || variation_text == "") {
+          warning(sprintf("sensi_variation not specified for %s", mc_name))
+          next
+        }
+
+        if (!is.na(mc_row$mc_func)) {
+          param_cols <- names(data_eval)[
+            grepl(paste0("^", mc_name, "_"), names(data_eval))
+          ]
+          if (length(param_cols) == 0) {
+            warning(sprintf("No input columns found for %s", mc_name))
+            next
+          }
+          for (param_col in param_cols) {
+            assign("value", data_eval[[param_col]], envir = environment())
+            data_eval[[param_col]] <- eval(
+              parse(text = variation_text),
+              envir = environment()
+            )
+          }
+          rm("value", envir = environment())
+        } else if (mc_name %in% names(data_eval)) {
+          assign("value", data_eval[[mc_name]], envir = environment())
+          data_eval[[mc_name]] <- eval(
+            parse(text = variation_text),
+            envir = environment()
+          )
+          rm("value", envir = environment())
+        } else {
+          warning(sprintf("No input column found for %s", mc_name))
+        }
+      }
+    }
+  }
+
+  data <- data_eval
+  mctable <- mctable_eval
 
   # Determine default for overwrite_keys when not explicitly provided:
   # - If overwrite_keys is NULL and data_keys is NULL or an empty list -> default TRUE
@@ -300,11 +420,7 @@ eval_module <- function(
         # If prev_nodes are in data, create mcnodes directly from data
         data_mctable <- data.frame(
           mcnode = data_nodes,
-          mc_func = NA,
-          description = NA,
-          from_variable = NA,
-          transformation = NA,
-          sensi_analysis = NA
+          mc_func = NA
         )
 
         create_mcnodes(data = data, mctable = data_mctable)
