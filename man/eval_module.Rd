@@ -14,7 +14,9 @@ eval_module(
   data_keys = set_data_keys(),
   match_keys = NULL,
   keys = NULL,
-  overwrite_keys = NULL
+  overwrite_keys = NULL,
+  use_baseline = NULL,
+  use_variation = NULL
 )
 }
 \arguments{
@@ -40,6 +42,12 @@ present as columns in \code{data} will be created from the data.}
 
 \item{overwrite_keys}{Logical or NULL. If NULL (default) it becomes TRUE when
 data_keys is NULL or an empty list; otherwise FALSE.}
+
+\item{use_baseline}{Character vector of mcnode names to override input data
+using \code{sensi_baseline} from mctable. Defaults to NULL (no baseline override).}
+
+\item{use_variation}{Character vector of mcnode names to apply \code{sensi_variation}
+expression after transformation and before mcnode creation. Defaults to NULL.}
 }
 \value{
 An mcmodule object containing data, expressions, and nodes
@@ -70,20 +78,20 @@ column1). Do not use \code{data$column1} or \code{data["column1"]}.
 }
 \examples{
 # Basic usage with single expression
-# Build a quoted expression using mcnodes defined in mctable or built with 
+# Build a quoted expression using mcnodes defined in mctable or built with
 # mcstoc()/mcdata within the expression (do NOT set nvariates, it is
 # inferred from nrow(data) when evaluated by eval_module()).
 expr_example <- quote({
   # Within-herd prevalence (assigned from a pre-built mcnode w_prev)
   inf_a <- w_prev
 
-  # Estimate of clinic sensitivity 
+  # Estimate of clinic sensitivity
   clinic_sensi <- mcstoc(runif, min = 0.6, max = 0.8)
 
-  # Probability an infected animal is tested in origin and not detected 
+  # Probability an infected animal is tested in origin and not detected
   false_neg_a <- inf_a * test_origin * (1 - test_sensi) * (1 - clinic_sensi)
 
-  # Probability an infected animal is not tested and not detected 
+  # Probability an infected animal is not tested and not detected
   no_test_a <- inf_a * (1 - test_origin) * (1 - clinic_sensi)
 
   # no_detect_a: total probability an infected animal is not detected
@@ -92,9 +100,9 @@ expr_example <- quote({
 
 # Evaluate
 eval_module(
-  exp = expr_example, 
-  data = imports_data, 
-  mctable = imports_mctable, 
+  exp = expr_example,
+  data = imports_data,
+  mctable = imports_mctable,
   data_keys = imports_data_keys
 )
 }

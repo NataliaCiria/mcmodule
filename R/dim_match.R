@@ -327,18 +327,18 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
     keys_y_match[!names(keys_y_match) %in% new_keys],
     keys_y[names(keys_y) %in% new_keys]
   )
-  keys_xy_match <- left_join(
+  keys_xy_match <- dplyr::left_join(
     keys_xy_match,
     keys_x[!names(keys_x) %in% names(keys_xy_match)],
     by = c("g_row.x" = "g_row")
   )
-  keys_xy_match <- left_join(
+  keys_xy_match <- dplyr::left_join(
     keys_xy_match,
     keys_y[!names(keys_y) %in% names(keys_xy_match)],
     by = c("g_row.y" = "g_row")
   )
   keys_xy_match
-  keys_xy <- relocate(
+  keys_xy <- dplyr::relocate(
     keys_xy_match,
     c("g_id", "g_row.x", "g_row.y", "scenario_id")
   )
@@ -498,18 +498,18 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
     keys_y_match[!names(keys_y_match) %in% new_keys],
     keys_y[names(keys_y) %in% new_keys]
   )
-  keys_xy_match <- left_join(
+  keys_xy_match <- dplyr::left_join(
     keys_xy_match,
     keys_x[!names(keys_x) %in% names(keys_xy_match)],
     by = c("g_row.x" = "g_row")
   )
-  keys_xy_match <- left_join(
+  keys_xy_match <- dplyr::left_join(
     keys_xy_match,
     keys_y[!names(keys_y) %in% names(keys_xy_match)],
     by = c("g_row.y" = "g_row")
   )
   keys_xy_match
-  keys_xy <- relocate(
+  keys_xy <- dplyr::relocate(
     keys_xy_match,
     c("g_id", "g_row.x", "g_row.y", "scenario_id")
   )
@@ -653,11 +653,11 @@ wif_match <- function(x, y, by = NULL) {
 
   # Create matched versions of both datasets
   new_x <- x[list_xy$xy$g_row.x, ] %>%
-    mutate(scenario_id = list_xy$xy$scenario_id)
+    dplyr::mutate(scenario_id = list_xy$xy$scenario_id)
   rownames(new_x) <- NULL
 
   new_y <- y[list_xy$xy$g_row.y, ] %>%
-    mutate(scenario_id = list_xy$xy$scenario_id)
+    dplyr::mutate(scenario_id = list_xy$xy$scenario_id)
   rownames(new_y) <- NULL
 
   # Count groups and scenarios for logging

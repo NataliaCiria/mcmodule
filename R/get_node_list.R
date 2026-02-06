@@ -8,7 +8,7 @@
 #' @param mctable Reference table for mcnodes, defaults to set_mctable()
 #' @param data_keys Data structure and keys, defaults to set_data_keys()
 #' @param keys Optional explicit keys for the input data (character vector)
-#' 
+#'
 #' @return A list of class "mcnode_list" containing node information
 get_node_list <- function(
   exp,
@@ -22,7 +22,7 @@ get_node_list <- function(
     stop("exp must be a quoted expression, use quote({ ... })")
   }
 
-  module <- gsub("_exp", "", deparse(substitute(exp)))
+  exp_name <- gsub("_exp", "", deparse(substitute(exp)))
 
   # Initialize lists and vectors
   out_node_list <- list()
@@ -62,19 +62,27 @@ get_node_list <- function(
       }
     }
 
-    if (parse_res$na_rm) out_node_list[[node_name]][["na_rm"]] <- TRUE
-    if (parse_res$function_call) out_node_list[[node_name]][["function_call"]] <- TRUE
+    if (parse_res$na_rm) {
+      out_node_list[[node_name]][["na_rm"]] <- TRUE
+    }
+    if (parse_res$function_call) {
+      out_node_list[[node_name]][["function_call"]] <- TRUE
+    }
 
     # Collect node names and inputs
     all_nodes <- unique(c(all_nodes, inputs, node_name))
 
     # Set node type: numeric literal -> scalar; otherwise an output node that may depend on inputs
     out_node_list[[node_name]][["type"]] <-
-      if (!grepl("[[:alpha:]]", node_exp) && !is.na(as.numeric(node_exp))) "scalar" else "out_node"
+      if (!grepl("[[:alpha:]]", node_exp) && !is.na(as.numeric(node_exp))) {
+        "scalar"
+      } else {
+        "out_node"
+      }
 
     out_node_list[[node_name]][["node_exp"]] <- node_exp
     out_node_list[[node_name]][["inputs"]] <- inputs
-    out_node_list[[node_name]][["module"]] <- module
+    out_node_list[[node_name]][["exp_name"]] <- exp_name
     out_node_list[[node_name]][["mc_name"]] <- node_name
   }
 
@@ -178,7 +186,7 @@ get_node_list <- function(
         }
       }
 
-      in_node_list[[node_name]][["module"]] <- module
+      in_node_list[[node_name]][["exp_name"]] <- exp_name
       in_node_list[[node_name]][["mc_name"]] <- node_name
 
       # If no inputs_col matched (no dataset matched) but explicit keys were provided, assign them
@@ -218,7 +226,7 @@ get_node_list <- function(
 
   # Combine all node lists (provisional list for key matching)
   node_list <- c(in_node_list, prev_node_list, out_node_list)
-  
+
   # Order list in node appearance order in expression
   node_list <- node_list[all_nodes]
 
@@ -255,9 +263,10 @@ get_node_list <- function(
 #'   - function_call: logical; TRUE if any function calls were present
 #' @keywords internal
 #' @noRd
-  ast_traverse <- function(expr_text) {
-    parsed <- tryCatch(parse(text = expr_text), error = function(e) NULL)
-    if (is.null(parsed)) return(list(
+ast_traverse <- function(expr_text) {
+  parsed <- tryCatch(parse(text = expr_text), error = function(e) NULL)
+  if (is.null(parsed)) {
+    return(list(
       inputs = character(),
       created_in_exp = FALSE,
       mc_func = NULL,
@@ -266,77 +275,100 @@ get_node_list <- function(
       function_call = FALSE,
       unsupported_types = character()
     ))
-    node <- parsed[[1]]
+  }
+  node <- parsed[[1]]
 
-    symbols <- character()
-    function_names <- character()
-    mc_func <- NULL
-    created_in_exp <- FALSE
-    na_rm_flag <- FALSE
-    nvariates_flag <- FALSE
-    function_call_flag <- FALSE
-    unsupported_types <- character()
+  symbols <- character()
+  function_names <- character()
+  mc_func <- NULL
+  created_in_exp <- FALSE
+  na_rm_flag <- FALSE
+  nvariates_flag <- FALSE
+  function_call_flag <- FALSE
+  unsupported_types <- character()
 
-    traverse <- function(e) {
-      if (is.symbol(e)) {
-        symbols <<- c(symbols, as.character(e))
-        return()
+  traverse <- function(e) {
+    if (is.symbol(e)) {
+      symbols <<- c(symbols, as.character(e))
+      return()
+    }
+    if (is.atomic(e)) {
+      return()
+    }
+    if (is.call(e)) {
+      function_call_flag <<- TRUE
+      fname <- if (is.symbol(e[[1]])) {
+        as.character(e[[1]])
+      } else {
+        paste0(deparse(e[[1]]), collapse = "")
       }
-      if (is.atomic(e)) return()
-      if (is.call(e)) {
-        function_call_flag <<- TRUE
-        fname <- if (is.symbol(e[[1]])) as.character(e[[1]]) else paste0(deparse(e[[1]]), collapse = "")
 
-        function_names <<- c(function_names, fname)
+      function_names <<- c(function_names, fname)
 
-        if (fname %in% c("mcstoc", "mcdata")) {
-          created_in_exp <<- TRUE
-          nm <- names(e)
-          if (!is.null(nm) && "nvariates" %in% nm) nvariates_flag <<- TRUE
+      if (fname %in% c("mcstoc", "mcdata")) {
+        created_in_exp <<- TRUE
+        nm <- names(e)
+        if (!is.null(nm) && "nvariates" %in% nm) {
+          nvariates_flag <<- TRUE
+        }
 
-          # detect mc sampling function name
-          if (!is.null(nm) && "func" %in% nm) {
-            argval <- e[["func"]]
-            mc_func <<- if (is.symbol(argval)) as.character(argval) else paste0(deparse(argval), collapse = "")
-          } else if (length(e) >= 2) {
-            second <- e[[2]]
-            mc_func <<- if (is.symbol(second)) as.character(second) else paste0(deparse(second), collapse = "")
+        # detect mc sampling function name
+        if (!is.null(nm) && "func" %in% nm) {
+          argval <- e[["func"]]
+          mc_func <<- if (is.symbol(argval)) {
+            as.character(argval)
+          } else {
+            paste0(deparse(argval), collapse = "")
           }
-
-          # detect unsupported type argument values ("U", "VU")
-          if (!is.null(nm) && "type" %in% nm) {
-            type_val <- e[["type"]]
-            type_char <- if (is.character(type_val)) {
-              type_val
-            } else if (is.symbol(type_val)) {
-              as.character(type_val)
-            } else {
-              paste0(deparse(type_val), collapse = "")
-            }
-            if (type_char %in% c("U", "VU")) {
-              unsupported_types <<- unique(c(unsupported_types, type_char))
-            }
+        } else if (length(e) >= 2) {
+          second <- e[[2]]
+          mc_func <<- if (is.symbol(second)) {
+            as.character(second)
+          } else {
+            paste0(deparse(second), collapse = "")
           }
         }
 
-        if (fname == "mcnode_na_rm") na_rm_flag <<- TRUE
+        # detect unsupported type argument values ("U", "VU")
+        if (!is.null(nm) && "type" %in% nm) {
+          type_val <- e[["type"]]
+          type_char <- if (is.character(type_val)) {
+            type_val
+          } else if (is.symbol(type_val)) {
+            as.character(type_val)
+          } else {
+            paste0(deparse(type_val), collapse = "")
+          }
+          if (type_char %in% c("U", "VU")) {
+            unsupported_types <<- unique(c(unsupported_types, type_char))
+          }
+        }
+      }
 
-        for (i in seq_along(e)[-1]) traverse(e[[i]])
+      if (fname == "mcnode_na_rm") {
+        na_rm_flag <<- TRUE
+      }
+
+      for (i in seq_along(e)[-1]) {
+        traverse(e[[i]])
       }
     }
-
-    traverse(node)
-
-    inputs <- setdiff(unique(symbols), unique(function_names))
-    if (!is.null(mc_func)) inputs <- setdiff(inputs, mc_func)
-
-    list(
-      inputs = inputs,
-      created_in_exp = created_in_exp,
-      mc_func = mc_func,
-      nvariates = nvariates_flag,
-      na_rm = na_rm_flag,
-      function_call = function_call_flag,
-      unsupported_types = unsupported_types
-    )
   }
+
+  traverse(node)
+
+  inputs <- setdiff(unique(symbols), unique(function_names))
+  if (!is.null(mc_func)) {
+    inputs <- setdiff(inputs, mc_func)
+  }
+
+  list(
+    inputs = inputs,
+    created_in_exp = created_in_exp,
+    mc_func = mc_func,
+    nvariates = nvariates_flag,
+    na_rm = na_rm_flag,
+    function_call = function_call_flag,
+    unsupported_types = unsupported_types
+  )
+}
