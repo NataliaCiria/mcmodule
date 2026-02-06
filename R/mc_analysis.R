@@ -632,7 +632,7 @@ mcmodule_converg <- function(
       info$module_exp_data$module == module_names[h]
     ]
     exp_h_nodes <- names(mcmodule$node_list)[
-      unlist(lapply(names(mcmodule$node_list), \(x) {
+      unlist(lapply(names(mcmodule$node_list), function(x) {
         mcmodule$node_list[[x]][["exp_name"]] %in% exp_h
       }))
     ]
