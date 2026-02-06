@@ -62,14 +62,14 @@ mcmodule_info <- function(mcmodule) {
 
     names_list <- names(exp_list)
 
-    module_names <- lapply(seq_along(exp_list), \(i) {
+    module_names <- lapply(seq_along(exp_list), function(i) {
       elem <- exp_list[[i]]
       elem_name <- names_list[i]
 
       if (is.list(elem) && !is.expression(elem) && !is.language(elem)) {
         child_is_list <- vapply(
           elem,
-          \(x) is.list(x) && !is.expression(x) && !is.language(x),
+          function(x) is.list(x) && !is.expression(x) && !is.language(x),
           logical(1)
         )
 
@@ -102,7 +102,7 @@ mcmodule_info <- function(mcmodule) {
 
     names_list <- names(exp_list)
 
-    result_list <- lapply(seq_along(exp_list), \(i) {
+    result_list <- lapply(seq_along(exp_list), function(i) {
       elem <- exp_list[[i]]
       elem_name <- names_list[i]
 
@@ -110,7 +110,7 @@ mcmodule_info <- function(mcmodule) {
         # Check if children are lists (nested modules)
         child_is_list <- vapply(
           elem,
-          \(x) is.list(x) && !is.expression(x) && !is.language(x),
+          function(x) is.list(x) && !is.expression(x) && !is.language(x),
           logical(1)
         )
 
@@ -152,7 +152,7 @@ mcmodule_info <- function(mcmodule) {
   # Combined modules have nested lists in exp
   has_nested <- any(vapply(
     mcmodule$exp,
-    \(x) is.list(x) && !is.expression(x) && !is.language(x),
+    function(x) is.list(x) && !is.expression(x) && !is.language(x),
     logical(1)
   ))
 
@@ -176,13 +176,16 @@ mcmodule_info <- function(mcmodule) {
   }
 
   # Extract module expressions and metadata (index information)
-  exp_name <- unlist(lapply(names(mcmodule$node_list), \(x) {
+  exp_name <- unlist(lapply(names(mcmodule$node_list), function(x) {
     mcmodule$node_list[[x]][["exp_name"]] %||% NA
   }))
 
-  data_name <- unlist(lapply(names(mcmodule$node_list)[!is.na(exp_name)], \(x) {
-    mcmodule$node_list[[x]][["data_name"]] %||% NA
-  }))
+  data_name <- unlist(lapply(
+    names(mcmodule$node_list)[!is.na(exp_name)],
+    function(x) {
+      mcmodule$node_list[[x]][["data_name"]] %||% NA
+    }
+  ))
 
   names(data_name) <- exp_name[!is.na(exp_name)]
 
@@ -192,7 +195,7 @@ mcmodule_info <- function(mcmodule) {
   module_exp$data_name <- data_name[module_exp$exp]
 
   # Process global keys
-  global_keys <- unique(unlist(lapply(names(mcmodule$node_list), \(x) {
+  global_keys <- unique(unlist(lapply(names(mcmodule$node_list), function(x) {
     mcmodule$node_list[[x]][["keys"]]
   })))
 

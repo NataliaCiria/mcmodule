@@ -14,7 +14,7 @@ mcmodule_dim_check <- function(mcmodule, mc_names = NULL) {
   mc_names <- mc_names %||% names(mcmodule$node_list)
 
   # Check that all mcnodes have 1 or the same number of uncertainty values
-  n_uncertainty <- unique(sapply(mc_names, \(x) {
+  n_uncertainty <- unique(sapply(mc_names, function(x) {
     dim(mcmodule$node_list[[x]][["mcnode"]])[1]
   }))
   n_uncertainty <- n_uncertainty[n_uncertainty != 1]
@@ -26,7 +26,7 @@ mcmodule_dim_check <- function(mcmodule, mc_names = NULL) {
   }
 
   # Check that all mcnodes have 1 or the same number of variate simulations
-  n_variate <- unique(sapply(mc_names, \(x) {
+  n_variate <- unique(sapply(mc_names, function(x) {
     dim(mcmodule$node_list[[x]][["mcnode"]])[3]
   }))
   n_variate <- n_variate[n_variate != 1]
@@ -219,7 +219,7 @@ mcmodule_corr <- function(
     ]
     # Get input (type == "in_node") mcnodes names in mcmodule$node_list for this expression (module == exp_h)
     exp_h_inputs <- names(mcmodule$node_list)[
-      unlist(lapply(names(mcmodule$node_list), \(x) {
+      unlist(lapply(names(mcmodule$node_list), function(x) {
         mcmodule$node_list[[x]][["exp_name"]] %in%
           exp_h &&
           mcmodule$node_list[[x]][["type"]] == "in_node"
@@ -229,7 +229,7 @@ mcmodule_corr <- function(
     if (is.null(output)) {
       if (by_exp) {
         exp_h_outputs <- names(mcmodule$node_list)[
-          unlist(lapply(names(mcmodule$node_list), \(x) {
+          unlist(lapply(names(mcmodule$node_list), function(x) {
             mcmodule$node_list[[x]][["exp_name"]] %in%
               exp_h &&
               mcmodule$node_list[[x]][["type"]] == "out_node"
@@ -654,7 +654,7 @@ mcmodule_converg <- function(
 
     # Get all nodes for this expression
     exp_h_nodes <- names(mcmodule$node_list)[
-      unlist(lapply(names(mcmodule$node_list), \(x) {
+      unlist(lapply(names(mcmodule$node_list), function(x) {
         mcmodule$node_list[[x]][["exp_name"]] %in% exp_h
       }))
     ]
