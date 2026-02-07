@@ -883,6 +883,8 @@ trial_totals <- function(
 
     return(mcmodule)
   }
+  # Iniciate keys_names vector to keep track of all keys used in nodes
+  keys_names <- c()
 
   # Process all nodes
   mcmodule <- process_trial_mcnode(
@@ -904,6 +906,11 @@ trial_totals <- function(
   } else {
     mcmodule$node_list[[trials_n]][["mcnode"]]
   }
+
+  keys_names <- unique(c(
+    keys_names,
+    mcmodule$node_list[[trials_n]][["keys"]]
+  ))
 
   # If subsets_n is NULL, defaults to 1
   if (is.null(subsets_n)) {
@@ -931,6 +938,11 @@ trial_totals <- function(
     } else {
       mcmodule$node_list[[subsets_n]][["mcnode"]]
     }
+
+    keys_names <- unique(c(
+      keys_names,
+      mcmodule$node_list[[subsets_n]][["keys"]]
+    ))
 
     hierarchical_n <- TRUE
   }
@@ -963,6 +975,11 @@ trial_totals <- function(
     } else {
       mcmodule$node_list[[subsets_p]][["mcnode"]]
     }
+
+    keys_names <- unique(c(
+      keys_names,
+      mcmodule$node_list[[subsets_p]][["keys"]]
+    ))
 
     hierarchical_p <- TRUE
   }
@@ -1103,11 +1120,10 @@ trial_totals <- function(
     )
   )
 
-  # Process each node
-  keys_names <- c()
   for (mc_name in mc_names) {
     if (!is.null(agg_keys)) {
-      keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
+      # Original node keys before aggregation
+      original_keys <- mcmodule$node_list[[mc_name]][["keys"]]
       # Aggregate node if agg_keys provided
       messages <- character(0)
       withCallingHandlers(
@@ -1146,12 +1162,17 @@ trial_totals <- function(
       # Add metadata
       mcmodule$node_list[[mc_name]][["module"]] <- module_name
       mcmodule$node_list[[mc_name]][["agg_keys"]] <- agg_keys
-      mcmodule$node_list[[mc_name]][["keys"]] <- keys_names
+      mcmodule$node_list[[mc_name]][["keys"]] <- original_keys
       mcmodule$node_list[[mc_name]][["keep_variates"]] <- keep_variates
 
       # Update keys_names if it does not keep all variates
       if (!keep_variates) {
         keys_names <- agg_keys
+      } else {
+        keys_names <- unique(c(
+          original_keys,
+          mcmodule$node_list[[mc_name]][["keys"]]
+        ))
       }
     } else {
       keys_names <- unique(c(
