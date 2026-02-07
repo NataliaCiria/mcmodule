@@ -1104,6 +1104,7 @@ trial_totals <- function(
   )
 
   # Process each node
+  keys_names <- c()
   for (mc_name in mc_names) {
     if (!is.null(agg_keys)) {
       keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
@@ -1153,7 +1154,10 @@ trial_totals <- function(
         keys_names <- agg_keys
       }
     } else {
-      keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
+      keys_names <- unique(c(
+        keys_names,
+        mcmodule$node_list[[mc_name]][["keys"]]
+      ))
     }
 
     if (!all_equal && mc_name %in% mc_inputs_names) {
