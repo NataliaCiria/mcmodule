@@ -18,10 +18,12 @@ add_prefix <- function(mcmodule, prefix = NULL, rewrite_module = NULL) {
   # Extract node list
   node_list <- mcmodule$node_list
 
-  # Assign current mcmodule to nodes without one or when pipe was used and auto named to  "."
+  # Assign current mcmodule to nodes without one or when pipe was used and auto named to "."
   for (i in 1:length(node_list)) {
     if (
-      is.null(node_list[[i]][["module"]]) || node_list[[i]][["module"]] == "."
+      is.null(node_list[[i]][["module"]]) ||
+        (length(node_list[[i]][["module"]]) == 1 &&
+          node_list[[i]][["module"]] == ".")
     ) {
       node_list[[i]][["module"]] <- deparse(substitute(mcmodule))
     }
@@ -31,13 +33,19 @@ add_prefix <- function(mcmodule, prefix = NULL, rewrite_module = NULL) {
   info <- mcmodule_info(mcmodule)
   modules <- info$module_names
   exps <- unique(info$module_exp_data$exp)
-  exp_and_modules <- c(modules, exps)
+  exp_and_modules <- c(modules, exps, deparse(substitute(mcmodule)))
 
   # Get node names and modules
   node_names <- names(node_list)
-  #node_module <- composition$module_names
   node_module <- unlist(sapply(node_list, "[[", "module"))
-  node_exp <- unlist(sapply(node_list, "[[", "exp_name"))
+  # Get node expression names, NA if not from an expression
+  node_exp <- unlist(sapply(node_list, function(x) {
+    if (!is.null(x[["exp_name"]])) {
+      return(x[["exp_name"]])
+    } else {
+      return(NA)
+    }
+  }))
 
   # Get inputs and their modules
   inputs <- unique(unlist(sapply(node_list, "[[", "inputs")))
@@ -117,12 +125,16 @@ add_prefix <- function(mcmodule, prefix = NULL, rewrite_module = NULL) {
 
   # Update node list inputs and prefix
   for (i in 1:length(node_list)) {
-    if (
-      node_list[[i]][["module"]] %in%
-        modules ||
-        (!is.null(node_list[[i]][["exp_name"]]) &&
-          node_list[[i]][["exp_name"]] %in% exps)
-    ) {
+    # Update nodes that belong to this module or its expressions
+    node_module_i <- node_list[[i]][["module"]]
+    node_exp_i <- node_list[[i]][["exp_name"]]
+    node_type_i <- node_list[[i]][["type"]]
+
+    is_current_node <-
+      any(node_module_i %in% modules) ||
+      (!is.null(node_exp_i) && any(node_exp_i %in% exps))
+
+    if (is_current_node) {
       old_inputs <- node_list[[i]][["inputs"]]
       node_list[[i]][["inputs"]] <- new_inputs[old_inputs]
       node_list[[i]][["prefix"]] <- prefix
@@ -134,7 +146,6 @@ add_prefix <- function(mcmodule, prefix = NULL, rewrite_module = NULL) {
   # Return appropriate object type
   if (inherits(mcmodule, "mcmodule")) {
     mcmodule$node_list <- node_list
-    mcmodule$prefix <- prefix
     return(mcmodule)
   } else {
     return(node_list)
