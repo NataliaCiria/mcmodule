@@ -169,6 +169,10 @@ at_least_one <- function(
     prefix <- sub("_$", "", prefix)
   }
 
+  if (!is.null(prefix) && prefix == "") {
+    prefix <- NULL
+  }
+
   # Add new node to module
   mcmodule$node_list[[p_all_mc_name]] <- list(
     mcnode = p_all,
@@ -350,6 +354,10 @@ agg_totals <- function(
       sub(paste0("^", prefix), "", agg_mc_name)
     )
     prefix <- sub("_$", "", prefix)
+  }
+
+  if (!is.null(prefix) && prefix == "") {
+    prefix <- NULL
   }
 
   # Extract variates
@@ -782,6 +790,10 @@ trial_totals <- function(
     ))
   }
 
+  if (!is.null(prefix) && prefix == "") {
+    prefix <- NULL
+  }
+
   # Fix missing level suffixes
   missing_suffixes <- setdiff(c("trial", "subset", "set"), names(level_suffix))
   for (suffix in missing_suffixes) {
@@ -996,7 +1008,8 @@ trial_totals <- function(
     keys_names,
     agg_keys,
     total_type,
-    keep_variates
+    keep_variates,
+    prefix
   ) {
     node_list[[name]] <- list(
       mcnode = value,
@@ -1286,7 +1299,8 @@ trial_totals <- function(
           keys_names = keys_names,
           agg_keys = agg_keys,
           total_type = total_type,
-          keep_variates = keep_variates
+          keep_variates = keep_variates,
+          prefix = prefix
         )
 
         # Add summary if requested
