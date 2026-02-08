@@ -472,6 +472,7 @@ default_color_pal <- c(
   input_data = "#B0DFF9",
   input_file = "#B0DFF9",
   inputs_col = "#B0DFF9",
+  scalar = "#6ABDEB",
   in_node = "#6ABDEB",
   out_node = "#A4CF96",
   trials_n = "#FAE4CB",
