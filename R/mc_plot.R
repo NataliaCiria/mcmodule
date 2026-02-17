@@ -64,7 +64,14 @@ tidy_mcnode <- function(
     data_name <- mcmodule$node_list[[mc_name]]$data_name
 
     if (is.null(data)) {
-      data <- mcmodule$data[[data_name]]
+      # Handle nodes with multiple data_names using existing summary if available
+      if (
+        length(data_name) > 1 && !is.null(mcmodule$node_list[[mc_name]]$summary)
+      ) {
+        data <- mcmodule$node_list[[mc_name]]$summary
+      } else {
+        data <- mcmodule$data[[data_name]]
+      }
     }
   } else {
     if (is.null(data)) {
@@ -72,8 +79,23 @@ tidy_mcnode <- function(
     }
   }
 
+  # Get mcnode dimensions
+  # Dimension 1: uncertainty iterations
+  # Dimension 2: variability iterations (usually 1)
+  # Dimension 3: variates (scenarios/rows from data)
+  dims <- dim(mcnode)
+  dims <- if (is.null(dims)) length(mcnode) else dims
+  dims <- c(dims, 1, 1)
+  n_uncertainty <- dims[1]
+  n_variability <- dims[2]
+  n_variates <- dims[3]
+
   # Validate provided keys
   if (!is.null(keys_names)) {
+    if (is.null(data)) {
+      stop("keys_names requires a non-NULL data argument")
+    }
+
     missing_keys <- keys_names[!keys_names %in% names(data)]
     if (length(missing_keys) > 0) {
       stop(sprintf(
@@ -84,25 +106,18 @@ tidy_mcnode <- function(
   }
 
   # Determine keys to use
-  if (is.null(keys_names) && !is.null(mcmodule)) {
+  if (is.null(keys_names) && !is.null(mcmodule) && !is.null(data)) {
     keys_names <- mcmodule$node_list[[mc_name]]$keys
   }
 
-  # Extract key columns from data
-  if (!is.null(keys_names) && length(keys_names) > 0) {
+  # Extract key columns from data or fall back to row_id
+  if (!is.null(data) && !is.null(keys_names) && length(keys_names) > 0) {
     keys_df <- data[names(data) %in% keys_names]
-  } else {
+  } else if (!is.null(data)) {
     keys_df <- data.frame(row_id = seq_len(nrow(data)))
+  } else {
+    keys_df <- data.frame(row_id = seq_len(n_variates))
   }
-
-  # Get mcnode dimensions
-  # Dimension 1: uncertainty iterations
-  # Dimension 2: variability iterations (usually 1)
-  # Dimension 3: variates (scenarios/rows from data)
-  dims <- dim(mcnode)
-  n_uncertainty <- dims[1]
-  n_variability <- dims[2]
-  n_variates <- dims[3]
 
   # Check that number of variates matches number of data rows
   if (n_variates != nrow(keys_df)) {

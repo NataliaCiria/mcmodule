@@ -162,6 +162,8 @@ mcmodule_to_mc <- function(
 #'   See \code{\link{mcmodule_to_mc}} for details.
 #' @param print_summary Logical, whether to print the summary output.
 #'   Default is TRUE.
+#' @param progress Logical, whether to print progress information while running.
+#'   Default is FALSE.
 #' @inheritParams mc2d::tornado
 #' @return Data frame with correlation coefficients and metadata. Columns include:
 #'   \itemize{
@@ -193,12 +195,14 @@ mcmodule_corr <- function(
   all_variates = TRUE,
   variates_as_nsv = FALSE,
   print_summary = TRUE,
+  progress = FALSE,
   method = c("spearman", "kendall", "pearson"),
   use = "all.obs",
   lim = c(0.025, 0.975)
 ) {
   info <- mcmodule_info(mcmodule)
   module_names <- unique(info$module_exp_data$module)
+  total_modules <- length(module_names)
 
   # Initialize correlation data frame
   coor <- data.frame(
@@ -217,6 +221,16 @@ mcmodule_corr <- function(
     exp_h <- info$module_exp_data$exp[
       info$module_exp_data$module == module_names[h]
     ]
+
+    if (progress) {
+      exp_label <- paste(exp_h, collapse = ", ")
+      cat(sprintf(
+        "\n[Progress] Expression %s (%d/%d)\n",
+        exp_label,
+        h,
+        total_modules
+      ))
+    }
     # Get input (type == "in_node") mcnodes names in mcmodule$node_list for this expression (module == exp_h)
     exp_h_inputs <- names(mcmodule$node_list)[
       unlist(lapply(names(mcmodule$node_list), function(x) {
@@ -566,6 +580,8 @@ mcmodule_corr <- function(
 #' @param conv_threshold Optional custom convergence threshold for standardized differences
 #' @param print_summary Logical, whether to print the summary output.
 #'   Default is TRUE.
+#' @param progress Logical, whether to print progress information while running.
+#'   Default is FALSE.
 #'
 #' @return A data frame with convergence statistics per node:
 #'   \itemize{
@@ -606,7 +622,8 @@ mcmodule_converg <- function(
   from_quantile = 0.95,
   to_quantile = 1,
   conv_threshold = NULL,
-  print_summary = TRUE
+  print_summary = TRUE,
+  progress = FALSE
 ) {
   # Helper function to calculate statistics (mean and quantiles) for convergence analysis
   mc_stat <- function(i, x) {
@@ -625,24 +642,8 @@ mcmodule_converg <- function(
   info <- mcmodule_info(mcmodule)
   module_names <- unique(info$module_exp_data$module)
 
-  # Calculate total iterations for progress bar
-  total_iterations <- 0
-  for (h in seq_along(module_names)) {
-    exp_h <- info$module_exp_data$exp[
-      info$module_exp_data$module == module_names[h]
-    ]
-    exp_h_nodes <- names(mcmodule$node_list)[
-      unlist(lapply(names(mcmodule$node_list), function(x) {
-        mcmodule$node_list[[x]][["exp_name"]] %in% exp_h
-      }))
-    ]
-    dims <- mcmodule_dim_check(mcmodule, exp_h_nodes)
-    total_iterations <- total_iterations +
-      (dims$n_variate * length(exp_h_nodes))
-  }
-
   # Initialize list to store convergence results
-  mc_convergence_list <- vector("list", total_iterations)
+  mc_convergence_list <- list()
   list_index <- 1
 
   # Iterate through each module (expression group) in the Monte Carlo module
@@ -658,6 +659,20 @@ mcmodule_converg <- function(
         mcmodule$node_list[[x]][["exp_name"]] %in% exp_h
       }))
     ]
+
+    dims <- mcmodule_dim_check(mcmodule, exp_h_nodes)
+
+    if (progress) {
+      exp_label <- paste(exp_h, collapse = ", ")
+      cat(sprintf(
+        "\n[Progress] Expression %s (%d/%d)\n",
+        exp_label,
+        h,
+        length(module_names)
+      ))
+      cat(sprintf("[Progress] Nodes: %d\n", length(exp_h_nodes)))
+      cat(sprintf("[Progress] Variates: %d\n", dims$n_variate))
+    }
 
     # Convert mcmodule to mc objects for this expression
     mc_list <- mcmodule_to_mc(mcmodule, mc_names = exp_h_nodes)
