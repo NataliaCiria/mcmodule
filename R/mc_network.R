@@ -306,6 +306,8 @@ visNetwork_edges <- function(mcmodule, inputs = FALSE) {
 
 #' Create Interactive Network Visualization
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
 #' Generates an interactive network visualization using visNetwork library. The visualization
 #' includes interactive features for exploring model structure and relationships.
 #'

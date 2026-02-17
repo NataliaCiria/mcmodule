@@ -1,5 +1,7 @@
 #' Convert mcnode to Long Format for Plotting
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
 #' Converts Monte Carlo node data to a long format data frame suitable for use
 #' with ggplot2 and other tidyverse functions. Each row represents a single Monte Carlo
 #' simulation for a specific variate (scenario/data row).
@@ -216,6 +218,8 @@ tidy_mcnode <- function(
 
 #' Plot Monte Carlo Node with Boxplot and Points
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
 #' Creates a ggplot visualization of Monte Carlo node data with semitransparent
 #' boxplots overlaid with scattered points representing individual iterations.
 #'
