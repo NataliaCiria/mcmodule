@@ -155,7 +155,7 @@ mcmodule_to_mc <- function(
 #'   If FALSE (default), calculates correlation by global output (last node).
 #' @param output Character string specifying the output node name. If NULL (default),
 #'   uses the last node in mcmodule$node_list (or last expression output if by_exp = TRUE).
-#' @param all_variates Logical, whether to match input nodes to output variates.
+#' @param match_variates Logical, whether to match input nodes to output variates.
 #'   Default is TRUE.
 #' @param variates_as_nsv Logical, if TRUE, combines all variates into a single mc object
 #'   for correlation analysis. If FALSE (default), analyzes each variate separately.
@@ -192,7 +192,7 @@ mcmodule_corr <- function(
   mcmodule,
   output = NULL,
   by_exp = FALSE,
-  all_variates = TRUE,
+  match_variates = TRUE,
   variates_as_nsv = FALSE,
   print_summary = TRUE,
   progress = FALSE,
@@ -225,18 +225,21 @@ mcmodule_corr <- function(
     if (progress) {
       exp_label <- paste(exp_h, collapse = ", ")
       cat(sprintf(
-        "\n[Progress] Expression %s (%d/%d)\n",
+        "\n[Correlation analysis] Expression %s (%d/%d)\n",
         exp_label,
         h,
         total_modules
       ))
     }
     # Get input (type == "in_node") mcnodes names in mcmodule$node_list for this expression (module == exp_h)
+    # Only include nodes that have more than 1 uncertainty simulation (nrow > 1) or more than 1 variate (if variates_as_nsv = TRUE)
     exp_h_inputs <- names(mcmodule$node_list)[
       unlist(lapply(names(mcmodule$node_list), function(x) {
+        mcnode_x <- mcmodule$node_list[[x]][["mcnode"]]
         mcmodule$node_list[[x]][["exp_name"]] %in%
           exp_h &&
-          mcmodule$node_list[[x]][["type"]] == "in_node"
+          mcmodule$node_list[[x]][["type"]] == "in_node" &&
+          (dim(mcnode_x)[1] > 1 || (variates_as_nsv && dim(mcnode_x)[3] > 1))
       }))
     ]
 
@@ -261,9 +264,9 @@ mcmodule_corr <- function(
     mc_output <- mcmodule$node_list[[output_h]][["mcnode"]]
     summary_output <- mcmodule$node_list[[output_h]][["summary"]]
 
-    data_name_h <- info$module_exp_data$data_name[
+    data_name_h <- unique(info$module_exp_data$data_name[
       info$module_exp_data$exp == exp_h
-    ]
+    ])
 
     suppressMessages({
       mc_match_data_h <- mc_match_data(
@@ -294,11 +297,14 @@ mcmodule_corr <- function(
     # Create a copy of mcmodule to modify
     mcmodule_h <- mcmodule
 
-    # Match input mcnodes to output mcnode if all_variates is TRUE and data dimensions differ
+    # Match input mcnodes to output mcnode if match_variates is TRUE and data dimensions differ
     if (
-      all_variates &&
-        (!all(dim(data_h) == dim(mcmodule_h$data[[data_name_h]])) ||
-          !all(data_h == mcmodule_h$data[[data_name_h]]))
+      match_variates &&
+        (!all(
+          dim(data_h) == dim(mcmodule_h$data[[data_name_h]]),
+          na.rm = TRUE
+        ) ||
+          !all(data_h == mcmodule_h$data[[data_name_h]], na.rm = TRUE))
     ) {
       for (input_name in exp_h_inputs) {
         mc_input <- mcmodule_h$node_list[[input_name]][["mcnode"]]
@@ -372,7 +378,7 @@ mcmodule_corr <- function(
       )
 
       coor_h_i$variate <- i
-      coor_h_i$exp <- exp_h
+      coor_h_i$exp <- paste(exp_h, collapse = ", ")
       coor_h_i$exp_n <- h
       coor_h_i$module <- module_names[h]
       coor_h_i[intersect(names(data_h), info$global_keys)] <- data_h[
@@ -665,13 +671,11 @@ mcmodule_converg <- function(
     if (progress) {
       exp_label <- paste(exp_h, collapse = ", ")
       cat(sprintf(
-        "\n[Progress] Expression %s (%d/%d)\n",
+        "\n[Convergence analysis] Expression %s (%d/%d)\n",
         exp_label,
         h,
         length(module_names)
       ))
-      cat(sprintf("[Progress] Nodes: %d\n", length(exp_h_nodes)))
-      cat(sprintf("[Progress] Variates: %d\n", dims$n_variate))
     }
 
     # Convert mcmodule to mc objects for this expression
