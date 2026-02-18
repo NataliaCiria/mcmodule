@@ -8,6 +8,11 @@
 
 <!-- badges: end -->
 
+> **⚠️ IMPORTANT NOTICE**
+This documentation is hosted here temporarily due to the unexpected suspension of my GitHub account ([@NataliaCiria](https://github.com/NataliaCiria))☹️. I am currently following GitHub's appeal process and I hope the official repository and package website are restored soon 🤞.
+>
+
+
 Framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to facilitate working with multiple risk pathways, variates and scenarios. It provides tools to organize risk analysis in independent flexible modules, perform multivariate mcnode operations, automate the creation of mcnodes and visualize risk analysis models.
 
 ## Installation
@@ -19,11 +24,13 @@ install.packages("mcmodule")
 library("mcmodule")
 ```
 
-Install latest development version from GitHub (requires `devtool` package)
+Install latest development version from ~~GitHub~~ my personal repository.
+
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("NataliaCiria/mcmodule")
+# devtools::install_github("NataliaCiria/mcmodule") >:( UGH!
+install.packages("mcmodule", repos = "https://nataliaciria.com/r", type = "source")
 ```
 
 ## Set up an mcmodel
