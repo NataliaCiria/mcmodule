@@ -25,7 +25,8 @@ Suggests:
     testthat (>= 3.0.0),
     visNetwork,
     igraph,
-    bookdown
+    bookdown,
+    ggplot2
 Config/testthat/edition: 3
 Imports: 
     dplyr,

@@ -682,7 +682,7 @@ info$global_keys
 
 ## Correlation analysis
 
-The `mcmodule_corr()` function calculates correlation coefficients between input and output nodes across your mcmodule. This helps identify which input parameters have the strongest influence on your results.
+The `mcmodule_corr()` function calculates correlation coefficients between input and output nodes across your mcmodule. This helps identify which input parameters have the strongest influence on your results. It is based on `mc2d::tornado()` but applied to many distinct variates.
 
 ```{r, eval=FALSE}
 # Calculate correlations using Spearman's method (default)
