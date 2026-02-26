@@ -363,57 +363,66 @@ mc_plot <- function(
       sort_cols <- group_by_cols
     }
 
-    # Create a sort order: group_by cols, then scenario_id (0 first), then other keys
-    if ("scenario_id" %in% other_keys) {
-      # Separate scenario_id from other keys
-      other_keys_no_scenario <- setdiff(other_keys, "scenario_id")
-      if (length(other_keys_no_scenario) > 0) {
-        sort_cols <- c(group_by_cols, "scenario_id", other_keys_no_scenario)
+    # Verify all sort_cols exist in long_df
+    if (!all(sort_cols %in% names(long_df))) {
+      # Skip grouping if required columns are missing
+      warning("Required columns for grouping not found in data")
+    } else {
+      # Create a sort order: group_by cols, then scenario_id (0 first), then other keys
+      if ("scenario_id" %in% other_keys) {
+        # Separate scenario_id from other keys
+        other_keys_no_scenario <- setdiff(other_keys, "scenario_id")
+        if (length(other_keys_no_scenario) > 0) {
+          sort_cols <- c(group_by_cols, "scenario_id", other_keys_no_scenario)
+        } else {
+          sort_cols <- c(group_by_cols, "scenario_id")
+        }
+
+        # Create sort order dataframe
+        unique_combos <- unique(long_df[, sort_cols, drop = FALSE])
+
+        # Sort: group_by cols (ascending), then scenario "0" first, then other scenarios (ascending)
+        unique_combos <- unique_combos[
+          order(
+            do.call(paste, unique_combos[, group_by_cols, drop = FALSE]), # Group cols
+            unique_combos$scenario_id != "0", # "0" comes first (FALSE < TRUE)
+            unique_combos$scenario_id # Then alphabetically
+          ),
+        ]
       } else {
-        sort_cols <- c(group_by_cols, "scenario_id")
+        unique_combos <- unique(long_df[, sort_cols, drop = FALSE])
+        unique_combos <- unique_combos[
+          order(do.call(paste, unique_combos[, sort_cols, drop = FALSE])),
+        ]
       }
 
-      # Create sort order dataframe
-      unique_combos <- unique(long_df[, sort_cols, drop = FALSE])
+      # Handle empty unique_combos case
+      if (is.data.frame(unique_combos) && nrow(unique_combos) > 0) {
+        unique_combos$sort_order <- seq_len(nrow(unique_combos))
 
-      # Sort: group_by cols (ascending), then scenario "0" first, then other scenarios (ascending)
-      unique_combos <- unique_combos[
-        order(
-          do.call(paste, unique_combos[, group_by_cols, drop = FALSE]), # Group cols
-          unique_combos$scenario_id != "0", # "0" comes first (FALSE < TRUE)
-          unique_combos$scenario_id # Then alphabetically
-        ),
-      ]
-    } else {
-      unique_combos <- unique(long_df[, sort_cols, drop = FALSE])
-      unique_combos <- unique_combos[
-        order(do.call(paste, unique_combos[, sort_cols, drop = FALSE])),
-      ]
-    }
+        # Merge sort order back and reorder
+        long_df <- merge(long_df, unique_combos, by = sort_cols)
+        long_df <- long_df[order(long_df$sort_order, long_df$simulation), ]
+        long_df$sort_order <- NULL
+      }
 
-    unique_combos$sort_order <- seq_len(nrow(unique_combos))
+      # Recreate y_label in the new order to reflect grouped structure
+      if (length(key_cols) == 1) {
+        long_df$y_label <- as.character(long_df[[key_cols[1]]])
+      } else {
+        long_df$y_label <- apply(
+          long_df[, key_cols, drop = FALSE],
+          1,
+          function(x) paste(x, collapse = " | ")
+        )
+      }
 
-    # Merge sort order back and reorder
-    long_df <- merge(long_df, unique_combos, by = sort_cols)
-    long_df <- long_df[order(long_df$sort_order, long_df$simulation), ]
-    long_df$sort_order <- NULL
-
-    # Recreate y_label in the new order to reflect grouped structure
-    if (length(key_cols) == 1) {
-      long_df$y_label <- as.character(long_df[[key_cols[1]]])
-    } else {
-      long_df$y_label <- apply(
-        long_df[, key_cols, drop = FALSE],
-        1,
-        function(x) paste(x, collapse = " | ")
+      # Factor y_label to preserve the sorted order
+      long_df$y_label <- factor(
+        long_df$y_label,
+        levels = rev(unique(long_df$y_label))
       )
     }
-
-    # Factor y_label to preserve the sorted order
-    long_df$y_label <- factor(
-      long_df$y_label,
-      levels = rev(unique(long_df$y_label))
-    )
   }
 
   # Add default scenario coloring if no color_by specified

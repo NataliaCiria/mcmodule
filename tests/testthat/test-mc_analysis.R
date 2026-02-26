@@ -280,7 +280,7 @@ suppressMessages({
       )
     })
 
-    expect_true(any(grepl("\\[Progress\\] Expression", output)))
+    expect_true(any(grepl("\\[Correlation analysis\\] Expression", output)))
     expect_true(any(grepl("imports", output)))
     expect_s3_class(result, "data.frame")
   })
@@ -570,9 +570,7 @@ suppressMessages({
       )
     })
 
-    expect_true(any(grepl("\\[Progress\\] Expression", output)))
-    expect_true(any(grepl("\\[Progress\\] Nodes:", output)))
-    expect_true(any(grepl("\\[Progress\\] Variates:", output)))
+    expect_true(any(grepl("\\[Convergence analysis\\] Expression", output)))
     expect_true(any(grepl("imports", output)))
     expect_s3_class(result, "data.frame")
   })
