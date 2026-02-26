@@ -63,22 +63,15 @@ mc_filter <- function(
   filter_suffix = "filtered",
   summary = TRUE
 ) {
-  mcmodule_quo <- rlang::enquo(mcmodule)
-  mcmodule_expr <- rlang::quo_get_expr(mcmodule_quo)
-  filter_expr <- rlang::enquos(...)
+  eval_env <- parent.frame()
+  mcmodule_expr <- substitute(mcmodule)
+  filter_expr <- as.list(substitute(list(...)))[-1]
 
-  if (
-    length(filter_expr) == 0 &&
-      rlang::is_call(mcmodule_expr) &&
-      is.null(mc_name)
-  ) {
-    filter_expr <- rlang::as_quosures(
-      list(mcmodule_expr),
-      env = rlang::quo_get_env(mcmodule_quo)
-    )
+  if (length(filter_expr) == 0 && is.call(mcmodule_expr) && is.null(mc_name)) {
+    filter_expr <- list(mcmodule_expr)
     mcmodule <- NULL
   } else {
-    mcmodule <- rlang::eval_tidy(mcmodule_quo)
+    mcmodule <- eval(mcmodule_expr, eval_env)
   }
 
   if (length(filter_expr) == 0) {
@@ -136,35 +129,29 @@ mc_filter <- function(
   }
 
   # Apply filter to data
-  data_filtered <- dplyr::filter(data, !!!filter_expr)
+  data_filtered <- eval(
+    as.call(c(quote(dplyr::filter), list(data), filter_expr)),
+    eval_env
+  )
 
   if (nrow(data_filtered) == 0) {
     warning("Filter conditions resulted in zero rows")
   }
 
-  # Get indices of filtered rows
-  filter_indices <- which(data[[1]] %in% data_filtered[[1]])
-  for (col in names(data)[-1]) {
-    if (col %in% names(data_filtered)) {
-      filter_indices <- intersect(
-        filter_indices,
-        which(data[[col]] %in% data_filtered[[col]])
-      )
-    }
+  # Get indices of filtered rows without creating temporary columns
+  filter_expr_combined <- if (length(filter_expr) == 1) {
+    filter_expr[[1]]
+  } else {
+    Reduce(function(x, y) call("&", x, y), filter_expr)
   }
 
-  # More robust filtering using row matching
-  data_with_index <- data |>
-    dplyr::mutate(.row_index = dplyr::row_number())
+  filter_indices <- which(eval(filter_expr_combined, data, eval_env))
 
-  data_filtered_with_index <- data_with_index |>
-    dplyr::filter(!!!filter_expr)
-
-  filter_indices <- data_filtered_with_index$.row_index
-
-  # Remove the temporary index column
-  data_filtered <- data_filtered_with_index |>
-    dplyr::select(-.row_index)
+  if (length(filter_indices) == 0) {
+    data_filtered <- data[0, , drop = FALSE]
+  } else {
+    data_filtered <- data[filter_indices, , drop = FALSE]
+  }
 
   # Extract filtered variates from mcnode
   if (length(filter_indices) == 0) {
@@ -223,7 +210,7 @@ mc_filter <- function(
   filter_expr_str <- vapply(
     filter_expr,
     function(x) {
-      rlang::quo_text(x)
+      paste(deparse(x), collapse = " ")
     },
     character(1)
   )
