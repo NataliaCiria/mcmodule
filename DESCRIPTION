@@ -33,6 +33,6 @@ Imports:
     utils
 Depends:
     mc2d,
-    R (>= 4.5)
+    R (>= 3.5)
 LazyData: true
 VignetteBuilder: knitr
