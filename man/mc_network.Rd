@@ -37,6 +37,7 @@ An interactive visNetwork object with features:
 }
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Generates an interactive network visualization using visNetwork library. The visualization
 includes interactive features for exploring model structure and relationships.
 }

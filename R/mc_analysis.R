@@ -1,5 +1,7 @@
 #' Check Monte Carlo Nodes Subset
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
 #' Validates that all Monte Carlo nodes in a module have compatible dimensions
 #' for sensitivity analysis by checking uncertainty and variate dimensions.
 #'
@@ -146,6 +148,8 @@ mcmodule_to_mc <- function(
 
 #' Calculate Correlation Coefficients for Monte Carlo Module Inputs and Outputs
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
 #' Computes correlation coefficients between Monte Carlo module inputs and outputs
 #' using the tornado analysis from the mc2d package. Supports multiple correlation
 #' methods and captures any warnings generated during calculation.
@@ -155,13 +159,15 @@ mcmodule_to_mc <- function(
 #'   If FALSE (default), calculates correlation by global output (last node).
 #' @param output Character string specifying the output node name. If NULL (default),
 #'   uses the last node in mcmodule$node_list (or last expression output if by_exp = TRUE).
-#' @param all_variates Logical, whether to match input nodes to output variates.
+#' @param match_variates Logical, whether to match input nodes to output variates.
 #'   Default is TRUE.
 #' @param variates_as_nsv Logical, if TRUE, combines all variates into a single mc object
 #'   for correlation analysis. If FALSE (default), analyzes each variate separately.
 #'   See \code{\link{mcmodule_to_mc}} for details.
 #' @param print_summary Logical, whether to print the summary output.
 #'   Default is TRUE.
+#' @param progress Logical, whether to print progress information while running.
+#'   Default is FALSE.
 #' @inheritParams mc2d::tornado
 #' @return Data frame with correlation coefficients and metadata. Columns include:
 #'   \itemize{
@@ -190,15 +196,17 @@ mcmodule_corr <- function(
   mcmodule,
   output = NULL,
   by_exp = FALSE,
-  all_variates = TRUE,
+  match_variates = TRUE,
   variates_as_nsv = FALSE,
   print_summary = TRUE,
+  progress = FALSE,
   method = c("spearman", "kendall", "pearson"),
   use = "all.obs",
   lim = c(0.025, 0.975)
 ) {
   info <- mcmodule_info(mcmodule)
   module_names <- unique(info$module_exp_data$module)
+  total_modules <- length(module_names)
 
   # Initialize correlation data frame
   coor <- data.frame(
@@ -217,12 +225,25 @@ mcmodule_corr <- function(
     exp_h <- info$module_exp_data$exp[
       info$module_exp_data$module == module_names[h]
     ]
+
+    if (progress) {
+      exp_label <- paste(exp_h, collapse = ", ")
+      cat(sprintf(
+        "\n[Correlation analysis] Expression %s (%d/%d)\n",
+        exp_label,
+        h,
+        total_modules
+      ))
+    }
     # Get input (type == "in_node") mcnodes names in mcmodule$node_list for this expression (module == exp_h)
+    # Only include nodes that have more than 1 uncertainty simulation (nrow > 1) or more than 1 variate (if variates_as_nsv = TRUE)
     exp_h_inputs <- names(mcmodule$node_list)[
       unlist(lapply(names(mcmodule$node_list), function(x) {
+        mcnode_x <- mcmodule$node_list[[x]][["mcnode"]]
         mcmodule$node_list[[x]][["exp_name"]] %in%
           exp_h &&
-          mcmodule$node_list[[x]][["type"]] == "in_node"
+          mcmodule$node_list[[x]][["type"]] == "in_node" &&
+          (dim(mcnode_x)[1] > 1 || (variates_as_nsv && dim(mcnode_x)[3] > 1))
       }))
     ]
 
@@ -247,9 +268,9 @@ mcmodule_corr <- function(
     mc_output <- mcmodule$node_list[[output_h]][["mcnode"]]
     summary_output <- mcmodule$node_list[[output_h]][["summary"]]
 
-    data_name_h <- info$module_exp_data$data_name[
+    data_name_h <- unique(info$module_exp_data$data_name[
       info$module_exp_data$exp == exp_h
-    ]
+    ])
 
     suppressMessages({
       mc_match_data_h <- mc_match_data(
@@ -280,11 +301,14 @@ mcmodule_corr <- function(
     # Create a copy of mcmodule to modify
     mcmodule_h <- mcmodule
 
-    # Match input mcnodes to output mcnode if all_variates is TRUE and data dimensions differ
+    # Match input mcnodes to output mcnode if match_variates is TRUE and data dimensions differ
     if (
-      all_variates &&
-        (!all(dim(data_h) == dim(mcmodule_h$data[[data_name_h]])) ||
-          !all(data_h == mcmodule_h$data[[data_name_h]]))
+      match_variates &&
+        (!all(
+          dim(data_h) == dim(mcmodule_h$data[[data_name_h]]),
+          na.rm = TRUE
+        ) ||
+          !all(data_h == mcmodule_h$data[[data_name_h]], na.rm = TRUE))
     ) {
       for (input_name in exp_h_inputs) {
         mc_input <- mcmodule_h$node_list[[input_name]][["mcnode"]]
@@ -358,7 +382,7 @@ mcmodule_corr <- function(
       )
 
       coor_h_i$variate <- i
-      coor_h_i$exp <- exp_h
+      coor_h_i$exp <- paste(exp_h, collapse = ", ")
       coor_h_i$exp_n <- h
       coor_h_i$module <- module_names[h]
       coor_h_i[intersect(names(data_h), info$global_keys)] <- data_h[
@@ -556,6 +580,7 @@ mcmodule_corr <- function(
 #' Monte Carlo Simulation Convergence Analysis
 #'
 #' @description
+#' `r lifecycle::badge("experimental")`
 #' Analyzes convergence in Monte Carlo simulations by computing statistical measures
 #' across iterations. Calculates both standardized and raw differences between
 #' consecutive iterations to evaluate stability and convergence.
@@ -566,6 +591,8 @@ mcmodule_corr <- function(
 #' @param conv_threshold Optional custom convergence threshold for standardized differences
 #' @param print_summary Logical, whether to print the summary output.
 #'   Default is TRUE.
+#' @param progress Logical, whether to print progress information while running.
+#'   Default is FALSE.
 #'
 #' @return A data frame with convergence statistics per node:
 #'   \itemize{
@@ -606,7 +633,8 @@ mcmodule_converg <- function(
   from_quantile = 0.95,
   to_quantile = 1,
   conv_threshold = NULL,
-  print_summary = TRUE
+  print_summary = TRUE,
+  progress = FALSE
 ) {
   # Helper function to calculate statistics (mean and quantiles) for convergence analysis
   mc_stat <- function(i, x) {
@@ -625,24 +653,8 @@ mcmodule_converg <- function(
   info <- mcmodule_info(mcmodule)
   module_names <- unique(info$module_exp_data$module)
 
-  # Calculate total iterations for progress bar
-  total_iterations <- 0
-  for (h in seq_along(module_names)) {
-    exp_h <- info$module_exp_data$exp[
-      info$module_exp_data$module == module_names[h]
-    ]
-    exp_h_nodes <- names(mcmodule$node_list)[
-      unlist(lapply(names(mcmodule$node_list), function(x) {
-        mcmodule$node_list[[x]][["exp_name"]] %in% exp_h
-      }))
-    ]
-    dims <- mcmodule_dim_check(mcmodule, exp_h_nodes)
-    total_iterations <- total_iterations +
-      (dims$n_variate * length(exp_h_nodes))
-  }
-
   # Initialize list to store convergence results
-  mc_convergence_list <- vector("list", total_iterations)
+  mc_convergence_list <- list()
   list_index <- 1
 
   # Iterate through each module (expression group) in the Monte Carlo module
@@ -658,6 +670,18 @@ mcmodule_converg <- function(
         mcmodule$node_list[[x]][["exp_name"]] %in% exp_h
       }))
     ]
+
+    dims <- mcmodule_dim_check(mcmodule, exp_h_nodes)
+
+    if (progress) {
+      exp_label <- paste(exp_h, collapse = ", ")
+      cat(sprintf(
+        "\n[Convergence analysis] Expression %s (%d/%d)\n",
+        exp_label,
+        h,
+        length(module_names)
+      ))
+    }
 
     # Convert mcmodule to mc objects for this expression
     mc_list <- mcmodule_to_mc(mcmodule, mc_names = exp_h_nodes)

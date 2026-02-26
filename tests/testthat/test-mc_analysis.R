@@ -242,17 +242,46 @@ suppressMessages({
 
     # Test with print_summary = FALSE (should not print)
     output <- capture.output({
-      result <- mcmodule_corr(test_module, print_summary = FALSE)
+      result <- mcmodule_corr(
+        test_module,
+        print_summary = FALSE,
+        progress = FALSE
+      )
     })
     expect_equal(length(output), 0)
     expect_s3_class(result, "data.frame")
 
     # Test with print_summary = TRUE (should print)
     output <- capture.output({
-      result <- mcmodule_corr(test_module, print_summary = TRUE)
+      result <- mcmodule_corr(
+        test_module,
+        print_summary = TRUE,
+        progress = FALSE
+      )
     })
     expect_true(length(output) > 0)
     expect_true(any(grepl("Correlation Analysis Summary", output)))
+    expect_s3_class(result, "data.frame")
+  })
+
+  test_that("mcmodule_corr progress parameter works", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    output <- capture.output({
+      result <- mcmodule_corr(
+        test_module,
+        print_summary = FALSE,
+        progress = TRUE
+      )
+    })
+
+    expect_true(any(grepl("\\[Correlation analysis\\] Expression", output)))
+    expect_true(any(grepl("imports", output)))
     expect_s3_class(result, "data.frame")
   })
 
@@ -288,7 +317,11 @@ suppressMessages({
 
     # Verify summary includes strength distribution
     output <- capture.output({
-      result <- mcmodule_corr(test_module, print_summary = TRUE)
+      result <- mcmodule_corr(
+        test_module,
+        print_summary = TRUE,
+        progress = FALSE
+      )
     })
     expect_true(any(grepl("Input Correlation Strength Distribution", output)))
     expect_true(any(grepl("Inputs by Correlation Strength", output)))
@@ -358,7 +391,11 @@ suppressMessages({
       name = "total"
     )
 
-    result <- mcmodule_corr(combined_module, print_summary = FALSE)
+    result <- mcmodule_corr(
+      combined_module,
+      print_summary = FALSE,
+      progress = FALSE
+    )
 
     expect_s3_class(result, "data.frame")
     expect_true(nrow(result) > 0)
@@ -368,7 +405,8 @@ suppressMessages({
     result <- mcmodule_corr(
       combined_module,
       output = "total",
-      print_summary = FALSE
+      print_summary = FALSE,
+      progress = FALSE
     )
     expect_s3_class(result, "data.frame")
     expect_true(nrow(result) > 0)
@@ -377,7 +415,8 @@ suppressMessages({
     result <- mcmodule_corr(
       combined_module,
       by_exp = TRUE,
-      print_summary = FALSE
+      print_summary = FALSE,
+      progress = FALSE
     )
     expect_s3_class(result, "data.frame")
     expect_true(nrow(result) > 0)
@@ -395,7 +434,8 @@ suppressMessages({
     result <- mcmodule_corr(
       test_module,
       variates_as_nsv = FALSE,
-      print_summary = FALSE
+      print_summary = FALSE,
+      progress = FALSE
     )
 
     expect_s3_class(result, "data.frame")
@@ -416,7 +456,8 @@ suppressMessages({
     result <- mcmodule_corr(
       test_module,
       variates_as_nsv = TRUE,
-      print_summary = FALSE
+      print_summary = FALSE,
+      progress = FALSE
     )
 
     expect_s3_class(result, "data.frame")
@@ -489,19 +530,48 @@ suppressMessages({
 
     # Test with print_summary = FALSE
     output <- capture.output({
-      result <- mcmodule_converg(test_module, print_summary = FALSE)
+      result <- mcmodule_converg(
+        test_module,
+        print_summary = FALSE,
+        progress = FALSE
+      )
     })
     expect_false(any(grepl("Convergence Analysis Summary", output)))
     expect_s3_class(result, "data.frame")
 
     # Test with print_summary = TRUE (should print summary)
     output <- capture.output({
-      result <- mcmodule_converg(test_module, print_summary = TRUE)
+      result <- mcmodule_converg(
+        test_module,
+        print_summary = TRUE,
+        progress = FALSE
+      )
     })
     expect_true(length(output) > 0)
     expect_true(any(grepl("Convergence Analysis Summary", output)))
     expect_true(any(grepl("Stochastic Distributions Stability", output)))
     expect_true(any(grepl("standardized:", output)))
+    expect_s3_class(result, "data.frame")
+  })
+
+  test_that("mcmodule_converg progress parameter works", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    output <- capture.output({
+      result <- mcmodule_converg(
+        test_module,
+        print_summary = FALSE,
+        progress = TRUE
+      )
+    })
+
+    expect_true(any(grepl("\\[Convergence analysis\\] Expression", output)))
+    expect_true(any(grepl("imports", output)))
     expect_s3_class(result, "data.frame")
   })
 
@@ -516,7 +586,8 @@ suppressMessages({
     result <- mcmodule_converg(
       test_module,
       conv_threshold = 0.03,
-      print_summary = FALSE
+      print_summary = FALSE,
+      progress = FALSE
     )
 
     expect_s3_class(result, "data.frame")
@@ -536,7 +607,8 @@ suppressMessages({
       test_module,
       from_quantile = 0.9,
       to_quantile = 1,
-      print_summary = FALSE
+      print_summary = FALSE,
+      progress = FALSE
     )
 
     expect_s3_class(result, "data.frame")
@@ -551,7 +623,11 @@ suppressMessages({
       data_keys = imports_data_keys
     )
 
-    result <- mcmodule_converg(test_module, print_summary = FALSE)
+    result <- mcmodule_converg(
+      test_module,
+      print_summary = FALSE,
+      progress = FALSE
+    )
 
     # Check that standardized values are ratios of raw values to means
     # (or NA if mean is zero)

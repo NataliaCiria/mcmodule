@@ -94,18 +94,24 @@ suppressMessages({
       mctable = transmission_mctable,
       prev_mcmodule = imports_mcmodule
     )
+    # Apply prefix
+    prefixed_a <- add_prefix(imports_mcmodule)
+    # Apply prefix
+    prefixed_b <- add_prefix(transmission)
 
     # Combine modules
-    combined <- combine_modules(imports_mcmodule, transmission)
-
-    # Apply prefix
-    prefixed <- add_prefix(combined, prefix = "combined")
-
-    # Check that nodes from both modules are prefixed
-    expect_true(any(grepl("combined_", names(prefixed$node_list))))
-
-    # Verify structure is preserved
-    expect_true(inherits(prefixed, "mcmodule"))
+    combined <- combine_modules(prefixed_a, prefixed_b)
+    combined <- at_least_one(
+      combined,
+      mc_names = c("imports_mcmodule_no_detect_a", "transmission_result"),
+      name = "combined_result"
+    )
+    # Check that combined module has prefixed nodes from both modules
+    expect_true(any(grepl(
+      "imports_mcmodule_no_detect_a",
+      names(combined$node_list)
+    )))
+    expect_true(any(grepl("transmission_result", names(combined$node_list))))
   })
 
   test_that("add_prefix handles nodes without module assignment", {

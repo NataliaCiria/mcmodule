@@ -33,7 +33,7 @@ add_prefix <- function(mcmodule, prefix = NULL, rewrite_module = NULL) {
   info <- mcmodule_info(mcmodule)
   modules <- info$module_names
   exps <- unique(info$module_exp_data$exp)
-  exp_and_modules <- c(modules, exps, deparse(substitute(mcmodule)))
+  exp_and_modules <- unique(c(modules, exps, deparse(substitute(mcmodule))))
 
   # Get node names and modules
   node_names <- names(node_list)
@@ -131,8 +131,8 @@ add_prefix <- function(mcmodule, prefix = NULL, rewrite_module = NULL) {
     node_type_i <- node_list[[i]][["type"]]
 
     is_current_node <-
-      any(node_module_i %in% modules) ||
-      (!is.null(node_exp_i) && any(node_exp_i %in% exps))
+      any(node_module_i %in% exp_and_modules) ||
+      (!is.null(node_exp_i) && any(node_exp_i %in% exp_and_modules))
 
     if (is_current_node) {
       old_inputs <- node_list[[i]][["inputs"]]
