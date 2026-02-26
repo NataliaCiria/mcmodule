@@ -9,7 +9,8 @@ tidy_mcnode(
   mc_name = NULL,
   mcnode = NULL,
   data = NULL,
-  keys_names = NULL
+  keys_names = NULL,
+  filter = NULL
 )
 }
 \arguments{
@@ -24,6 +25,11 @@ data will be extracted from the module}
 
 \item{keys_names}{Vector of column names to use as key columns for grouping (optional).
 If NULL, will use node keys from the module or all available keys}
+
+\item{filter}{Optional expression to filter variates. Should be an unquoted expression
+that evaluates to a logical vector, e.g., \code{pathogen == "a"} or
+\code{pathogen == "a" | origin == "nord"}. The expression is evaluated
+in the context of the data frame containing the keys.}
 }
 \value{
 A long format data frame with columns:
@@ -35,6 +41,7 @@ A long format data frame with columns:
 }
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Converts Monte Carlo node data to a long format data frame suitable for use
 with ggplot2 and other tidyverse functions. Each row represents a single Monte Carlo
 simulation for a specific variate (scenario/data row).
@@ -59,5 +66,15 @@ long_data <- tidy_mcnode(imports_mcmodule, "w_prev",
 # Using mcnode and data directly
 w_prev <- imports_mcmodule$node_list$w_prev$mcnode
 long_data <- tidy_mcnode(mcnode = w_prev, data = imports_data)
+
+# Filter specific variates
+long_data <- tidy_mcnode(imports_mcmodule, "w_prev",
+  filter = pathogen == "a"
+)
+
+# Filter with multiple conditions
+long_data <- tidy_mcnode(imports_mcmodule, "w_prev",
+  filter = pathogen == "a" | origin == "nord"
+)
 
 }

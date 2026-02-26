@@ -12,6 +12,8 @@ mc_plot(
   keys_names = NULL,
   color_by = NULL,
   order_by = NULL,
+  group_by = NULL,
+  filter = NULL,
   threshold = NULL,
   scale = NULL,
   max_dots = 300,
@@ -37,9 +39,25 @@ If NULL, will use node keys from the module or use row index}
 \item{order_by}{Optional column name or "median" to reorder y-axis groups by a value.
 If "median", groups will be ordered by median value}
 
+\item{group_by}{Optional column name to group variates by (e.g., "country_code" or "commodity").
+When specified, variates are organized with all scenarios for each group appearing together.
+For example, with group_by="commodity", y-axis shows labels like
+\code{scenario 0 | commodity 1} and \code{scenario a | commodity 1}.}
+
+\item{filter}{Optional expression to filter variates before plotting. Should be an unquoted
+expression that evaluates to a logical vector, e.g., \code{pathogen == "a"} or
+\code{pathogen == "a" | origin == "nord"}. Passed to \code{tidy_mcnode()}.}
+
 \item{threshold}{Optional numeric value to add a vertical reference line}
 
-\item{scale}{Optional transformation for x-axis. Use "log10" for log scale or "sqrt" for square root}
+\item{scale}{Optional transformation for x-axis. Supported values:
+\itemize{
+\item "identity": no transformation (default)
+\item "log10": logarithm base 10
+\item "log": natural logarithm
+\item "sqrt": square root
+\item "asinh": inverse hyperbolic sine (good for data spanning many orders of magnitude)
+}}
 
 \item{max_dots}{Maximum number of uncertainty simulation dots to plot per variate. If exceeded,
 representative sampling using regular intervals is applied (default: 300). Boxplots always
@@ -55,18 +73,15 @@ use all simulations for statistical accuracy.}
 A ggplot2 object
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Creates a ggplot visualization of Monte Carlo node data with semitransparent
 boxplots overlaid with scattered points representing individual iterations.
 }
 \details{
-Default colors are based on the mcmodule color legend:
+When \code{color_by} is NULL, scenarios are colored with:
 \itemize{
-\item inputs: "#B0DFF9"
-\item in_node: "#6ABDEB"
-\item out_node: "#A4CF96"
-\item trials_info: "#FAE4CB"
-\item total: "#F39200"
-\item agg_total: "#C17816"
+\item Baseline scenario (scenario_id == "0"): blue ("#6ABDEB")
+\item Alternative scenarios: green ("#A4CF96")
 }
 }
 \examples{

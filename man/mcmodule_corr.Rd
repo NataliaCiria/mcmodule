@@ -8,9 +8,10 @@ mcmodule_corr(
   mcmodule,
   output = NULL,
   by_exp = FALSE,
-  all_variates = TRUE,
+  match_variates = TRUE,
   variates_as_nsv = FALSE,
   print_summary = TRUE,
+  progress = FALSE,
   method = c("spearman", "kendall", "pearson"),
   use = "all.obs",
   lim = c(0.025, 0.975)
@@ -25,7 +26,7 @@ uses the last node in mcmodule$node_list (or last expression output if by_exp = 
 \item{by_exp}{Logical, whether to calculate correlations by expression output.
 If FALSE (default), calculates correlation by global output (last node).}
 
-\item{all_variates}{Logical, whether to match input nodes to output variates.
+\item{match_variates}{Logical, whether to match input nodes to output variates.
 Default is TRUE.}
 
 \item{variates_as_nsv}{Logical, if TRUE, combines all variates into a single mc object
@@ -34,6 +35,9 @@ See \code{\link{mcmodule_to_mc}} for details.}
 
 \item{print_summary}{Logical, whether to print the summary output.
 Default is TRUE.}
+
+\item{progress}{Logical, whether to print progress information while running.
+Default is FALSE.}
 
 \item{method}{(for \samp{mc} objects only). A character string
 indicating which correlation coefficient (or covariance) is to be
@@ -67,6 +71,7 @@ Data frame with correlation coefficients and metadata. Columns include:
 }
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Computes correlation coefficients between Monte Carlo module inputs and outputs
 using the tornado analysis from the mc2d package. Supports multiple correlation
 methods and captures any warnings generated during calculation.

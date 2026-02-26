@@ -14,8 +14,8 @@
 #' @param keys_names Vector of column names to use as key columns for grouping (optional).
 #'   If NULL, will use node keys from the module or all available keys
 #' @param filter Optional expression to filter variates. Should be an unquoted expression
-#'   that evaluates to a logical vector, e.g., `scenario_id == "0"` or
-#'   `scenario_id == "0" | country %in% c("AUS", "NZL")`. The expression is evaluated
+#'   that evaluates to a logical vector, e.g., `pathogen == "a"` or
+#'   `pathogen == "a" | origin == "nord"`. The expression is evaluated
 #'   in the context of the data frame containing the keys.
 #'
 #' @return A long format data frame with columns:
@@ -45,12 +45,12 @@
 #'
 #' # Filter specific variates
 #' long_data <- tidy_mcnode(imports_mcmodule, "w_prev",
-#'   filter = scenario_id == "0"
+#'   filter = pathogen == "a"
 #' )
 #'
 #' # Filter with multiple conditions
 #' long_data <- tidy_mcnode(imports_mcmodule, "w_prev",
-#'   filter = scenario_id == "0" | country %in% c("AUS", "NZL")
+#'   filter = pathogen == "a" | origin == "nord"
 #' )
 #'
 #' @export
@@ -234,10 +234,11 @@ tidy_mcnode <- function(
 #'   If "median", groups will be ordered by median value
 #' @param group_by Optional column name to group variates by (e.g., "country_code" or "commodity").
 #'   When specified, variates are organized with all scenarios for each group appearing together.
-#'   For example, with group_by="commodity", y-axis shows: [scenario 0 | commodity 1], [scenario a | commodity 1], etc.
+#'   For example, with group_by="commodity", y-axis shows labels like
+#'   \code{scenario 0 | commodity 1} and \code{scenario a | commodity 1}.
 #' @param filter Optional expression to filter variates before plotting. Should be an unquoted
-#'   expression that evaluates to a logical vector, e.g., `scenario_id == "0"` or
-#'   `scenario_id == "0" | country %in% c("AUS", "NZL")`. Passed to `tidy_mcnode()`.
+#'   expression that evaluates to a logical vector, e.g., `pathogen == "a"` or
+#'   `pathogen == "a" | origin == "nord"`. Passed to `tidy_mcnode()`.
 #' @param threshold Optional numeric value to add a vertical reference line
 #' @param scale Optional transformation for x-axis. Supported values:
 #'   - "identity": no transformation (default)
@@ -251,6 +252,7 @@ tidy_mcnode <- function(
 #' @param point_alpha Transparency level for points (0-1, default: 0.4)
 #' @param boxplot_alpha Transparency level for boxplot (0-1, default: 0.3)
 #' @param color_pal Optional named character vector of colors for color_by categories
+#'
 #'
 #' @return A ggplot2 object
 #'
@@ -661,7 +663,7 @@ mc_plot <- function(
       p <- p + ggplot2::scale_x_sqrt()
       x_axis_label <- paste(x_axis_label, "(sqrt scale)")
     } else if (scale == "asinh") {
-      p <- p + ggplot2::scale_x_continuous(trans = scales::asinh_trans())
+      p <- p + ggplot2::scale_x_continuous(trans = "asinh")
       x_axis_label <- paste(x_axis_label, "(asinh scale)")
     } else if (scale == "identity") {
       x_axis_label <- paste(x_axis_label, "(linear scale)")

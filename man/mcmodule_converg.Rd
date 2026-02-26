@@ -9,7 +9,8 @@ mcmodule_converg(
   from_quantile = 0.95,
   to_quantile = 1,
   conv_threshold = NULL,
-  print_summary = TRUE
+  print_summary = TRUE,
+  progress = FALSE
 )
 }
 \arguments{
@@ -23,6 +24,9 @@ mcmodule_converg(
 
 \item{print_summary}{Logical, whether to print the summary output.
 Default is TRUE.}
+
+\item{progress}{Logical, whether to print progress information while running.
+Default is FALSE.}
 }
 \value{
 A data frame with convergence statistics per node:
@@ -39,6 +43,7 @@ A data frame with convergence statistics per node:
 }
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Analyzes convergence in Monte Carlo simulations by computing statistical measures
 across iterations. Calculates both standardized and raw differences between
 consecutive iterations to evaluate stability and convergence.

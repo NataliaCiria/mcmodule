@@ -19,12 +19,11 @@ install.packages("mcmodule")
 library("mcmodule")
 ```
 
-Install latest development version from ~~GitHub~~ my personal repository. 
+Install latest development version from GitHub.
 
 ``` r
 # install.packages("devtools")
-# devtools::install_github("NataliaCiria/mcmodule") >:( UGH!
-install.packages("mcmodule", repos = "https://nataliaciria.com/r", type = "source")
+devtools::install_github("NataliaCiria/mcmodule")
 ```
 
 ## Set up an mcmodel
