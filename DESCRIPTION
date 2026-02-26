@@ -12,12 +12,12 @@ Authors@R: c(
            role = c("ths"),
            comment = c(ORCID = "0000-0002-5796-8093"))
            )
-Description: Framework for building modular Monte Carlo risk analysis models. It extends the capabilities of 'mc2d' to facilitate working with multiple risk pathways, variates and scenarios. It provides tools to organize risk analysis in independent flexible modules, perform multivariate Monte Carlo node operations, automate the creation of Monte Carlo nodes and visualize risk analysis models. For more details see Ciria (2025) <https://nataliaciria.github.io/mcmodule/articles/mcmodule>.
+Description: Framework for building modular Monte Carlo risk analysis models. It extends the capabilities of 'mc2d' to facilitate working with multiple risk pathways, variates and scenarios. It provides tools to organize risk analysis in independent flexible modules, perform multivariate Monte Carlo node operations, automate the creation of Monte Carlo nodes and visualize risk analysis models. For more details see Ciria (2025) <https://nataliaciria.com/mcmodule/>.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-URL: https://nataliaciria.github.io/mcmodule/, https://github.com/NataliaCiria/mcmodule
+URL: https://nataliaciria.com/mcmodule/, https://github.com/NataliaCiria/mcmodule
 BugReports: https://github.com/NataliaCiria/mcmodule/issues
 Suggests:
     knitr,

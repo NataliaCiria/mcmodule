@@ -270,7 +270,7 @@ From now on we will use only the merged `imports_data` table. However, it is use
 
 -   `test_sensitivity` provided information by `"pathogen"` only
 
-The resulting merged table, `imports_data`, will therefore have two keys: `"pathogen"` and `"origin"`. However, not all parameters will use both keys, for example, `"test_sensi"` only has information by `"pathogen"`. Knowing the keys for each parameter is crucial when performing multivariate operations, such as [calculating totals](https://nataliaciria.github.io/mcmodule/articles/intro.html#calculating-totals).
+The resulting merged table, `imports_data`, will therefore have two keys: `"pathogen"` and `"origin"`. However, not all parameters will use both keys, for example, `"test_sensi"` only has information by `"pathogen"`. Knowing the keys for each parameter is crucial when performing multivariate operations, such as [calculating totals](https://nataliaciria.com/mcmodule/articles/intro.html#calculating-totals).
 
 To make these relationships explicit in the model, we need to provide the data keys. These are defined in a list with one element for each input dataset, specifying both the columns and the keys for each dataset.
 
@@ -334,7 +334,7 @@ For encoding categorical variables as mcnodes (or any other data transformation)
 
 ## Expressions
 
-Finally, we need to write the model's mathematical expression. These expressions should ideally include only arithmetic operations, not R functions (with some exceptions that will be covered later in "[tricks and tweaks](https://nataliaciria.github.io/mcmodule/articles/intro.html#tricks-and-tweaks)"). We'll wrap them using `quote()` so they aren't executed immediately but stored for later evaluation with `eval_model()`.
+Finally, we need to write the model's mathematical expression. These expressions should ideally include only arithmetic operations, not R functions (with some exceptions that will be covered later in "[tricks and tweaks](https://nataliaciria.com/mcmodule/articles/intro.html#tricks-and-tweaks)"). We'll wrap them using `quote()` so they aren't executed immediately but stored for later evaluation with `eval_model()`.
 
 ```{r}
 imports_exp <- quote({
@@ -443,7 +443,7 @@ mc_summary(mcmodule = imports, mc_name = "no_detect")
 
 ## Calculating totals
 
-Most of the following probability calculations are based on Chapter 5 of the *Handbook on Import Risk Analysis for Animals and Animal Products Volume 2. Quantitative risk assessment* [@Murray2004]. More details can be found on the [*Multivariate operations*](https://nataliaciria.github.io/mcmodule/articles/multivariate_operations.html) vignette.
+Most of the following probability calculations are based on Chapter 5 of the *Handbook on Import Risk Analysis for Animals and Animal Products Volume 2. Quantitative risk assessment* [@Murray2004]. More details can be found on the [*Multivariate operations*](https://nataliaciria.com/mcmodule/articles/multivariate_operations.html) vignette.
 
 ### Single-level trials
 
@@ -525,7 +525,7 @@ imports$node_list$no_detect_subset$summary
 
 **Multiple group multilevel trials**
 
-This `trial_totals()` application is beyond the scope of this vignette, but there are cases where you might have several variates from the same subset. For example we could deal with different animal categories (cow, calf, bull...) from the same farm. In this case, the infection probability of animals within the same farm is not independent, and this should be taken into account. For more information, see [Multilevel trials](https://nataliaciria.github.io/mcmodule/articles/multivariate_operations.html#multilevel-trials) in the *Multivariate operations* vignette.
+This `trial_totals()` application is beyond the scope of this vignette, but there are cases where you might have several variates from the same subset. For example we could deal with different animal categories (cow, calf, bull...) from the same farm. In this case, the infection probability of animals within the same farm is not independent, and this should be taken into account. For more information, see [Multilevel trials](https://nataliaciria.com/mcmodule/articles/multivariate_operations.html#multilevel-trials) in the *Multivariate operations* vignette.
 
 ![*Selection (in blue) of 2 cows and 5 calves from 3 farms, with a 20% regional herd prevalence and 50% within-herd prevalence for adult animals and 30% within-herd prevalence for young animals.*](images/mcmodule_multilevel_trial_drawing_groups.png)
 

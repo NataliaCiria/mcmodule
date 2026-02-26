@@ -8,11 +8,6 @@
 
 <!-- badges: end -->
 
-> **⚠️ IMPORTANT NOTICE**
-This documentation is hosted here temporarily due to the unexpected suspension of my GitHub account ([@NataliaCiria](https://github.com/NataliaCiria))☹️. I am currently following GitHub's appeal process and I hope the official repository and package website are restored soon 🤞.
->
-
-
 Framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to facilitate working with multiple risk pathways, variates and scenarios. It provides tools to organize risk analysis in independent flexible modules, perform multivariate mcnode operations, automate the creation of mcnodes and visualize risk analysis models.
 
 ## Installation
@@ -24,8 +19,7 @@ install.packages("mcmodule")
 library("mcmodule")
 ```
 
-Install latest development version from ~~GitHub~~ my personal repository.
-
+Install latest development version from ~~GitHub~~ my personal repository. 
 
 ``` r
 # install.packages("devtools")
@@ -112,13 +106,13 @@ mc_network(example_mcmodule, legend = TRUE)
 
 ![](man/figures/mc_network_example.png)
 
-Further documentation and examples can be found in the [vignette](https://nataliaciria.github.io/mcmodule/articles/mcmodule.html) and in the [introduction](https://nataliaciria.github.io/mcmodule/articles/intro.html) article.
+Further documentation and examples can be found in the [vignette](https://nataliaciria.com/mcmodule/articles/mcmodule.html) and in the [introduction](https://nataliaciria.com/mcmodule/articles/intro.html) article.
 
 ## Citations
 
 If you use `mcmodule` in your research, please cite:
 
-Ciria, N. (2025). mcmodule: Modular Monte Carlo Risk Analysis. R package version 1.1.0. <https://nataliaciria.github.io/mcmodule/>
+Ciria, N. (2025). mcmodule: Modular Monte Carlo Risk Analysis. R package version 1.1.0. <https://nataliaciria.com/mcmodule/>
 
 ## Acknowledgements
 
