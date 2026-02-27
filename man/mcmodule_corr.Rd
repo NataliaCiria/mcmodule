@@ -2,7 +2,7 @@
 % Please edit documentation in R/mc_analysis.R
 \name{mcmodule_corr}
 \alias{mcmodule_corr}
-\title{Calculate Correlation Coefficients for Monte Carlo Module Inputs and Outputs}
+\title{Calculate Correlation Coefficients for Monte Carlo Inputs and Outputs}
 \usage{
 mcmodule_corr(
   mcmodule,
@@ -18,10 +18,10 @@ mcmodule_corr(
 )
 }
 \arguments{
-\item{mcmodule}{Monte Carlo module object}
+\item{mcmodule}{A Monte Carlo module object}
 
 \item{output}{Character string specifying the output node name. If NULL (default),
-uses the last node in mcmodule$node_list (or last expression output if by_exp = TRUE).}
+uses the last node in \code{mcmodule$node_list} (or last expression output if \code{by_exp = TRUE}).}
 
 \item{by_exp}{Logical, whether to calculate correlations by expression output.
 If FALSE (default), calculates correlation by global output (last node).}
@@ -29,9 +29,9 @@ If FALSE (default), calculates correlation by global output (last node).}
 \item{match_variates}{Logical, whether to match input nodes to output variates.
 Default is TRUE.}
 
-\item{variates_as_nsv}{Logical, if TRUE, combines all variates into a single mc object
+\item{variates_as_nsv}{Logical, if TRUE, combines all variates into a single \code{mc} object
 for correlation analysis. If FALSE (default), analyzes each variate separately.
-See \code{\link{mcmodule_to_mc}} for details.}
+See \code{mcmodule_to_mc()} for details.}
 
 \item{print_summary}{Logical, whether to print the summary output.
 Default is TRUE.}
@@ -55,7 +55,7 @@ values. This must be (an abbreviation of) one of the strings
 interval in two-dimensional models.}
 }
 \value{
-Data frame with correlation coefficients and metadata. Columns include:
+A data frame with correlation coefficients and metadata. Columns include:
 \itemize{
 \item exp: Expression name
 \item exp_n: Expression number
@@ -65,7 +65,7 @@ Data frame with correlation coefficients and metadata. Columns include:
 \item value: Correlation coefficient value
 \item strength: Qualitative strength of association (Very strong, Strong, Moderate, Weak, None)
 \item method: Correlation method used (spearman, kendall, or pearson)
-\item use: Method for handling missing values (passed to cor())
+\item use: Method for handling missing values (passed to \code{cor()})
 \item warnings: Any warnings generated during correlation calculation (if present)
 \item Additional columns for global keys (e.g., pathogen, origin)
 }
@@ -73,7 +73,7 @@ Data frame with correlation coefficients and metadata. Columns include:
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Computes correlation coefficients between Monte Carlo module inputs and outputs
-using the tornado analysis from the mc2d package. Supports multiple correlation
+using the tornado analysis from the \code{mc2d} package. Supports multiple correlation
 methods and captures any warnings generated during calculation.
 }
 \examples{

@@ -2,7 +2,7 @@
 % Please edit documentation in R/mc_analysis.R
 \name{mcmodule_dim_check}
 \alias{mcmodule_dim_check}
-\title{Check Monte Carlo Nodes Subset}
+\title{Check Dimension Compatibility of Monte Carlo Nodes}
 \usage{
 mcmodule_dim_check(mcmodule, mc_names = NULL)
 }

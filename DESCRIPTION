@@ -1,6 +1,6 @@
 Package: mcmodule
 Title: Modular Monte Carlo Risk Analysis
-Version: 1.1.1.9000
+Version: 1.2.0
 Authors@R: c(
     person("Natalia", "Ciria", , "nataliaciria@hotmail.com",
            role = c("aut", "cre", "cph"),

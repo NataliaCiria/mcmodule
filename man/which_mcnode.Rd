@@ -2,7 +2,7 @@
 % Please edit documentation in R/which_mcnode.R
 \name{which_mcnode}
 \alias{which_mcnode}
-\title{Find mcnodes in a mcmodule based on a condition}
+\title{Find \code{mcnode}s in an \code{mcmodule} Based on a Condition}
 \usage{
 which_mcnode(mcmodule, test_func)
 }
@@ -17,9 +17,9 @@ A character vector containing the names of mcnodes where test_func
 returns TRUE. Returns an empty character vector if no mcnodes meet the condition.
 }
 \description{
-Generic function that applies a test function to each mcnode in an mcmodule
-and returns the names of mcnodes where the test returns TRUE. Useful for
-debugging and troubleshooting Monte Carlo models.
+Applies a test function to each \code{mcnode} in an \code{mcmodule} and returns the
+names of nodes where the test returns \code{TRUE}. Useful for debugging and
+troubleshooting Monte Carlo models.
 }
 \examples{
 # Find nodes with negative values

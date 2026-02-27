@@ -1,6 +1,9 @@
-#' Compute summary statistics for an mcnode object
+#' Summarize Monte Carlo Node Values
 #'
-#' @param mcmodule An mcmodule object containing the node to summarize
+#' Computes summary statistics for an mcnode object, including mean,
+#' standard deviation, and quantiles. Can be called with an mcmodule and
+#' node name, or directly with an mcnode and data frame.
+#' @param mcmodule An mcmodule object containing the node to summarize (default: NULL)
 #' @param mc_name Character string specifying the name of the mcnode in the module
 #' @param keys_names Vector of column names to use as keys for grouping (default: NULL)
 #' @param data Optional data frame containing the input data (default: NULL)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/mc_summary.R
 \name{mc_summary}
 \alias{mc_summary}
-\title{Compute summary statistics for an mcnode object}
+\title{Summarize Monte Carlo Node Values}
 \usage{
 mc_summary(
   mcmodule = NULL,
@@ -15,7 +15,7 @@ mc_summary(
 )
 }
 \arguments{
-\item{mcmodule}{An mcmodule object containing the node to summarize}
+\item{mcmodule}{An mcmodule object containing the node to summarize (default: NULL)}
 
 \item{mc_name}{Character string specifying the name of the mcnode in the module}
 
@@ -43,7 +43,9 @@ A data frame containing summary statistics with columns:
 }
 }
 \description{
-Compute summary statistics for an mcnode object
+Computes summary statistics for an mcnode object, including mean,
+standard deviation, and quantiles. Can be called with an mcmodule and
+node name, or directly with an mcnode and data frame.
 }
 \details{
 This function can be called in two ways:

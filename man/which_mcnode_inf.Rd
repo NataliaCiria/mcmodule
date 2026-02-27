@@ -2,7 +2,7 @@
 % Please edit documentation in R/which_mcnode.R
 \name{which_mcnode_inf}
 \alias{which_mcnode_inf}
-\title{Find mcnodes in a mcmodule that contain infinite values}
+\title{Find \code{mcnode}s with Infinite Values}
 \usage{
 which_mcnode_inf(mcmodule)
 }
@@ -14,9 +14,9 @@ A character vector containing the names of mcnodes that have infinite values.
 Returns an empty character vector if no infinite values are found.
 }
 \description{
-Identifies which mcnodes within an mcmodule contain infinite values (Inf or -Inf).
-Useful for troubleshooting and debugging Monte Carlo models to find
-nodes that may be causing issues due to infinite values.
+Identifies which \code{mcnode}s within an \code{mcmodule} contain infinite values
+(\code{Inf} or \code{-Inf}). Useful for troubleshooting and debugging Monte Carlo
+models to find nodes that may be causing issues due to infinite values.
 }
 \examples{
 # Find nodes with infinite values in the imports_mcmodule

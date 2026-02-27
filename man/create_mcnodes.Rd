@@ -23,8 +23,8 @@ create_mcnodes(data, mctable = set_mctable(), envir = parent.frame())
 No return value, creates MC nodes in the specified environment
 }
 \description{
-Creates Monte Carlo nodes (mcnodes) based on instructions provided in a configuration
-table (mctable) and input variables from a dataframe.
+Creates Monte Carlo nodes (mcnodes) based on instructions provided in a
+configuration table (mctable) and input variables from a data frame.
 }
 \examples{
 create_mcnodes(data = imports_data, mctable = imports_mctable)

@@ -1,7 +1,8 @@
-#' Generate Edge Table for Network Construction
+#' Generate Edge Table for Network Visualization
 #'
-#' Creates a data frame containing edge relationships between nodes in a Monte Carlo module network.
-#' Each row represents a directed edge from one node to another.
+#' Creates a data frame containing edge relationships between nodes in a
+#' Monte Carlo module network. Each row represents a directed edge from one
+#' node to another.
 #'
 #' @param mcmodule An mcmodule object containing node relationships
 #' @param inputs Include non-node inputs: data-sets, data-frames and columns (optional)
@@ -58,10 +59,10 @@ get_edge_table <- function(mcmodule, inputs = FALSE) {
   return(edge_table)
 }
 
-#' Generate Node Table for Network Construction
+#' Generate Node Table for Network Visualization
 #'
-#' Creates a data frame containing node information from a Monte Carlo module network.
-#' Includes node attributes, values, and relationships.
+#' Creates a data frame containing node information from a Monte Carlo module
+#' network. Includes node attributes, values, and relationships.
 #'
 #' @param mcmodule An mcmodule object containing node information
 #' @param variate Integer indicating which variate to extract (default: 1)

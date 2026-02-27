@@ -2,7 +2,7 @@
 % Please edit documentation in R/which_mcnode.R
 \name{which_mcnode_na}
 \alias{which_mcnode_na}
-\title{Find mcnodes in a mcmodule that contain NAs}
+\title{Find \code{mcnode}s with Missing Values}
 \usage{
 which_mcnode_na(mcmodule)
 }
@@ -14,7 +14,7 @@ A character vector containing the names of mcnodes that have NA values.
 Returns an empty character vector if no NAs are found.
 }
 \description{
-Identifies which mcnodes within an mcmodule contain NA values.
+Identifies which \code{mcnode}s within an \code{mcmodule} contain \code{NA} values.
 Useful for troubleshooting and debugging Monte Carlo models to find
 nodes that may be causing issues due to missing or undefined values.
 }

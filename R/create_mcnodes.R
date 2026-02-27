@@ -1,7 +1,7 @@
 #' Create Monte Carlo Nodes from Data and Configuration Table
 #'
-#' Creates Monte Carlo nodes (mcnodes) based on instructions provided in a configuration
-#' table (mctable) and input variables from a dataframe.
+#' Creates Monte Carlo nodes (mcnodes) based on instructions provided in a
+#' configuration table (mctable) and input variables from a data frame.
 #'
 #' @param data A data frame containing the input variables for creating Monte Carlo nodes
 #' @param mctable A configuration table specifying MC node definitions. Must contain columns:
@@ -144,7 +144,7 @@ create_mcnodes <- function(
             mc_name,
             " ",
             mc_func,
-            " mcstock node not created because no ",
+            " mcstoc node not created because no ",
             mc_func,
             " parameter was provided. ",
             mc_name,
@@ -227,7 +227,7 @@ create_mcnodes <- function(
               mc_name,
               " ",
               mc_func,
-              " mcstock node:\n",
+              " mcstoc node:\n",
               e
             )
           },
@@ -245,7 +245,7 @@ create_mcnodes <- function(
                   mc_name,
                   " ",
                   mc_func,
-                  " mcstock node:\n",
+                  " mcstoc node:\n",
                   e
                 )
               },
@@ -255,7 +255,7 @@ create_mcnodes <- function(
                   mc_name,
                   " ",
                   mc_func,
-                  " mcstock node:\n",
+                  " mcstoc node:\n",
                   w,
                   "Check data inputs: is min < mode < max?\n"
                 )

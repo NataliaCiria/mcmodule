@@ -15,7 +15,8 @@ combine_modules(mcmodule_x, mcmodule_y)
 A combined mcmodule object
 }
 \description{
-Combines two mcmodules into a single mcmodule by merging their data and components.
+Combines two \code{mcmodule} objects into a single \code{mcmodule} by merging their
+data and components.
 }
 \examples{
 module_x <- list(

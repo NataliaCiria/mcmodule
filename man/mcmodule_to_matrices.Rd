@@ -16,7 +16,7 @@ If NULL (default), includes all nodes in the module.}
 A list of matrices, one per variate simulation. Each matrix has:
 \itemize{
 \item Rows: uncertainty simulations
-\item Columns: Monte Carlo nodes (in order of mc_names)
+\item Columns: Monte Carlo nodes (in order of \code{mc_names})
 }
 }
 \description{

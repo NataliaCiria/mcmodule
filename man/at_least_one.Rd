@@ -2,7 +2,7 @@
 % Please edit documentation in R/totals.R
 \name{at_least_one}
 \alias{at_least_one}
-\title{Combined Probability of Events (At least one)}
+\title{Combine Probabilities Assuming Independence}
 \usage{
 at_least_one(
   mcmodule,
@@ -31,8 +31,8 @@ Updated mcmodule with new combined probability node
 }
 \description{
 Combines probabilities of multiple events assuming independence,
-using the formula P(A or B) = 1 - (1-P(A))*(1-P(B)).
-It matches dimensions automatically.
+using the formula P(A or B) = 1 - (1-P(A))*(1-P(B)). Automatically
+matches dimensions and keys.
 }
 \examples{
 module <- list(

@@ -2,7 +2,7 @@
 % Please edit documentation in R/mc_analysis.R
 \name{mcmodule_converg}
 \alias{mcmodule_converg}
-\title{Monte Carlo Simulation Convergence Analysis}
+\title{Analyze Monte Carlo Simulation Convergence}
 \usage{
 mcmodule_converg(
   mcmodule,

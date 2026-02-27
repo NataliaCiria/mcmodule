@@ -2,7 +2,7 @@
 % Please edit documentation in R/dim_match.R
 \name{mc_keys}
 \alias{mc_keys}
-\title{Get Monte Carlo Node Keys}
+\title{Extract Key Columns from Monte Carlo Nodes}
 \usage{
 mc_keys(mcmodule, mc_name, keys_names = NULL)
 }
@@ -14,7 +14,7 @@ mc_keys(mcmodule, mc_name, keys_names = NULL)
 \item{keys_names}{Vector of column names to extract (optional)}
 }
 \value{
-Dataframe with scenario_id and requested key columns
+A data frame with scenario_id and requested key columns
 }
 \description{
 Extracts key columns from Monte Carlo node's associated data.

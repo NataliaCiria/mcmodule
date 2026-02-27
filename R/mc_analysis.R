@@ -1,4 +1,4 @@
-#' Check Monte Carlo Nodes Subset
+#' Check Dimension Compatibility of Monte Carlo Nodes
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
@@ -57,7 +57,7 @@ mcmodule_dim_check <- function(mcmodule, mc_names = NULL) {
 #' @return A list of matrices, one per variate simulation. Each matrix has:
 #'   \itemize{
 #'     \item Rows: uncertainty simulations
-#'     \item Columns: Monte Carlo nodes (in order of mc_names)
+#'     \item Columns: Monte Carlo nodes (in order of `mc_names`)
 #'   }
 mcmodule_to_matrices <- function(mcmodule, mc_names = NULL) {
   mc_names <- mc_names %||% names(mcmodule$node_list)
@@ -84,23 +84,23 @@ mcmodule_to_matrices <- function(mcmodule, mc_names = NULL) {
   matrices
 }
 
-#' Convert Monte Carlo Module to mc2d mc Objects
+#' Convert Monte Carlo Module to `mc2d` Objects
 #'
-#' Transforms a Monte Carlo module into a list of mc objects (from the mc2d package),
-#' with one mc object per variate simulation, or a single mc object with all variates
+#' Transforms a Monte Carlo module into a list of `mc` objects (from the `mc2d` package),
+#' with one `mc` object per variate simulation, or a single `mc` object with all variates
 #' combined into the variability dimension.
 #'
 #' @param mcmodule A Monte Carlo module object
 #' @param mc_names Optional character vector of Monte Carlo node names to include.
 #'   If NULL (default), includes all nodes in the module.
 #' @param match Logical, currently unused (reserved for future functionality)
-#' @param variates_as_nsv Logical, if TRUE, combines all variates into a single mc object
+#' @param variates_as_nsv Logical, if TRUE, combines all variates into a single `mc` object
 #'   by multiplying the number of variates by the number of uncertainty simulations in the
-#'   variability dimension (nsv). If FALSE (default), returns a list with one mc object per variate.
-#' @return If \code{variates_as_nsv = FALSE}, a list of mc objects (one per variate) combining
-#'   specified Monte Carlo nodes. If \code{variates_as_nsv = TRUE}, a single mc object where all
-#'   variates are combined into the variability dimension. Each mc object is compatible with
-#'   mc2d package functions.
+#'   variability dimension (`nsv`). If FALSE (default), returns a list with one `mc` object per variate.
+#' @return If `variates_as_nsv = FALSE`, a list of `mc` objects (one per variate) combining
+#'   specified Monte Carlo nodes. If `variates_as_nsv = TRUE`, a single `mc` object where all
+#'   variates are combined into the variability dimension. Each `mc` object is compatible with
+#'   `mc2d` package functions.
 mcmodule_to_mc <- function(
   mcmodule,
   mc_names = NULL,
@@ -146,30 +146,30 @@ mcmodule_to_mc <- function(
   }
 }
 
-#' Calculate Correlation Coefficients for Monte Carlo Module Inputs and Outputs
+#' Calculate Correlation Coefficients for Monte Carlo Inputs and Outputs
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
 #' Computes correlation coefficients between Monte Carlo module inputs and outputs
-#' using the tornado analysis from the mc2d package. Supports multiple correlation
+#' using the tornado analysis from the `mc2d` package. Supports multiple correlation
 #' methods and captures any warnings generated during calculation.
 #'
-#' @param mcmodule Monte Carlo module object
+#' @param mcmodule A Monte Carlo module object
 #' @param by_exp Logical, whether to calculate correlations by expression output.
 #'   If FALSE (default), calculates correlation by global output (last node).
 #' @param output Character string specifying the output node name. If NULL (default),
-#'   uses the last node in mcmodule$node_list (or last expression output if by_exp = TRUE).
+#'   uses the last node in `mcmodule$node_list` (or last expression output if `by_exp = TRUE`).
 #' @param match_variates Logical, whether to match input nodes to output variates.
 #'   Default is TRUE.
-#' @param variates_as_nsv Logical, if TRUE, combines all variates into a single mc object
+#' @param variates_as_nsv Logical, if TRUE, combines all variates into a single `mc` object
 #'   for correlation analysis. If FALSE (default), analyzes each variate separately.
-#'   See \code{\link{mcmodule_to_mc}} for details.
+#'   See `mcmodule_to_mc()` for details.
 #' @param print_summary Logical, whether to print the summary output.
 #'   Default is TRUE.
 #' @param progress Logical, whether to print progress information while running.
 #'   Default is FALSE.
 #' @inheritParams mc2d::tornado
-#' @return Data frame with correlation coefficients and metadata. Columns include:
+#' @return A data frame with correlation coefficients and metadata. Columns include:
 #'   \itemize{
 #'     \item exp: Expression name
 #'     \item exp_n: Expression number
@@ -179,7 +179,7 @@ mcmodule_to_mc <- function(
 #'     \item value: Correlation coefficient value
 #'     \item strength: Qualitative strength of association (Very strong, Strong, Moderate, Weak, None)
 #'     \item method: Correlation method used (spearman, kendall, or pearson)
-#'     \item use: Method for handling missing values (passed to cor())
+#'     \item use: Method for handling missing values (passed to `cor()`)
 #'     \item warnings: Any warnings generated during correlation calculation (if present)
 #'     \item Additional columns for global keys (e.g., pathogen, origin)
 #'   }
@@ -577,7 +577,7 @@ mcmodule_corr <- function(
 }
 
 
-#' Monte Carlo Simulation Convergence Analysis
+#' Analyze Monte Carlo Simulation Convergence
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`

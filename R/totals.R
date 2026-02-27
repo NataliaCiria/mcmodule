@@ -1,8 +1,8 @@
-#' Combined Probability of Events (At least one)
+#' Combine Probabilities Assuming Independence
 #'
 #' Combines probabilities of multiple events assuming independence,
-#' using the formula P(A or B) = 1 - (1-P(A))*(1-P(B)).
-#' It matches dimensions automatically.
+#' using the formula P(A or B) = 1 - (1-P(A))*(1-P(B)). Automatically
+#' matches dimensions and keys.
 #'
 #' @param mcmodule Module containing node list and input data frames
 #' @param mc_names Vector of node names to combine
@@ -269,14 +269,12 @@ generate_all_name <- function(mc_names, all_suffix = NULL) {
   paste0(c(common_parts, all_suffix), collapse = "_")
 }
 
-#' Aggregate Across Groups
+#' Aggregate Values Across Groups
 #'
-#' Combines node values across specified grouping variables using different aggregation methods.
-#' The aggregation method can be specified via agg_func parameter:
-#' - "prob": Combined probability assuming independence
-#' - "sum": Sum of values
-#' - "avg": Average of values
-#' - NULL: defaults to "sum" if mc_name ends in "_n", else defaults to "prob"
+#' Combines node values across specified grouping variables using different
+#' aggregation methods. The aggregation method is specified via `agg_func`
+#' parameter, with options for combined probability, sum, average, or automatic
+#' selection based on node naming conventions.
 #' @param mcmodule mcmodule object containing nodes and data
 #' @param mc_name name of node to aggregate
 #' @param agg_keys grouping variables for aggregation

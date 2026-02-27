@@ -2,7 +2,7 @@
 % Please edit documentation in R/mc_filter.R
 \name{mc_filter}
 \alias{mc_filter}
-\title{Filter an mcnode object}
+\title{Filter an \code{mcnode} Object}
 \usage{
 mc_filter(
   mcmodule = NULL,
@@ -43,9 +43,10 @@ Either:
 }
 }
 \description{
-Filters an mcnode within an mcmodule based on conditions, similar to dplyr::filter().
-Can either create a new node in the mcmodule (when mcmodule and name are provided)
-or return a raw filtered mcnode (when only data and mcnode are provided).
+Filters an \code{mcnode} within an \code{mcmodule} based on conditions, similar to
+\code{dplyr::filter()}. Can either create a new node in the \code{mcmodule} (when
+both \code{mcmodule} and \code{name} are provided) or return a raw filtered \code{mcnode}
+(when only \code{data} and \code{mcnode} are provided).
 }
 \details{
 This function can be called in two ways:

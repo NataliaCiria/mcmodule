@@ -441,6 +441,47 @@ In the imports mcmodule, we can already see the raw mcnode results for the proba
 mc_summary(mcmodule = imports, mc_name = "no_detect")
 ```
 
+## Filtering
+
+Sometimes you may want to focus your analysis on specific subsets of your data, such as a particular pathogen or region. The `mc_filter()` function allows you to filter mcnodes based on conditions, similar to `dplyr::filter()`.
+
+### Filtering a single condition
+
+Let's filter the `no_detect` node to only include results for pathogen "a":
+
+```{r}
+# Filter for pathogen a only
+imports <- mc_filter(
+  imports,
+  "no_detect",
+  pathogen == "a",
+  name = "no_detect_pathogen_a"
+)
+
+# View the filtered results
+imports$node_list$no_detect_pathogen_a$summary
+```
+
+### Filtering with multiple conditions
+
+You can also apply multiple filter conditions at once. For example, to analyze only pathogen "b" from the "nord" region:
+
+```{r}
+# Filter for pathogen b from nord region
+imports <- mc_filter(
+  imports,
+  "no_detect",
+  pathogen == "b",
+  origin == "nord",
+  name = "no_detect_b_nord"
+)
+
+# View the filtered results
+imports$node_list$no_detect_b_nord$summary
+```
+
+The filtered nodes maintain all the metadata from the original node and can be used in subsequent calculations just like any other node in the mcmodule.
+
 ## Calculating totals
 
 Most of the following probability calculations are based on Chapter 5 of the *Handbook on Import Risk Analysis for Animals and Animal Products Volume 2. Quantitative risk assessment* [@Murray2004]. More details can be found on the [*Multivariate operations*](https://nataliaciria.com/mcmodule/articles/multivariate_operations.html) vignette.

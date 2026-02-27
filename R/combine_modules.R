@@ -1,7 +1,7 @@
 #' Combine Two Modules
 #'
-#' @description
-#' Combines two mcmodules into a single mcmodule by merging their data and components.
+#' Combines two `mcmodule` objects into a single `mcmodule` by merging their
+#' data and components.
 #'
 #' @param mcmodule_x First module to combine
 #' @param mcmodule_y Second module to combine

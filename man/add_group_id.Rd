@@ -14,8 +14,8 @@ add_group_id(x, y = NULL, by = NULL)
 \item{by}{Grouping variables}
 }
 \value{
-Dataframe or list of dataframes with added group IDs
+A data frame or list of data frames with added group IDs
 }
 \description{
-Add Group IDs to Data Frames
+Adds group identifiers to data frames for matching and alignment operations.
 }

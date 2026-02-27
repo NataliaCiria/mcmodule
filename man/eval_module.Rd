@@ -2,7 +2,7 @@
 % Please edit documentation in R/eval_module.R
 \name{eval_module}
 \alias{eval_module}
-\title{Evaluate a Monte Carlo Model Expression and create an mcmodule}
+\title{Evaluate a Monte Carlo Model Expression and Create an \code{mcmodule}}
 \usage{
 eval_module(
   exp,
@@ -53,8 +53,8 @@ expression after transformation and before mcnode creation. Defaults to NULL.}
 An mcmodule object containing data, expressions, and nodes
 }
 \description{
-Takes a set of Monte Carlo model expressions, evaluates them, and creates an
-mcmodule containing results and metadata.
+Evaluates a set of Monte Carlo model expressions and creates an
+\code{mcmodule} containing simulation results and metadata.
 }
 \details{
 \itemize{

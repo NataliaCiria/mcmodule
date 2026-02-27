@@ -2,7 +2,7 @@
 % Please edit documentation in R/mc_analysis.R
 \name{mcmodule_to_mc}
 \alias{mcmodule_to_mc}
-\title{Convert Monte Carlo Module to mc2d mc Objects}
+\title{Convert Monte Carlo Module to \code{mc2d} Objects}
 \usage{
 mcmodule_to_mc(
   mcmodule,
@@ -19,18 +19,18 @@ If NULL (default), includes all nodes in the module.}
 
 \item{match}{Logical, currently unused (reserved for future functionality)}
 
-\item{variates_as_nsv}{Logical, if TRUE, combines all variates into a single mc object
+\item{variates_as_nsv}{Logical, if TRUE, combines all variates into a single \code{mc} object
 by multiplying the number of variates by the number of uncertainty simulations in the
-variability dimension (nsv). If FALSE (default), returns a list with one mc object per variate.}
+variability dimension (\code{nsv}). If FALSE (default), returns a list with one \code{mc} object per variate.}
 }
 \value{
-If \code{variates_as_nsv = FALSE}, a list of mc objects (one per variate) combining
-specified Monte Carlo nodes. If \code{variates_as_nsv = TRUE}, a single mc object where all
-variates are combined into the variability dimension. Each mc object is compatible with
-mc2d package functions.
+If \code{variates_as_nsv = FALSE}, a list of \code{mc} objects (one per variate) combining
+specified Monte Carlo nodes. If \code{variates_as_nsv = TRUE}, a single \code{mc} object where all
+variates are combined into the variability dimension. Each \code{mc} object is compatible with
+\code{mc2d} package functions.
 }
 \description{
-Transforms a Monte Carlo module into a list of mc objects (from the mc2d package),
-with one mc object per variate simulation, or a single mc object with all variates
+Transforms a Monte Carlo module into a list of \code{mc} objects (from the \code{mc2d} package),
+with one \code{mc} object per variate simulation, or a single \code{mc} object with all variates
 combined into the variability dimension.
 }

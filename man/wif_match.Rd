@@ -2,7 +2,7 @@
 % Please edit documentation in R/dim_match.R
 \name{wif_match}
 \alias{wif_match}
-\title{Match Datasets With Differing Scenarios}
+\title{Match Datasets with Differing Scenarios}
 \usage{
 wif_match(x, y, by = NULL)
 }
@@ -14,14 +14,14 @@ wif_match(x, y, by = NULL)
 \item{by}{Grouping variable(s) to match on, defaults to NULL}
 }
 \value{
-List containing matched datasets with aligned scenario IDs:
+A list containing matched datasets with aligned scenario IDs:
 \itemize{
 \item First element: matched version of dataset x
 \item Second element: matched version of dataset y
 }
 }
 \description{
-Matches datasets by group and preserves baseline scenarios (scenario_id=0) when scenarios differ between them.
+Matches datasets by group and preserves baseline scenarios (scenario_id = 0) when scenarios differ between them.
 }
 \examples{
 x <- data.frame(

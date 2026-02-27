@@ -2,21 +2,21 @@
 % Please edit documentation in R/dim_match.R
 \name{mc_match_data}
 \alias{mc_match_data}
-\title{Match Monte Carlo Node with other data frame}
+\title{Match Monte Carlo Node with Data Frame}
 \usage{
 mc_match_data(mcmodule, mc_name, data, keys_names = NULL)
 }
 \arguments{
-\item{mcmodule}{Monte Carlo module}
+\item{mcmodule}{A Monte Carlo module}
 
 \item{mc_name}{Node name}
 
-\item{data}{Data frame containing keys to match with}
+\item{data}{A data frame containing keys to match with}
 
 \item{keys_names}{Names of key columns}
 }
 \value{
-List containing matched node, matched data and combined keys (keys_xy
+A list containing matched node, matched data, and combined keys (\code{keys_xy})
 }
 \description{
 Matches an mcnode with a data frame by:

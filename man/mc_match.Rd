@@ -2,12 +2,12 @@
 % Please edit documentation in R/dim_match.R
 \name{mc_match}
 \alias{mc_match}
-\title{Match Monte Carlo Nodes}
+\title{Match Two Monte Carlo Nodes}
 \usage{
 mc_match(mcmodule, mc_name_x, mc_name_y, keys_names = NULL)
 }
 \arguments{
-\item{mcmodule}{Monte Carlo module}
+\item{mcmodule}{A Monte Carlo module}
 
 \item{mc_name_x}{First node name}
 
@@ -16,7 +16,7 @@ mc_match(mcmodule, mc_name_x, mc_name_y, keys_names = NULL)
 \item{keys_names}{Names of key columns}
 }
 \value{
-List containing matched nodes and combined keys (keys_xy)
+A list containing matched nodes and combined keys (\code{keys_xy})
 }
 \description{
 Matches two mcnodes by:

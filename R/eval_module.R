@@ -1,7 +1,7 @@
-#' Evaluate a Monte Carlo Model Expression and create an mcmodule
+#' Evaluate a Monte Carlo Model Expression and Create an `mcmodule`
 #'
-#' Takes a set of Monte Carlo model expressions, evaluates them, and creates an
-#' mcmodule containing results and metadata.
+#' Evaluates a set of Monte Carlo model expressions and creates an
+#' `mcmodule` containing simulation results and metadata.
 #'
 #' @details
 #' - mcstoc() and mcdata() may be used directly inside model expressions.

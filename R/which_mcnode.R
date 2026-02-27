@@ -1,8 +1,8 @@
-#' Find mcnodes in a mcmodule based on a condition
+#' Find `mcnode`s in an `mcmodule` Based on a Condition
 #'
-#' Generic function that applies a test function to each mcnode in an mcmodule
-#' and returns the names of mcnodes where the test returns TRUE. Useful for
-#' debugging and troubleshooting Monte Carlo models.
+#' Applies a test function to each `mcnode` in an `mcmodule` and returns the
+#' names of nodes where the test returns `TRUE`. Useful for debugging and
+#' troubleshooting Monte Carlo models.
 #'
 #' @param mcmodule An mcmodule object containing node_list with mcnodes
 #' @param test_func A function that takes an mcnode and returns a logical value
@@ -26,7 +26,7 @@ which_mcnode <- function(mcmodule, test_func) {
   if (!is.list(mcmodule) || is.null(mcmodule$node_list)) {
     stop("mcmodule must be a list with a node_list component")
   }
-  
+
   if (!is.function(test_func)) {
     stop("test_func must be a function")
   }
@@ -43,11 +43,14 @@ which_mcnode <- function(mcmodule, test_func) {
     if (is.null(node[["mcnode"]])) {
       return(FALSE)
     }
-    tryCatch({
-      test_func(node[["mcnode"]])
-    }, error = function(e) {
-      FALSE
-    })
+    tryCatch(
+      {
+        test_func(node[["mcnode"]])
+      },
+      error = function(e) {
+        FALSE
+      }
+    )
   })
 
   # Return names of nodes where test is TRUE
@@ -55,9 +58,9 @@ which_mcnode <- function(mcmodule, test_func) {
 }
 
 
-#' Find mcnodes in a mcmodule that contain NAs
+#' Find `mcnode`s with Missing Values
 #'
-#' Identifies which mcnodes within an mcmodule contain NA values.
+#' Identifies which `mcnode`s within an `mcmodule` contain `NA` values.
 #' Useful for troubleshooting and debugging Monte Carlo models to find
 #' nodes that may be causing issues due to missing or undefined values.
 #'
@@ -89,11 +92,11 @@ which_mcnode_na <- function(mcmodule) {
 }
 
 
-#' Find mcnodes in a mcmodule that contain infinite values
+#' Find `mcnode`s with Infinite Values
 #'
-#' Identifies which mcnodes within an mcmodule contain infinite values (Inf or -Inf).
-#' Useful for troubleshooting and debugging Monte Carlo models to find
-#' nodes that may be causing issues due to infinite values.
+#' Identifies which `mcnode`s within an `mcmodule` contain infinite values
+#' (`Inf` or `-Inf`). Useful for troubleshooting and debugging Monte Carlo
+#' models to find nodes that may be causing issues due to infinite values.
 #'
 #' @param mcmodule An mcmodule object containing node_list with mcnodes
 #'

@@ -1,4 +1,4 @@
-#' Get Monte Carlo Node Keys
+#' Extract Key Columns from Monte Carlo Nodes
 #'
 #' Extracts key columns from Monte Carlo node's associated data.
 #'
@@ -6,7 +6,7 @@
 #' @param mc_name Name of the node to extract keys from
 #' @param keys_names Vector of column names to extract (optional)
 #'
-#' @return Dataframe with scenario_id and requested key columns
+#' @return A data frame with scenario_id and requested key columns
 #'
 #' @examples
 #' keys_df <- mc_keys(imports_mcmodule, "w_prev")
@@ -167,18 +167,18 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
   data[unique(c("scenario_id", keys_names))]
 }
 
-#' Match Monte Carlo Nodes
+#' Match Two Monte Carlo Nodes
 #'
 #' Matches two mcnodes by:
 #' 1. Group matching - Align nodes with same scenarios but different group order
 #' 2. Scenario matching - Align nodes with same groups but different scenarios
 #' 3. Null matching - Add missing groups across different scenarios
 #'
-#' @param mcmodule Monte Carlo module
+#' @param mcmodule A Monte Carlo module
 #' @param mc_name_x First node name
 #' @param mc_name_y Second node name
 #' @param keys_names Names of key columns
-#' @return List containing matched nodes and combined keys (keys_xy)
+#' @return A list containing matched nodes and combined keys (`keys_xy`)
 #' @examples
 #' test_module <- list(
 #'   node_list = list(
@@ -411,18 +411,18 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
   return(result)
 }
 
-#' Match Monte Carlo Node with other data frame
+#' Match Monte Carlo Node with Data Frame
 #'
 #' Matches an mcnode with a data frame by:
 #' 1. Group matching - Same scenarios but different group order
 #' 2. Scenario matching - Same groups but different scenarios
 #' 3. Null matching - Add missing groups across different scenarios
 #'
-#' @param mcmodule Monte Carlo module
+#' @param mcmodule A Monte Carlo module
 #' @param mc_name Node name
-#' @param data Data frame containing keys to match with
+#' @param data A data frame containing keys to match with
 #' @param keys_names Names of key columns
-#' @return List containing matched node, matched data and combined keys (keys_xy
+#' @return A list containing matched node, matched data, and combined keys (`keys_xy`)
 #' @examples
 #' test_data  <- data.frame(pathogen=c("a","b"),
 #'                          inf_dc_min=c(0.05,0.3),
@@ -582,14 +582,14 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
   return(result)
 }
 
-#' Match Datasets With Differing Scenarios
+#' Match Datasets with Differing Scenarios
 #'
-#' Matches datasets by group and preserves baseline scenarios (scenario_id=0) when scenarios differ between them.
+#' Matches datasets by group and preserves baseline scenarios (scenario_id = 0) when scenarios differ between them.
 #'
 #' @param x First dataset to match
 #' @param y Second dataset to match
 #' @param by Grouping variable(s) to match on, defaults to NULL
-#' @return List containing matched datasets with aligned scenario IDs:
+#' @return A list containing matched datasets with aligned scenario IDs:
 #'   - First element: matched version of dataset x
 #'   - Second element: matched version of dataset y
 #' @examples

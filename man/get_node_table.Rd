@@ -2,7 +2,7 @@
 % Please edit documentation in R/mc_network.R
 \name{get_node_table}
 \alias{get_node_table}
-\title{Generate Node Table for Network Construction}
+\title{Generate Node Table for Network Visualization}
 \usage{
 get_node_table(mcmodule, variate = 1, inputs = FALSE)
 }
@@ -17,8 +17,8 @@ get_node_table(mcmodule, variate = 1, inputs = FALSE)
 A data frame containing node information and attributes
 }
 \description{
-Creates a data frame containing node information from a Monte Carlo module network.
-Includes node attributes, values, and relationships.
+Creates a data frame containing node information from a Monte Carlo module
+network. Includes node attributes, values, and relationships.
 }
 \examples{
 node_table <- get_node_table(imports_mcmodule)

@@ -1,8 +1,9 @@
-#' Filter an mcnode object
+#' Filter an `mcnode` Object
 #'
-#' Filters an mcnode within an mcmodule based on conditions, similar to dplyr::filter().
-#' Can either create a new node in the mcmodule (when mcmodule and name are provided)
-#' or return a raw filtered mcnode (when only data and mcnode are provided).
+#' Filters an `mcnode` within an `mcmodule` based on conditions, similar to
+#' `dplyr::filter()`. Can either create a new node in the `mcmodule` (when
+#' both `mcmodule` and `name` are provided) or return a raw filtered `mcnode`
+#' (when only `data` and `mcnode` are provided).
 #'
 #' @param mcmodule An mcmodule object containing the node to filter (default: NULL)
 #' @param mc_name Character string specifying the name of the mcnode in the module (default: NULL)

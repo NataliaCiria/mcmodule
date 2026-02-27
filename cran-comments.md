@@ -4,14 +4,20 @@
 
 ## Submission
 
-This is a minor release that:
+This is a minor release (v1.2.0) that:
 
-* Adds support for mcnodes with multiple data names across core 
-functions
+* Adds comprehensive suite of Monte Carlo analysis functions 
+  (`mcmodule_info()`, `mcmodule_corr()`, `mcmodule_converg()`, 
+  `mcmodule_to_matrices()`, `mcmodule_to_mc()`)
 
-* Adds new arguments for flexible key handling in `eval_module()`
+* Adds new `mc_filter()` function for filtering mcnodes and metadata
 
-* Fixes several bugs
+* Introduces experimental `mc_plot()` for visualization
+
+* Enhances `eval_module()` to support `mcstoc()` and `mcdata()` 
+  directly within expressions
+
+* Fixes multiple bugs
 
 See NEWS.md for detailed changes.
 
