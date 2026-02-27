@@ -169,6 +169,10 @@ at_least_one <- function(
     prefix <- sub("_$", "", prefix)
   }
 
+  if (!is.null(prefix) && prefix == "") {
+    prefix <- NULL
+  }
+
   # Add new node to module
   mcmodule$node_list[[p_all_mc_name]] <- list(
     mcnode = p_all,
@@ -350,6 +354,10 @@ agg_totals <- function(
       sub(paste0("^", prefix), "", agg_mc_name)
     )
     prefix <- sub("_$", "", prefix)
+  }
+
+  if (!is.null(prefix) && prefix == "") {
+    prefix <- NULL
   }
 
   # Extract variates
@@ -782,6 +790,10 @@ trial_totals <- function(
     ))
   }
 
+  if (!is.null(prefix) && prefix == "") {
+    prefix <- NULL
+  }
+
   # Fix missing level suffixes
   missing_suffixes <- setdiff(c("trial", "subset", "set"), names(level_suffix))
   for (suffix in missing_suffixes) {
@@ -883,6 +895,8 @@ trial_totals <- function(
 
     return(mcmodule)
   }
+  # Iniciate keys_names vector to keep track of all keys used in nodes
+  keys_names <- c()
 
   # Process all nodes
   mcmodule <- process_trial_mcnode(
@@ -904,6 +918,11 @@ trial_totals <- function(
   } else {
     mcmodule$node_list[[trials_n]][["mcnode"]]
   }
+
+  keys_names <- unique(c(
+    keys_names,
+    mcmodule$node_list[[trials_n]][["keys"]]
+  ))
 
   # If subsets_n is NULL, defaults to 1
   if (is.null(subsets_n)) {
@@ -931,6 +950,11 @@ trial_totals <- function(
     } else {
       mcmodule$node_list[[subsets_n]][["mcnode"]]
     }
+
+    keys_names <- unique(c(
+      keys_names,
+      mcmodule$node_list[[subsets_n]][["keys"]]
+    ))
 
     hierarchical_n <- TRUE
   }
@@ -964,6 +988,11 @@ trial_totals <- function(
       mcmodule$node_list[[subsets_p]][["mcnode"]]
     }
 
+    keys_names <- unique(c(
+      keys_names,
+      mcmodule$node_list[[subsets_p]][["keys"]]
+    ))
+
     hierarchical_p <- TRUE
   }
 
@@ -979,7 +1008,8 @@ trial_totals <- function(
     keys_names,
     agg_keys,
     total_type,
-    keep_variates
+    keep_variates,
+    prefix
   ) {
     node_list[[name]] <- list(
       mcnode = value,
@@ -1103,10 +1133,10 @@ trial_totals <- function(
     )
   )
 
-  # Process each node
   for (mc_name in mc_names) {
     if (!is.null(agg_keys)) {
-      keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
+      # Original node keys before aggregation
+      original_keys <- mcmodule$node_list[[mc_name]][["keys"]]
       # Aggregate node if agg_keys provided
       messages <- character(0)
       withCallingHandlers(
@@ -1145,15 +1175,23 @@ trial_totals <- function(
       # Add metadata
       mcmodule$node_list[[mc_name]][["module"]] <- module_name
       mcmodule$node_list[[mc_name]][["agg_keys"]] <- agg_keys
-      mcmodule$node_list[[mc_name]][["keys"]] <- keys_names
+      mcmodule$node_list[[mc_name]][["keys"]] <- original_keys
       mcmodule$node_list[[mc_name]][["keep_variates"]] <- keep_variates
 
       # Update keys_names if it does not keep all variates
       if (!keep_variates) {
         keys_names <- agg_keys
+      } else {
+        keys_names <- unique(c(
+          original_keys,
+          mcmodule$node_list[[mc_name]][["keys"]]
+        ))
       }
     } else {
-      keys_names <- mcmodule$node_list[[mc_name]][["keys"]]
+      keys_names <- unique(c(
+        keys_names,
+        mcmodule$node_list[[mc_name]][["keys"]]
+      ))
     }
 
     if (!all_equal && mc_name %in% mc_inputs_names) {
@@ -1261,7 +1299,8 @@ trial_totals <- function(
           keys_names = keys_names,
           agg_keys = agg_keys,
           total_type = total_type,
-          keep_variates = keep_variates
+          keep_variates = keep_variates,
+          prefix = prefix
         )
 
         # Add summary if requested
