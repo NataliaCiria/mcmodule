@@ -39,11 +39,15 @@
 #'   sep_keys = FALSE
 #' )
 #' @export
-mc_summary <- function(mcmodule = NULL, mc_name = NULL,
-                       keys_names = NULL,
-                       data = NULL,
-                       mcnode = NULL,
-                       sep_keys = TRUE, digits = NULL) {
+mc_summary <- function(
+  mcmodule = NULL,
+  mc_name = NULL,
+  keys_names = NULL,
+  data = NULL,
+  mcnode = NULL,
+  sep_keys = TRUE,
+  digits = NULL
+) {
   # Input validation
   if (!is.null(mcnode) & is.null(mc_name)) {
     mc_name <- deparse(substitute(mcnode))
@@ -70,16 +74,15 @@ mc_summary <- function(mcmodule = NULL, mc_name = NULL,
       data <- mcmodule$data[[data_name]]
     }
 
-    if(length(data_name)>1&!is.null(mcmodule$node_list[[mc_name]]$summary)){
+    if (
+      length(data_name) > 1 & !is.null(mcmodule$node_list[[mc_name]]$summary)
+    ) {
       message("Too many data names. Using existing summary.")
       return(mcmodule$node_list[[mc_name]]$summary)
     }
-
   } else {
     if (is.null(data)) stop("mcmodule or data must be provided")
   }
-
-
 
   # Validate provided keys
   if (!is.null(keys_names)) {
@@ -87,13 +90,18 @@ mc_summary <- function(mcmodule = NULL, mc_name = NULL,
     if (length(missing_keys) > 0) {
       stop(sprintf(
         "keys_names (%s) must appear in %s data column names",
-        paste(missing_keys, collapse = ", "), mc_name
+        paste(missing_keys, collapse = ", "),
+        mc_name
       ))
     }
   }
 
   # Process keys
-  keys_names <- if (is.null(keys_names) & !is.null(mcmodule)) names(mc_keys(mcmodule, mc_name)) else keys_names
+  keys_names <- if (is.null(keys_names) & !is.null(mcmodule)) {
+    names(mc_keys(mcmodule, mc_name))
+  } else {
+    keys_names
+  }
 
   keys <- if (length(keys_names) > 0 && any(keys_names %in% names(data))) {
     data[names(data) %in% keys_names]
@@ -111,11 +119,14 @@ mc_summary <- function(mcmodule = NULL, mc_name = NULL,
 
   # Calculate summary statistics
   summary_l <- summary(mcnode)[[1]]
-  if (!is.list(summary_l)) summary_l <- list(summary_l)
+  if (!is.list(summary_l)) {
+    summary_l <- list(summary_l)
+  }
 
   # Create summary dataframe
   summary_names <- colnames(summary_l[[1]])
-  summary_df <- data.frame(matrix(unlist(summary_l),
+  summary_df <- data.frame(matrix(
+    unlist(summary_l),
     nrow = length(summary_l),
     byrow = TRUE
   ))
@@ -134,62 +145,10 @@ mc_summary <- function(mcmodule = NULL, mc_name = NULL,
   return(summary_df)
 }
 
-signif_round <- function(x, digits = 2) ifelse(x < (10^-(digits)), signif(x, digits = digits), round(x, digits = digits))
-
-#' Get mcnode summary keys
-#' @param mcsummary data frame from mc_summary()
-#' @return vector of key names
-mc_summary_keys <- function(mcsummary) {
-  if ("mean" %in% names(mcsummary)) {
-    names(mcsummary)[2:(match("mean", names(mcsummary)) - 1)]
-  } else {
-    names(mcsummary)[2:(match("NoUnc", names(mcsummary)) - 1)]
-  }
-}
-
-#' Include summary and keys in node_list
-#' @param mcmodule mc module object
-#' @param data data frame with mc inputs
-#' @param node_list list of nodes
-#' @return updated node_list
-node_list_summary <- function(mcmodule = NULL, data = NULL, node_list = NULL) {
-  if (!is.null(mcmodule)) {
-    data <- mcmodule$data
-    node_list <- mcmodule$node_list
-  } else if (is.null(data) || is.null(node_list)) {
-    stop("data containing mc_inputs and node_list must be provided")
-  }
-
-  for (i in seq_along(node_list)) {
-    node_name <- names(node_list)[i]
-    inputs_names <- node_list[[i]][["inputs"]]
-    mcnode <- node_list[[i]][["mcnode"]]
-
-    if (is.null(inputs_names)) {
-      node_summary <- mc_summary(
-        data = data, mcnode = mcnode,
-        mc_name = node_name
-      )
-    } else {
-      keys_names <- unique(unlist(lapply(inputs_names, function(x) {
-        node_list[[x]][["keys"]]
-      })))
-
-      node_summary <- mc_summary(
-        data = data, mcnode = mcnode,
-        mc_name = node_name,
-        keys_names = keys_names
-      )
-    }
-
-    node_list[[i]][["summary"]] <- node_summary
-    node_list[[i]][["keys"]] <- mc_summary_keys(node_summary)
-  }
-
-  if (!is.null(mcmodule)) {
-    mcmodule$node_list <- node_list
-    return(mcmodule)
-  }
-
-  return(node_list)
+signif_round <- function(x, digits = 2) {
+  ifelse(
+    x < (10^-(digits)),
+    signif(x, digits = digits),
+    round(x, digits = digits)
+  )
 }
