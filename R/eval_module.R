@@ -34,8 +34,9 @@
 #' @param keys Optional explicit keys for the input data (character vector)
 #' @param overwrite_keys Logical or NULL. If NULL (default) it becomes TRUE when
 #'   data_keys is NULL or an empty list; otherwise FALSE.
-#' @param use_baseline Character vector of mcnode names to override input data
-#'   using `sensi_baseline` from mctable. Defaults to NULL (no baseline override).
+#' @param use_baseline Character vector of mcnode names to override
+#'   input data using `sensi_baseline` from mctable. Defaults to NULL
+#'   (no baseline override).
 #' @param use_variation Character vector of mcnode names to apply `sensi_variation`
 #'   expression after transformation and before mcnode creation. Defaults to NULL.
 #'

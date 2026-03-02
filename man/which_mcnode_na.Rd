@@ -35,5 +35,5 @@ which_mcnode_na(test_mcmodule)
 
 }
 \seealso{
-\code{\link{which_mcnode}}, \code{\link{which_mcnode_inf}}, \code{\link{mcnode_na_rm}}
+\code{\link[=which_mcnode]{which_mcnode()}}, \code{\link[=which_mcnode_inf]{which_mcnode_inf()}}, \code{\link[=mcnode_na_rm]{mcnode_na_rm()}}
 }

@@ -31,7 +31,7 @@ The `mc2d` R package [@mc2d] provides tools to build and analyse models involvin
 1.  Organize risk analysis in independent flexible modules
 2.  Perform multivariate mcnode operations
 3.  Automate the creation of mcnodes
-4.  Visualize risk analysis models
+4.  visualise risk analysis models
 
 ## Multivariate Monte-Carlo simulations
 
@@ -423,7 +423,7 @@ When arithmetic operations are performed between nodes in mcmodule, they are app
 
 ## Visualizing
 
-We can visualize an mc_module with the `mc_network()` function. For this, you will need to have `igraph` [@igraph] and `visNetwork` [@visnetwork] installed.
+We can visualise an mc_module with the `mc_network()` function. For this, you will need to have `igraph` [@igraph] and `visNetwork` [@visnetwork] installed.
 
 In these network visualizations, input datasets appear in blue, input data files, input columns and input mcnodes appear in different shades of dark-grey-blue, output mcnodes in green, and total mcnodes (as we will see later) in orange. The numbers displayed when clicked correspond to the median and the 95% confidence interval of the first variate of each mcnode.
 
@@ -585,7 +585,7 @@ imports <- agg_totals(
 imports$node_list$no_detect_set_agg$summary
 ```
 
-Now we can visualize our mcmodule again and see all these new nodes created by the totals functions.
+Now we can visualise our mcmodule again and see all these new nodes created by the totals functions.
 
 ```{r}
 mc_network(imports, legend = TRUE)

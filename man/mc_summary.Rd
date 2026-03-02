@@ -33,7 +33,8 @@ mc_summary(
 A data frame containing summary statistics with columns:
 \itemize{
 \item mc_name: Name of the mcnode
-\item keys: Grouping variables (if sep_keys=FALSE) or individual key columns (if sep_keys=TRUE)
+\item keys: Grouping variables (if sep_keys=FALSE) or individual key
+columns (if sep_keys=TRUE)
 \item Summary statistics including:
 \itemize{
 \item mean: Average value

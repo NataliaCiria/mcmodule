@@ -32,14 +32,14 @@
 #' imports_mcmodule <- mc_filter(
 #'   imports_mcmodule,
 #'   "w_prev",
-#'   origin == "Country A",
+#'   origin == "nord",
 #'   name = "w_prev_countryA"
 #' )
 #'
 #' # Filter and return raw mcnode (note: conditions before named args)
 #' w_prev <- imports_mcmodule$node_list$w_prev$mcnode
 #' w_prev_filtered <- mc_filter(
-#'   origin == "Country A",
+#'   origin == "nord",
 #'   data = imports_data,
 #'   mcnode = w_prev
 #' )
@@ -48,7 +48,7 @@
 #' imports_mcmodule <- mc_filter(
 #'   imports_mcmodule,
 #'   "w_prev",
-#'   origin == "Country A",
+#'   origin == "nord",
 #'   pathogen == "virus",
 #'   name = "w_prev_countryA_virus"
 #' )

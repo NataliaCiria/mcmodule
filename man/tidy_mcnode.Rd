@@ -26,10 +26,10 @@ data will be extracted from the module}
 \item{keys_names}{Vector of column names to use as key columns for grouping (optional).
 If NULL, will use node keys from the module or all available keys}
 
-\item{filter}{Optional expression to filter variates. Should be an unquoted expression
-that evaluates to a logical vector, e.g., \code{pathogen == "a"} or
-\code{pathogen == "a" | origin == "nord"}. The expression is evaluated
-in the context of the data frame containing the keys.}
+\item{filter}{Optional expression to filter variates. Should be an unquoted
+expression that evaluates to a logical vector, e.g., \code{pathogen == "a"} or
+\code{pathogen == "a" | origin == "nord"}. The expression is evaluated in the
+context of the data frame containing the keys.}
 }
 \value{
 A long format data frame with columns:

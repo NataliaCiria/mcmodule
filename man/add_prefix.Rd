@@ -17,8 +17,8 @@ add_prefix(mcmodule, prefix = NULL, rewrite_module = NULL)
 A mcmodule with new prefixes in node_list names
 }
 \description{
-Adds a prefix to node_list names and all input nodes.
-Preserves previous prefixes unless rewrite_module argument is specified.
+Adds a prefix to node_list names and all input nodes. Preserves
+previous prefixes unless rewrite_module argument is specified.
 }
 \examples{
 print(names(imports_mcmodule$node_list))

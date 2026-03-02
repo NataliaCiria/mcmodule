@@ -8,7 +8,7 @@
 
 <!-- badges: end -->
 
-Framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to facilitate working with multiple risk pathways, variates and scenarios. It provides tools to organize risk analysis in independent flexible modules, perform multivariate mcnode operations, automate the creation of mcnodes and visualize risk analysis models.
+Framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to facilitate working with multiple risk pathways, variates and scenarios. It provides tools to organize risk analysis in independent flexible modules, perform multivariate mcnode operations, automate the creation of mcnodes and visualise risk analysis models.
 
 ## Installation
 
@@ -83,7 +83,7 @@ example_mcmodule <- eval_module(
 )
 ```
 
-6.  Once you have created a mcmodule object, you can use other package functions to summarize and visualize mcnodes, calculate totals, and combine them with other mcmodules
+6.  Once you have created a mcmodule object, you can use other package functions to summarize and visualise mcnodes, calculate totals, and combine them with other mcmodules
 
 ``` r
 # Summarize the 'result' node
@@ -99,7 +99,7 @@ example_mcmodule<-example_mcmodule%>%
 # Print aggregated 'result'
 example_mcmodule$node_list$result_agg$summary
 
-# Visualize the mcmodule
+# visualise the mcmodule
 mc_network(example_mcmodule, legend = TRUE)
 ```
 

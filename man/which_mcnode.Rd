@@ -7,13 +7,13 @@
 which_mcnode(mcmodule, test_func)
 }
 \arguments{
-\item{mcmodule}{An mcmodule object containing node_list with mcnodes}
+\item{mcmodule}{An mcmodule object containing \code{node_list} with mcnodes}
 
 \item{test_func}{A function that takes an mcnode and returns a logical value
 (TRUE if the condition is met)}
 }
 \value{
-A character vector containing the names of mcnodes where test_func
+A character vector containing the names of mcnodes where \code{test_func}
 returns TRUE. Returns an empty character vector if no mcnodes meet the condition.
 }
 \description{
@@ -30,5 +30,5 @@ which_mcnode(imports_mcmodule, function(x) any(x > 1, na.rm = TRUE))
 
 }
 \seealso{
-\code{\link{which_mcnode_na}}, \code{\link{which_mcnode_inf}}
+\code{\link[=which_mcnode_na]{which_mcnode_na()}}, \code{\link[=which_mcnode_inf]{which_mcnode_inf()}}
 }

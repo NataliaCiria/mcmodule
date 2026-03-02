@@ -7,9 +7,6 @@
 #' - Keys for each variate (data row)
 #' - Global data keys
 #'
-#' This function combines the functionality of the deprecated `mcmodule_composition()`
-#' and `mcmodule_index()` functions.
-#'
 #' @param mcmodule A Monte Carlo module object
 #'
 #' @return A list with six elements:
@@ -22,8 +19,8 @@
 #'
 #' @details
 #' A raw module has a single expression in `mcmodule$exp`.
-#' A combined module has multiple expressions in `mcmodule$exp`, each representing
-#' a component module that was combined via `combine_modules()`.
+#' A combined module has multiple expressions in `mcmodule$exp`, each
+#' representing a component module that was combined via `combine_modules()`.
 #'
 #' For combined modules, module names are recursively extracted up to one level deep.
 #' This allows identifying all base modules even in deeply nested combinations.

@@ -18,7 +18,8 @@
 #'
 #' @return A data frame containing summary statistics with columns:
 #'   - mc_name: Name of the mcnode
-#'   - keys: Grouping variables (if sep_keys=FALSE) or individual key columns (if sep_keys=TRUE)
+#'   - keys: Grouping variables (if sep_keys=FALSE) or individual key
+#'     columns (if sep_keys=TRUE)
 #'   - Summary statistics including:
 #'     * mean: Average value
 #'     * sd: Standard deviation

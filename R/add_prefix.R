@@ -1,7 +1,7 @@
 #' Add Prefix to Node Names
 #'
-#' Adds a prefix to node_list names and all input nodes.
-#' Preserves previous prefixes unless rewrite_module argument is specified.
+#' Adds a prefix to node_list names and all their input nodes. Existing prefixes are preserved to
+#' avoid breaking references. To rewrite prefixes for a specific module, use the rewrite_module argument.
 #'
 #' @param mcmodule An mcmodule or a node_list object
 #' @param prefix String to add as prefix of the new mcmodule mcnodes, defaults to mcmodule name

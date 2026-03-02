@@ -15,7 +15,10 @@
 #' @return No return value, creates MC nodes in the specified environment
 #' @import mc2d
 #' @examples
-#' create_mcnodes(data = imports_data, mctable = imports_mctable)
+#' create_mcnodes(
+#'   data = imports_data,
+#'   mctable = imports_mctable
+#' )
 #'
 #' @export
 create_mcnodes <- function(

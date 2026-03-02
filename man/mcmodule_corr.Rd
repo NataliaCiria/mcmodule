@@ -29,9 +29,9 @@ If FALSE (default), calculates correlation by global output (last node).}
 \item{match_variates}{Logical, whether to match input nodes to output variates.
 Default is TRUE.}
 
-\item{variates_as_nsv}{Logical, if TRUE, combines all variates into a single \code{mc} object
-for correlation analysis. If FALSE (default), analyzes each variate separately.
-See \code{mcmodule_to_mc()} for details.}
+\item{variates_as_nsv}{Logical, if TRUE, combines all variates into a
+single \code{mc} object for correlation analysis. If FALSE (default), analyzes
+each variate separately. See \code{mcmodule_to_mc()} for details.}
 
 \item{print_summary}{Logical, whether to print the summary output.
 Default is TRUE.}
@@ -39,20 +39,15 @@ Default is TRUE.}
 \item{progress}{Logical, whether to print progress information while running.
 Default is FALSE.}
 
-\item{method}{(for \samp{mc} objects only). A character string
-indicating which correlation coefficient (or covariance) is to be
-computed. One of "spearman" (default), "kendall" or "pearson", can be
-abbreviated (see \code{\link{cor}}). Warning : the default is not the
-same in \code{\link{cor}}.}
+\item{method}{A character string indicating which correlation coefficient is to be
+computed. One of "spearman" (default), "kendall" or "pearson".}
 
-\item{use}{(for \samp{mc} objects only). An optional character string
-giving a method for computing covariances in the presence of missing
-values. This must be (an abbreviation of) one of the strings
-"all.obs", "complete.obs" or "pairwise.complete.obs" (see
-\code{\link{cor}}).}
+\item{use}{An optional character string giving a method for computing
+correlations in the presence of missing values. One of "all.obs",
+"complete.obs" or "pairwise.complete.obs". Default is "all.obs".}
 
-\item{lim}{A vector of quantiles used to compute the credible
-interval in two-dimensional models.}
+\item{lim}{A vector of quantiles used to compute the credible interval in
+two-dimensional models.}
 }
 \value{
 A data frame with correlation coefficients and metadata. Columns include:
@@ -65,7 +60,7 @@ A data frame with correlation coefficients and metadata. Columns include:
 \item value: Correlation coefficient value
 \item strength: Qualitative strength of association (Very strong, Strong, Moderate, Weak, None)
 \item method: Correlation method used (spearman, kendall, or pearson)
-\item use: Method for handling missing values (passed to \code{cor()})
+\item use: Method for handling missing values (passed to the correlation function)
 \item warnings: Any warnings generated during correlation calculation (if present)
 \item Additional columns for global keys (e.g., pathogen, origin)
 }
@@ -77,7 +72,11 @@ using the tornado analysis from the \code{mc2d} package. Supports multiple corre
 methods and captures any warnings generated during calculation.
 }
 \examples{
-mcmodule <- agg_totals(mcmodule = imports_mcmodule, mc_name = "no_detect_a", agg_keys = "pathogen")
+mcmodule <- agg_totals(
+  mcmodule = imports_mcmodule,
+  mc_name = "no_detect_a",
+  agg_keys = "pathogen"
+)
 cor_results <- mcmodule_corr(mcmodule)
 
 # Use single method

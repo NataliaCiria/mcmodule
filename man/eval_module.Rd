@@ -43,8 +43,9 @@ present as columns in \code{data} will be created from the data.}
 \item{overwrite_keys}{Logical or NULL. If NULL (default) it becomes TRUE when
 data_keys is NULL or an empty list; otherwise FALSE.}
 
-\item{use_baseline}{Character vector of mcnode names to override input data
-using \code{sensi_baseline} from mctable. Defaults to NULL (no baseline override).}
+\item{use_baseline}{Character vector of mcnode names to override
+input data using \code{sensi_baseline} from mctable. Defaults to NULL
+(no baseline override).}
 
 \item{use_variation}{Character vector of mcnode names to apply \code{sensi_variation}
 expression after transformation and before mcnode creation. Defaults to NULL.}

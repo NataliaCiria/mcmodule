@@ -313,7 +313,7 @@ visNetwork_edges <- function(mcmodule, inputs = FALSE) {
 #' includes interactive features for exploring model structure and relationships.
 #'
 #' @param mcmodule An mcmodule object
-#' @param variate Integer specifying which variate to visualize (default: 1)
+#' @param variate Integer specifying which variate to visualise (default: 1)
 #' @param color_pal Custom color palette for nodes (optional)
 #' @param color_by Column name to determine node colors (optional)
 #' @param legend Show colors legend (optional)

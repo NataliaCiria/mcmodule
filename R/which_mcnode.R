@@ -4,11 +4,11 @@
 #' names of nodes where the test returns `TRUE`. Useful for debugging and
 #' troubleshooting Monte Carlo models.
 #'
-#' @param mcmodule An mcmodule object containing node_list with mcnodes
+#' @param mcmodule An mcmodule object containing `node_list` with mcnodes
 #' @param test_func A function that takes an mcnode and returns a logical value
 #'   (TRUE if the condition is met)
 #'
-#' @return A character vector containing the names of mcnodes where test_func
+#' @return A character vector containing the names of mcnodes where `test_func`
 #'   returns TRUE. Returns an empty character vector if no mcnodes meet the condition.
 #'
 #' @examples
@@ -20,7 +20,7 @@
 #'
 #' @export
 #'
-#' @seealso \code{\link{which_mcnode_na}}, \code{\link{which_mcnode_inf}}
+#' @seealso [which_mcnode_na()], [which_mcnode_inf()]
 which_mcnode <- function(mcmodule, test_func) {
   # Validate input
   if (!is.list(mcmodule) || is.null(mcmodule$node_list)) {
@@ -86,7 +86,7 @@ which_mcnode <- function(mcmodule, test_func) {
 #'
 #' @export
 #'
-#' @seealso \code{\link{which_mcnode}}, \code{\link{which_mcnode_inf}}, \code{\link{mcnode_na_rm}}
+#' @seealso [which_mcnode()], [which_mcnode_inf()], [mcnode_na_rm()]
 which_mcnode_na <- function(mcmodule) {
   which_mcnode(mcmodule, function(x) any(is.na(x)))
 }
@@ -120,7 +120,7 @@ which_mcnode_na <- function(mcmodule) {
 #'
 #' @export
 #'
-#' @seealso \code{\link{which_mcnode}}, \code{\link{which_mcnode_na}}, \code{\link{mcnode_na_rm}}
+#' @seealso [which_mcnode()], [which_mcnode_na()], [mcnode_na_rm()]
 which_mcnode_inf <- function(mcmodule) {
   which_mcnode(mcmodule, function(x) any(is.infinite(x)))
 }

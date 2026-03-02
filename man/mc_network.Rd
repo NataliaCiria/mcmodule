@@ -16,7 +16,7 @@ mc_network(
 \arguments{
 \item{mcmodule}{An mcmodule object}
 
-\item{variate}{Integer specifying which variate to visualize (default: 1)}
+\item{variate}{Integer specifying which variate to visualise (default: 1)}
 
 \item{color_pal}{Custom color palette for nodes (optional)}
 

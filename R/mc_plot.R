@@ -13,10 +13,10 @@
 #'   data will be extracted from the module
 #' @param keys_names Vector of column names to use as key columns for grouping (optional).
 #'   If NULL, will use node keys from the module or all available keys
-#' @param filter Optional expression to filter variates. Should be an unquoted expression
-#'   that evaluates to a logical vector, e.g., `pathogen == "a"` or
-#'   `pathogen == "a" | origin == "nord"`. The expression is evaluated
-#'   in the context of the data frame containing the keys.
+#' @param filter Optional expression to filter variates. Should be an unquoted
+#'   expression that evaluates to a logical vector, e.g., `pathogen == "a"` or
+#'   `pathogen == "a" | origin == "nord"`. The expression is evaluated in the
+#'   context of the data frame containing the keys.
 #'
 #' @return A long format data frame with columns:
 #'   - All key columns (from keys_names)

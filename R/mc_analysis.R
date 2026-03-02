@@ -151,7 +151,7 @@ mcmodule_to_mc <- function(
 #' @description
 #' `r lifecycle::badge("experimental")`
 #' Computes correlation coefficients between Monte Carlo module inputs and outputs
-#' using the tornado analysis from the `mc2d` package. Supports multiple correlation
+#' using the tornado analysis (`mc2d::tornado()`) from the `mc2d` package. Supports multiple correlation
 #' methods and captures any warnings generated during calculation.
 #'
 #' @param mcmodule A Monte Carlo module object
@@ -161,14 +161,21 @@ mcmodule_to_mc <- function(
 #'   uses the last node in `mcmodule$node_list` (or last expression output if `by_exp = TRUE`).
 #' @param match_variates Logical, whether to match input nodes to output variates.
 #'   Default is TRUE.
-#' @param variates_as_nsv Logical, if TRUE, combines all variates into a single `mc` object
-#'   for correlation analysis. If FALSE (default), analyzes each variate separately.
-#'   See `mcmodule_to_mc()` for details.
+#' @param variates_as_nsv Logical, if TRUE, combines all variates into a
+#'   single `mc` object for correlation analysis. If FALSE (default), analyzes
+#'   each variate separately. For details, see `mcmodule_to_mc()`.
 #' @param print_summary Logical, whether to print the summary output.
 #'   Default is TRUE.
 #' @param progress Logical, whether to print progress information while running.
 #'   Default is FALSE.
-#' @inheritParams mc2d::tornado
+#' @param method A character string indicating which correlation coefficient is to be
+#'   computed. One of "spearman" (default), "kendall" or "pearson". See `stats::cor()`.
+#' @param use An optional character string giving a method for computing
+#'   correlations in the presence of missing values. Default is "all.obs"
+#'   and the presence of missing observations will produce an error. Other options are
+#'   "complete.obs" and "pairwise.complete.obs". See `stats::cor()`.
+#' @param lim A vector of quantiles used to compute the credible interval in
+#'   two-dimensional models.
 #' @return A data frame with correlation coefficients and metadata. Columns include:
 #'   \itemize{
 #'     \item exp: Expression name
@@ -179,14 +186,18 @@ mcmodule_to_mc <- function(
 #'     \item value: Correlation coefficient value
 #'     \item strength: Qualitative strength of association (Very strong, Strong, Moderate, Weak, None)
 #'     \item method: Correlation method used (spearman, kendall, or pearson)
-#'     \item use: Method for handling missing values (passed to `cor()`)
+#'     \item use: Method for handling missing values (passed to the correlation function)
 #'     \item warnings: Any warnings generated during correlation calculation (if present)
 #'     \item Additional columns for global keys (e.g., pathogen, origin)
 #'   }
 #' @export
 #'
 #' @examples
-#' mcmodule <- agg_totals(mcmodule = imports_mcmodule, mc_name = "no_detect_a", agg_keys = "pathogen")
+#' mcmodule <- agg_totals(
+#'   mcmodule = imports_mcmodule,
+#'   mc_name = "no_detect_a",
+#'   agg_keys = "pathogen"
+#' )
 #' cor_results <- mcmodule_corr(mcmodule)
 #'
 #' # Use single method

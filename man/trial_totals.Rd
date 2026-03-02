@@ -42,7 +42,8 @@ trial_totals(
 
 \item{all_suffix}{Suffix for combined node name (default: "all")}
 
-\item{level_suffix}{A list of suffixes for each hierarchical level (default: c(trial="trial",subset="subset",set="set"))}
+\item{level_suffix}{A list of suffixes for each hierarchical level.
+Default: c(trial="trial", subset="subset", set="set")}
 
 \item{mctable}{Data frame containing Monte Carlo nodes definitions (default: set_mctable())}
 

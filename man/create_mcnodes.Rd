@@ -27,6 +27,9 @@ Creates Monte Carlo nodes (mcnodes) based on instructions provided in a
 configuration table (mctable) and input variables from a data frame.
 }
 \examples{
-create_mcnodes(data = imports_data, mctable = imports_mctable)
+create_mcnodes(
+  data = imports_data,
+  mctable = imports_mctable
+)
 
 }

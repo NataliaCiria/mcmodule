@@ -10,7 +10,7 @@
 * New `mc_filter()` filters mcnodes and metadata within mcmodules or using
   mcnode and data (#53).
 
-* New `mc_plot()` visualizes Monte Carlo results with support for filters and
+* New `mc_plot()` visualises Monte Carlo results with support for filters and
   color mapping. This function is experimental and may change in future
   versions (#4).
 

@@ -507,7 +507,8 @@ agg_totals <- function(
 #' @param prefix Prefix for output node names (optional)
 #' @param combine_prob Combine probability of all nodes assuming independence (default: TRUE)
 #' @param all_suffix Suffix for combined node name (default: "all")
-#' @param level_suffix A list of suffixes for each hierarchical level (default: c(trial="trial",subset="subset",set="set"))
+#' @param level_suffix A list of suffixes for each hierarchical level.
+#'   Default: c(trial="trial", subset="subset", set="set")
 #' @param mctable Data frame containing Monte Carlo nodes definitions (default: set_mctable())
 #' @param agg_keys Column names for aggregation (optional)
 #' @param agg_suffix Suffix for aggregated node names (default: "hag")
