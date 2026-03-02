@@ -19,6 +19,8 @@ This is a minor release (v1.2.0) that:
 
 * Fixes multiple bugs
 
+* Extends and harmonises documentation.
+
 See NEWS.md for detailed changes.
 
 ## Downstream dependencies

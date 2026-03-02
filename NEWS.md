@@ -62,7 +62,9 @@
 * Not exported functions `mc_summary_keys()` and `node_list_summary()` have been
 removed.
 
-* Documentation clarified exp vs module terminology across the package.
+* The distinction between "exp" and "module" terminology has been clarified throughout the package.
+
+* Function documentation has been extended and harmonised.
 
 * Documentation updated to clarify use of `mcstoc()` and `mcdata()` within
   expressions in `eval_module()` (#32, #42).
