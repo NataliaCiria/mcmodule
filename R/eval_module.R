@@ -1,7 +1,9 @@
-#' Evaluate a Monte Carlo Model Expression and Create an `mcmodule`
+#' Evaluate Monte Carlo Model Expressions
 #'
-#' Evaluates a set of Monte Carlo model expressions and creates an
-#' `mcmodule` containing simulation results and metadata.
+#' Evaluates a model expression or list of expressions to produce an mcmodule
+#' object containing simulation results and metadata. Expression may use
+#' `mcstoc()` and `mcdata()` to create nodes inline; nvariates is automatically
+#' inferred from the data.
 #'
 #' @details
 #' - mcstoc() and mcdata() may be used directly inside model expressions.
@@ -21,26 +23,36 @@
 #' - Within expressions reference input mcnodes by their bare names (e.g.
 #'   column1). Do not use `data$column1` or `data["column1"]`.
 #'
-#' @param exp Model expression or list of expressions to evaluate
-#' @param data Input data frame containing model parameters. The number of
-#'   rows of `data` determines nvariates for mcstoc()/mcdata() used in expressions.
-#' @param param_names Named vector for parameter renaming (optional)
-#' @param prev_mcmodule Previous module(s) for dependent calculations
-#' @param summary Logical; whether to calculate summary statistics
-#' @param mctable Reference table for mcnodes. If omitted or NULL nodes that are
-#'   present as columns in `data` will be created from the data.
-#' @param data_keys Data structure and keys, defaults to set_data_keys()
-#' @param match_keys Keys to match prev_mcmodule mcnodes and data by
-#' @param keys Optional explicit keys for the input data (character vector)
-#' @param overwrite_keys Logical or NULL. If NULL (default) it becomes TRUE when
-#'   data_keys is NULL or an empty list; otherwise FALSE.
-#' @param use_baseline Character vector of mcnode names to override
-#'   input data using `sensi_baseline` from mctable. Defaults to NULL
-#'   (no baseline override).
-#' @param use_variation Character vector of mcnode names to apply `sensi_variation`
-#'   expression after transformation and before mcnode creation. Defaults to NULL.
+#' @param exp (language or list). Model expression or list of expressions to evaluate.
+#' @param data (data frame). Input data; number of rows determines nvariates for
+#'   `mcstoc()`/`mcdata()` in expressions. Default: required.
+#' @param param_names (named character vector, optional). Names to rename parameters.
+#'   Default: NULL.
+#' @param prev_mcmodule (mcmodule or list, optional). Previous module(s) for
+#'   dependent calculations. Default: NULL.
+#' @param summary (logical). If TRUE, calculate summary statistics for output nodes.
+#'   Default: FALSE.
+#' @param mctable (data frame). Reference table for mcnodes with `mcnode` and
+#'   `mc_func` columns. If NULL or not provided, nodes matching `data` column names
+#'   are automatically created. Default: empty mctable().
+#' @param data_keys (list). Data structure and keys for input data. Default:
+#'   `set_data_keys()`.
+#' @param match_keys (character vector, optional). Keys to match `prev_mcmodule`
+#'   mcnodes with current data. Default: NULL.
+#' @param keys (character vector, optional). Explicit keys for input data. Default: NULL.
+#' @param overwrite_keys (logical or NULL). If NULL (default), becomes TRUE when
+#'   `data_keys` is NULL or empty; otherwise FALSE.
+#' @param use_baseline (character vector, optional). mcnode names to override with
+#'   `sensi_baseline` values from `mctable`. Default: NULL.
+#' @param use_variation (character vector, optional). mcnode names to apply
+#'   `sensi_variation` expression from `mctable` before node creation. Default: NULL.
 #'
-#' @return An mcmodule object containing data, expressions, and nodes
+#' @return An mcmodule object (list) with elements:
+#'   \itemize{
+#'     \item data: List containing input data frames.
+#'     \item exp: List of evaluated expressions.
+#'     \item node_list: Named list of mcnode objects with metadata.
+#'   }
 #' @export
 #'
 #' @examples

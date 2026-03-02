@@ -1,12 +1,15 @@
-#' Generate Edge Table for Network Visualization
+#' Generate Edge Table for Network Visualisation
 #'
 #' Creates a data frame containing edge relationships between nodes in a
 #' Monte Carlo module network. Each row represents a directed edge from one
 #' node to another.
 #'
-#' @param mcmodule An mcmodule object containing node relationships
-#' @param inputs Include non-node inputs: data-sets, data-frames and columns (optional)
-#' @return A data frame with columns node_from and node_to representing network edges
+#' @param mcmodule (mcmodule object). Module containing node relationships.
+#' @param inputs (logical). If TRUE, include non-node inputs (datasets,
+#'   dataframes, and columns). Default: FALSE.
+#'
+#' @return A data frame with columns `node_from` and `node_to` representing
+#'   network edges.
 #' @examples
 #' edge_table <- get_edge_table(imports_mcmodule)
 #' @export
@@ -59,15 +62,17 @@ get_edge_table <- function(mcmodule, inputs = FALSE) {
   return(edge_table)
 }
 
-#' Generate Node Table for Network Visualization
+#' Generate Node Table for Network Visualisation
 #'
 #' Creates a data frame containing node information from a Monte Carlo module
 #' network. Includes node attributes, values, and relationships.
 #'
-#' @param mcmodule An mcmodule object containing node information
-#' @param variate Integer indicating which variate to extract (default: 1)
-#' @param inputs Include non-node inputs: data-sets, data-frames and columns (optional)
-#' @return A data frame containing node information and attributes
+#' @param mcmodule (mcmodule object). Module containing node information.
+#' @param variate (integer). Which variate to extract. Default: 1.
+#' @param inputs (logical). If TRUE, include non-node inputs (datasets,
+#'   dataframes, and columns). Default: FALSE.
+#'
+#' @return A data frame containing node information and attributes.
 #' @examples
 #' node_table <- get_node_table(imports_mcmodule)
 #' @export
@@ -192,24 +197,21 @@ get_node_table <- function(mcmodule, variate = 1, inputs = FALSE) {
   return(node_table)
 }
 
-#' Generate Network Node Table for Visualization
+#' Generate Formatted Network Node Table for Visualisation
 #'
-#' Creates a formatted node table for visualization with visNetwork.
-#' Includes styling and formatting for network visualization.
+#' Creates a formatted node table for visualisation with visNetwork.
+#' Includes styling and formatting for interactive network display.
 #'
-#' @param mcmodule An mcmodule object containing the network structure
-#' @param variate Integer specifying which variate to extract (default: 1)
-#' @param color_pal Custom color palette for nodes (optional)
-#' @param color_by Column name to determine node colors (optional)
-#' @param inputs Include non-node inputs: data-sets, data-frames and columns (optional)
-#' @return A data frame formatted for visNetwork with columns:
-#'   \itemize{
-#'     \item id: Unique node identifier
-#'     \item color: Node color based on type/category
-#'     \item grouping: Module association
-#'     \item expression: Node expression or type
-#'     \item title: Hover text containing node details
-#'   }
+#' @param mcmodule (mcmodule object). Module containing network structure.
+#' @param variate (integer). Which variate to extract. Default: 1.
+#' @param color_pal (character vector, optional). Custom colour palette for nodes.
+#'   Default: NULL.
+#' @param color_by (character, optional). Column name to determine node colours.
+#'   Default: NULL.
+#' @param inputs (logical). If TRUE, include non-node inputs. Default: FALSE.
+#'
+#' @return A data frame formatted for visNetwork with columns: id, label, color,
+#'   grouping, expression, and title (hover text).
 visNetwork_nodes <- function(
   mcmodule,
   variate = 1,
@@ -289,13 +291,15 @@ visNetwork_nodes <- function(
   return(nodes)
 }
 
-#' Generate visNetwork Edge Table
+#' Generate Formatted visNetwork Edge Table
 #'
-#' Creates a formatted edge table suitable for visualization with visNetwork.
+#' Creates a formatted edge table suitable for visualisation with visNetwork.
 #'
-#' @param mcmodule An mcmodule object
-#' @param inputs Include non-node inputs: data-sets, data-frames and columns (optional)
-#' @return A data frame containing edge information for visNetwork
+#' @param mcmodule (mcmodule object). Module containing node relationships.
+#' @param inputs (logical). If TRUE, include non-node inputs. Default: FALSE.
+#'
+#' @return A data frame containing edge information for visNetwork with columns:
+#'   from, to, and id.
 visNetwork_edges <- function(mcmodule, inputs = FALSE) {
   get_edge_table(mcmodule = mcmodule, inputs = inputs) %>%
     transmute(
@@ -305,27 +309,26 @@ visNetwork_edges <- function(mcmodule, inputs = FALSE) {
     )
 }
 
-#' Create Interactive Network Visualization
+#' Create Interactive Network Visualisation
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
-#' Generates an interactive network visualization using visNetwork library. The visualization
-#' includes interactive features for exploring model structure and relationships.
+#' Generates an interactive network visualisation using visNetwork library.
+#' The visualisation includes interactive features for exploring model structure
+#' and relationships.
 #'
-#' @param mcmodule An mcmodule object
-#' @param variate Integer specifying which variate to visualise (default: 1)
-#' @param color_pal Custom color palette for nodes (optional)
-#' @param color_by Column name to determine node colors (optional)
-#' @param legend Show colors legend (optional)
-#' @param inputs Show non-node inputs: data-sets, data-frames and columns (optional)
-#' @return An interactive visNetwork object with features:
-#'   \itemize{
-#'     \item Highlighting of connected nodes
-#'     \item Node selection and filtering by module
-#'     \item Directional arrows showing relationships
-#'     \item Hierarchical layout
-#'     \item Draggable nodes
-#'   }
+#' @param mcmodule (mcmodule object). Module containing network to visualise.
+#' @param variate (integer). Which variate to visualise. Default: 1.
+#' @param color_pal (character vector, optional). Custom colour palette for nodes.
+#'   Default: NULL.
+#' @param color_by (character, optional). Column name to determine node colours.
+#'   Default: NULL.
+#' @param legend (logical). If TRUE, show colours legend. Default: FALSE.
+#' @param inputs (logical). If TRUE, show non-node inputs. Default: FALSE.
+#'
+#' @return An interactive visNetwork object with highlighting of connected nodes,
+#'   node selection and filtering by module, directional arrows, hierarchical
+#'   layout, and draggable nodes.
 #' @export
 #' @examples
 #' \donttest{

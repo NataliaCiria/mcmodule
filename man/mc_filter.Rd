@@ -2,7 +2,7 @@
 % Please edit documentation in R/mc_filter.R
 \name{mc_filter}
 \alias{mc_filter}
-\title{Filter an \code{mcnode} Object}
+\title{Filter mcnode Variates by Condition}
 \usage{
 mc_filter(
   mcmodule = NULL,
@@ -17,25 +17,38 @@ mc_filter(
 )
 }
 \arguments{
-\item{mcmodule}{An mcmodule object containing the node to filter (default: NULL)}
+\item{mcmodule}{(mcmodule object, optional). Module containing the node.
+Default: NULL.}
 
-\item{mc_name}{Character string specifying the name of the mcnode in the module (default: NULL)}
+\item{mc_name}{(character, optional). Name of the mcnode in the module.}
 
-\item{...}{Logical conditions to filter by (similar to dplyr::filter)}
+\item{...}{(expression). Logical conditions to filter by; evaluated in context
+of the data associated with the mcnode.}
 
-\item{data}{Optional data frame containing the input data (default: NULL)}
+\item{data}{(data frame, optional). Input data frame. Default: NULL.}
 
-\item{mcnode}{Optional mcnode object to filter directly (default: NULL)}
+\item{mcnode}{(mcnode object, optional). mcnode to filter directly. Default: NULL.}
 
-\item{name}{Optional name for the new filtered node when adding to mcmodule (default: NULL)}
+\item{name}{(character, optional). Name for the new filtered node when adding to
+mcmodule. If NULL, auto-generated from \code{mc_name} and \code{filter_suffix}.
+Default: NULL.}
 
-\item{prefix}{Optional prefix for the filtered node name (default: NULL)}
+\item{prefix}{(character, optional). Prefix for the auto-generated node name.
+Default: NULL.}
 
-\item{filter_suffix}{Suffix for the filtered node name (default: "filtered")}
+\item{filter_suffix}{(character). Suffix appended to auto-generated name.
+Default: "filtered".}
 
-\item{summary}{Logical; if TRUE, includes summary statistics (default: TRUE)}
+\item{summary}{(logical). If TRUE, compute summary statistics for the new node.
+Default: TRUE.}
 }
 \value{
+Either:
+\itemize{
+\item Updated mcmodule with new filtered node (when mcmodule and \code{name} provided).
+\item Filtered mcnode object (when only \code{data} and \code{mcnode} provided).
+}
+
 Either:
 \itemize{
 \item An updated mcmodule with a new filtered node (when mcmodule and name are provided)
@@ -43,34 +56,33 @@ Either:
 }
 }
 \description{
-Filters an \code{mcnode} within an \code{mcmodule} based on conditions, similar to
-\code{dplyr::filter()}. Can either create a new node in the \code{mcmodule} (when
-both \code{mcmodule} and \code{name} are provided) or return a raw filtered \code{mcnode}
-(when only \code{data} and \code{mcnode} are provided).
+Filters variates (data rows) from an mcnode based on logical conditions,
+similar to \code{dplyr::filter()}. Can return a new node in the mcmodule or
+return a filtered mcnode directly.
 }
 \details{
-This function can be called in two ways:
-\enumerate{
-\item By providing an mcmodule and mc_name to create a new filtered node in the module
-\item By providing data and mcnode directly to return a raw filtered mcnode
+Call signatures:
+\itemize{
+\item To add filtered node to mcmodule: \code{mc_filter(mcmodule, "node", conditions, name = "new_name")}
+\item To return filtered mcnode only: \code{mc_filter(conditions, data = data, mcnode = mcnode)}
 }
 
-The filter conditions work on the data associated with the mcnode, and only
-variates (rows) matching the conditions are kept in the resulting mcnode.
+Filter conditions work on variates (data rows); only rows meeting all conditions
+are retained in the resulting mcnode.
 }
 \examples{
 # Filter within an mcmodule and create new node
 imports_mcmodule <- mc_filter(
   imports_mcmodule,
   "w_prev",
-  origin == "Country A",
+  origin == "nord",
   name = "w_prev_countryA"
 )
 
 # Filter and return raw mcnode (note: conditions before named args)
 w_prev <- imports_mcmodule$node_list$w_prev$mcnode
 w_prev_filtered <- mc_filter(
-  origin == "Country A",
+  origin == "nord",
   data = imports_data,
   mcnode = w_prev
 )
@@ -79,7 +91,7 @@ w_prev_filtered <- mc_filter(
 imports_mcmodule <- mc_filter(
   imports_mcmodule,
   "w_prev",
-  origin == "Country A",
+  origin == "nord",
   pathogen == "virus",
   name = "w_prev_countryA_virus"
 )

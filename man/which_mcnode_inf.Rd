@@ -2,21 +2,20 @@
 % Please edit documentation in R/which_mcnode.R
 \name{which_mcnode_inf}
 \alias{which_mcnode_inf}
-\title{Find \code{mcnode}s with Infinite Values}
+\title{Find mcnodes with Infinite Values}
 \usage{
 which_mcnode_inf(mcmodule)
 }
 \arguments{
-\item{mcmodule}{An mcmodule object containing node_list with mcnodes}
+\item{mcmodule}{(mcmodule object). Module containing node_list.}
 }
 \value{
-A character vector containing the names of mcnodes that have infinite values.
-Returns an empty character vector if no infinite values are found.
+Character vector of mcnode names containing infinite values. Returns
+empty vector if no infinite values found.
 }
 \description{
-Identifies which \code{mcnode}s within an \code{mcmodule} contain infinite values
-(\code{Inf} or \code{-Inf}). Useful for troubleshooting and debugging Monte Carlo
-models to find nodes that may be causing issues due to infinite values.
+Identifies which mcnodes within an mcmodule contain infinite values
+(Inf or -Inf). Useful for troubleshooting and debugging Monte Carlo models.
 }
 \examples{
 # Find nodes with infinite values in the imports_mcmodule

@@ -14,67 +14,60 @@ tidy_mcnode(
 )
 }
 \arguments{
-\item{mcmodule}{An mcmodule object containing the node (optional if mcnode provided)}
+\item{mcmodule}{(mcmodule object, optional). Module containing the node.}
 
-\item{mc_name}{Character string specifying the name of the mcnode in the module (optional)}
+\item{mc_name}{(character, optional). Name of the mcnode in the module.}
 
-\item{mcnode}{An mcnode object to convert directly (optional if mcmodule and mc_name provided)}
+\item{mcnode}{(mcnode object, optional). mcnode to convert directly.}
 
-\item{data}{Optional data frame containing the input data. If NULL and mcmodule provided,
-data will be extracted from the module}
+\item{data}{(data frame, optional). Input data; extracted from \code{mcmodule} if NULL.
+Default: NULL.}
 
-\item{keys_names}{Vector of column names to use as key columns for grouping (optional).
-If NULL, will use node keys from the module or all available keys}
+\item{keys_names}{(character vector, optional). Column names for grouping variates.
+If NULL, uses node keys from module or all available keys. Default: NULL.}
 
-\item{filter}{Optional expression to filter variates. Should be an unquoted
-expression that evaluates to a logical vector, e.g., \code{pathogen == "a"} or
-\code{pathogen == "a" | origin == "nord"}. The expression is evaluated in the
-context of the data frame containing the keys.}
+\item{filter}{(expression, optional). Unquoted expression to filter variates
+(e.g., \code{pathogen == "a"} or \code{origin == "nord"}). Evaluated in context of
+keys data frame. Default: NULL.}
 }
 \value{
-A long format data frame with columns:
+A long data frame with columns:
 \itemize{
-\item All key columns (from keys_names)
-\item variate: Variate index (1 to number of data rows/scenarios)
-\item simulation: Simulation index (1 to number of uncertainty iterations)
-\item value: The Monte Carlo node value
+\item All key columns from \code{keys_names}.
+\item variate: Variate index (data row number).
+\item simulation: Uncertainty iteration index.
+\item value: mcnode value for that combination.
 }
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Converts Monte Carlo node data to a long format data frame suitable for use
-with ggplot2 and other tidyverse functions. Each row represents a single Monte Carlo
-simulation for a specific variate (scenario/data row).
+Converts an mcnode to long format suitable for ggplot2 and tidyverse analysis.
+Each row represents one uncertainty iteration for one variate.
 }
 \details{
-This function can be called in multiple ways:
-\enumerate{
-\item With mcmodule and mc_name: \code{tidy_mcnode(mcmodule, "w_prev")}
-\item With mcnode and data: \code{tidy_mcnode(mcnode = mcnode, data = data)}
-\item With mcmodule and mcnode: \code{tidy_mcnode(mcmodule, mcnode = mcnode)}
+Call signatures:
+\itemize{
+\item \verb{tidy_mcnode(mcmodule, \\"node_name\\")}
+\item \code{tidy_mcnode(mcnode = mcnode, data = data)}
+\item \code{tidy_mcnode(mcmodule, mcnode = mcnode)}
 }
 }
 \examples{
-# Using mcmodule and mc_name
+# Using mcmodule and node name
 long_data <- tidy_mcnode(imports_mcmodule, "w_prev")
 
-# Using with keys_names parameter
+# Using with specific keys
 long_data <- tidy_mcnode(imports_mcmodule, "w_prev",
-  keys_names = c("origin")
+  keys_names = "origin"
 )
 
 # Using mcnode and data directly
 w_prev <- imports_mcmodule$node_list$w_prev$mcnode
 long_data <- tidy_mcnode(mcnode = w_prev, data = imports_data)
 
-# Filter specific variates
+# Filter variates
 long_data <- tidy_mcnode(imports_mcmodule, "w_prev",
   filter = pathogen == "a"
-)
-
-# Filter with multiple conditions
-long_data <- tidy_mcnode(imports_mcmodule, "w_prev",
-  filter = pathogen == "a" | origin == "nord"
 )
 
 }

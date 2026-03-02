@@ -2,7 +2,7 @@
 % Please edit documentation in R/mc_analysis.R
 \name{mcmodule_converg}
 \alias{mcmodule_converg}
-\title{Analyze Monte Carlo Simulation Convergence}
+\title{Analyse Monte Carlo Simulation Convergence}
 \usage{
 mcmodule_converg(
   mcmodule,
@@ -14,39 +14,38 @@ mcmodule_converg(
 )
 }
 \arguments{
-\item{mcmodule}{A Monte Carlo module object containing simulation results}
+\item{mcmodule}{(mcmodule object). Module containing simulation results.}
 
-\item{from_quantile}{Lower bound quantile for analysis (default: 0.95)}
+\item{from_quantile}{(numeric). Lower bound quantile for analysis. Default: 0.95.}
 
-\item{to_quantile}{Upper bound quantile for analysis (default: 1)}
+\item{to_quantile}{(numeric). Upper bound quantile for analysis. Default: 1.}
 
-\item{conv_threshold}{Optional custom convergence threshold for standardized differences}
+\item{conv_threshold}{(numeric, optional). Custom convergence threshold for
+standardised differences. Default: NULL.}
 
-\item{print_summary}{Logical, whether to print the summary output.
-Default is TRUE.}
+\item{print_summary}{(logical). If TRUE, print convergence analysis summary.
+Default: TRUE.}
 
-\item{progress}{Logical, whether to print progress information while running.
-Default is FALSE.}
+\item{progress}{(logical). If TRUE, print progress information. Default: FALSE.}
 }
 \value{
-A data frame with convergence statistics per node:
+A data frame with convergence statistics. Each row represents one node.
+Key columns:
 \itemize{
-\item expression: Expression identifier
-\item variate: Variate identifier
-\item node: Node identifier
-\item max_dif_scaled: Max of standardized differences
-\item max_dif: Max of raw differences
-\item conv_threshold: Convergence at custom threshold (TRUE/FALSE), if threshold provided
-\item conv_01: Convergence at 1\% std threshold (TRUE/FALSE)
-\item conv_025: Convergence at 2.5\% std threshold (TRUE/FALSE)
-\item conv_05: Convergence at 5\% std threshold (TRUE/FALSE)
+\item expression: Expression identifier.
+\item variate: Variate (data row) identifier.
+\item node: Node name.
+\item max_dif_scaled: Maximum standardised difference.
+\item max_dif: Maximum raw difference.
+\item conv_threshold: Convergence at custom threshold, if provided.
+\item conv_01, conv_025, conv_05: Convergence at 1\%, 2.5\%, 5\% thresholds.
 }
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Analyzes convergence in Monte Carlo simulations by computing statistical measures
-across iterations. Calculates both standardized and raw differences between
-consecutive iterations to evaluate stability and convergence.
+Analyses convergence in Monte Carlo simulations by computing standardised
+and raw differences between consecutive iterations to evaluate stability and
+convergence of statistical measures.
 }
 \details{
 The function performs the following:

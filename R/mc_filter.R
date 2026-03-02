@@ -1,27 +1,37 @@
-#' Filter an `mcnode` Object
+#' Filter mcnode Variates by Condition
 #'
-#' Filters an `mcnode` within an `mcmodule` based on conditions, similar to
-#' `dplyr::filter()`. Can either create a new node in the `mcmodule` (when
-#' both `mcmodule` and `name` are provided) or return a raw filtered `mcnode`
-#' (when only `data` and `mcnode` are provided).
+#' Filters variates (data rows) from an mcnode based on logical conditions,
+#' similar to `dplyr::filter()`. Can return a new node in the mcmodule or
+#' return a filtered mcnode directly.
 #'
-#' @param mcmodule An mcmodule object containing the node to filter (default: NULL)
-#' @param mc_name Character string specifying the name of the mcnode in the module (default: NULL)
-#' @param ... Logical conditions to filter by (similar to dplyr::filter)
-#' @param data Optional data frame containing the input data (default: NULL)
-#' @param mcnode Optional mcnode object to filter directly (default: NULL)
-#' @param name Optional name for the new filtered node when adding to mcmodule (default: NULL)
-#' @param prefix Optional prefix for the filtered node name (default: NULL)
-#' @param filter_suffix Suffix for the filtered node name (default: "filtered")
-#' @param summary Logical; if TRUE, includes summary statistics (default: TRUE)
+#' @param mcmodule (mcmodule object, optional). Module containing the node.
+#'   Default: NULL.
+#' @param mc_name (character, optional). Name of the mcnode in the module.
+#' @param ... (expression). Logical conditions to filter by; evaluated in context
+#'   of the data associated with the mcnode.
+#' @param data (data frame, optional). Input data frame. Default: NULL.
+#' @param mcnode (mcnode object, optional). mcnode to filter directly. Default: NULL.
+#' @param name (character, optional). Name for the new filtered node when adding to
+#'   mcmodule. If NULL, auto-generated from `mc_name` and `filter_suffix`.
+#'   Default: NULL.
+#' @param prefix (character, optional). Prefix for the auto-generated node name.
+#'   Default: NULL.
+#' @param filter_suffix (character). Suffix appended to auto-generated name.
+#'   Default: "filtered".
+#' @param summary (logical). If TRUE, compute summary statistics for the new node.
+#'   Default: TRUE.
 #'
 #' @details
-#' This function can be called in two ways:
-#' 1. By providing an mcmodule and mc_name to create a new filtered node in the module
-#' 2. By providing data and mcnode directly to return a raw filtered mcnode
+#' Call signatures:
+#' - To add filtered node to mcmodule: `mc_filter(mcmodule, "node", conditions, name = "new_name")`
+#' - To return filtered mcnode only: `mc_filter(conditions, data = data, mcnode = mcnode)`
 #'
-#' The filter conditions work on the data associated with the mcnode, and only
-#' variates (rows) matching the conditions are kept in the resulting mcnode.
+#' Filter conditions work on variates (data rows); only rows meeting all conditions
+#' are retained in the resulting mcnode.
+#'
+#' @return Either:
+#'   - Updated mcmodule with new filtered node (when mcmodule and `name` provided).
+#'   - Filtered mcnode object (when only `data` and `mcnode` provided).
 #'
 #' @return Either:
 #'   - An updated mcmodule with a new filtered node (when mcmodule and name are provided)

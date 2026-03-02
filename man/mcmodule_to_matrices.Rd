@@ -7,20 +7,16 @@
 mcmodule_to_matrices(mcmodule, mc_names = NULL)
 }
 \arguments{
-\item{mcmodule}{A Monte Carlo module object}
+\item{mcmodule}{(mcmodule object). Module to convert.}
 
-\item{mc_names}{Optional character vector of Monte Carlo node names to include.
-If NULL (default), includes all nodes in the module.}
+\item{mc_names}{(character vector, optional). Node names to include. If NULL,
+includes all nodes. Default: NULL.}
 }
 \value{
-A list of matrices, one per variate simulation. Each matrix has:
-\itemize{
-\item Rows: uncertainty simulations
-\item Columns: Monte Carlo nodes (in order of \code{mc_names})
-}
+A list of matrices (one per variate). Each matrix has uncertainty
+simulations as rows and mcnodes as columns.
 }
 \description{
-Transforms a Monte Carlo module into a list of matrices, with one matrix per
-variate simulation. Each matrix has uncertainty simulations as rows and
-Monte Carlo nodes as columns.
+Transforms an mcmodule into a list of matrices, with one matrix per variate.
+Each matrix has uncertainty simulations as rows and mcnodes as columns.
 }

@@ -7,19 +7,17 @@
 mcmodule_dim_check(mcmodule, mc_names = NULL)
 }
 \arguments{
-\item{mcmodule}{A Monte Carlo module object}
+\item{mcmodule}{(mcmodule object). Module containing nodes.}
 
-\item{mc_names}{Optional character vector of Monte Carlo node names to check.
-If NULL (default), checks all nodes in the module.}
+\item{mc_names}{(character vector, optional). Node names to check. If NULL,
+checks all nodes. Default: NULL.}
 }
 \value{
-A list with three elements:
-\item{n_mcnodes}{Number of Monte Carlo nodes}
-\item{n_variate}{Number of variate simulations}
-\item{n_uncertainty}{Number of uncertainty simulations}
+A list with: \code{n_mcnodes} (count), \code{n_variate} (variate count),
+\code{n_uncertainty} (uncertainty simulation count).
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Validates that all Monte Carlo nodes in a module have compatible dimensions
-for sensitivity analysis by checking uncertainty and variate dimensions.
+Validates that all mcnodes in a module have compatible dimensions for
+sensitivity analysis by checking uncertainty and variate dimensions.
 }

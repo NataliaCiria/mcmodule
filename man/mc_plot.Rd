@@ -2,7 +2,7 @@
 % Please edit documentation in R/mc_plot.R
 \name{mc_plot}
 \alias{mc_plot}
-\title{Plot Monte Carlo Node with Boxplot and Points}
+\title{Plot Monte Carlo Node Distribution with Boxplot and Scatter Points}
 \usage{
 mc_plot(
   mcmodule = NULL,
@@ -23,66 +23,63 @@ mc_plot(
 )
 }
 \arguments{
-\item{mcmodule}{An mcmodule object containing the node (optional if mcnode provided)}
+\item{mcmodule}{(mcmodule object, optional). Module containing the node.}
 
-\item{mc_name}{Character string specifying the name of the mcnode in the module (optional)}
+\item{mc_name}{(character, optional). Name of the mcnode in the module.}
 
-\item{mcnode}{An mcnode object to plot directly (optional if mcmodule and mc_name provided)}
+\item{mcnode}{(mcnode object, optional). mcnode to plot directly.}
 
-\item{data}{Optional data frame containing the input data}
+\item{data}{(data frame, optional). Input data. If NULL, extracted from \code{mcmodule}.
+Default: NULL.}
 
-\item{keys_names}{Vector of column names to use as key columns for grouping (optional).
-If NULL, will use node keys from the module or use row index}
+\item{keys_names}{(character vector, optional). Column names for grouping variates.
+If NULL, uses node keys from module or row indices. Default: NULL.}
 
-\item{color_by}{Optional column name to color points and boxplot by (must be in keys_names or data)}
+\item{color_by}{(character, optional). Column name to colour points and boxplot.
+Must be in \code{keys_names} or \code{data}. Default: NULL.}
 
-\item{order_by}{Optional column name or "median" to reorder y-axis groups by a value.
-If "median", groups will be ordered by median value}
+\item{order_by}{(character, optional). Column name or "median" to reorder y-axis
+groups. If "median", groups ordered by median value. Default: NULL.}
 
-\item{group_by}{Optional column name to group variates by (e.g., "country_code" or "commodity").
-When specified, variates are organized with all scenarios for each group appearing together.
-For example, with group_by="commodity", y-axis shows labels like
-\code{scenario 0 | commodity 1} and \code{scenario a | commodity 1}.}
+\item{group_by}{(character, optional). Column name to group variates (e.g.,
+"commodity"). Variates organised so all scenarios per group appear together.
+Default: NULL.}
 
-\item{filter}{Optional expression to filter variates before plotting. Should be an unquoted
-expression that evaluates to a logical vector, e.g., \code{pathogen == "a"} or
-\code{pathogen == "a" | origin == "nord"}. Passed to \code{tidy_mcnode()}.}
+\item{filter}{(expression, optional). Unquoted expression to filter variates
+(e.g., \code{pathogen == "a"} or \code{origin == "nord"}). Passed to \code{tidy_mcnode()}.
+Default: NULL.}
 
-\item{threshold}{Optional numeric value to add a vertical reference line}
+\item{threshold}{(numeric, optional). Reference value for vertical dashed line.
+Default: NULL.}
 
-\item{scale}{Optional transformation for x-axis. Supported values:
-\itemize{
-\item "identity": no transformation (default)
-\item "log10": logarithm base 10
-\item "log": natural logarithm
-\item "sqrt": square root
-\item "asinh": inverse hyperbolic sine (good for data spanning many orders of magnitude)
-}}
+\item{scale}{(character, optional). Transformation for x-axis: "identity"
+(default), "log10", "log", "sqrt", or "asinh". Default: NULL.}
 
-\item{max_dots}{Maximum number of uncertainty simulation dots to plot per variate. If exceeded,
-representative sampling using regular intervals is applied (default: 300). Boxplots always
-use all simulations for statistical accuracy.}
+\item{max_dots}{(integer). Maximum dots per variate; exceeding this triggers
+representative sampling. Boxplots always use all simulations. Default: 300.}
 
-\item{point_alpha}{Transparency level for points (0-1, default: 0.4)}
+\item{point_alpha}{(numeric). Transparency for points (0–1). Default: 0.4.}
 
-\item{boxplot_alpha}{Transparency level for boxplot (0-1, default: 0.3)}
+\item{boxplot_alpha}{(numeric). Transparency for boxplots (0–1). Default: 0.3.}
 
-\item{color_pal}{Optional named character vector of colors for color_by categories}
+\item{color_pal}{(character vector, optional). Named vector of colours for
+\code{color_by} categories. Default: NULL.}
 }
 \value{
-A ggplot2 object
+A ggplot2 object for further customisation and display.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Creates a ggplot visualization of Monte Carlo node data with semitransparent
-boxplots overlaid with scattered points representing individual iterations.
+Creates a ggplot2 visualisation of Monte Carlo node data showing distributions
+as semi-transparent boxplots overlaid with scatter points representing individual
+uncertainty iterations.
 }
 \details{
-When \code{color_by} is NULL, scenarios are colored with:
-\itemize{
-\item Baseline scenario (scenario_id == "0"): blue ("#6ABDEB")
-\item Alternative scenarios: green ("#A4CF96")
-}
+When \code{color_by} is NULL, scenarios are coloured by default:
+— baseline scenario (scenario_id == "0"): blue (#6ABDEB);
+— alternative scenarios: green (#A4CF96).
+Boxplots show all uncertainty iterations for statistical accuracy;
+scatter points are sampled to improve readability with many variates.
 }
 \examples{
 # Basic plot using mcmodule and mc_name

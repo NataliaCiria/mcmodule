@@ -7,16 +7,18 @@
 which_mcnode_na(mcmodule)
 }
 \arguments{
-\item{mcmodule}{An mcmodule object containing node_list with mcnodes}
+\item{mcmodule}{(mcmodule object). Module containing node_list.}
 }
 \value{
-A character vector containing the names of mcnodes that have NA values.
-Returns an empty character vector if no NAs are found.
+Character vector of mcnode names containing NA values. Returns empty
+vector if no NAs found.
 }
 \description{
-Identifies which \code{mcnode}s within an \code{mcmodule} contain \code{NA} values.
-Useful for troubleshooting and debugging Monte Carlo models to find
-nodes that may be causing issues due to missing or undefined values.
+Find mcnodes with Missing Values
+}
+\details{
+Identifies which mcnodes within an mcmodule contain NA values.
+Useful for troubleshooting and debugging Monte Carlo models.
 }
 \examples{
 # Find nodes with NAs in the imports_mcmodule

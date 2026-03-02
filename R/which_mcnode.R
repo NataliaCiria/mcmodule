@@ -1,15 +1,15 @@
-#' Find `mcnode`s in an `mcmodule` Based on a Condition
+#' Find mcnodes Matching a Condition
 #'
-#' Applies a test function to each `mcnode` in an `mcmodule` and returns the
-#' names of nodes where the test returns `TRUE`. Useful for debugging and
-#' troubleshooting Monte Carlo models.
+#' Applies a test function to each mcnode in an mcmodule and returns the
+#' names of nodes where the test returns TRUE. Useful for identifying nodes
+#' with specific properties (e.g., NA values, negative values).
 #'
-#' @param mcmodule An mcmodule object containing `node_list` with mcnodes
-#' @param test_func A function that takes an mcnode and returns a logical value
-#'   (TRUE if the condition is met)
+#' @param mcmodule (mcmodule object). Module containing node_list with mcnodes.
+#' @param test_func (function). Function that takes an mcnode and returns logical;
+#'   TRUE if the condition is met.
 #'
-#' @return A character vector containing the names of mcnodes where `test_func`
-#'   returns TRUE. Returns an empty character vector if no mcnodes meet the condition.
+#' @return Character vector of mcnode names where `test_func` returns TRUE.
+#'   Empty vector if no nodes meet the condition.
 #'
 #' @examples
 #' # Find nodes with negative values
@@ -60,14 +60,15 @@ which_mcnode <- function(mcmodule, test_func) {
 
 #' Find `mcnode`s with Missing Values
 #'
-#' Identifies which `mcnode`s within an `mcmodule` contain `NA` values.
-#' Useful for troubleshooting and debugging Monte Carlo models to find
-#' nodes that may be causing issues due to missing or undefined values.
+#' Find mcnodes with Missing Values
 #'
-#' @param mcmodule An mcmodule object containing node_list with mcnodes
+#' Identifies which mcnodes within an mcmodule contain NA values.
+#' Useful for troubleshooting and debugging Monte Carlo models.
 #'
-#' @return A character vector containing the names of mcnodes that have NA values.
-#'   Returns an empty character vector if no NAs are found.
+#' @param mcmodule (mcmodule object). Module containing node_list.
+#'
+#' @return Character vector of mcnode names containing NA values. Returns empty
+#'   vector if no NAs found.
 #'
 #' @examples
 #' # Find nodes with NAs in the imports_mcmodule
@@ -92,16 +93,15 @@ which_mcnode_na <- function(mcmodule) {
 }
 
 
-#' Find `mcnode`s with Infinite Values
+#' Find mcnodes with Infinite Values
 #'
-#' Identifies which `mcnode`s within an `mcmodule` contain infinite values
-#' (`Inf` or `-Inf`). Useful for troubleshooting and debugging Monte Carlo
-#' models to find nodes that may be causing issues due to infinite values.
+#' Identifies which mcnodes within an mcmodule contain infinite values
+#' (Inf or -Inf). Useful for troubleshooting and debugging Monte Carlo models.
 #'
-#' @param mcmodule An mcmodule object containing node_list with mcnodes
+#' @param mcmodule (mcmodule object). Module containing node_list.
 #'
-#' @return A character vector containing the names of mcnodes that have infinite values.
-#'   Returns an empty character vector if no infinite values are found.
+#' @return Character vector of mcnode names containing infinite values. Returns
+#'   empty vector if no infinite values found.
 #'
 #' @examples
 #' # Find nodes with infinite values in the imports_mcmodule

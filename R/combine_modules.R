@@ -1,12 +1,12 @@
-#' Combine Two Modules
+#' Combine Two mcmodule Objects
 #'
-#' Combines two `mcmodule` objects into a single `mcmodule` by merging their
-#' data and components.
+#' Combines two mcmodule objects into a single mcmodule by merging their
+#' data and node lists.
 #'
-#' @param mcmodule_x First module to combine
-#' @param mcmodule_y Second module to combine
+#' @param mcmodule_x (mcmodule object). First module.
+#' @param mcmodule_y (mcmodule object). Second module.
 #'
-#' @return A combined mcmodule object
+#' @return An mcmodule object with combined data and node lists.
 #'
 #' @examples
 #' module_x <- list(

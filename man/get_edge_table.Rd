@@ -2,17 +2,19 @@
 % Please edit documentation in R/mc_network.R
 \name{get_edge_table}
 \alias{get_edge_table}
-\title{Generate Edge Table for Network Visualization}
+\title{Generate Edge Table for Network Visualisation}
 \usage{
 get_edge_table(mcmodule, inputs = FALSE)
 }
 \arguments{
-\item{mcmodule}{An mcmodule object containing node relationships}
+\item{mcmodule}{(mcmodule object). Module containing node relationships.}
 
-\item{inputs}{Include non-node inputs: data-sets, data-frames and columns (optional)}
+\item{inputs}{(logical). If TRUE, include non-node inputs (datasets,
+dataframes, and columns). Default: FALSE.}
 }
 \value{
-A data frame with columns node_from and node_to representing network edges
+A data frame with columns \code{node_from} and \code{node_to} representing
+network edges.
 }
 \description{
 Creates a data frame containing edge relationships between nodes in a

@@ -1,13 +1,15 @@
-#' Add Prefix to Node Names
+#' Add Prefix to mcnode Names
 #'
-#' Adds a prefix to node_list names and all their input nodes. Existing prefixes are preserved to
-#' avoid breaking references. To rewrite prefixes for a specific module, use the rewrite_module argument.
+#' Adds a prefix to node names and their input references. Existing prefixes are
+#' preserved to avoid breaking references.
 #'
-#' @param mcmodule An mcmodule or a node_list object
-#' @param prefix String to add as prefix of the new mcmodule mcnodes, defaults to mcmodule name
-#' @param rewrite_module Name of a module to rewrite prefixes
+#' @param mcmodule (mcmodule or list). mcmodule object or node_list to prefix.
+#' @param prefix (character, optional). Prefix to add to node names; defaults to
+#'   mcmodule name. Default: NULL.
+#' @param rewrite_module (character, optional). Module name to rewrite prefixes for.
+#'   Default: NULL.
 #'
-#' @return A mcmodule with new prefixes in node_list names
+#' @return The mcmodule with prefixed node names.
 #'
 #' @examples
 #' print(names(imports_mcmodule$node_list))

@@ -2,16 +2,15 @@
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
-#' Validates that all Monte Carlo nodes in a module have compatible dimensions
-#' for sensitivity analysis by checking uncertainty and variate dimensions.
+#' Validates that all mcnodes in a module have compatible dimensions for
+#' sensitivity analysis by checking uncertainty and variate dimensions.
 #'
-#' @param mcmodule A Monte Carlo module object
-#' @param mc_names Optional character vector of Monte Carlo node names to check.
-#'   If NULL (default), checks all nodes in the module.
-#' @return A list with three elements:
-#'   \item{n_mcnodes}{Number of Monte Carlo nodes}
-#'   \item{n_variate}{Number of variate simulations}
-#'   \item{n_uncertainty}{Number of uncertainty simulations}
+#' @param mcmodule (mcmodule object). Module containing nodes.
+#' @param mc_names (character vector, optional). Node names to check. If NULL,
+#'   checks all nodes. Default: NULL.
+#'
+#' @return A list with: `n_mcnodes` (count), `n_variate` (variate count),
+#'   `n_uncertainty` (uncertainty simulation count).
 mcmodule_dim_check <- function(mcmodule, mc_names = NULL) {
   mc_names <- mc_names %||% names(mcmodule$node_list)
 
@@ -47,18 +46,15 @@ mcmodule_dim_check <- function(mcmodule, mc_names = NULL) {
 
 #' Convert Monte Carlo Module to Matrices
 #'
-#' Transforms a Monte Carlo module into a list of matrices, with one matrix per
-#' variate simulation. Each matrix has uncertainty simulations as rows and
-#' Monte Carlo nodes as columns.
+#' Transforms an mcmodule into a list of matrices, with one matrix per variate.
+#' Each matrix has uncertainty simulations as rows and mcnodes as columns.
 #'
-#' @param mcmodule A Monte Carlo module object
-#' @param mc_names Optional character vector of Monte Carlo node names to include.
-#'   If NULL (default), includes all nodes in the module.
-#' @return A list of matrices, one per variate simulation. Each matrix has:
-#'   \itemize{
-#'     \item Rows: uncertainty simulations
-#'     \item Columns: Monte Carlo nodes (in order of `mc_names`)
-#'   }
+#' @param mcmodule (mcmodule object). Module to convert.
+#' @param mc_names (character vector, optional). Node names to include. If NULL,
+#'   includes all nodes. Default: NULL.
+#'
+#' @return A list of matrices (one per variate). Each matrix has uncertainty
+#'   simulations as rows and mcnodes as columns.
 mcmodule_to_matrices <- function(mcmodule, mc_names = NULL) {
   mc_names <- mc_names %||% names(mcmodule$node_list)
   dims <- mcmodule_dim_check(mcmodule, mc_names)
@@ -86,21 +82,23 @@ mcmodule_to_matrices <- function(mcmodule, mc_names = NULL) {
 
 #' Convert Monte Carlo Module to `mc2d` Objects
 #'
-#' Transforms a Monte Carlo module into a list of `mc` objects (from the `mc2d` package),
-#' with one `mc` object per variate simulation, or a single `mc` object with all variates
-#' combined into the variability dimension.
+#' Converts an mcmodule into one or more mc objects (from the mc2d package).
+#' Returns either one mc object per variate or a single mc object with all
+#' variates combined into the variability dimension.
 #'
-#' @param mcmodule A Monte Carlo module object
-#' @param mc_names Optional character vector of Monte Carlo node names to include.
-#'   If NULL (default), includes all nodes in the module.
-#' @param match Logical, currently unused (reserved for future functionality)
-#' @param variates_as_nsv Logical, if TRUE, combines all variates into a single `mc` object
-#'   by multiplying the number of variates by the number of uncertainty simulations in the
-#'   variability dimension (`nsv`). If FALSE (default), returns a list with one `mc` object per variate.
-#' @return If `variates_as_nsv = FALSE`, a list of `mc` objects (one per variate) combining
-#'   specified Monte Carlo nodes. If `variates_as_nsv = TRUE`, a single `mc` object where all
-#'   variates are combined into the variability dimension. Each `mc` object is compatible with
-#'   `mc2d` package functions.
+#' @param mcmodule (mcmodule object). Module to convert.
+#' @param mc_names (character vector, optional). Node names to include. If NULL,
+#'   includes all nodes. Default: NULL.
+#' @param match (logical, unused). Reserved for future functionality. Default: FALSE.
+#' @param variates_as_nsv (logical). If TRUE, combine all variates into a single
+#'   mc object by multiplying variates by uncertainty simulations in the
+#'   variability dimension. If FALSE, return one mc object per variate.
+#'   Default: FALSE.
+#'
+#' @return If `variates_as_nsv = FALSE`, a list of mc objects (one per variate).
+#'   If `variates_as_nsv = TRUE`, a single mc object with all variates combined
+#'   into the variability dimension. Each mc object is compatible with mc2d
+#'   package functions.
 mcmodule_to_mc <- function(
   mcmodule,
   mc_names = NULL,
@@ -146,36 +144,36 @@ mcmodule_to_mc <- function(
   }
 }
 
-#' Calculate Correlation Coefficients for Monte Carlo Inputs and Outputs
+#' Calculate Correlation Coefficients Between Inputs and Outputs
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
-#' Computes correlation coefficients between Monte Carlo module inputs and outputs
-#' using the tornado analysis (`mc2d::tornado()`) from the `mc2d` package. Supports multiple correlation
-#' methods and captures any warnings generated during calculation.
+#' Computes correlation coefficients between mcmodule inputs and outputs using
+#' tornado analysis (from the `mc2d` package). Supports multiple correlation methods
+#' and captures warnings generated during calculation.
 #'
-#' @param mcmodule A Monte Carlo module object
-#' @param by_exp Logical, whether to calculate correlations by expression output.
-#'   If FALSE (default), calculates correlation by global output (last node).
-#' @param output Character string specifying the output node name. If NULL (default),
-#'   uses the last node in `mcmodule$node_list` (or last expression output if `by_exp = TRUE`).
-#' @param match_variates Logical, whether to match input nodes to output variates.
-#'   Default is TRUE.
-#' @param variates_as_nsv Logical, if TRUE, combines all variates into a
-#'   single `mc` object for correlation analysis. If FALSE (default), analyzes
-#'   each variate separately. For details, see `mcmodule_to_mc()`.
-#' @param print_summary Logical, whether to print the summary output.
-#'   Default is TRUE.
-#' @param progress Logical, whether to print progress information while running.
-#'   Default is FALSE.
-#' @param method A character string indicating which correlation coefficient is to be
-#'   computed. One of "spearman" (default), "kendall" or "pearson". See `stats::cor()`.
-#' @param use An optional character string giving a method for computing
-#'   correlations in the presence of missing values. Default is "all.obs"
-#'   and the presence of missing observations will produce an error. Other options are
-#'   "complete.obs" and "pairwise.complete.obs". See `stats::cor()`.
-#' @param lim A vector of quantiles used to compute the credible interval in
-#'   two-dimensional models.
+#' @param mcmodule (mcmodule object). Module containing simulation results.
+#' @param output (character, optional). Output node name. If NULL (default), uses
+#'   the last node in `mcmodule$node_list`. If `by_exp = TRUE`, uses the last
+#'   output node per expression. Default: NULL.
+#' @param by_exp (logical). If TRUE, calculate correlations by expression output;
+#'   if FALSE, use global output (last node). Default: FALSE.
+#' @param match_variates (logical). If TRUE, match input nodes to output variates
+#'   when data dimensions differ. Default: TRUE.
+#' @param variates_as_nsv (logical). If TRUE, combine all variates into one `mc`
+#'   object; if FALSE, analyse each variate separately. See `mcmodule_to_mc()`.
+#'   Default: FALSE.
+#' @param print_summary (logical). If TRUE, print correlation analysis summary.
+#'   Default: TRUE.
+#' @param progress (logical). If TRUE, print progress information while running.
+#'   Default: FALSE.
+#' @param method (character). Correlation coefficient type: "spearman" (default),
+#'   "kendall", or "pearson". See `stats::cor()`. Default: "spearman".
+#' @param use (character). Method for handling missing values: "all.obs",
+#'   "complete.obs", or "pairwise.complete.obs". See `stats::cor()`.
+#'   Default: "all.obs".
+#' @param lim (numeric vector). Quantiles for credible interval computation (reserved
+#'   for two-dimensional models). Default: `c(0.025, 0.975)`.
 #' @return A data frame with correlation coefficients and metadata. Columns include:
 #'   \itemize{
 #'     \item exp: Expression name
@@ -588,34 +586,33 @@ mcmodule_corr <- function(
 }
 
 
-#' Analyze Monte Carlo Simulation Convergence
+#' Analyse Monte Carlo Simulation Convergence
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
-#' Analyzes convergence in Monte Carlo simulations by computing statistical measures
-#' across iterations. Calculates both standardized and raw differences between
-#' consecutive iterations to evaluate stability and convergence.
+#' Analyses convergence in Monte Carlo simulations by computing standardised
+#' and raw differences between consecutive iterations to evaluate stability and
+#' convergence of statistical measures.
 #'
-#' @param mcmodule A Monte Carlo module object containing simulation results
-#' @param from_quantile Lower bound quantile for analysis (default: 0.95)
-#' @param to_quantile Upper bound quantile for analysis (default: 1)
-#' @param conv_threshold Optional custom convergence threshold for standardized differences
-#' @param print_summary Logical, whether to print the summary output.
-#'   Default is TRUE.
-#' @param progress Logical, whether to print progress information while running.
-#'   Default is FALSE.
+#' @param mcmodule (mcmodule object). Module containing simulation results.
+#' @param from_quantile (numeric). Lower bound quantile for analysis. Default: 0.95.
+#' @param to_quantile (numeric). Upper bound quantile for analysis. Default: 1.
+#' @param conv_threshold (numeric, optional). Custom convergence threshold for
+#'   standardised differences. Default: NULL.
+#' @param print_summary (logical). If TRUE, print convergence analysis summary.
+#'   Default: TRUE.
+#' @param progress (logical). If TRUE, print progress information. Default: FALSE.
 #'
-#' @return A data frame with convergence statistics per node:
+#' @return A data frame with convergence statistics. Each row represents one node.
+#'   Key columns:
 #'   \itemize{
-#'     \item expression: Expression identifier
-#'     \item variate: Variate identifier
-#'     \item node: Node identifier
-#'     \item max_dif_scaled: Max of standardized differences
-#'     \item max_dif: Max of raw differences
-#'     \item conv_threshold: Convergence at custom threshold (TRUE/FALSE), if threshold provided
-#'     \item conv_01: Convergence at 1% std threshold (TRUE/FALSE)
-#'     \item conv_025: Convergence at 2.5% std threshold (TRUE/FALSE)
-#'     \item conv_05: Convergence at 5% std threshold (TRUE/FALSE)
+#'     \item expression: Expression identifier.
+#'     \item variate: Variate (data row) identifier.
+#'     \item node: Node name.
+#'     \item max_dif_scaled: Maximum standardised difference.
+#'     \item max_dif: Maximum raw difference.
+#'     \item conv_threshold: Convergence at custom threshold, if provided.
+#'     \item conv_01, conv_025, conv_05: Convergence at 1%, 2.5%, 5% thresholds.
 #'   }
 #'
 #' @details

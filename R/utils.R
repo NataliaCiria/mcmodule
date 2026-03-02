@@ -1,12 +1,15 @@
-#' Add Group IDs to Data Frames
+#' Add Group Identifiers to Data Frame
 #'
-#' Adds group identifiers to data frames for matching and alignment operations.
+#' Adds group IDs for matching and alignment between data frames.
 #'
-#' @param x First dataset
-#' @param by Grouping variables
-#' @param y Optional second dataset
-#' @return A data frame or list of data frames with added group IDs
-#' @import dplyr
+#' @param x (data frame). First dataset.
+#' @param by (character vector, optional). Column names for grouping.
+#'   If NULL, auto-detected from categorical columns. Default: NULL.
+#' @param y (data frame, optional). Second dataset. If provided, aligns with `x`.
+#'   Default: NULL.
+#'
+#' @return Data frame or list of data frames with added group identifiers (g_id, g_row).
+#' @keywords internal
 
 add_group_id <- function(x, y = NULL, by = NULL) {
   if (!is.null(y)) {

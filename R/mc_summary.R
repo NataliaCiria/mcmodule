@@ -1,29 +1,34 @@
-#' Summarize Monte Carlo Node Values
+#' Summarise Monte Carlo Node Values
 #'
 #' Computes summary statistics for an mcnode object, including mean,
 #' standard deviation, and quantiles. Can be called with an mcmodule and
 #' node name, or directly with an mcnode and data frame.
-#' @param mcmodule An mcmodule object containing the node to summarize (default: NULL)
-#' @param mc_name Character string specifying the name of the mcnode in the module
-#' @param keys_names Vector of column names to use as keys for grouping (default: NULL)
-#' @param data Optional data frame containing the input data (default: NULL)
-#' @param mcnode Optional mcnode object to summarize directly (default: NULL)
-#' @param sep_keys Logical; if TRUE, keeps keys in separate columns (default: TRUE)
-#' @param digits Integer indicating number of significant digits for rounding (default: NULL)
+#' @param mcmodule (mcmodule object, optional). Module containing the node.
+#'   Default: NULL.
+#' @param mc_name (character, optional). Name of the mcnode in the module.
+#' @param keys_names (character vector, optional). Column names for grouping.
+#'   Default: NULL.
+#' @param data (data frame, optional). Input data frame. Default: NULL.
+#' @param mcnode (mcnode object, optional). mcnode to summarise directly. Default: NULL.
+#' @param sep_keys (logical). If TRUE, keep keys in separate columns; if FALSE,
+#'   combine into single column. Default: TRUE.
+#' @param digits (integer, optional). Number of significant digits for rounding.
+#'   Default: NULL.
 #'
 #' @details
 #' This function can be called in two ways:
 #' 1. By providing an mcmodule and mc_name
 #' 2. By providing data and mcnode directly
 #'
-#' @return A data frame containing summary statistics with columns:
-#'   - mc_name: Name of the mcnode
-#'   - keys: Grouping variables (if sep_keys=FALSE) or individual key
-#'     columns (if sep_keys=TRUE)
-#'   - Summary statistics including:
-#'     * mean: Average value
-#'     * sd: Standard deviation
-#'     * Various quantiles (2.5%, 25%, 50%, 75%, 97.5%)
+#' @return A data frame with summary statistics for each mcnode variate.
+#'   Columns include:
+#'   \itemize{
+#'     \item mc_name: Node name.
+#'     \item Key columns (if sep_keys = TRUE) or single keys column (if FALSE).
+#'     \item mean: Average value.
+#'     \item sd: Standard deviation.
+#'     \item Quantile columns (2.5%, 25%, 50%, 75%, 97.5%).
+#'   }
 #'
 #' @examples
 #' # Use with mcmodule

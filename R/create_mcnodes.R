@@ -1,18 +1,15 @@
-#' Create Monte Carlo Nodes from Data and Configuration Table
+#' Create mcnodes from Data and Configuration Table
 #'
-#' Creates Monte Carlo nodes (mcnodes) based on instructions provided in a
-#' configuration table (mctable) and input variables from a data frame.
+#' Creates mcnodes based on mctable specifications and input data.
+#' Applies transformations and generates mcnodes in the calling environment.
 #'
-#' @param data A data frame containing the input variables for creating Monte Carlo nodes
-#' @param mctable A configuration table specifying MC node definitions. Must contain columns:
-#'   \itemize{
-#'     \item mcnode: Name of the Monte Carlo node
-#'     \item mc_func: Distribution function to use (if applicable)
-#'     \item transformation: Optional transformation to apply to input data
-#'     \item from_variable: Optional source variable name for transformation
-#'   }
-#' @param envir Environment where MC nodes will be created (default: parent.frame())
-#' @return No return value, creates MC nodes in the specified environment
+#' @param data (data frame). Input data containing variables for mcnode creation.
+#' @param mctable (data frame). Configuration table with columns:
+#'   mcnode, mc_func, transformation, from_variable.
+#' @param envir (environment, optional). Environment where nodes are created.
+#'   Default: parent.frame().
+#'
+#' @return NULL (invisibly). mcnodes created in `envir`.
 #' @import mc2d
 #' @examples
 #' create_mcnodes(

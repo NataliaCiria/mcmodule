@@ -2,24 +2,24 @@
 % Please edit documentation in R/which_mcnode.R
 \name{which_mcnode}
 \alias{which_mcnode}
-\title{Find \code{mcnode}s in an \code{mcmodule} Based on a Condition}
+\title{Find mcnodes Matching a Condition}
 \usage{
 which_mcnode(mcmodule, test_func)
 }
 \arguments{
-\item{mcmodule}{An mcmodule object containing \code{node_list} with mcnodes}
+\item{mcmodule}{(mcmodule object). Module containing node_list with mcnodes.}
 
-\item{test_func}{A function that takes an mcnode and returns a logical value
-(TRUE if the condition is met)}
+\item{test_func}{(function). Function that takes an mcnode and returns logical;
+TRUE if the condition is met.}
 }
 \value{
-A character vector containing the names of mcnodes where \code{test_func}
-returns TRUE. Returns an empty character vector if no mcnodes meet the condition.
+Character vector of mcnode names where \code{test_func} returns TRUE.
+Empty vector if no nodes meet the condition.
 }
 \description{
-Applies a test function to each \code{mcnode} in an \code{mcmodule} and returns the
-names of nodes where the test returns \code{TRUE}. Useful for debugging and
-troubleshooting Monte Carlo models.
+Applies a test function to each mcnode in an mcmodule and returns the
+names of nodes where the test returns TRUE. Useful for identifying nodes
+with specific properties (e.g., NA values, negative values).
 }
 \examples{
 # Find nodes with negative values

@@ -2,29 +2,17 @@
 
 #' Set or Get Monte Carlo Inputs Table
 #'
-#' @description
-#' Manages a Monte Carlo inputs table in the global package environment by either setting new data
-#' or retrieving the current table. The table stores information about Monte Carlo nodes including
-#' their descriptions, functions, and dependencies.
+#' Manages the global mctable (Monte Carlo nodes reference table) by setting
+#' or retrieving its value. The table stores metadata about mcnodes including
+#' descriptions, functions, and sensitivity analysis parameters.
 #'
-#' @param data Optional data frame containing MC table information. Must contain an 'mcnode' column.
-#'            Other columns will be auto-filled if missing. If NULL, returns the current MC table.
+#' @param data (data frame, optional). mctable with at minimum an `mcnode` column.
+#'   Other columns auto-filled if absent. If NULL, returns the current table.
+#'   Default: NULL.
 #'
-#' @return
-#'   \itemize{
-#'     \item If data = NULL: Returns the current MC table
-#'     \item If data provided: Sets the new MC table and returns invisibly
-#'   }
-#'   The table contains the following columns:
-#'   \itemize{
-#'     \item mcnode - Character. Name of the Monte Carlo node (required)
-#'     \item description - Character. Description of the parameter
-#'     \item mc_func - Character. Probability distribution
-#'     \item from_variable - Character. Variable name in the data table, if it is in a column with a name different from the mcnode
-#'     \item transformation - Character. Transformation to be applied to the original column values
-#'     \item sensi_baseline - Character. Parameters for baseline mock distribution
-#'     \item sensi_variation - Character. OAT variation expression using 'value' placeholder
-#'   }
+#' @return Current or newly set mctable. Columns include: mcnode (required),
+#'   description, mc_func, from_variable, transformation, sensi_baseline,
+#'   sensi_variation.
 #'
 #' @examples
 #' # Get current MC table
@@ -34,9 +22,7 @@
 #' mct <- data.frame(
 #'   mcnode = c("h_prev", "w_prev"),
 #'   description = c("Herd prevalence", "Within herd prevalence"),
-#'   mc_func = c("runif", "runif"),
-#'   sensi_baseline = c("min = 0, max = 1", "min = 0, max = 1"),
-#'   sensi_variation = c("pmin(1, pmax(0, value * 1.5))", "pmin(1, pmax(0, value * 1.5))")
+#'   mc_func = c("runif", "runif")
 #' )
 #' set_mctable(mct)
 #'
@@ -74,9 +60,11 @@ set_mctable <- function(data = NULL) {
   }
 }
 
-#' Resets the Monte Carlo inputs table
+#' Reset Monte Carlo Inputs Table
 #'
-#' @return An empty data frame with the standard mctable structure
+#' Clears and resets the global mctable to an empty state with standard columns.
+#'
+#' @return Empty data frame with standard mctable columns.
 #'
 #' @export
 
@@ -95,12 +83,23 @@ reset_mctable <- function() {
 }
 
 
-#' Checks mctable data
+#' Validate and Prepare mctable Data Frame
 #'
-#' @param data A data frame containing MC table information. Must contain an 'mcnode' column.
+#' @description
+#' Validates that an mctable contains required columns (`mcnode`, `mc_func`),
+#' issues warnings for missing columns, and auto-fills missing optional columns
+#' with `NA`.
 #'
-#' @return A data frame with the standard mctable structure
-
+#' @param data (data frame). mctable with `mcnode` column (required) and optionally
+#'   `mc_func`, `description`, `from_variable`, `transformation`, `sensi_baseline`,
+#'   and `sensi_variation`. Default: required.
+#'
+#' @details
+#' If `mc_func` is missing, all nodes are treated as deterministic (no uncertainty).
+#' Optional columns are auto-filled with `NA` if absent.
+#'
+#' @return The validated `data` frame with all standard mctable columns present,
+#'   with missing optional columns filled as `NA`.
 check_mctable <- function(data) {
   # If data provided, perform checks and auto-fill
   if (is.data.frame(data)) {

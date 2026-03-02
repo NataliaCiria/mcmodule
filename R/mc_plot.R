@@ -2,55 +2,50 @@
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
-#' Converts Monte Carlo node data to a long format data frame suitable for use
-#' with ggplot2 and other tidyverse functions. Each row represents a single Monte Carlo
-#' simulation for a specific variate (scenario/data row).
+#' Converts an mcnode to long format suitable for ggplot2 and tidyverse analysis.
+#' Each row represents one uncertainty iteration for one variate.
 #'
-#' @param mcmodule An mcmodule object containing the node (optional if mcnode provided)
-#' @param mc_name Character string specifying the name of the mcnode in the module (optional)
-#' @param mcnode An mcnode object to convert directly (optional if mcmodule and mc_name provided)
-#' @param data Optional data frame containing the input data. If NULL and mcmodule provided,
-#'   data will be extracted from the module
-#' @param keys_names Vector of column names to use as key columns for grouping (optional).
-#'   If NULL, will use node keys from the module or all available keys
-#' @param filter Optional expression to filter variates. Should be an unquoted
-#'   expression that evaluates to a logical vector, e.g., `pathogen == "a"` or
-#'   `pathogen == "a" | origin == "nord"`. The expression is evaluated in the
-#'   context of the data frame containing the keys.
+#' @param mcmodule (mcmodule object, optional). Module containing the node.
+#' @param mc_name (character, optional). Name of the mcnode in the module.
+#' @param mcnode (mcnode object, optional). mcnode to convert directly.
+#' @param data (data frame, optional). Input data; extracted from `mcmodule` if NULL.
+#'   Default: NULL.
+#' @param keys_names (character vector, optional). Column names for grouping variates.
+#'   If NULL, uses node keys from module or all available keys. Default: NULL.
+#' @param filter (expression, optional). Unquoted expression to filter variates
+#'   (e.g., `pathogen == "a"` or `origin == "nord"`). Evaluated in context of
+#'   keys data frame. Default: NULL.
 #'
-#' @return A long format data frame with columns:
-#'   - All key columns (from keys_names)
-#'   - variate: Variate index (1 to number of data rows/scenarios)
-#'   - simulation: Simulation index (1 to number of uncertainty iterations)
-#'   - value: The Monte Carlo node value
+#' @return A long data frame with columns:
+#'   \itemize{
+#'     \item All key columns from `keys_names`.
+#'     \item variate: Variate index (data row number).
+#'     \item simulation: Uncertainty iteration index.
+#'     \item value: mcnode value for that combination.
+#'   }
 #'
 #' @details
-#' This function can be called in multiple ways:
-#' 1. With mcmodule and mc_name: `tidy_mcnode(mcmodule, "w_prev")`
-#' 2. With mcnode and data: `tidy_mcnode(mcnode = mcnode, data = data)`
-#' 3. With mcmodule and mcnode: `tidy_mcnode(mcmodule, mcnode = mcnode)`
+#' Call signatures:
+#' - `tidy_mcnode(mcmodule, \"node_name\")`
+#' - `tidy_mcnode(mcnode = mcnode, data = data)`
+#' - `tidy_mcnode(mcmodule, mcnode = mcnode)`
 #'
 #' @examples
-#' # Using mcmodule and mc_name
+#' # Using mcmodule and node name
 #' long_data <- tidy_mcnode(imports_mcmodule, "w_prev")
 #'
-#' # Using with keys_names parameter
+#' # Using with specific keys
 #' long_data <- tidy_mcnode(imports_mcmodule, "w_prev",
-#'   keys_names = c("origin")
+#'   keys_names = "origin"
 #' )
 #'
 #' # Using mcnode and data directly
 #' w_prev <- imports_mcmodule$node_list$w_prev$mcnode
 #' long_data <- tidy_mcnode(mcnode = w_prev, data = imports_data)
 #'
-#' # Filter specific variates
+#' # Filter variates
 #' long_data <- tidy_mcnode(imports_mcmodule, "w_prev",
 #'   filter = pathogen == "a"
-#' )
-#'
-#' # Filter with multiple conditions
-#' long_data <- tidy_mcnode(imports_mcmodule, "w_prev",
-#'   filter = pathogen == "a" | origin == "nord"
 #' )
 #'
 #' @export
@@ -216,50 +211,51 @@ tidy_mcnode <- function(
 }
 
 
-#' Plot Monte Carlo Node with Boxplot and Points
+#' Plot Monte Carlo Node Distribution with Boxplot and Scatter Points
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
-#' Creates a ggplot visualization of Monte Carlo node data with semitransparent
-#' boxplots overlaid with scattered points representing individual iterations.
+#' Creates a ggplot2 visualisation of Monte Carlo node data showing distributions
+#' as semi-transparent boxplots overlaid with scatter points representing individual
+#' uncertainty iterations.
 #'
-#' @param mcmodule An mcmodule object containing the node (optional if mcnode provided)
-#' @param mc_name Character string specifying the name of the mcnode in the module (optional)
-#' @param mcnode An mcnode object to plot directly (optional if mcmodule and mc_name provided)
-#' @param data Optional data frame containing the input data
-#' @param keys_names Vector of column names to use as key columns for grouping (optional).
-#'   If NULL, will use node keys from the module or use row index
-#' @param color_by Optional column name to color points and boxplot by (must be in keys_names or data)
-#' @param order_by Optional column name or "median" to reorder y-axis groups by a value.
-#'   If "median", groups will be ordered by median value
-#' @param group_by Optional column name to group variates by (e.g., "country_code" or "commodity").
-#'   When specified, variates are organized with all scenarios for each group appearing together.
-#'   For example, with group_by="commodity", y-axis shows labels like
-#'   \code{scenario 0 | commodity 1} and \code{scenario a | commodity 1}.
-#' @param filter Optional expression to filter variates before plotting. Should be an unquoted
-#'   expression that evaluates to a logical vector, e.g., `pathogen == "a"` or
-#'   `pathogen == "a" | origin == "nord"`. Passed to `tidy_mcnode()`.
-#' @param threshold Optional numeric value to add a vertical reference line
-#' @param scale Optional transformation for x-axis. Supported values:
-#'   - "identity": no transformation (default)
-#'   - "log10": logarithm base 10
-#'   - "log": natural logarithm
-#'   - "sqrt": square root
-#'   - "asinh": inverse hyperbolic sine (good for data spanning many orders of magnitude)
-#' @param max_dots Maximum number of uncertainty simulation dots to plot per variate. If exceeded,
-#'   representative sampling using regular intervals is applied (default: 300). Boxplots always
-#'   use all simulations for statistical accuracy.
-#' @param point_alpha Transparency level for points (0-1, default: 0.4)
-#' @param boxplot_alpha Transparency level for boxplot (0-1, default: 0.3)
-#' @param color_pal Optional named character vector of colors for color_by categories
+#' @param mcmodule (mcmodule object, optional). Module containing the node.
+#' @param mc_name (character, optional). Name of the mcnode in the module.
+#' @param mcnode (mcnode object, optional). mcnode to plot directly.
+#' @param data (data frame, optional). Input data. If NULL, extracted from `mcmodule`.
+#'   Default: NULL.
+#' @param keys_names (character vector, optional). Column names for grouping variates.
+#'   If NULL, uses node keys from module or row indices. Default: NULL.
+#' @param color_by (character, optional). Column name to colour points and boxplot.
+#'   Must be in `keys_names` or `data`. Default: NULL.
+#' @param order_by (character, optional). Column name or "median" to reorder y-axis
+#'   groups. If "median", groups ordered by median value. Default: NULL.
+#' @param group_by (character, optional). Column name to group variates (e.g.,
+#'   "commodity"). Variates organised so all scenarios per group appear together.
+#'   Default: NULL.
+#' @param filter (expression, optional). Unquoted expression to filter variates
+#'   (e.g., `pathogen == "a"` or `origin == "nord"`). Passed to `tidy_mcnode()`.
+#'   Default: NULL.
+#' @param threshold (numeric, optional). Reference value for vertical dashed line.
+#'   Default: NULL.
+#' @param scale (character, optional). Transformation for x-axis: "identity"
+#'   (default), "log10", "log", "sqrt", or "asinh". Default: NULL.
+#' @param max_dots (integer). Maximum dots per variate; exceeding this triggers
+#'   representative sampling. Boxplots always use all simulations. Default: 300.
+#' @param point_alpha (numeric). Transparency for points (0–1). Default: 0.4.
+#' @param boxplot_alpha (numeric). Transparency for boxplots (0–1). Default: 0.3.
+#' @param color_pal (character vector, optional). Named vector of colours for
+#'   `color_by` categories. Default: NULL.
 #'
 #'
-#' @return A ggplot2 object
+#' @return A ggplot2 object for further customisation and display.
 #'
 #' @details
-#' When `color_by` is NULL, scenarios are colored with:
-#' - Baseline scenario (scenario_id == "0"): blue ("#6ABDEB")
-#' - Alternative scenarios: green ("#A4CF96")
+#' When `color_by` is NULL, scenarios are coloured by default:
+#' — baseline scenario (scenario_id == "0"): blue (#6ABDEB);
+#' — alternative scenarios: green (#A4CF96).
+#' Boxplots show all uncertainty iterations for statistical accuracy;
+#' scatter points are sampled to improve readability with many variates.
 #'
 #' @examples
 #' # Basic plot using mcmodule and mc_name

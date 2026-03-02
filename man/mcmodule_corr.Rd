@@ -2,7 +2,7 @@
 % Please edit documentation in R/mc_analysis.R
 \name{mcmodule_corr}
 \alias{mcmodule_corr}
-\title{Calculate Correlation Coefficients for Monte Carlo Inputs and Outputs}
+\title{Calculate Correlation Coefficients Between Inputs and Outputs}
 \usage{
 mcmodule_corr(
   mcmodule,
@@ -18,36 +18,37 @@ mcmodule_corr(
 )
 }
 \arguments{
-\item{mcmodule}{A Monte Carlo module object}
+\item{mcmodule}{(mcmodule object). Module containing simulation results.}
 
-\item{output}{Character string specifying the output node name. If NULL (default),
-uses the last node in \code{mcmodule$node_list} (or last expression output if \code{by_exp = TRUE}).}
+\item{output}{(character, optional). Output node name. If NULL (default), uses
+the last node in \code{mcmodule$node_list}. If \code{by_exp = TRUE}, uses the last
+output node per expression. Default: NULL.}
 
-\item{by_exp}{Logical, whether to calculate correlations by expression output.
-If FALSE (default), calculates correlation by global output (last node).}
+\item{by_exp}{(logical). If TRUE, calculate correlations by expression output;
+if FALSE, use global output (last node). Default: FALSE.}
 
-\item{match_variates}{Logical, whether to match input nodes to output variates.
-Default is TRUE.}
+\item{match_variates}{(logical). If TRUE, match input nodes to output variates
+when data dimensions differ. Default: TRUE.}
 
-\item{variates_as_nsv}{Logical, if TRUE, combines all variates into a
-single \code{mc} object for correlation analysis. If FALSE (default), analyzes
-each variate separately. See \code{mcmodule_to_mc()} for details.}
+\item{variates_as_nsv}{(logical). If TRUE, combine all variates into one \code{mc}
+object; if FALSE, analyse each variate separately. See \code{mcmodule_to_mc()}.
+Default: FALSE.}
 
-\item{print_summary}{Logical, whether to print the summary output.
-Default is TRUE.}
+\item{print_summary}{(logical). If TRUE, print correlation analysis summary.
+Default: TRUE.}
 
-\item{progress}{Logical, whether to print progress information while running.
-Default is FALSE.}
+\item{progress}{(logical). If TRUE, print progress information while running.
+Default: FALSE.}
 
-\item{method}{A character string indicating which correlation coefficient is to be
-computed. One of "spearman" (default), "kendall" or "pearson".}
+\item{method}{(character). Correlation coefficient type: "spearman" (default),
+"kendall", or "pearson". See \code{stats::cor()}. Default: "spearman".}
 
-\item{use}{An optional character string giving a method for computing
-correlations in the presence of missing values. One of "all.obs",
-"complete.obs" or "pairwise.complete.obs". Default is "all.obs".}
+\item{use}{(character). Method for handling missing values: "all.obs",
+"complete.obs", or "pairwise.complete.obs". See \code{stats::cor()}.
+Default: "all.obs".}
 
-\item{lim}{A vector of quantiles used to compute the credible interval in
-two-dimensional models.}
+\item{lim}{(numeric vector). Quantiles for credible interval computation (reserved
+for two-dimensional models). Default: \code{c(0.025, 0.975)}.}
 }
 \value{
 A data frame with correlation coefficients and metadata. Columns include:
@@ -67,9 +68,9 @@ A data frame with correlation coefficients and metadata. Columns include:
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Computes correlation coefficients between Monte Carlo module inputs and outputs
-using the tornado analysis from the \code{mc2d} package. Supports multiple correlation
-methods and captures any warnings generated during calculation.
+Computes correlation coefficients between mcmodule inputs and outputs using
+tornado analysis (from the \code{mc2d} package). Supports multiple correlation methods
+and captures warnings generated during calculation.
 }
 \examples{
 mcmodule <- agg_totals(

@@ -12,25 +12,26 @@ mcmodule_to_mc(
 )
 }
 \arguments{
-\item{mcmodule}{A Monte Carlo module object}
+\item{mcmodule}{(mcmodule object). Module to convert.}
 
-\item{mc_names}{Optional character vector of Monte Carlo node names to include.
-If NULL (default), includes all nodes in the module.}
+\item{mc_names}{(character vector, optional). Node names to include. If NULL,
+includes all nodes. Default: NULL.}
 
-\item{match}{Logical, currently unused (reserved for future functionality)}
+\item{match}{(logical, unused). Reserved for future functionality. Default: FALSE.}
 
-\item{variates_as_nsv}{Logical, if TRUE, combines all variates into a single \code{mc} object
-by multiplying the number of variates by the number of uncertainty simulations in the
-variability dimension (\code{nsv}). If FALSE (default), returns a list with one \code{mc} object per variate.}
+\item{variates_as_nsv}{(logical). If TRUE, combine all variates into a single
+mc object by multiplying variates by uncertainty simulations in the
+variability dimension. If FALSE, return one mc object per variate.
+Default: FALSE.}
 }
 \value{
-If \code{variates_as_nsv = FALSE}, a list of \code{mc} objects (one per variate) combining
-specified Monte Carlo nodes. If \code{variates_as_nsv = TRUE}, a single \code{mc} object where all
-variates are combined into the variability dimension. Each \code{mc} object is compatible with
-\code{mc2d} package functions.
+If \code{variates_as_nsv = FALSE}, a list of mc objects (one per variate).
+If \code{variates_as_nsv = TRUE}, a single mc object with all variates combined
+into the variability dimension. Each mc object is compatible with mc2d
+package functions.
 }
 \description{
-Transforms a Monte Carlo module into a list of \code{mc} objects (from the \code{mc2d} package),
-with one \code{mc} object per variate simulation, or a single \code{mc} object with all variates
-combined into the variability dimension.
+Converts an mcmodule into one or more mc objects (from the mc2d package).
+Returns either one mc object per variate or a single mc object with all
+variates combined into the variability dimension.
 }

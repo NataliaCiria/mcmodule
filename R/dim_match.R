@@ -1,12 +1,13 @@
 #' Extract Key Columns from Monte Carlo Nodes
 #'
-#' Extracts key columns from Monte Carlo node's associated data.
+#' Extracts key columns from a mcnode's associated data.
 #'
-#' @param mcmodule Monte Carlo module containing nodes and data
-#' @param mc_name Name of the node to extract keys from
-#' @param keys_names Vector of column names to extract (optional)
+#' @param mcmodule (mcmodule object). Module containing node.
+#' @param mc_name (character). Node name to extract keys from.
+#' @param keys_names (character vector, optional). Column names to extract.
+#'   If NULL, uses all keys for the node. Default: NULL.
 #'
-#' @return A data frame with scenario_id and requested key columns
+#' @return A data frame with scenario_id and requested key columns.
 #'
 #' @examples
 #' keys_df <- mc_keys(imports_mcmodule, "w_prev")
@@ -169,16 +170,21 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
 
 #' Match Two Monte Carlo Nodes
 #'
-#' Matches two mcnodes by:
-#' 1. Group matching - Align nodes with same scenarios but different group order
-#' 2. Scenario matching - Align nodes with same groups but different scenarios
-#' 3. Null matching - Add missing groups across different scenarios
+#' Matches two mcnodes by aligning groups, scenarios, or adding missing
+#' groups across different scenarios.
 #'
-#' @param mcmodule A Monte Carlo module
-#' @param mc_name_x First node name
-#' @param mc_name_y Second node name
-#' @param keys_names Names of key columns
-#' @return A list containing matched nodes and combined keys (`keys_xy`)
+#' Matching proceeds in order:
+#' 1. Group matching — align nodes with same scenarios but different group order
+#' 2. Scenario matching — align nodes with same groups but different scenarios
+#' 3. Null matching — add missing groups across different scenarios
+#'
+#' @param mcmodule (mcmodule object). Module containing nodes.
+#' @param mc_name_x (character). First mcnode name.
+#' @param mc_name_y (character). Second mcnode name.
+#' @param keys_names (character vector, optional). Column names for matching.
+#'   Default: NULL.
+#'
+#' @return A list containing matched nodes and combined keys (`keys_xy`).
 #' @examples
 #' test_module <- list(
 #'   node_list = list(
@@ -413,16 +419,22 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
 
 #' Match Monte Carlo Node with Data Frame
 #'
-#' Matches an mcnode with a data frame by:
-#' 1. Group matching - Same scenarios but different group order
-#' 2. Scenario matching - Same groups but different scenarios
-#' 3. Null matching - Add missing groups across different scenarios
+#' Matches an mcnode with a data frame by aligning groups, scenarios, or adding
+#' missing groups across different scenarios.
 #'
-#' @param mcmodule A Monte Carlo module
-#' @param mc_name Node name
-#' @param data A data frame containing keys to match with
-#' @param keys_names Names of key columns
-#' @return A list containing matched node, matched data, and combined keys (`keys_xy`)
+#' Matching proceeds in order:
+#' 1. Group matching — same scenarios but different group order
+#' 2. Scenario matching — same groups but different scenarios
+#' 3. Null matching — add missing groups across different scenarios
+#'
+#' @param mcmodule (mcmodule object). Module containing node.
+#' @param mc_name (character). Node name.
+#' @param data (data frame). Data to match with mcnode.
+#' @param keys_names (character vector, optional). Column names for matching.
+#'   Default: NULL.
+#'
+#' @return A list containing matched mcnode, matched data, and combined keys
+#'   (`keys_xy`).
 #' @examples
 #' test_data  <- data.frame(pathogen=c("a","b"),
 #'                          inf_dc_min=c(0.05,0.3),
@@ -584,14 +596,16 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
 
 #' Match Datasets with Differing Scenarios
 #'
-#' Matches datasets by group and preserves baseline scenarios (scenario_id = 0) when scenarios differ between them.
+#' Matches datasets by group and preserves baseline scenarios (scenario_id = 0)
+#' when scenarios differ between them.
 #'
-#' @param x First dataset to match
-#' @param y Second dataset to match
-#' @param by Grouping variable(s) to match on, defaults to NULL
-#' @return A list containing matched datasets with aligned scenario IDs:
-#'   - First element: matched version of dataset x
-#'   - Second element: matched version of dataset y
+#' @param x (data frame). First dataset to match.
+#' @param y (data frame). Second dataset to match.
+#' @param by (character vector, optional). Grouping column name(s) to match on.
+#'   If NULL, auto-detected from column names. Default: NULL.
+#'
+#' @return A list containing matched datasets with aligned scenario IDs.
+#'   Element 1: matched version of x. Element 2: matched version of y.
 #' @examples
 #' x <- data.frame(
 #'   category = c("a", "b", "a", "b"),

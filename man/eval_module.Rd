@@ -2,7 +2,7 @@
 % Please edit documentation in R/eval_module.R
 \name{eval_module}
 \alias{eval_module}
-\title{Evaluate a Monte Carlo Model Expression and Create an \code{mcmodule}}
+\title{Evaluate Monte Carlo Model Expressions}
 \usage{
 eval_module(
   exp,
@@ -20,42 +20,54 @@ eval_module(
 )
 }
 \arguments{
-\item{exp}{Model expression or list of expressions to evaluate}
+\item{exp}{(language or list). Model expression or list of expressions to evaluate.}
 
-\item{data}{Input data frame containing model parameters. The number of
-rows of \code{data} determines nvariates for mcstoc()/mcdata() used in expressions.}
+\item{data}{(data frame). Input data; number of rows determines nvariates for
+\code{mcstoc()}/\code{mcdata()} in expressions. Default: required.}
 
-\item{param_names}{Named vector for parameter renaming (optional)}
+\item{param_names}{(named character vector, optional). Names to rename parameters.
+Default: NULL.}
 
-\item{prev_mcmodule}{Previous module(s) for dependent calculations}
+\item{prev_mcmodule}{(mcmodule or list, optional). Previous module(s) for
+dependent calculations. Default: NULL.}
 
-\item{summary}{Logical; whether to calculate summary statistics}
+\item{summary}{(logical). If TRUE, calculate summary statistics for output nodes.
+Default: FALSE.}
 
-\item{mctable}{Reference table for mcnodes. If omitted or NULL nodes that are
-present as columns in \code{data} will be created from the data.}
+\item{mctable}{(data frame). Reference table for mcnodes with \code{mcnode} and
+\code{mc_func} columns. If NULL or not provided, nodes matching \code{data} column names
+are automatically created. Default: empty mctable().}
 
-\item{data_keys}{Data structure and keys, defaults to set_data_keys()}
+\item{data_keys}{(list). Data structure and keys for input data. Default:
+\code{set_data_keys()}.}
 
-\item{match_keys}{Keys to match prev_mcmodule mcnodes and data by}
+\item{match_keys}{(character vector, optional). Keys to match \code{prev_mcmodule}
+mcnodes with current data. Default: NULL.}
 
-\item{keys}{Optional explicit keys for the input data (character vector)}
+\item{keys}{(character vector, optional). Explicit keys for input data. Default: NULL.}
 
-\item{overwrite_keys}{Logical or NULL. If NULL (default) it becomes TRUE when
-data_keys is NULL or an empty list; otherwise FALSE.}
+\item{overwrite_keys}{(logical or NULL). If NULL (default), becomes TRUE when
+\code{data_keys} is NULL or empty; otherwise FALSE.}
 
-\item{use_baseline}{Character vector of mcnode names to override
-input data using \code{sensi_baseline} from mctable. Defaults to NULL
-(no baseline override).}
+\item{use_baseline}{(character vector, optional). mcnode names to override with
+\code{sensi_baseline} values from \code{mctable}. Default: NULL.}
 
-\item{use_variation}{Character vector of mcnode names to apply \code{sensi_variation}
-expression after transformation and before mcnode creation. Defaults to NULL.}
+\item{use_variation}{(character vector, optional). mcnode names to apply
+\code{sensi_variation} expression from \code{mctable} before node creation. Default: NULL.}
 }
 \value{
-An mcmodule object containing data, expressions, and nodes
+An mcmodule object (list) with elements:
+\itemize{
+\item data: List containing input data frames.
+\item exp: List of evaluated expressions.
+\item node_list: Named list of mcnode objects with metadata.
+}
 }
 \description{
-Evaluates a set of Monte Carlo model expressions and creates an
-\code{mcmodule} containing simulation results and metadata.
+Evaluates a model expression or list of expressions to produce an mcmodule
+object containing simulation results and metadata. Expression may use
+\code{mcstoc()} and \code{mcdata()} to create nodes inline; nvariates is automatically
+inferred from the data.
 }
 \details{
 \itemize{
