@@ -874,4 +874,120 @@ suppressMessages({
 
     expect_equal(result$node_list$p_all_set$data_name, c("data_a", "data_b"))
   })
+
+  test_that("agg_totals works with filtered mcnodes (mc_filter integration)", {
+    # Create test module with grouped data
+    test_module <- list(
+      node_list = list(
+        contact = list(
+          mcnode = mcstoc(
+            runif,
+            min = mcdata(
+              c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6),
+              type = "0",
+              nvariates = 6
+            ),
+            max = mcdata(
+              c(0.2, 0.3, 0.4, 0.5, 0.6, 0.7),
+              type = "0",
+              nvariates = 6
+            ),
+            nvariates = 6
+          ),
+          data_name = "contact_data",
+          keys = c("visit_type", "scenario_id")
+        )
+      ),
+      data = list(
+        contact_data = data.frame(
+          visit_type = c(
+            "vehicle",
+            "vehicle",
+            "vehicle",
+            "person",
+            "person",
+            "person"
+          ),
+          scenario_id = c("0", "0", "0", "0", "0", "0"),
+          fomite_id = c(
+            "wheels_1",
+            "wheels_2",
+            "boots",
+            "boots",
+            "equipment",
+            "gloves"
+          )
+        )
+      )
+    )
+
+    # Filter to vehicle visits only
+    filtered_module <- mc_filter(
+      test_module,
+      "contact",
+      visit_type == "vehicle",
+      filter_suffix = "veh"
+    )
+
+    # Verify filtered node has correct dimensions
+    expect_equal(dim(filtered_module$node_list$contact_veh$mcnode)[3], 3)
+
+    # Now aggregate the filtered node
+    agg_module <- agg_totals(
+      filtered_module,
+      "contact_veh",
+      agg_keys = "scenario_id"
+    )
+
+    # Check that aggregated node was created successfully
+    expect_true("contact_veh_agg" %in% names(agg_module$node_list))
+    expect_true(is.mcnode(agg_module$node_list$contact_veh_agg$mcnode))
+
+    # Check metadata
+    expect_equal(agg_module$node_list$contact_veh_agg$type, "agg_total")
+  })
+
+  test_that("agg_totals handles single-variate groups correctly (edge case)", {
+    # Create test module where some groups will have only 1 variate
+    test_module <- list(
+      node_list = list(
+        risk = list(
+          mcnode = mcstoc(
+            runif,
+            min = mcdata(c(0.1, 0.2, 0.3, 0.4, 0.5), type = "0", nvariates = 5),
+            max = mcdata(c(0.2, 0.3, 0.4, 0.5, 0.6), type = "0", nvariates = 5),
+            nvariates = 5
+          ),
+          data_name = "test_data",
+          keys = c("category", "scenario_id")
+        )
+      ),
+      data = list(
+        test_data = data.frame(
+          category = c("A", "B", "C", "D", "E"),
+          scenario_id = c("0", "0", "0", "1", "1"),
+          stringsAsFactors = FALSE
+        )
+      )
+    )
+
+    # Aggregate by scenario_id
+    # Group 1 (scenario "0"): 3 variates (A, B, C)
+    # Group 2 (scenario "1"): 2 variates (D, E) - different from first group size
+    result <- agg_totals(
+      test_module,
+      "risk",
+      agg_keys = "scenario_id"
+    )
+
+    # Check that aggregation succeeded
+    expect_true("risk_agg" %in% names(result$node_list))
+    expect_true(is.mcnode(result$node_list$risk_agg$mcnode))
+
+    # Check that result has correct dimensions (2 groups)
+    expect_equal(dim(result$node_list$risk_agg$mcnode)[3], 2)
+
+    # Check summary
+    expect_equal(nrow(result$node_list$risk_agg$summary), 2)
+  })
 })

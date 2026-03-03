@@ -90,11 +90,11 @@ suppressMessages({
     # Check description contains both conditions
     expect_true(grepl(
       "category == \"A\"",
-      result$node_list$p_1_A_North_filtered$filter_conditions
+      result$node_list$p_1_A_North_filtered$filter
     ))
     expect_true(grepl(
       "region == \"North\"",
-      result$node_list$p_1_A_North_filtered$filter_conditions
+      result$node_list$p_1_A_North_filtered$filter
     ))
   })
 
@@ -447,7 +447,7 @@ suppressMessages({
     expect_true(!is.null(result$node_list$filtered_A_filtered$description))
     expect_true(!is.null(result$node_list$filtered_A_filtered$node_expression))
     expect_true(
-      !is.null(result$node_list$filtered_A_filtered$filter_conditions)
+      !is.null(result$node_list$filtered_A_filtered$filter)
     )
     expect_equal(result$node_list$filtered_A_filtered$data_name, "test_data")
 

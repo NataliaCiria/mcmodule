@@ -35,9 +35,13 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
   # 1. Use provided keys_names if not NULL
   # 2. Otherwise use agg_keys if available
   # 3. Fall back to regular keys
+  is_agg_node <- !is.null(node[["agg_keys"]]) &&
+    !isTRUE(node[["keep_variates"]])
+  is_filter_node <- identical(node[["type"]], "filter")
+
   keys_names <- if (!is.null(keys_names)) {
     keys_names
-  } else if (!is.null(node[["agg_keys"]]) && !node[["keep_variates"]]) {
+  } else if (is_agg_node) {
     node[["agg_keys"]]
   } else {
     node[["keys"]]
@@ -50,17 +54,18 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
   #    - Use "data" corresponding to last data_name if not found in "summary"
   # 3. Otherwise, use "data" corresponding to data_name
 
-  data <- if (!is.null(node[["agg_keys"]]) && !node[["keep_variates"]]) {
+  data <- if (is_agg_node || is_filter_node) {
     if (is.null(node[["summary"]])) {
       stop(
         sprintf(
-          "%s summary is needed for aggregated mcnodes",
-          mc_name
+          "%s summary is needed for %s mcnodes",
+          mc_name,
+          if (is_filter_node) "filtered" else "aggregated"
         ),
         call. = FALSE
       )
     }
-    # Case 1: Aggregated nodes
+    # Case 1: Aggregated or filtered nodes
     node[["summary"]]
   } else if (length(node[["data_name"]]) > 1) {
     # Case 2: Multiple data_names

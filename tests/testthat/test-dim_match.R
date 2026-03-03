@@ -493,4 +493,48 @@ suppressMessages({
       "Baseline scenario '0' missing key combinations"
     )
   })
+
+  test_that("mc_keys returns filtered dimensions for filter nodes", {
+    test_module <- list(
+      node_list = list(
+        p_1 = list(
+          mcnode = mc2d::mcstoc(
+            runif,
+            min = mc2d::mcdata(
+              c(0.1, 0.2, 0.3, 0.4),
+              type = "0",
+              nvariates = 4
+            ),
+            max = mc2d::mcdata(
+              c(0.2, 0.3, 0.4, 0.5),
+              type = "0",
+              nvariates = 4
+            ),
+            nvariates = 4
+          ),
+          data_name = "test_data",
+          keys = c("group", "scenario_id")
+        )
+      ),
+      data = list(
+        test_data = data.frame(
+          group = c("A", "A", "B", "B"),
+          scenario_id = c("0", "0", "0", "0")
+        )
+      )
+    )
+
+    filtered <- mc_filter(
+      mcmodule = test_module,
+      mc_name = "p_1",
+      group == "A",
+      filter_suffix = "flt"
+    )
+
+    keys_df <- mc_keys(filtered, "p_1_flt")
+
+    expect_equal(nrow(keys_df), dim(filtered$node_list$p_1_flt$mcnode)[3])
+    expect_equal(nrow(keys_df), 2)
+    expect_equal(colnames(keys_df), c("scenario_id", "group"))
+  })
 })

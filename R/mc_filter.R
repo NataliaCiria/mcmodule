@@ -254,7 +254,7 @@ mc_filter <- function(
       NULL
     },
     prefix = if (!is.null(prefix)) prefix else NULL,
-    filter_conditions = filter_description
+    filter = filter_description
   )
 
   # Add summary if requested
