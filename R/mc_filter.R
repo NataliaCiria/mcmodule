@@ -78,6 +78,13 @@ mc_filter <- function(
   mcmodule_expr <- substitute(mcmodule)
   filter_expr <- as.list(substitute(list(...)))[-1]
 
+  # Capture module name before evaluation to avoid deparsing entire object
+  module_name <- if (is.symbol(mcmodule_expr)) {
+    as.character(mcmodule_expr)
+  } else {
+    deparse(mcmodule_expr)
+  }
+
   if (length(filter_expr) == 0 && is.call(mcmodule_expr) && is.null(mc_name)) {
     filter_expr <- list(mcmodule_expr)
     mcmodule <- NULL
@@ -97,7 +104,6 @@ mc_filter <- function(
   return_mcmodule <- FALSE
 
   if (!is.null(mcmodule)) {
-    module_name <- deparse(substitute(mcmodule))
     return_mcmodule <- TRUE
 
     if (is.null(mcnode)) {

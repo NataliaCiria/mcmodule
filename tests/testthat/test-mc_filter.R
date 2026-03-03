@@ -450,6 +450,9 @@ suppressMessages({
       !is.null(result$node_list$filtered_A_filtered$filter_conditions)
     )
     expect_equal(result$node_list$filtered_A_filtered$data_name, "test_data")
+
+    # Check that module name is correctly stored
+    expect_equal(result$node_list$filtered_A_filtered$module, "test_module")
   })
 
   test_that("mc_filter works with complex dplyr expressions", {
