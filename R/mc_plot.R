@@ -79,10 +79,18 @@ tidy_mcnode <- function(
     data_name <- mcmodule$node_list[[mc_name]]$data_name
 
     if (is.null(data)) {
-      # Handle nodes with multiple data_names using existing summary if available
+      # Handle filtered, compared, or aggregated nodes with summary
+      node_type <- mcmodule$node_list[[mc_name]]$type
       if (
+        !is.null(node_type) &&
+          node_type %in% c("filter", "compare", "agg_total") &&
+          !is.null(mcmodule$node_list[[mc_name]]$summary)
+      ) {
+        data <- mcmodule$node_list[[mc_name]]$summary
+      } else if (
         length(data_name) > 1 && !is.null(mcmodule$node_list[[mc_name]]$summary)
       ) {
+        # Handle nodes with multiple data_names using existing summary if available
         data <- mcmodule$node_list[[mc_name]]$summary
       } else {
         data <- mcmodule$data[[data_name]]

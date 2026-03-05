@@ -639,6 +639,23 @@ imports_wif <- imports_wif %>%
 imports_wif$node_list$no_detect_set_agg$summary
 ```
 
+Once scenario totals are available, we can directly compare each what-if scenario
+against baseline using `mc_compare()`. Here we compute the **relative risk
+reduction** in `no_detect_set_agg` for each pathogen:
+
+```{r}
+imports_wif <- mc_compare(
+  mcmodule = imports_wif,
+  mc_name = "no_detect_set_agg",
+  baseline = "0",
+  type = "relative_reduction",
+  name = "no_detect_set_rrr"
+)
+
+# Relative risk reduction by pathogen and scenario
+imports_wif$node_list$no_detect_set_rrr_compared$summary
+```
+
 # Working with multiple mcmodules
 
 As your risk analysis grows in complexity, you may need to split your model into several independent modules and then combine them.

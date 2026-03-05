@@ -188,6 +188,9 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
 #' @param mc_name_y (character). Second mcnode name.
 #' @param keys_names (character vector, optional). Column names for matching.
 #'   Default: NULL.
+#' @param match_scenario (logical). If TRUE, scenario_id is used for alignment
+#'   (default behavior). If FALSE, scenario_id is treated as a regular key,
+#'   enabling cross-scenario matching. Default: TRUE.
 #'
 #' @return A list containing matched nodes and combined keys (`keys_xy`).
 #' @examples
@@ -226,7 +229,13 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
 #'
 #' result <- mc_match(test_module, "node_x", "node_y")
 #' @export
-mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
+mc_match <- function(
+  mcmodule,
+  mc_name_x,
+  mc_name_y,
+  keys_names = NULL,
+  match_scenario = TRUE
+) {
   # Check if mcnodes are in mcmodule
   missing_nodes <- c(mc_name_x, mc_name_y)[
     !c(mc_name_x, mc_name_y) %in% names(mcmodule$node_list)
@@ -250,16 +259,21 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
   data_name_x <- mcmodule$node_list[[mc_name_x]][["data_name"]]
   data_name_y <- mcmodule$node_list[[mc_name_y]][["data_name"]]
 
-  # Remove scenario_id from keys
-  keys_names <- keys_names[!keys_names == "scenario_id"]
+  # Remove scenario_id from keys (conditionally based on match_scenario)
+  if (match_scenario) {
+    keys_names <- keys_names[!keys_names == "scenario_id"]
+  }
 
   # Get keys dataframes for x and y
   keys_x <- mc_keys(mcmodule, mc_name_x, keys_names)
   keys_y <- mc_keys(mcmodule, mc_name_y, keys_names)
 
   # Validate baseline scenario contains all key combinations for both nodes
-  check_baseline_keys(keys_x, keys_names, mc_name_x)
-  check_baseline_keys(keys_y, keys_names, mc_name_y)
+  # Skip check when match_scenario=FALSE (cross-scenario matching)
+  if (match_scenario) {
+    check_baseline_keys(keys_x, keys_names, mc_name_x)
+    check_baseline_keys(keys_y, keys_names, mc_name_y)
+  }
 
   # If nodes do not have the same keys but both nodes come from the same data, keys are inferred from data
   if (
@@ -316,12 +330,12 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
     return(list(
       mcnode_x_match = mcnode_x,
       mcnode_y_match = mcnode_y,
-      keys_xy = keys_match(keys_x, keys_y, keys_names)$xy
+      keys_xy = keys_match(keys_x, keys_y, keys_names, match_scenario)$xy
     ))
   }
 
   # Match keys
-  keys_list <- keys_match(keys_x, keys_y, keys_names)
+  keys_list <- keys_match(keys_x, keys_y, keys_names, match_scenario)
   keys_x_match <- keys_list$x
   keys_y_match <- keys_list$y
   keys_xy_match <- keys_list$xy
@@ -437,6 +451,9 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
 #' @param data (data frame). Data to match with mcnode.
 #' @param keys_names (character vector, optional). Column names for matching.
 #'   Default: NULL.
+#' @param match_scenario (logical). If TRUE, scenario_id is used for alignment
+#'   (default behavior). If FALSE, scenario_id is treated as a regular key,
+#'   enabling cross-scenario matching. Default: TRUE.
 #'
 #' @return A list containing matched mcnode, matched data, and combined keys
 #'   (`keys_xy`).
@@ -446,7 +463,13 @@ mc_match <- function(mcmodule, mc_name_x, mc_name_y, keys_names = NULL) {
 #'                          inf_dc_max=c(0.08,0.4))
 #' result<-mc_match_data(imports_mcmodule,"no_detect_a", test_data)
 #' @export
-mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
+mc_match_data <- function(
+  mcmodule,
+  mc_name,
+  data,
+  keys_names = NULL,
+  match_scenario = TRUE
+) {
   # Check if mcnodes are in mcmodule
   if (!mc_name %in% names(mcmodule$node_list)) {
     stop(paste("Nodes", mc_name, "not found in", deparse(substitute(mcmodule))))
@@ -459,8 +482,10 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
   data_name_x <- mcmodule$node_list[[mc_name]][["data_name"]]
   data_name_y <- deparse(substitute(data))
 
-  # Remove scenario_id from keys
-  keys_names <- keys_names[!keys_names == "scenario_id"]
+  # Remove scenario_id from keys (conditionally based on match_scenario)
+  if (match_scenario) {
+    keys_names <- keys_names[!keys_names == "scenario_id"]
+  }
 
   # Get keys dataframes for x and y
   keys_x <- mc_keys(mcmodule, mc_name, keys_names)
@@ -468,8 +493,11 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
   keys_y <- data[keys_data]
 
   # Validate baseline scenario contains all key combinations for both node and provided data
-  check_baseline_keys(keys_x, keys_names, mc_name)
-  check_baseline_keys(data, keys_data, data_name_y)
+  # Skip check when match_scenario=FALSE (cross-scenario matching)
+  if (match_scenario) {
+    check_baseline_keys(keys_x, keys_names, mc_name)
+    check_baseline_keys(data, keys_data, data_name_y)
+  }
 
   # If nodes do not have the same keys but both nodes come from the same data, keys are inferred from data
   if (
@@ -493,12 +521,12 @@ mc_match_data <- function(mcmodule, mc_name, data, keys_names = NULL) {
     return(list(
       mcnode_match = mcnode_x,
       data_match = data,
-      keys_xy = keys_match(keys_x, keys_y, keys_names)$xy
+      keys_xy = keys_match(keys_x, keys_y, keys_names, match_scenario)$xy
     ))
   }
 
   # Match keys
-  keys_list <- keys_match(keys_x, keys_y, keys_names)
+  keys_list <- keys_match(keys_x, keys_y, keys_names, match_scenario)
   keys_x_match <- keys_list$x
   keys_y_match <- keys_list$y
   keys_xy_match <- keys_list$xy
