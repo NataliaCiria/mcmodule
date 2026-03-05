@@ -537,4 +537,271 @@ suppressMessages({
     expect_equal(nrow(keys_df), 2)
     expect_equal(colnames(keys_df), c("scenario_id", "group"))
   })
+
+  test_that("mc_match with match_scenario=TRUE (default) maintains default behavior", {
+    test_module <- list(
+      node_list = list(
+        node_x = list(
+          mcnode = mcdata(c(10, 20, 30), type = "0", nvariates = 3),
+          data_name = "data_x",
+          keys = c("category")
+        ),
+        node_y = list(
+          mcnode = mcdata(c(15, 25, 35), type = "0", nvariates = 3),
+          data_name = "data_y",
+          keys = c("category")
+        )
+      ),
+      data = list(
+        data_x = data.frame(
+          category = c("A", "B", "C"),
+          scenario_id = c("0", "0", "0"),
+          stringsAsFactors = FALSE
+        ),
+        data_y = data.frame(
+          category = c("A", "B", "C"),
+          scenario_id = c("0", "0", "0"),
+          stringsAsFactors = FALSE
+        )
+      )
+    )
+
+    # Default behavior - scenario_id is excluded from matching keys
+    result <- mc_match(test_module, "node_x", "node_y", match_scenario = TRUE)
+
+    # Result returns matched mcnodes, not full module
+    expect_equal(length(result), 3) # mcnode_x_match, mcnode_y_match, keys_xy
+    expect_equal(dim(result[[1]])[3], 3) # node_x_match
+    expect_equal(dim(result[[2]])[3], 3) # node_y_match
+
+    # Verify scenario_id is in keys_xy
+    expect_true("scenario_id" %in% names(result$keys_xy))
+  })
+
+  test_that("mc_match with match_scenario=FALSE enables cross-scenario matching", {
+    # Create baseline node (scenario 0 only)
+    baseline_module <- list(
+      node_list = list(
+        baseline_node = list(
+          mcnode = mcdata(c(10, 20), type = "0", nvariates = 2),
+          data_name = "baseline_data",
+          keys = c("category")
+        )
+      ),
+      data = list(
+        baseline_data = data.frame(
+          category = c("A", "B"),
+          scenario_id = c("0", "0"),
+          stringsAsFactors = FALSE
+        )
+      )
+    )
+
+    # Create what-if nodes (scenarios 1 and 2 only)
+    whatif_module <- list(
+      node_list = list(
+        whatif_node = list(
+          mcnode = mcdata(c(15, 25, 12, 22), type = "0", nvariates = 4),
+          data_name = "whatif_data",
+          keys = c("category")
+        )
+      ),
+      data = list(
+        whatif_data = data.frame(
+          category = c("A", "B", "A", "B"),
+          scenario_id = c("1", "1", "2", "2"),
+          stringsAsFactors = FALSE
+        )
+      )
+    )
+
+    # Add whatif_node to baseline_module for mc_match
+    baseline_module$node_list$whatif_node <- whatif_module$node_list$whatif_node
+    baseline_module$data$whatif_data <- whatif_module$data$whatif_data
+
+    # Cross-scenario matching - baseline should match with scenarios 1 and 2
+    result <- mc_match(
+      baseline_module,
+      "baseline_node",
+      "whatif_node",
+      match_scenario = FALSE
+    )
+
+    # Baseline node should be expanded to match all what-if combinations
+    expect_equal(dim(result[[1]])[3], 4) # 2 baseline categories × 2 what-if scenarios = 4
+    expect_equal(dim(result[[2]])[3], 4)
+
+    # Check that keys_xy shows the cross-scenario matching
+    expect_true("scenario_id" %in% names(result$keys_xy))
+    expect_true(all(c("1", "2") %in% result$keys_xy$scenario_id))
+  })
+
+  test_that("mc_match scenario_id becomes matching key when match_scenario=FALSE", {
+    test_module <- list(
+      node_list = list(
+        node_x = list(
+          mcnode = mcdata(c(10, 20, 15, 25), type = "0", nvariates = 4),
+          data_name = "data_x",
+          keys = c("group")
+        ),
+        node_y = list(
+          mcnode = mcdata(c(100, 200, 150, 250), type = "0", nvariates = 4),
+          data_name = "data_y",
+          keys = c("group")
+        )
+      ),
+      data = list(
+        data_x = data.frame(
+          group = c("A", "B", "A", "B"),
+          scenario_id = c("1", "1", "2", "2"),
+          stringsAsFactors = FALSE
+        ),
+        data_y = data.frame(
+          group = c("A", "B", "A", "B"),
+          scenario_id = c("1", "1", "2", "2"),
+          stringsAsFactors = FALSE
+        )
+      )
+    )
+
+    # With match_scenario=FALSE, nodes should match by both group AND scenario_id
+    result <- mc_match(test_module, "node_x", "node_y", match_scenario = FALSE)
+
+    # Should maintain 4 variates (exact match on both keys)
+    expect_equal(dim(result[[1]])[3], 4) # node_x_match
+    expect_equal(dim(result[[2]])[3], 4) # node_y_match
+
+    # Verify scenario_id appears in the keys_xy
+    expect_true("scenario_id" %in% names(result$keys_xy))
+
+    # Check that scenario_id values are preserved correctly
+    expect_true(all(c("1", "2") %in% result$keys_xy$scenario_id))
+  })
+
+  test_that("mc_match maintains backward compatibility with default parameters", {
+    test_module <- list(
+      node_list = list(
+        node_x = list(
+          mcnode = mcdata(c(10, 20), type = "0", nvariates = 2),
+          data_name = "data_x",
+          keys = c("category")
+        ),
+        node_y = list(
+          mcnode = mcdata(c(30, 40), type = "0", nvariates = 2),
+          data_name = "data_y",
+          keys = c("category")
+        )
+      ),
+      data = list(
+        data_x = data.frame(
+          category = c("A", "B"),
+          scenario_id = c("0", "0"),
+          stringsAsFactors = FALSE
+        ),
+        data_y = data.frame(
+          category = c("A", "B"),
+          scenario_id = c("0", "0"),
+          stringsAsFactors = FALSE
+        )
+      )
+    )
+
+    # Call without match_scenario parameter (should use default TRUE)
+    result_default <- mc_match(test_module, "node_x", "node_y")
+    result_explicit <- mc_match(
+      test_module,
+      "node_x",
+      "node_y",
+      match_scenario = TRUE
+    )
+
+    # Results should be identical
+    expect_equal(
+      dim(result_default[[1]]),
+      dim(result_explicit[[1]])
+    )
+    expect_equal(
+      dim(result_default[[2]]),
+      dim(result_explicit[[2]])
+    )
+    expect_equal(nrow(result_default$keys_xy), nrow(result_explicit$keys_xy))
+  })
+
+  test_that("mc_match_data with match_scenario=TRUE maintains default behavior", {
+    test_module <- list(
+      node_list = list(
+        node_x = list(
+          mcnode = mcdata(c(10, 20), type = "0", nvariates = 2),
+          data_name = "data_x",
+          keys = c("category")
+        )
+      ),
+      data = list(
+        data_x = data.frame(
+          category = c("A", "B"),
+          scenario_id = c("0", "0"),
+          stringsAsFactors = FALSE
+        )
+      )
+    )
+
+    new_data <- data.frame(
+      category = c("A", "B"),
+      value = c(100, 200),
+      scenario_id = c("0", "0"),
+      stringsAsFactors = FALSE
+    )
+
+    result <- mc_match_data(
+      test_module,
+      "node_x",
+      new_data,
+      match_scenario = TRUE
+    )
+
+    expect_equal(length(result), 3) # mcnode_match, new_data_match, keys_xy
+    expect_equal(dim(result[[1]])[3], 2)
+  })
+
+  test_that("mc_match_data with match_scenario=FALSE enables cross-scenario matching", {
+    test_module <- list(
+      node_list = list(
+        node_baseline = list(
+          mcnode = mcdata(c(10, 20), type = "0", nvariates = 2),
+          data_name = "data_baseline",
+          keys = c("category")
+        )
+      ),
+      data = list(
+        data_baseline = data.frame(
+          category = c("A", "B"),
+          scenario_id = c("0", "0"),
+          stringsAsFactors = FALSE
+        )
+      )
+    )
+
+    # Data with different scenarios
+    new_data <- data.frame(
+      category = c("A", "B", "A", "B"),
+      value = c(100, 200, 150, 250),
+      scenario_id = c("1", "1", "2", "2"),
+      stringsAsFactors = FALSE
+    )
+
+    result <- mc_match_data(
+      test_module,
+      "node_baseline",
+      new_data,
+      match_scenario = FALSE
+    )
+
+    # Baseline should be expanded to match all scenario combinations
+    expect_equal(dim(result[[1]])[3], 4) # mcnode_match
+    expect_equal(nrow(result$new_data_match), 4)
+
+    # Verify cross-scenario matching in keys_xy
+    expect_true("scenario_id" %in% names(result$keys_xy))
+    expect_true(all(c("1", "2") %in% result$keys_xy$scenario_id))
+  })
 })

@@ -69,6 +69,11 @@ Call signatures:
 
 Filter conditions work on variates (data rows); only rows meeting all conditions
 are retained in the resulting mcnode.
+
+For derived nodes with pre-computed summaries (types \code{"filter"}, \code{"compare"},
+or \code{"agg_total"}), filtering uses the node's \code{summary} by default as the data
+source (instead of \code{mcmodule$data[[data_name]]}) so variate alignment is
+preserved.
 }
 \examples{
 # Filter within an mcmodule and create new node

@@ -29,6 +29,11 @@
 #' Filter conditions work on variates (data rows); only rows meeting all conditions
 #' are retained in the resulting mcnode.
 #'
+#' For derived nodes with pre-computed summaries (types `"filter"`, `"compare"`,
+#' or `"agg_total"`), filtering uses the node's `summary` by default as the data
+#' source (instead of `mcmodule$data[[data_name]]`) so variate alignment is
+#' preserved.
+#'
 #' @return Either:
 #'   - Updated mcmodule with new filtered node (when mcmodule and `name` provided).
 #'   - Filtered mcnode object (when only `data` and `mcnode` provided).
@@ -114,13 +119,25 @@ mc_filter <- function(
       stop(sprintf("%s must be a mcnode present in %s", mc_name, module_name))
     }
 
-    data_name <- mcmodule$node_list[[mc_name]]$data_name
+    node <- mcmodule$node_list[[mc_name]]
+    data_name <- node$data_name
+    node_type <- node$type
+    # For derived nodes (filter, compare, agg_total), use pre-computed summary as the data source
+    # to preserve variate-to-row correspondence
+    uses_summary_data <-
+      !is.null(node_type) &&
+      node_type %in% c("filter", "compare", "agg_total") &&
+      !is.null(node$summary)
 
     if (is.null(data)) {
-      data <- mcmodule$data[[data_name]]
+      data <- if (uses_summary_data) {
+        node$summary
+      } else {
+        mcmodule$data[[data_name]]
+      }
     }
 
-    if (length(data_name) > 1) {
+    if (length(data_name) > 1 && !uses_summary_data) {
       message(
         "Multiple data names detected. Using first data_name for filtering."
       )
@@ -262,12 +279,22 @@ mc_filter <- function(
     if (nrow(data_filtered) == 0) {
       mcmodule$node_list[[filtered_mc_name]][["summary"]] <- NULL
     } else {
+      # Include scenario_id in summary if it exists in the data
+      summary_keys <- keys_names
+      if (
+        "scenario_id" %in%
+          names(data_filtered) &&
+          !("scenario_id" %in% keys_names)
+      ) {
+        summary_keys <- c("scenario_id", keys_names)
+      }
+
       mcmodule$node_list[[filtered_mc_name]][["summary"]] <-
         mc_summary(
           mcmodule = mcmodule,
           data = data_filtered,
           mc_name = filtered_mc_name,
-          keys_names = keys_names
+          keys_names = summary_keys
         )
     }
   }
