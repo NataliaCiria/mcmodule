@@ -636,4 +636,73 @@ suppressMessages({
       result$node_list$p_test_agg_rrr_compared$summary$scenario_id == "1"
     ))
   })
+
+  # Test 16: align_uncertainty parameter works correctly
+  test_that("mc_compare align_uncertainty parameter aligns uncertainty iterations", {
+    set.seed(123)
+
+    # Create test module with multivariate nodes with uncertainty
+    test_module <- list(
+      node_list = list(
+        p_test = list(
+          mcnode = mcstoc(
+            runif,
+            min = mcdata(c(0.1, 0.2, 0.1, 0.2), type = "0", nvariates = 4),
+            max = mcdata(c(0.2, 0.3, 0.2, 0.3), type = "0", nvariates = 4),
+            nvariates = 4,
+            nsv = 100
+          ),
+          data_name = "test_data",
+          keys = c("category")
+        )
+      ),
+      data = list(
+        test_data = data.frame(
+          category = c("A", "B", "A", "B"),
+          scenario_id = c("0", "0", "1", "1"),
+          stringsAsFactors = FALSE
+        )
+      )
+    )
+
+    # Test with align_uncertainty = TRUE (default)
+    result_aligned <- mc_compare(
+      test_module,
+      "p_test",
+      baseline = "0",
+      type = "difference",
+      align_uncertainty = TRUE,
+      name = "aligned"
+    )
+
+    # Test with align_uncertainty = FALSE
+    result_unaligned <- mc_compare(
+      test_module,
+      "p_test",
+      baseline = "0",
+      type = "difference",
+      align_uncertainty = FALSE,
+      name = "unaligned"
+    )
+
+    # Both should produce valid comparison nodes
+    expect_true("aligned_compared" %in% names(result_aligned$node_list))
+    expect_true("unaligned_compared" %in% names(result_unaligned$node_list))
+
+    # Both should have same dimensions
+    expect_equal(
+      dim(result_aligned$node_list$aligned_compared$mcnode),
+      dim(result_unaligned$node_list$unaligned_compared$mcnode)
+    )
+
+    # The results should be different due to alignment
+    # (unless by chance they're identical, which is extremely unlikely)
+    aligned_values <- unmc(result_aligned$node_list$aligned_compared$mcnode)
+    unaligned_values <- unmc(
+      result_unaligned$node_list$unaligned_compared$mcnode
+    )
+
+    # Check that not all values are identical
+    expect_false(all(aligned_values == unaligned_values))
+  })
 })

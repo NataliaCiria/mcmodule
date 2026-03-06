@@ -23,6 +23,11 @@
 #'   Default: "_compared".
 #' @param summary (logical). If TRUE, compute summary statistics for the new node.
 #'   Default: TRUE.
+#' @param align_uncertainty (logical). If TRUE, align uncertainty iterations between
+#'   baseline and what-if nodes using rank correlation (Spearman). This ensures that
+#'   the same uncertainty iteration in both nodes represents similar uncertainty
+#'   realizations, making comparisons more meaningful when nodes have multivariate
+#'   dimensions. Default: TRUE.
 #'
 #' @details
 #' This function compares what-if scenarios against a baseline by:
@@ -30,9 +35,14 @@
 #'   \item Filtering the baseline scenario (scenario_id == baseline)
 #'   \item Filtering what-if scenarios (scenario_id != baseline)
 #'   \item Matching them across scenarios using keys
+#'   \item Optionally aligning uncertainty iterations using rank correlation
 #'   \item Applying the selected comparison formula
 #'   \item Creating a new comparison node in the mcmodule
 #' }
+#'
+#' When `align_uncertainty = TRUE`, the function uses `mc2d::cornode()` to align
+#' the uncertainty iterations between matched baseline and what-if nodes. For
+#' multivariate nodes, correlation is applied independently to each variate.
 #'
 #' For derived nodes with pre-computed summaries (types `"filter"`, `"compare"`,
 #' or `"agg_total"`), scenario filtering and key alignment use the node's
@@ -101,7 +111,8 @@ mc_compare <- function(
   name = NULL,
   prefix = NULL,
   suffix = "_compared",
-  summary = TRUE
+  summary = TRUE,
+  align_uncertainty = TRUE
 ) {
   scenario_id <- NULL
 
@@ -361,6 +372,23 @@ mc_compare <- function(
     baseline_matched <- match_result[[paste0(temp_baseline_name, "_match")]]
     whatif_matched <- match_result[[paste0(temp_whatif_name, "_match")]]
     keys_xy <- match_result$keys_xy
+  }
+
+  # Correlate matched nodes for uncertainty alignment
+  # Only apply correlation if nodes have uncertainty (nsv > 1)
+  if (align_uncertainty && dim(whatif_matched)[1] > 1) {
+    # For multivariate nodes, cornode needs a 2x2 correlation matrix
+    # Use 0.999 instead of 1.0 to ensure positive definiteness
+    target_cor <- matrix(c(1, 0.999, 0.999, 1), ncol = 2)
+
+    cornodes <- mc2d::cornode(
+      node1 = whatif_matched,
+      node2 = baseline_matched,
+      target = target_cor,
+      result = FALSE
+    )
+    whatif_matched <- cornodes[[1]]
+    baseline_matched <- cornodes[[2]]
   }
 
   # Apply comparison formula
