@@ -730,4 +730,149 @@ suppressMessages({
     expect_true("inf_a" %in% names(result_null_defaults$node_list))
     expect_true(is.mcnode(result_null_defaults$node_list$inf_a$mcnode))
   })
+
+  test_that("eval_module works with mcnode_na_rm() in expressions", {
+    # Create test data with values that could produce NA or Inf
+    test_data <- data.frame(
+      category = c("a", "b", "c"),
+      input_min = c(0.1, 0.2, 0.3),
+      input_max = c(0.2, 0.3, 0.4),
+      divisor = c(1, 0, 2) # zero will create Inf
+    )
+
+    test_mctable <- data.frame(
+      mcnode = c("input"),
+      mc_func = c("runif"),
+      description = c("Test input"),
+      from_variable = c(NA),
+      transformation = c(NA),
+      sensi_baseline = c(NA_character_),
+      sensi_variation = c(NA_character_),
+      stringsAsFactors = FALSE
+    )
+
+    test_data_keys <- list(
+      test_data = list(
+        cols = c("category", "input_min", "input_max", "divisor"),
+        keys = c("category")
+      )
+    )
+
+    # Expression that uses mcnode_na_rm to handle potential NA/Inf
+    test_exp <- quote({
+      ratio <- input / divisor
+      # Clean the ratio by replacing NA/Inf with 0
+      clean_ratio <- mcnode_na_rm(ratio)
+      # Use cleaned ratio in further calculations
+      result <- clean_ratio * 10
+    })
+
+    result_module <- eval_module(
+      exp = c(test = test_exp),
+      data = test_data,
+      mctable = test_mctable,
+      data_keys = test_data_keys
+    )
+
+    # Verify module was created
+    expect_equal(class(result_module), "mcmodule")
+    expect_true("clean_ratio" %in% names(result_module$node_list))
+    expect_true("result" %in% names(result_module$node_list))
+
+    # Verify clean_ratio has no NA or Inf values
+    clean_ratio_mcnode <- result_module$node_list$clean_ratio$mcnode
+    expect_false(any(is.na(clean_ratio_mcnode)))
+    expect_false(any(is.infinite(clean_ratio_mcnode)))
+
+    # Verify result also has no NA or Inf
+    result_mcnode <- result_module$node_list$result$mcnode
+    expect_false(any(is.na(result_mcnode)))
+    expect_false(any(is.infinite(result_mcnode)))
+  })
+
+  test_that("eval_module works with mcnode_na_rm() with custom na_value", {
+    # Create test data
+    test_data <- data.frame(
+      id = c("x", "y"),
+      value_a = c(1, 2),
+      value_b = c(0, 3) # zero will create Inf when used as divisor
+    )
+
+    # Expression using mcnode_na_rm with custom replacement value
+    test_exp <- quote({
+      ratio <- value_a / value_b
+      # Replace Inf with -999 instead of default 0
+      clean_ratio <- mcnode_na_rm(ratio, na_value = -999)
+    })
+
+    result_module <- eval_module(
+      exp = c(test = test_exp),
+      data = test_data
+    )
+
+    # Verify the custom replacement value was used
+    clean_ratio_mcnode <- result_module$node_list$clean_ratio$mcnode
+    expect_false(any(is.infinite(clean_ratio_mcnode)))
+
+    # Check that Inf was replaced with -999
+    expect_true(any(clean_ratio_mcnode == -999))
+  })
+
+  test_that("eval_module works with mcnode_null_rm() in expressions", {
+    # Create test data
+    test_data <- data.frame(
+      category = c("a", "b"),
+      base_value = c(0.5, 0.8)
+    )
+
+    # Expression that uses mcnode_null_rm to handle potentially missing nodes
+    test_exp <- quote({
+      result <- base_value * mcnode_null_rm(optional_node, null_value = 1)
+    })
+
+    result_module <- eval_module(
+      exp = c(test = test_exp),
+      data = test_data
+    )
+
+    # Verify module was created
+    expect_equal(class(result_module), "mcmodule")
+    expect_true("result" %in% names(result_module$node_list))
+
+    # Verify result uses the default value (1)
+    result_mcnode <- result_module$node_list$result$mcnode
+    expect_equal(as.numeric(result_mcnode), test_data$base_value)
+  })
+
+  test_that("eval_module works with mcnode_null_rm() returning existing node", {
+    # Create test data
+    test_data <- data.frame(
+      category = c("x", "y", "z"),
+      factor_value = c(2, 3, 4)
+    )
+
+    # Expression where mcnode_null_rm returns the existing node
+    test_exp <- quote({
+      existing_node <- mcdata(c(0.1, 0.2, 0.3), type = "0")
+      # mcnode_null_rm should return the existing node unchanged
+      safe_node <- mcnode_null_rm(existing_node)
+      # Use it in calculations
+      result <- factor_value * safe_node
+    })
+
+    result_module <- eval_module(
+      exp = c(test = test_exp),
+      data = test_data
+    )
+
+    # Verify both nodes exist
+    expect_true("existing_node" %in% names(result_module$node_list))
+    expect_true("safe_node" %in% names(result_module$node_list))
+    expect_true("result" %in% names(result_module$node_list))
+
+    # Verify safe_node equals existing_node
+    existing_mcnode <- result_module$node_list$existing_node$mcnode
+    safe_mcnode <- result_module$node_list$safe_node$mcnode
+    expect_equal(safe_mcnode, existing_mcnode)
+  })
 })
