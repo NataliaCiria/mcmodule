@@ -297,10 +297,21 @@ ast_traverse <- function(expr_text) {
     }
     if (is.call(e)) {
       function_call_flag <<- TRUE
-      fname <- if (is.symbol(e[[1]])) {
-        as.character(e[[1]])
+      call_head <- e[[1]]
+      fname <- if (is.symbol(call_head)) {
+        as.character(call_head)
       } else {
-        paste0(deparse(e[[1]]), collapse = "")
+        paste0(deparse(call_head), collapse = "")
+      }
+
+      if (is.call(call_head)) {
+        ns_op <- as.character(call_head[[1]])
+        if (ns_op %in% c("::", ":::")) {
+          pkg_name <- as.character(call_head[[2]])
+          fname_ns <- as.character(call_head[[3]])
+          function_names <<- c(function_names, pkg_name)
+          fname <- fname_ns
+        }
       }
 
       function_names <<- c(function_names, fname)

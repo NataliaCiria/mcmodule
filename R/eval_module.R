@@ -549,7 +549,6 @@ eval_module <- function(
       # modify the quoted expression in place
       exp_i <- add_nvariates_ast(exp_i, data_name = "data")
     }
-
     # Evaluate current expression
     eval(exp_i)
     message(sprintf("%s evaluated", exp_name_i))
