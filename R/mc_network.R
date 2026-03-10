@@ -317,6 +317,18 @@ visNetwork_edges <- function(mcmodule, inputs = FALSE) {
 #' The visualisation includes interactive features for exploring model structure
 #' and relationships.
 #'
+#' By default, nodes are colored as:
+#' \itemize{
+#'   \item \strong{inputs} (light blue, #B0DFF9): Input datasets, data frames, files, and columns
+#'   \item \strong{in_node} (blue, #6ABDEB): Input nodes and scalar values
+#'   \item \strong{out_node} (green, #A4CF96): Output nodes
+#'   \item \strong{filter} (light purple, #E8A5E5): Filtered nodes created with \code{mc_filter()}
+#'   \item \strong{compare} (medium purple, #D88FD5): Comparison nodes created with \code{mc_compare()}
+#'   \item \strong{trials_info} (light orange, #FAE4CB): Trial, subset, and related information nodes
+#'   \item \strong{total} (orange, #F39200): Total nodes created with \code{at_least_one()}
+#'   \item \strong{agg_total} (dark orange, #C17816): Aggregated total nodes created with \code{agg_totals()}
+#' }
+#'
 #' @param mcmodule (mcmodule object). Module containing network to visualise.
 #' @param variate (integer). Which variate to visualise. Default: 1.
 #' @param color_pal (character vector, optional). Custom colour palette for nodes.
@@ -481,6 +493,8 @@ default_color_pal <- c(
   scalar = "#6ABDEB",
   in_node = "#6ABDEB",
   out_node = "#A4CF96",
+  filter = "#E8A5E5",
+  compare = "#D88FD5",
   trials_n = "#FAE4CB",
   subsets_n = "#FAE4CB",
   subsets_p = "#FAE4CB",
@@ -492,6 +506,8 @@ default_color_legend <- c(
   inputs = "#B0DFF9",
   in_node = "#6ABDEB",
   out_node = "#A4CF96",
+  filter = "#E8A5E5",
+  compare = "#D88FD5",
   trials_info = "#FAE4CB",
   total = "#F39200",
   agg_total = "#C17816"

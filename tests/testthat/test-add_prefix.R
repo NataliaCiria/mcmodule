@@ -172,4 +172,84 @@ suppressMessages({
       names(prefixed$node_list)
     )))
   })
+
+  test_that("add_prefix prefixes total nodes after rewrite in combined module", {
+    transmission_data <- data.frame(
+      pathogen = c("a", "b"),
+      inf_dc_min = c(0.05, 0.3),
+      inf_dc_max = c(0.08, 0.4)
+    )
+
+    transmission_mctable <- data.frame(
+      mcnode = "inf_dc",
+      mc_func = "runif"
+    )
+
+    transmission <- eval_module(
+      exp = list(
+        transmission = quote({
+          result <- inf_dc
+        })
+      ),
+      data = transmission_data,
+      mctable = transmission_mctable,
+      data_keys = list(
+        transmission_data = list(
+          cols = names(transmission_data),
+          keys = "pathogen"
+        )
+      ),
+      prev_mcmodule = imports_mcmodule
+    )
+
+    combined <- combine_modules(imports_mcmodule, transmission)
+
+    combined <- at_least_one(
+      combined,
+      mc_names = c("no_detect_a", "result"),
+      name = "combined_detect"
+    )
+
+    combined <- trial_totals(
+      mcmodule = combined,
+      mc_names = "combined_detect",
+      trials_n = "animals_n",
+      data_name = "imports_data",
+      mctable = imports_mctable
+    )
+
+    prefixed_once <- add_prefix(combined, prefix = "first")
+    expect_true(any(grepl(
+      "^first_combined_detect$",
+      names(prefixed_once$node_list)
+    )))
+    expect_true(any(grepl(
+      "^first_combined_detect_set$",
+      names(prefixed_once$node_list)
+    )))
+    expect_true(any(grepl(
+      "^first_combined_detect_set_n$",
+      names(prefixed_once$node_list)
+    )))
+
+    prefixed_twice <- add_prefix(
+      prefixed_once,
+      prefix = "second",
+      rewrite_module = "first"
+    )
+
+    expect_true(any(grepl(
+      "^second_combined_detect$",
+      names(prefixed_twice$node_list)
+    )))
+    expect_true(any(grepl(
+      "^second_combined_detect_set$",
+      names(prefixed_twice$node_list)
+    )))
+    expect_true(any(grepl(
+      "^second_combined_detect_set_n$",
+      names(prefixed_twice$node_list)
+    )))
+    expect_false(any(grepl("^first_", names(prefixed_twice$node_list))))
+  })
 })

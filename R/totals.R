@@ -1322,7 +1322,7 @@ trial_totals <- function(
               mcmodule = mcmodule,
               data = data,
               mc_name = new_mc_name,
-              keys_names = keys_names
+              keys_names = keys_names[keys_names %in% names(data)]
             )
           }
         }
