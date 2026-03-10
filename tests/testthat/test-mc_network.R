@@ -222,6 +222,11 @@ suppressMessages({
     edges <- network$x$edges
     edge_pairs <- paste0(edges$from, "->", edges$to)
     expect_true(any(grepl("p1.*p1_A_filtered", edge_pairs)))
+
+    # Verify the filtered node has the correct color
+    node_colors <- network$x$nodes$color
+    names(node_colors) <- network$x$nodes$id
+    expect_equal(unname(node_colors["p1_A_filtered"]), "#E8A5E5")
   })
 
   test_that("mc_network works with mc_compare nodes", {
@@ -276,6 +281,11 @@ suppressMessages({
       node_types["p1_diff_compared"] == "compare" ||
         !is.na(node_types["p1_diff_compared"])
     )
+
+    # Verify the compared node has the correct color
+    node_colors <- network$x$nodes$color
+    names(node_colors) <- network$x$nodes$id
+    expect_equal(unname(node_colors["p1_diff_compared"]), "#D88FD5")
   })
 
   test_that("mc_network works with chained filter and compare nodes", {
