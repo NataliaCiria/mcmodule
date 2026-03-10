@@ -68,6 +68,7 @@ A data frame with correlation coefficients and metadata. Columns include:
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 Computes correlation coefficients between mcmodule inputs and outputs using
 tornado analysis (from the \code{mc2d} package). Supports multiple correlation methods
 and captures warnings generated during calculation.

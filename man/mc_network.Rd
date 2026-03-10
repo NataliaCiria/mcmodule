@@ -35,6 +35,7 @@ layout, and draggable nodes.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 Generates an interactive network visualisation using visNetwork library.
 The visualisation includes interactive features for exploring model structure
 and relationships.

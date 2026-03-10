@@ -2,6 +2,7 @@
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
+#'
 #' Converts an mcnode to long format suitable for ggplot2 and tidyverse analysis.
 #' Each row represents one uncertainty iteration for one variate.
 #'
@@ -223,6 +224,7 @@ tidy_mcnode <- function(
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
+#'
 #' Creates a ggplot2 visualisation of Monte Carlo node data showing distributions
 #' as semi-transparent boxplots overlaid with scatter points representing individual
 #' uncertainty iterations.

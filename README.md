@@ -111,7 +111,7 @@ Further documentation and examples can be found in the [vignette](https://natali
 
 If you use `mcmodule` in your research, please cite:
 
-Ciria, N. (2025). mcmodule: Modular Monte Carlo Risk Analysis. R package version 1.1.0. <https://nataliaciria.com/mcmodule/>
+Ciria N, Allepuz A, Ciaravino G (2025). mcmodule: Modular Monte Carlo Risk Analysis. R package version 1.2.0, <https://nataliaciria.com/mcmodule/>.
 
 ## Acknowledgements
 

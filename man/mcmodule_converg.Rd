@@ -43,6 +43,7 @@ Key columns:
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 Analyses convergence in Monte Carlo simulations by computing standardised
 and raw differences between consecutive iterations to evaluate stability and
 convergence of statistical measures.

@@ -2,6 +2,7 @@
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
+#'
 #' Validates that all mcnodes in a module have compatible dimensions for
 #' sensitivity analysis by checking uncertainty and variate dimensions.
 #'
@@ -148,6 +149,7 @@ mcmodule_to_mc <- function(
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
+#'
 #' Computes correlation coefficients between mcmodule inputs and outputs using
 #' tornado analysis (from the `mc2d` package). Supports multiple correlation methods
 #' and captures warnings generated during calculation.
@@ -590,6 +592,7 @@ mcmodule_corr <- function(
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
+#'
 #' Analyses convergence in Monte Carlo simulations by computing standardised
 #' and raw differences between consecutive iterations to evaluate stability and
 #' convergence of statistical measures.

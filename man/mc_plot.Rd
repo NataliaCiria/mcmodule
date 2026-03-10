@@ -70,6 +70,7 @@ A ggplot2 object for further customisation and display.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 Creates a ggplot2 visualisation of Monte Carlo node data showing distributions
 as semi-transparent boxplots overlaid with scatter points representing individual
 uncertainty iterations.
