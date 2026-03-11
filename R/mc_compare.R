@@ -20,7 +20,7 @@
 #' @param prefix (character, optional). Prefix for the auto-generated node name.
 #'   Default: NULL.
 #' @param suffix (character). Suffix appended to auto-generated name.
-#'   Default: "_compared".
+#'   Default: "compared".
 #' @param summary (logical). If TRUE, compute summary statistics for the new node.
 #'   Default: TRUE.
 #' @param align_uncertainty (logical). If TRUE, align uncertainty iterations between
@@ -110,7 +110,7 @@ mc_compare <- function(
   keys_names = NULL,
   name = NULL,
   prefix = NULL,
-  suffix = "_compared",
+  suffix = "compared",
   summary = TRUE,
   align_uncertainty = TRUE
 ) {
@@ -407,15 +407,21 @@ mc_compare <- function(
   comparison_node <- mcnode_na_rm(comparison_node, na_value = 0)
 
   # Generate comparison node name
+  normalized_suffix <- if (!is.null(suffix) && suffix != "") {
+    sub("^_+", "", suffix)
+  } else {
+    ""
+  }
+
   compare_mc_name <- if (!is.null(name)) {
-    if (!is.null(suffix) && suffix != "") {
-      paste0(name, suffix)
+    if (normalized_suffix != "") {
+      paste0(name, "_", normalized_suffix)
     } else {
       name
     }
   } else {
-    if (!is.null(suffix) && suffix != "") {
-      paste0(mc_name, suffix)
+    if (normalized_suffix != "") {
+      paste0(mc_name, "_", normalized_suffix)
     } else {
       paste0(mc_name, "_cmp")
     }
