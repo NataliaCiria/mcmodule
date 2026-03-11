@@ -284,8 +284,12 @@ eval_module <- function(
     )
 
     # Identify nodes requiring previous module inputs
-    prev_nodes <- names(node_list_i)[grepl("prev_node", node_list_i)]
-    prev_nodes <- prev_nodes[!prev_nodes %in% names(node_list)]
+    all_prev_nodes <- names(node_list_i)[
+      sapply(node_list_i, function(x) identical(x[["type"]], "prev_node"))
+    ]
+
+    prev_nodes <- all_prev_nodes[!all_prev_nodes %in% names(node_list)]
+
     data_nodes <- prev_nodes[prev_nodes %in% names(data)]
 
     # Process nodes requiring previous module inputs
@@ -336,94 +340,114 @@ eval_module <- function(
             mc_names = prev_nodes
           )
 
-          #Check if all prev_nodes are found in prev_mcmodule
-          missing_prev_nodes <- prev_nodes[
-            !prev_nodes %in% names(prev_node_list_i)
+          #Check if all true prev_nodes are found in prev_mcmodule
+          prev_nodes_check <- names(node_list_i)[
+            sapply(node_list_i, function(x) identical(x[["type"]], "prev_node"))
           ]
+
+          missing_prev_nodes <- prev_nodes_check[
+            !prev_nodes_check %in% names(prev_node_list_i)
+          ]
+
           if (length(missing_prev_nodes) > 0) {
-            stop(sprintf(
-              "%s not found in prev_mcmodule",
-              paste0(missing_prev_nodes, collapse = ", ")
-            ))
+            # If any missing prev_nodes, check if they are allowed to be missing due to null_rm
+            missing_prev_nodes <- missing_prev_nodes[
+              !sapply(missing_prev_nodes, function(x) {
+                isTRUE(node_list_i[[x]][["null_rm"]])
+              })
+            ]
+            # If there are still missing prev_nodes, throw error
+            if (length(missing_prev_nodes) > 0) {
+              stop(sprintf(
+                "%s not found in prev_mcmodule",
+                paste0(missing_prev_nodes, collapse = ", ")
+              ))
+            }
+            # Update prev_nodes to only those that are actually in prev_mcmodule
+            prev_nodes <- prev_nodes_check[
+              prev_nodes_check %in% names(prev_node_list_i)
+            ]
           }
 
           # Process each previous node
-          for (k in 1:length(prev_nodes)) {
-            mc_name <- prev_nodes[k]
-            node_list_i[[mc_name]] <- prev_node_list_i[[mc_name]]
-            # Check if previous node is an aggregated node,
-            # - if it is NOT an aggregated node it will be matched by its reference data_name
-            # - if it is an aggregated node it will be matched by its summary
-            if (
-              is.null(prev_node_list_i[[mc_name]][["agg_keys"]]) ||
-                prev_node_list_i[[mc_name]][["keep_variates"]]
-            ) {
-              data_name_k <- prev_node_list_i[[mc_name]]$data_name
-
-              if (length(data_name_k) > 1) {
-                message(sprintf(
-                  "Multiple data_name found for %s: %s. Using summary to match dimensions.",
-                  mc_name,
-                  paste(data_name_k, collapse = ", ")
-                ))
-                prev_data <- NULL
-              } else {
-                prev_data <- prev_mcmodule_i$data[[data_name_k]]
-              }
-
-              # Match if previous node data is not equal to new data or if node has multiple data_names
-              # IF IT PASSES ALL THE CHECKS IT ALREADY MATCHES AND NO MATCH IS NEEDED
+          if (length(prev_nodes) > 0) {
+            for (k in 1:length(prev_nodes)) {
+              mc_name <- prev_nodes[k]
+              node_list_i[[mc_name]] <- prev_node_list_i[[mc_name]]
+              # Check if previous node is an aggregated node,
+              # - if it is NOT an aggregated node it will be matched by its reference data_name
+              # - if it is an aggregated node it will be matched by its summary
               if (
-                is.null(prev_data) ||
-                  !(nrow(prev_data) == nrow(data) &&
-                    ncol(prev_data) == ncol(data) &&
-                    nrow(prev_data) ==
-                      dim(prev_mcmodule$node_list[[mc_name]]$mcnode)[[3]] &&
-                    all(names(prev_data) == names(data)) &&
-                    all(prev_data == data, na.rm = TRUE))
+                is.null(prev_node_list_i[[mc_name]][["agg_keys"]]) ||
+                  prev_node_list_i[[mc_name]][["keep_variates"]]
               ) {
-                match_prev <- mc_match_data(
-                  prev_mcmodule,
-                  mc_name,
-                  data,
-                  keys_names = match_keys
+                data_name_k <- prev_node_list_i[[mc_name]]$data_name
+
+                if (length(data_name_k) > 1) {
+                  message(sprintf(
+                    "Multiple data_name found for %s: %s. Using summary to match dimensions.",
+                    mc_name,
+                    paste(data_name_k, collapse = ", ")
+                  ))
+                  prev_data <- NULL
+                } else {
+                  prev_data <- prev_mcmodule_i$data[[data_name_k]]
+                }
+
+                # Match if previous node data is not equal to new data or if node has multiple data_names
+                # IF IT PASSES ALL THE CHECKS IT ALREADY MATCHES AND NO MATCH IS NEEDED
+                if (
+                  is.null(prev_data) ||
+                    !(nrow(prev_data) == nrow(data) &&
+                      ncol(prev_data) == ncol(data) &&
+                      nrow(prev_data) ==
+                        dim(prev_mcmodule$node_list[[mc_name]]$mcnode)[[3]] &&
+                      all(names(prev_data) == names(data)) &&
+                      all(prev_data == data, na.rm = TRUE))
+                ) {
+                  match_prev <- mc_match_data(
+                    prev_mcmodule,
+                    mc_name,
+                    data,
+                    keys_names = match_keys
+                  )
+                  match_prev_mcnode <- match_prev[[1]]
+                  data <- match_prev[["data_match"]]
+
+                  assign(mc_name, match_prev_mcnode)
+                }
+              } else {
+                # Match previous aggregated node with current data and update data
+                agg_keys <- prev_node_list_i[[mc_name]][["agg_keys"]]
+
+                if (!is.null(match_keys)) {
+                  if (!all(agg_keys %in% match_keys)) {
+                    message(sprintf(
+                      "Using match_keys (%s) instead of: %s",
+                      paste(match_keys, collapse = ", "),
+                      paste(agg_keys, collapse = ", ")
+                    ))
+                    agg_keys <- match_keys
+                  }
+                }
+
+                message(sprintf(
+                  "Matching agg prev_nodes dimensions by: %s",
+                  paste(agg_keys, collapse = ", ")
+                ))
+
+                match_agg_prev <- mc_match_data(
+                  mcmodule = prev_mcmodule,
+                  mc_name = mc_name,
+                  data = data,
+                  keys_names = agg_keys
                 )
-                match_prev_mcnode <- match_prev[[1]]
-                data <- match_prev[["data_match"]]
+
+                match_prev_mcnode <- match_agg_prev[[1]]
+                data <- match_agg_prev[["data_match"]]
 
                 assign(mc_name, match_prev_mcnode)
               }
-            } else {
-              # Match previous aggregated node with current data and update data
-              agg_keys <- prev_node_list_i[[mc_name]][["agg_keys"]]
-
-              if (!is.null(match_keys)) {
-                if (!all(agg_keys %in% match_keys)) {
-                  message(sprintf(
-                    "Using match_keys (%s) instead of: %s",
-                    paste(match_keys, collapse = ", "),
-                    paste(agg_keys, collapse = ", ")
-                  ))
-                  agg_keys <- match_keys
-                }
-              }
-
-              message(sprintf(
-                "Matching agg prev_nodes dimensions by: %s",
-                paste(agg_keys, collapse = ", ")
-              ))
-
-              match_agg_prev <- mc_match_data(
-                mcmodule = prev_mcmodule,
-                mc_name = mc_name,
-                data = data,
-                keys_names = agg_keys
-              )
-
-              match_prev_mcnode <- match_agg_prev[[1]]
-              data <- match_agg_prev[["data_match"]]
-
-              assign(mc_name, match_prev_mcnode)
             }
           }
         }
@@ -557,7 +581,9 @@ eval_module <- function(
     for (j in 1:length(node_list)) {
       mc_name <- names(node_list)[j]
 
-      if (mc_name %in% prev_nodes) {
+      # Skip processing for prev_nodes that are NOT in data
+      # (prev_nodes in data will be handled separately and still need metadata updates)
+      if (mc_name %in% all_prev_nodes && !mc_name %in% data_nodes) {
         next
       }
 

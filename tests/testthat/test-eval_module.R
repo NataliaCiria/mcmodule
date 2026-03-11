@@ -844,6 +844,59 @@ suppressMessages({
     expect_equal(as.numeric(result_mcnode), test_data$base_value)
   })
 
+  test_that("eval_module ignores missing prev_nodes flagged with null_rm", {
+    test_data <- data.frame(
+      category = c("a", "b"),
+      base_value_min = c(2, 3),
+      base_value_max = c(3, 4)
+    )
+
+    test_mctable <- data.frame(
+      mcnode = c("base_value"),
+      mc_func = c("runif"),
+      description = c("Base value"),
+      from_variable = c(NA),
+      transformation = c(NA),
+      sensi_baseline = c(NA_character_),
+      sensi_variation = c(NA_character_),
+      stringsAsFactors = FALSE
+    )
+
+    test_data_keys <- list(
+      test_data = list(
+        cols = c("category", "base_value_min", "base_value_max", "base_value"),
+        keys = c("category")
+      )
+    )
+
+    test_exp <- quote({
+      result <- base_value * mcnode_null_rm(missing_prev_node, null_value = 1)
+    })
+
+    expect_no_error(
+      result_module <- eval_module(
+        exp = c(test = test_exp),
+        data = test_data,
+        mctable = test_mctable,
+        data_keys = test_data_keys,
+        prev_mcmodule = list(
+          list(
+            data = list(),
+            node_list = structure(list(), class = "mcnode_list")
+          ) |>
+            structure(class = "mcmodule")
+        )
+      )
+    )
+
+    expect_true("result" %in% names(result_module$node_list))
+    expect_false("missing_prev_node" %in% names(result_module$node_list))
+    expect_equal(
+      "missing_prev_node",
+      result_module$node_list$result$null_rm_inputs
+    )
+  })
+
   test_that("eval_module works with mcnode_null_rm() returning existing node", {
     # Create test data
     test_data <- data.frame(

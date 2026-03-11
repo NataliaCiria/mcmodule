@@ -183,6 +183,41 @@ suppressMessages({
     expect_equal(node_list$output_4$inputs, c("output_3", "level"))
   })
 
+  test_that("get_node_list sets null_rm on in_nodes wrapped by mcnode_null_rm", {
+    test_exp <- quote({
+      output_1 <- mcnode_null_rm(input_a, null_value = 0)
+      output_2 <- mcnode_na_rm(output_1, 0)
+    })
+
+    test_mctable <- data.frame(
+      mcnode = c("input_a"),
+      mc_func = c("runif"),
+      description = c("Test input A"),
+      stringsAsFactors = FALSE
+    )
+
+    test_data_keys <- list(
+      test_data = list(
+        cols = c("x", "input_a_min", "input_a_max"),
+        keys = c("x")
+      )
+    )
+
+    node_list <- get_node_list(
+      exp = test_exp,
+      mctable = test_mctable,
+      data_keys = test_data_keys
+    )
+
+    expect_true("input_a" %in% names(node_list))
+    expect_equal(node_list$input_a$type, "in_node")
+    expect_true(isTRUE(node_list$input_a$null_rm))
+
+    expect_true("output_2" %in% names(node_list))
+    expect_equal(node_list$output_2$type, "out_node")
+    expect_true(isTRUE(node_list$output_2$na_rm))
+  })
+
   test_that("get_node_list works with functions with naming conflicts", {
     exp <- c("something", "called", "exp", "not", "a", "function")
 
