@@ -129,19 +129,23 @@ mc_filter <- function(
       node_type %in% c("filter", "compare", "agg_total") &&
       !is.null(node$summary)
 
+    # If data not provided, attempt to use node's data_name to get data from mcmodule$data
+    # If node_type is "total" and multiple data_names exist use summary
     if (is.null(data)) {
       data <- if (uses_summary_data) {
         node$summary
+      } else if (length(data_name) > 1 && !uses_summary_data) {
+        if (node_type == "total") {
+          node$summary
+        } else {
+          message(
+            "Multiple data names detected. Using first data_name for filtering."
+          )
+          data <- mcmodule$data[[data_name[1]]]
+        }
       } else {
         mcmodule$data[[data_name]]
       }
-    }
-
-    if (length(data_name) > 1 && !uses_summary_data) {
-      message(
-        "Multiple data names detected. Using first data_name for filtering."
-      )
-      data <- mcmodule$data[[data_name[1]]]
     }
   } else {
     if (is.null(data)) {

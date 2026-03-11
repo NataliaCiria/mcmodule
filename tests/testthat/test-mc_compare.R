@@ -705,4 +705,75 @@ suppressMessages({
     # Check that not all values are identical
     expect_false(all(aligned_values == unaligned_values))
   })
+
+  # Test 17: Regression - compare total node with multiple data_names
+  test_that("mc_compare works for total node with multiple data_names", {
+    module_1_data <- data.frame(
+      group = c("A", "B", "A", "B"),
+      scenario_id = c("0", "0", "1", "1"),
+      p_mod1_x = c(0.20, 0.30, 0.10, 0.15),
+      p_mod1_y = c(0.05, 0.10, 0.02, 0.03)
+    )
+
+    module_2_data <- data.frame(
+      group = c("A", "B", "A", "B"),
+      scenario_id = c("0", "0", "2", "2"),
+      p_mod2_x = c(0.25, 0.35, 0.12, 0.18),
+      p_mod2_y = c(0.08, 0.12, 0.03, 0.05)
+    )
+    example_keys <- list(
+      module_1_data = list(cols = names(module_1_data), keys = c("group")),
+      module_2_data = list(cols = names(module_2_data), keys = c("group"))
+    )
+    module_1_exp <- quote({
+      p_mod1 <- p_mod1_x + p_mod1_y
+    })
+
+    module_1 <- eval_module(
+      exp = module_1_exp,
+      data = module_1_data,
+      data_keys = example_keys
+    )
+
+    module_2_exp <- quote({
+      p_mod2 <- p_mod2_x + p_mod2_y
+    })
+
+    module_2 <- eval_module(
+      exp = module_2_exp,
+      data = module_2_data,
+      data_keys = example_keys
+    )
+
+    module_1 <- agg_totals(
+      module_1,
+      mc_name = "p_mod1",
+      agg_keys = "scenario_id"
+    )
+    module_2 <- agg_totals(
+      module_2,
+      mc_name = "p_mod2",
+      agg_keys = "scenario_id"
+    )
+
+    combined <- combine_modules(module_1, module_2)
+
+    combined <- at_least_one(
+      combined,
+      mc_name = c("p_mod1_agg", "p_mod2_agg"),
+      name = "total",
+      summary = TRUE
+    )
+
+    expect_true("total" %in% names(combined$node_list))
+    expect_true(length(combined$node_list$total$data_name) > 1)
+
+    combined <- mc_compare(
+      combined,
+      "total",
+      type = "relative_reduction",
+      suffix = "rr"
+    )
+    expect_true("total_rr" %in% names(combined$node_list))
+  })
 })
