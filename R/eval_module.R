@@ -341,12 +341,8 @@ eval_module <- function(
           )
 
           #Check if all true prev_nodes are found in prev_mcmodule
-          prev_nodes_check <- names(node_list_i)[
-            sapply(node_list_i, function(x) identical(x[["type"]], "prev_node"))
-          ]
-
-          missing_prev_nodes <- prev_nodes_check[
-            !prev_nodes_check %in% names(prev_node_list_i)
+          missing_prev_nodes <- prev_nodes[
+            !prev_nodes %in% names(prev_node_list_i)
           ]
 
           if (length(missing_prev_nodes) > 0) {
@@ -364,8 +360,8 @@ eval_module <- function(
               ))
             }
             # Update prev_nodes to only those that are actually in prev_mcmodule
-            prev_nodes <- prev_nodes_check[
-              prev_nodes_check %in% names(prev_node_list_i)
+            prev_nodes <- prev_nodes[
+              prev_nodes %in% names(prev_node_list_i)
             ]
           }
 
