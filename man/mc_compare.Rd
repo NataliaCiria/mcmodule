@@ -12,7 +12,7 @@ mc_compare(
   keys_names = NULL,
   name = NULL,
   prefix = NULL,
-  suffix = "_compared",
+  suffix = "compared",
   summary = TRUE,
   align_uncertainty = TRUE
 )
@@ -42,7 +42,7 @@ auto-generated from \code{mc_name} and \code{suffix}. Default: NULL.}
 Default: NULL.}
 
 \item{suffix}{(character). Suffix appended to auto-generated name.
-Default: "_compared".}
+Default: "compared".}
 
 \item{summary}{(logical). If TRUE, compute summary statistics for the new node.
 Default: TRUE.}
