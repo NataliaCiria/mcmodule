@@ -45,42 +45,6 @@ mcmodule_dim_check <- function(mcmodule, mc_names = NULL) {
   )
 }
 
-#' Convert Monte Carlo Module to Matrices
-#'
-#' Transforms an mcmodule into a list of matrices, with one matrix per variate.
-#' Each matrix has uncertainty simulations as rows and mcnodes as columns.
-#'
-#' @param mcmodule (mcmodule object). Module to convert.
-#' @param mc_names (character vector, optional). Node names to include. If NULL,
-#'   includes all nodes. Default: NULL.
-#'
-#' @return A list of matrices (one per variate). Each matrix has uncertainty
-#'   simulations as rows and mcnodes as columns.
-mcmodule_to_matrices <- function(mcmodule, mc_names = NULL) {
-  mc_names <- mc_names %||% names(mcmodule$node_list)
-  dims <- mcmodule_dim_check(mcmodule, mc_names)
-  # Initialize list to store matrices: one per n_variate
-  matrices <- vector("list", dims$n_variate)
-  # Intitialize matrices (n_uncertainty x n_mcnodes)
-  matrices <- lapply(matrices, function(x) {
-    matrix(nrow = dims$n_uncertainty, ncol = dims$n_mcnodes)
-  })
-
-  for (i in seq_along(mc_names)) {
-    mcnode_i <- mcmodule$node_list[[mc_names[i]]][["mcnode"]]
-    for (j in seq_len(dim(mcnode_i)[3])) {
-      variate_i_j <- mcnode_i[,, j]
-
-      if (length(variate_i_j) == 1) {
-        variate_i_j <- rep(variate_i_j, dims$n_uncertainty)
-      }
-
-      matrices[[j]][, i] <- variate_i_j
-    }
-  }
-  matrices
-}
-
 #' Convert Monte Carlo Module to `mc2d` Objects
 #'
 #' Converts an mcmodule into one or more mc objects (from the mc2d package).
