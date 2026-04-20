@@ -34,6 +34,68 @@ mcmodule_to_matrices <- function(mcmodule, mc_names = NULL) {
   matrices
 }
 
+#' Set or Get Global Sample Design
+#'
+#' Manages a global sample design matrix/data frame by setting or retrieving it.
+#' This object is typically the output of [sample_design()] and can be used as
+#' default input in [eval_module()].
+#'
+#' @param data (matrix or data frame, optional). Sample design to store
+#'   globally. If `NULL`, returns the current global sample design. Default:
+#'   `NULL`.
+#'
+#' @return Current or newly set sample design (`data.frame`) or `NULL` if no
+#'   sample design has been set.
+#'
+#' @examples
+#' # Get current sample design (NULL if not set)
+#' current_sample_design <- set_sample_design()
+#'
+#' # Set sample design
+#' X <- data.frame(a = c(0.1, 0.2), b = c(1, 2))
+#' set_sample_design(X)
+#'
+#' # Reset sample design
+#' reset_sample_desing()
+#'
+#' @export
+set_sample_design <- function(data = NULL) {
+  if (is.null(data)) {
+    if (!exists("sample_design", envir = .pkgglobalenv)) {
+      assign("sample_design", NULL, envir = .pkgglobalenv)
+    }
+    return(get("sample_design", envir = .pkgglobalenv))
+  }
+
+  if (!(is.matrix(data) || is.data.frame(data))) {
+    stop("sample_design must be a matrix or data frame")
+  }
+
+  sample_design_df <- as.data.frame(
+    data,
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+
+  assign("sample_design", sample_design_df, envir = .pkgglobalenv)
+  message("sample_design set to ", deparse(substitute(data)))
+}
+
+#' Reset Global Sample Design
+#'
+#' Clears and resets the global sample design to `NULL`.
+#'
+#' @return `NULL` (invisibly). Clears global sample design.
+#'
+#' @examples
+#' reset_sample_desing()
+#'
+#' @export
+reset_sample_desing <- function() {
+  assign("sample_design", NULL, envir = .pkgglobalenv)
+  message("sample_design reset")
+}
+
 #' Generate Sampling Design Matrix
 #'
 #' Builds a design matrix from `mctable` definitions using Latin, Morris, or

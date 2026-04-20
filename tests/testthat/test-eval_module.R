@@ -608,6 +608,205 @@ suppressMessages({
     expect_true(is.mcnode(result_mcmodule$node_list$external_input$mcnode))
   })
 
+  test_that("eval_module creates input nodes from sample_design and allows empty data", {
+    test_exp <- quote({
+      result <- input_a + input_b
+    })
+
+    test_mctable <- data.frame(
+      mcnode = c("input_a", "input_b"),
+      mc_func = c(NA, NA),
+      description = c("A", "B"),
+      from_variable = c(NA, NA),
+      sample_space = c(NA_character_, NA_character_),
+      transformation = c(NA, NA),
+      sensi_variation = c(NA_character_, NA_character_),
+      stringsAsFactors = FALSE
+    )
+
+    X <- data.frame(
+      input_a = c(0.1, 0.2, 0.3, 0.4),
+      input_b = c(1, 2, 3, 4)
+    )
+
+    result_mcmodule <- eval_module(
+      exp = c(test = test_exp),
+      data = data.frame(),
+      mctable = test_mctable,
+      sample_design = X
+    )
+
+    expect_equal(class(result_mcmodule), "mcmodule")
+    expect_true(result_mcmodule$node_list$input_a$from_sample_design)
+    expect_true(result_mcmodule$node_list$input_b$from_sample_design)
+    expect_null(result_mcmodule$node_list$input_a$data_name)
+    expect_null(result_mcmodule$node_list$input_b$data_name)
+    expect_equal(
+      dim(result_mcmodule$node_list$input_a$mcnode),
+      c(nrow(X), 1, 1)
+    )
+    expect_equal(
+      dim(result_mcmodule$node_list$input_b$mcnode),
+      c(nrow(X), 1, 1)
+    )
+    expect_equal(
+      as.numeric(result_mcmodule$node_list$input_a$mcnode[, 1, 1]),
+      X$input_a
+    )
+    expect_equal(
+      as.numeric(result_mcmodule$node_list$input_b$mcnode[, 1, 1]),
+      X$input_b
+    )
+
+    expect_no_error(
+      eval_module(
+        exp = c(test = test_exp),
+        data = NULL,
+        mctable = test_mctable,
+        sample_design = X
+      )
+    )
+  })
+
+  test_that("eval_module uses global sample_design by default", {
+    reset_sample_desing()
+
+    test_exp <- quote({
+      result <- input_a + input_b
+    })
+
+    test_mctable <- data.frame(
+      mcnode = c("input_a", "input_b"),
+      mc_func = c(NA, NA),
+      description = c("A", "B"),
+      from_variable = c(NA, NA),
+      sample_space = c(NA_character_, NA_character_),
+      transformation = c(NA, NA),
+      sensi_variation = c(NA_character_, NA_character_),
+      stringsAsFactors = FALSE
+    )
+
+    X <- data.frame(
+      input_a = c(0.1, 0.2, 0.3),
+      input_b = c(1, 2, 3)
+    )
+
+    set_sample_design(X)
+
+    result_mcmodule <- eval_module(
+      exp = c(test = test_exp),
+      data = data.frame(),
+      mctable = test_mctable
+    )
+
+    expect_true(result_mcmodule$node_list$input_a$from_sample_design)
+    expect_true(result_mcmodule$node_list$input_b$from_sample_design)
+
+    reset_sample_desing()
+  })
+
+  test_that("eval_module enforces input ndvar compatibility when sample_design is used", {
+    test_data <- data.frame(
+      other_min = 0.2,
+      other_max = 0.4
+    )
+
+    test_mctable <- data.frame(
+      mcnode = c("input_a", "other"),
+      mc_func = c(NA, "runif"),
+      description = c("A", "Other"),
+      from_variable = c(NA, NA),
+      sample_space = c(NA_character_, NA_character_),
+      transformation = c(NA, NA),
+      sensi_variation = c(NA_character_, NA_character_),
+      stringsAsFactors = FALSE
+    )
+
+    test_exp <- quote({
+      result <- input_a * other
+    })
+
+    X <- data.frame(input_a = c(0.1, 0.2, 0.3, 0.4, 0.5))
+
+    result_mcmodule <- eval_module(
+      exp = c(test = test_exp),
+      data = test_data,
+      mctable = test_mctable,
+      sample_design = X
+    )
+
+    expect_equal(
+      dim(result_mcmodule$node_list$input_a$mcnode),
+      c(nrow(X), 1, 1)
+    )
+    expect_equal(dim(result_mcmodule$node_list$other$mcnode)[1], nrow(X))
+    expect_false(isTRUE(result_mcmodule$node_list$other$from_sample_design))
+    expect_equal(result_mcmodule$node_list$other$data_name, "test_data")
+  })
+
+  test_that("eval_module keeps type 0 nodes at original dimension with sample_design", {
+    test_data <- data.frame(
+      fixed_value = 2
+    )
+
+    test_mctable <- data.frame(
+      mcnode = c("input_a", "fixed_value"),
+      mc_func = c(NA, NA),
+      description = c("A", "Fixed"),
+      from_variable = c(NA, NA),
+      sample_space = c(NA_character_, NA_character_),
+      transformation = c(NA, NA),
+      sensi_variation = c(NA_character_, NA_character_),
+      stringsAsFactors = FALSE
+    )
+
+    test_exp <- quote({
+      result <- input_a * fixed_value
+    })
+
+    X <- data.frame(input_a = c(0.1, 0.2, 0.3, 0.4))
+
+    result_mcmodule <- eval_module(
+      exp = c(test = test_exp),
+      data = test_data,
+      mctable = test_mctable,
+      sample_design = X
+    )
+
+    expect_equal(dim(result_mcmodule$node_list$input_a$mcnode), c(nrow(X), 1, 1))
+    expect_equal(dim(result_mcmodule$node_list$fixed_value$mcnode), c(1, 1, 1))
+    expect_identical(attr(result_mcmodule$node_list$fixed_value$mcnode, "type"), "0")
+  })
+
+  test_that("eval_module errors when sample_design misses required inputs and data is empty", {
+    test_exp <- quote({
+      result <- input_a + input_b
+    })
+
+    test_mctable <- data.frame(
+      mcnode = c("input_a", "input_b"),
+      mc_func = c(NA, NA),
+      description = c("A", "B"),
+      from_variable = c(NA, NA),
+      sample_space = c(NA_character_, NA_character_),
+      transformation = c(NA, NA),
+      sensi_variation = c(NA_character_, NA_character_),
+      stringsAsFactors = FALSE
+    )
+
+    X <- data.frame(input_a = c(0.1, 0.2, 0.3))
+
+    expect_error(
+      eval_module(
+        exp = c(test = test_exp),
+        data = data.frame(),
+        mctable = test_mctable,
+        sample_design = X
+      ),
+      "not provided in sample_design"
+    )
+  })
+
   test_that("eval_module deals with mcdata() and mcstoc() functions", {
     test_data <- data.frame(
       category = c("a", "b"),

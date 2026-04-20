@@ -2,15 +2,15 @@
 #'
 #' Evaluates a model expression or list of expressions to produce an mcmodule
 #' object containing simulation results and metadata. Expression may use
-#' `mcstoc()` and `mcdata()` to create nodes inline; nvariates is automatically
+#' [mc2d::mcstoc()] and [mc2d::mcdata()] to create nodes inline; nvariates is automatically
 #' inferred from the data.
 #'
 #' @details
-#' - mcstoc() and mcdata() may be used directly inside model expressions.
+#' - [mc2d::mcstoc()] and [mc2d::mcdata()] may be used directly inside model expressions.
 #'   When these are used you should NOT explicitly supply nvariates, nvariates
 #'   will be inferred automatically as the number of rows in the input `data`.
 #'   Other arguments are preserved, for example specify `type = "0"` when
-#'   providing data without variability/uncertainty (see ?mcdata and ?mcstoc).
+#'   providing data without variability/uncertainty (see [mc2d::mcdata()] and [mc2d::mcstoc()]).
 #' - By design, mcmodule supports type = "V" (the default, with variability) and
 #'   type = "0" (no variability) nodes. Expressions that specify other node
 #'   types ("U" or "VU") are not fully supported and downstream compatibility is not
@@ -25,7 +25,7 @@
 #'
 #' @param exp (language or list). Model expression or list of expressions to evaluate.
 #' @param data (data frame). Input data; number of rows determines nvariates for
-#'   `mcstoc()`/`mcdata()` in expressions. Default: required.
+#'   [mc2d::mcstoc()]/[mc2d::mcdata()] in expressions. Default: required.
 #' @param param_names (named character vector, optional). Names to rename parameters.
 #'   Default: NULL.
 #' @param prev_mcmodule (mcmodule or list, optional). Previous module(s) for
@@ -36,12 +36,16 @@
 #'   `mc_func` columns. If NULL or not provided, nodes matching `data` column names
 #'   are automatically created. Default: empty mctable().
 #' @param data_keys (list). Data structure and keys for input data. Default:
-#'   `set_data_keys()`.
+#'   [set_data_keys()].
 #' @param match_keys (character vector, optional). Keys to match `prev_mcmodule`
 #'   mcnodes with current data. Default: NULL.
 #' @param keys (character vector, optional). Explicit keys for input data. Default: NULL.
 #' @param overwrite_keys (logical or NULL). If NULL (default), becomes TRUE when
 #'   `data_keys` is NULL or empty; otherwise FALSE.
+#' @param sample_design (matrix or data frame, optional). Sampling design matrix
+#'   (typically output of [sample_design()]) used to create input nodes via
+#'   [matrix_to_mcnodes()]. Columns matching expression input nodes are created
+#'   from this matrix. Defaults to [set_sample_design()].
 #' @param use_variation (character vector, optional). mcnode names to apply
 #'   `sensi_variation` expression from `mctable` before node creation. Default: NULL.
 #'
@@ -93,15 +97,70 @@ eval_module <- function(
   match_keys = NULL,
   keys = NULL,
   overwrite_keys = NULL,
+  sample_design = set_sample_design(),
   use_variation = NULL
 ) {
+  if (is.null(data)) {
+    data <- data.frame()
+  }
+
   data_name <- deparse(substitute(data))
+
+  sample_design_data <- NULL
+  if (!is.null(sample_design)) {
+    if (!(is.matrix(sample_design) || is.data.frame(sample_design))) {
+      stop("sample_design must be a matrix or data frame")
+    }
+    sample_design_data <- as.data.frame(
+      sample_design,
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+
+    if (nrow(sample_design_data) < 1) {
+      stop("sample_design has 0 rows")
+    }
+    if (ncol(sample_design_data) < 1) {
+      stop("sample_design has 0 columns")
+    }
+  }
 
   mctable <- check_mctable(mctable)
 
   # Validate that data is not empty
-  if (nrow(data) < 1) {
+  if (nrow(data) < 1 && is.null(sample_design_data)) {
     stop(sprintf("data '%s' has 0 rows", data_name))
+  }
+
+  resize_input_ndvar <- function(mcnode_obj, target_ndvar) {
+    if (is.null(target_ndvar) || !is.mcnode(mcnode_obj)) {
+      return(mcnode_obj)
+    }
+
+    mc_type <- attr(mcnode_obj, "type", exact = TRUE)
+    if (!identical(mc_type, "V")) {
+      return(mcnode_obj)
+    }
+
+    mc_dim <- dim(mcnode_obj)
+    if (length(mc_dim) < 3 || mc_dim[1] == target_ndvar) {
+      return(mcnode_obj)
+    }
+
+    n_variates <- mc_dim[3]
+    node_matrix <- matrix(NA_real_, nrow = target_ndvar, ncol = n_variates)
+
+    for (vv in seq_len(n_variates)) {
+      node_values <- as.numeric(mcnode_obj[, 1, vv])
+      node_matrix[, vv] <- rep_len(node_values, target_ndvar)
+    }
+
+    mcdata(
+      data = as.vector(node_matrix),
+      type = "V",
+      nsv = target_ndvar,
+      nvariates = n_variates
+    )
   }
 
   # Normalize optional OAT arguments
@@ -231,6 +290,12 @@ eval_module <- function(
   }
 
   node_list <- list()
+  sampled_nodes_all <- character()
+  target_ndvar <- if (!is.null(sample_design_data)) {
+    nrow(sample_design_data)
+  } else {
+    NULL
+  }
 
   # Process each expression in the list
   for (i in 1:length(exp_list)) {
@@ -245,6 +310,23 @@ eval_module <- function(
       data_keys = data_keys,
       keys = keys_arg
     )
+
+    in_nodes_i <- names(node_list_i)[
+      sapply(node_list_i, function(x) identical(x[["type"]], "in_node"))
+    ]
+
+    sampled_nodes_i <- character()
+    if (!is.null(sample_design_data)) {
+      sampled_nodes_i <- intersect(in_nodes_i, colnames(sample_design_data))
+      sampled_nodes_all <- unique(c(sampled_nodes_all, sampled_nodes_i))
+
+      if (length(sampled_nodes_i) > 0) {
+        matrix_to_mcnodes(
+          X = sample_design_data[, sampled_nodes_i, drop = FALSE],
+          envir = environment()
+        )
+      }
+    }
 
     # Identify nodes requiring previous module inputs
     all_prev_nodes <- names(node_list_i)[
@@ -478,10 +560,30 @@ eval_module <- function(
 
     # Create mcnodes for the current expression
     mctable_i = mctable[
-      mctable$mcnode %in% names(node_list_i)[grepl("in_node", node_list_i)],
+      mctable$mcnode %in% in_nodes_i & !(mctable$mcnode %in% sampled_nodes_i),
     ]
+
+    if (!is.null(sample_design_data) && nrow(mctable_i) > 0 && nrow(data) < 1) {
+      stop(sprintf(
+        "data has 0 rows and the following input nodes are not provided in sample_design: %s",
+        paste(mctable_i$mcnode, collapse = ", ")
+      ))
+    }
+
     if (nrow(mctable_i) > 0) {
       create_mcnodes(data = data, mctable = mctable_i)
+
+      if (!is.null(sample_design_data)) {
+        for (mc_name_resize in mctable_i$mcnode) {
+          if (exists(mc_name_resize)) {
+            assign(
+              mc_name_resize,
+              resize_input_ndvar(get(mc_name_resize), target_ndvar),
+              envir = environment()
+            )
+          }
+        }
+      }
     }
 
     # Add nvariates to mcstoc and mcdata in current expression (handle multi-line & nested calls)
@@ -577,7 +679,14 @@ eval_module <- function(
 
       # Update node metadata
       node_list[[mc_name]][["mcnode"]] <- mcnode
-      node_list[[mc_name]][["data_name"]] <- data_name
+
+      if (mc_name %in% sampled_nodes_all) {
+        node_list[[mc_name]][["from_sample_design"]] <- TRUE
+        node_list[[mc_name]][["data_name"]] <- NULL
+      } else {
+        node_list[[mc_name]][["data_name"]] <- data_name
+      }
+
       node_list[[mc_name]][["mc_name"]] <- mc_name
 
       # Set module name

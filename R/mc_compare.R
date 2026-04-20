@@ -40,7 +40,7 @@
 #'   \item Creating a new comparison node in the mcmodule
 #' }
 #'
-#' When `align_uncertainty = TRUE`, the function uses `mc2d::cornode()` to align
+#' When `align_uncertainty = TRUE`, the function uses [mc2d::cornode()] to align
 #' the uncertainty iterations between matched baseline and what-if nodes. For
 #' multivariate nodes, correlation is applied independently to each variate.
 #'

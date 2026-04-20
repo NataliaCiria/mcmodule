@@ -23,13 +23,13 @@
 #'     (for example `runif`, `rpert`). If missing/`NA`, node is deterministic.
 #'   \item `from_variable`: Source column name in `data` when different from
 #'     `mcnode`.
-#'   \item `sample_space`: Sampling definition used by `sample_design()`.
+#'   \item `sample_space`: Sampling definition used by [sample_design()].
 #'     Supported formats include `c(...)` and named bounds such as
 #'     `min = X, max = Y`.
 #'   \item `transformation`: R expression applied using `value` as placeholder
 #'     before node creation.
 #'   \item `sensi_variation`: OAT variation expression using `value` placeholder
-#'     in `eval_module()`.
+#'     in [eval_module()].
 #' }
 #'
 #' @examples

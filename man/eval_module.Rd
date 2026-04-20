@@ -15,6 +15,7 @@ eval_module(
   match_keys = NULL,
   keys = NULL,
   overwrite_keys = NULL,
+  sample_design = set_sample_design(),
   use_variation = NULL
 )
 }
@@ -22,7 +23,7 @@ eval_module(
 \item{exp}{(language or list). Model expression or list of expressions to evaluate.}
 
 \item{data}{(data frame). Input data; number of rows determines nvariates for
-\code{mcstoc()}/\code{mcdata()} in expressions. Default: required.}
+\code{\link[mc2d:mcstoc]{mc2d::mcstoc()}}/\code{\link[mc2d:mcnode]{mc2d::mcdata()}} in expressions. Default: required.}
 
 \item{param_names}{(named character vector, optional). Names to rename parameters.
 Default: NULL.}
@@ -38,7 +39,7 @@ Default: FALSE.}
 are automatically created. Default: empty mctable().}
 
 \item{data_keys}{(list). Data structure and keys for input data. Default:
-\code{set_data_keys()}.}
+\code{\link[=set_data_keys]{set_data_keys()}}.}
 
 \item{match_keys}{(character vector, optional). Keys to match \code{prev_mcmodule}
 mcnodes with current data. Default: NULL.}
@@ -47,6 +48,11 @@ mcnodes with current data. Default: NULL.}
 
 \item{overwrite_keys}{(logical or NULL). If NULL (default), becomes TRUE when
 \code{data_keys} is NULL or empty; otherwise FALSE.}
+
+\item{sample_design}{(matrix or data frame, optional). Sampling design matrix
+(typically output of \code{\link[=sample_design]{sample_design()}}) used to create input nodes via
+\code{\link[=matrix_to_mcnodes]{matrix_to_mcnodes()}}. Columns matching expression input nodes are created
+from this matrix. Defaults to \code{\link[=set_sample_design]{set_sample_design()}}.}
 
 \item{use_variation}{(character vector, optional). mcnode names to apply
 \code{sensi_variation} expression from \code{mctable} before node creation. Default: NULL.}
@@ -62,16 +68,16 @@ An mcmodule object (list) with elements:
 \description{
 Evaluates a model expression or list of expressions to produce an mcmodule
 object containing simulation results and metadata. Expression may use
-\code{mcstoc()} and \code{mcdata()} to create nodes inline; nvariates is automatically
+\code{\link[mc2d:mcstoc]{mc2d::mcstoc()}} and \code{\link[mc2d:mcnode]{mc2d::mcdata()}} to create nodes inline; nvariates is automatically
 inferred from the data.
 }
 \details{
 \itemize{
-\item mcstoc() and mcdata() may be used directly inside model expressions.
+\item \code{\link[mc2d:mcstoc]{mc2d::mcstoc()}} and \code{\link[mc2d:mcnode]{mc2d::mcdata()}} may be used directly inside model expressions.
 When these are used you should NOT explicitly supply nvariates, nvariates
 will be inferred automatically as the number of rows in the input \code{data}.
 Other arguments are preserved, for example specify \code{type = "0"} when
-providing data without variability/uncertainty (see ?mcdata and ?mcstoc).
+providing data without variability/uncertainty (see \code{\link[mc2d:mcnode]{mc2d::mcdata()}} and \code{\link[mc2d:mcstoc]{mc2d::mcstoc()}}).
 \item By design, mcmodule supports type = "V" (the default, with variability) and
 type = "0" (no variability) nodes. Expressions that specify other node
 types ("U" or "VU") are not fully supported and downstream compatibility is not

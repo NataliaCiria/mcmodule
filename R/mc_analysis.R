@@ -127,16 +127,16 @@ mcmodule_to_mc <- function(
 #' @param match_variates (logical). If TRUE, match input nodes to output variates
 #'   when data dimensions differ. Default: TRUE.
 #' @param variates_as_nsv (logical). If TRUE, combine all variates into one `mc`
-#'   object; if FALSE, analyse each variate separately. See `mcmodule_to_mc()`.
+#'   object; if FALSE, analyse each variate separately. See [mcmodule_to_mc()].
 #'   Default: FALSE.
 #' @param print_summary (logical). If TRUE, print correlation analysis summary.
 #'   Default: TRUE.
 #' @param progress (logical). If TRUE, print progress information while running.
 #'   Default: FALSE.
 #' @param method (character). Correlation coefficient type: "spearman" (default),
-#'   "kendall", or "pearson". See `stats::cor()`. Default: "spearman".
+#'   "kendall", or "pearson". See [stats::cor()]. Default: "spearman".
 #' @param use (character). Method for handling missing values: "all.obs",
-#'   "complete.obs", or "pairwise.complete.obs". See `stats::cor()`.
+#'   "complete.obs", or "pairwise.complete.obs". See [stats::cor()].
 #'   Default: "all.obs".
 #' @param lim (numeric vector). Quantiles for credible interval computation (reserved
 #'   for two-dimensional models). Default: `c(0.025, 0.975)`.

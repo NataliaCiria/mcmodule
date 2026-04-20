@@ -1,4 +1,27 @@
 suppressMessages({
+  test_that("set_sample_design and reset_sample_desing work", {
+    reset_sample_desing()
+    expect_null(set_sample_design())
+
+    X <- data.frame(
+      a = c(0.1, 0.2, 0.3),
+      b = c(1, 2, 3)
+    )
+
+    expect_no_error(set_sample_design(X))
+    current_X <- set_sample_design()
+    expect_s3_class(current_X, "data.frame")
+    expect_equal(current_X, X)
+
+    expect_error(
+      set_sample_design(1:3),
+      "sample_design must be a matrix or data frame"
+    )
+
+    reset_sample_desing()
+    expect_null(set_sample_design())
+  })
+
   test_that("mcmodule_to_matrices returns correct structure", {
     # Minimal mock mcmodule object
     mcmodule <- list(

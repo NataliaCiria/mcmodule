@@ -81,7 +81,7 @@ This function compares what-if scenarios against a baseline by:
 \item Creating a new comparison node in the mcmodule
 }
 
-When \code{align_uncertainty = TRUE}, the function uses \code{mc2d::cornode()} to align
+When \code{align_uncertainty = TRUE}, the function uses \code{\link[mc2d:cornode]{mc2d::cornode()}} to align
 the uncertainty iterations between matched baseline and what-if nodes. For
 multivariate nodes, correlation is applied independently to each variate.
 

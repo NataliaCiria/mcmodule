@@ -244,7 +244,7 @@ tidy_mcnode <- function(
 #'   "commodity"). Variates organised so all scenarios per group appear together.
 #'   Default: NULL.
 #' @param filter (expression, optional). Unquoted expression to filter variates
-#'   (e.g., `pathogen == "a"` or `origin == "nord"`). Passed to `tidy_mcnode()`.
+#'   (e.g., `pathogen == "a"` or `origin == "nord"`). Passed to [tidy_mcnode()].
 #'   Default: NULL.
 #' @param threshold (numeric, optional). Reference value for vertical dashed line.
 #'   Default: NULL.

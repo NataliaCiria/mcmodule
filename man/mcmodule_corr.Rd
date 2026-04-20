@@ -31,7 +31,7 @@ if FALSE, use global output (last node). Default: FALSE.}
 when data dimensions differ. Default: TRUE.}
 
 \item{variates_as_nsv}{(logical). If TRUE, combine all variates into one \code{mc}
-object; if FALSE, analyse each variate separately. See \code{mcmodule_to_mc()}.
+object; if FALSE, analyse each variate separately. See \code{\link[=mcmodule_to_mc]{mcmodule_to_mc()}}.
 Default: FALSE.}
 
 \item{print_summary}{(logical). If TRUE, print correlation analysis summary.
@@ -41,10 +41,10 @@ Default: TRUE.}
 Default: FALSE.}
 
 \item{method}{(character). Correlation coefficient type: "spearman" (default),
-"kendall", or "pearson". See \code{stats::cor()}. Default: "spearman".}
+"kendall", or "pearson". See \code{\link[stats:cor]{stats::cor()}}. Default: "spearman".}
 
 \item{use}{(character). Method for handling missing values: "all.obs",
-"complete.obs", or "pairwise.complete.obs". See \code{stats::cor()}.
+"complete.obs", or "pairwise.complete.obs". See \code{\link[stats:cor]{stats::cor()}}.
 Default: "all.obs".}
 
 \item{lim}{(numeric vector). Quantiles for credible interval computation (reserved
