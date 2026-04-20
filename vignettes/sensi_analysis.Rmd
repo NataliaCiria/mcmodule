@@ -1,0 +1,15 @@
+---
+title: "Sensitivity analysis"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Sensitivity analysis-vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: references.bib
+number-sections: true
+number-equations: true
+crossref:
+  chapters: true
+link-citations: true
+---
+

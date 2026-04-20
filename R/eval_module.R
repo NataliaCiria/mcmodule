@@ -34,7 +34,7 @@
 #'   Default: FALSE.
 #' @param mctable (data frame). Reference table for mcnodes with `mcnode` and
 #'   `mc_func` columns. If NULL or not provided, nodes matching `data` column names
-#'   are automatically created. Default: empty mctable().
+#'   are automatically created. Default [set_mctable()].
 #' @param data_keys (list). Data structure and keys for input data. Default:
 #'   [set_data_keys()].
 #' @param match_keys (character vector, optional). Keys to match `prev_mcmodule`
