@@ -34,29 +34,62 @@ mcmodule_to_matrices <- function(mcmodule, mc_names = NULL) {
   matrices
 }
 
+#' Generate Sampling Design Matrix
+#'
+#' Builds a design matrix from `mctable` definitions using Latin, Morris, or
+#' Sobol sampling. Optionally samples only a subset of nodes via `mc_names`
+#' and controls treatment of non-sampled nodes with `if_not_sampled`.
+#'
+#' @param mctable (data frame). Table containing at least `mcnode` and
+#'   `sample_space`; may also contain `transformation`.
+#' @param data (data frame, optional). Source data used for sampling when
+#'   `method = "latin"`. If `NULL`, sampling is performed directly from
+#'   `sample_space`.
+#' @param n (integer). Number of samples for Latin and Sobol methods.
+#'   Default: 1000.
+#' @param method (character). Sampling method: one of `"latin"`, `"morris"`,
+#'   or `"sobol"`. Default: `"latin"`.
+#' @param mc_names (character vector, optional). Node names to sample. If
+#'   `NULL`, all nodes in `mctable$mcnode` are sampled.
+#' @param if_not_sampled (character). How to handle nodes not listed in
+#'   `mc_names`: `"exclude"`, `"median"`, `"mean"`, `"max"`, or `"min"`.
+#'   Default: `"exclude"`.
+#' @param transformation (logical). Whether to apply `transformation` rules.
+#'   Default: `TRUE`.
+#' @param morris_r (integer). Number of Morris repetitions.
+#'   Default: 10.
+#' @param morris_design (list). Morris design specification passed to
+#'   [sensitivity::morris()].
+#' @param sobol_scheme (character). Scheme passed to
+#'   [sensitivity::sobolSalt()]. Default: `"A"`.
+#' @param ... Additional arguments reserved for future extensions.
+#'
+#' @return A data frame with sampled inputs as columns. If
+#'   `if_not_sampled != "exclude"`, non-sampled inputs are added as fixed
+#'   columns prefixed with `"fix."`.
+#'
+#' @examples
+#' mctable <- data.frame(
+#'   mcnode = c("x", "y"),
+#'   sample_space = c("min = 0, max = 1", "min = 10, max = 20"),
+#'   stringsAsFactors = FALSE
+#' )
+#' sample_design(mctable, n = 10)
 sample_design <- function(
   mctable,
   data = NULL,
   n = 1000,
   method = c("latin", "morris", "sobol"),
-  transformation = TRUE,
   mc_names = NULL,
-  if_not_sampled = NULL,
+  if_not_sampled = c("exclude", "median", "mean", "max", "min"),
+  transformation = TRUE,
   morris_r = 10,
   morris_design = list(type = "oat", levels = 4, grid.jump = 2),
   sobol_scheme = "A",
   ...
 ) {
   method <- match.arg(method)
-
-  # Set default if_not_sampled based on method
-  if (is.null(if_not_sampled)) {
-    if_not_sampled <- if (method == "latin") "exclude" else "median"
-  }
-  if_not_sampled <- match.arg(
-    if_not_sampled,
-    c("exclude", "median", "mean", "max", "min")
-  )
+  if_not_sampled <- match.arg(if_not_sampled)
 
   # Filter mctable by mc_names if provided
   all_mcnode_names <- mctable$mcnode

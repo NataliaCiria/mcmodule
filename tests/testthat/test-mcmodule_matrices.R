@@ -32,6 +32,29 @@ suppressMessages({
     expect_true(all(res$y >= 10 & res$y <= 20))
   })
 
+  test_that("sample_design defaults to method='latin' and if_not_sampled='exclude'", {
+    mctable <- data.frame(
+      mcnode = c("a", "b", "c"),
+      sample_space = c(
+        "min = 0, max = 1",
+        "min = 10, max = 20",
+        "min = -5, max = 5"
+      ),
+      stringsAsFactors = FALSE
+    )
+
+    res <- sample_design(
+      mctable,
+      n = 20,
+      mc_names = c("a", "c")
+    )
+
+    expect_s3_class(res, "data.frame")
+    expect_equal(colnames(res), c("a", "c"))
+    expect_equal(nrow(res), 20)
+    expect_false(any(grepl("^fix\\.", colnames(res))))
+  })
+
   test_that("sample_design applies transformation and logical coercion by default", {
     mctable <- data.frame(
       mcnode = c("x", "flag", "origin"),
@@ -210,7 +233,7 @@ suppressMessages({
     expect_true(all(res$fix.b >= 10 & res$fix.b <= 20))
   })
 
-  test_that("sample_design morris with mc_names defaults to if_not_sampled='median'", {
+  test_that("sample_design morris with mc_names defaults to if_not_sampled='exclude'", {
     mctable <- data.frame(
       mcnode = c("x", "y", "z"),
       sample_space = c(
@@ -221,20 +244,68 @@ suppressMessages({
       stringsAsFactors = FALSE
     )
 
-    res <- sample_design(
+    res <- suppressWarnings(sample_design(
       mctable,
       method = "morris",
       morris_r = 3,
       mc_names = c("x", "z")
+    ))
+
+    expect_s3_class(res, "data.frame")
+    expect_equal(colnames(res), c("x", "z"))
+    expect_false(any(grepl("^fix\\.", colnames(res))))
+  })
+
+  test_that("sample_design morris with if_not_sampled='median' adds fixed columns", {
+    mctable <- data.frame(
+      mcnode = c("x", "y", "z"),
+      sample_space = c(
+        "min = 0, max = 1",
+        "min = 10, max = 20",
+        "min = -5, max = 5"
+      ),
+      stringsAsFactors = FALSE
     )
+
+    res <- suppressWarnings(sample_design(
+      mctable,
+      method = "morris",
+      morris_r = 10,
+      mc_names = c("x", "z"),
+      if_not_sampled = "median"
+    ))
 
     expect_s3_class(res, "data.frame")
     expect_equal(colnames(res), c("x", "z", "fix.y"))
     expect_length(unique(res$fix.y), 1)
-    expect_true(all(res$fix.y >= 10 & res$fix.y <= 20))
+    expect_equal(unique(res$fix.y), 15)
   })
 
-  test_that("sample_design sobol with if_not_sampled='mean'", {
+  test_that("sample_design sobol with mc_names defaults to if_not_sampled='exclude'", {
+    mctable <- data.frame(
+      mcnode = c("a", "b", "c"),
+      sample_space = c(
+        "min = 0, max = 1",
+        "min = 10, max = 20",
+        "min = -5, max = 5"
+      ),
+      stringsAsFactors = FALSE
+    )
+
+    res <- sample_design(
+      mctable,
+      n = 32,
+      method = "sobol",
+      mc_names = c("a", "c")
+    )
+
+    expect_s3_class(res, "data.frame")
+    expect_equal(colnames(res), c("a", "c"))
+    expect_equal(nrow(res), 32)
+    expect_false(any(grepl("^fix\\.", colnames(res))))
+  })
+
+  test_that("sample_design sobol with if_not_sampled='median' adds fixed columns", {
     mctable <- data.frame(
       mcnode = c("a", "b", "c"),
       sample_space = c(
@@ -250,14 +321,14 @@ suppressMessages({
       n = 32,
       method = "sobol",
       mc_names = c("a", "c"),
-      if_not_sampled = "mean"
+      if_not_sampled = "median"
     )
 
     expect_s3_class(res, "data.frame")
     expect_equal(colnames(res), c("a", "c", "fix.b"))
     expect_equal(nrow(res), 32)
     expect_length(unique(res$fix.b), 1)
-    expect_true(all(res$fix.b >= 10 & res$fix.b <= 20))
+    expect_equal(unique(res$fix.b), 15)
   })
 
   test_that("sample_design rejects invalid mc_names", {

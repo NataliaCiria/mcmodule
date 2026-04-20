@@ -303,9 +303,9 @@ With values and keys established, we still need some information to build our st
 
 -   from_variable: Column name, if it comes from a column with a name different to the mcnode
 
--   transformation: Transformation to be applied to the original column values
+-   sample_space: Sampling domain used by `sample_design()` (for example `c(0, 1)` or `min = 0, max = 1`)
 
--   sensi_baseline: Parameters for baseline mock distribution [^2]
+-   transformation: Transformation to be applied to the original column values
 
 -   sensi_variation: OAT variation expression using `value` placeholder[^2]
 

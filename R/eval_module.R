@@ -42,8 +42,6 @@
 #' @param keys (character vector, optional). Explicit keys for input data. Default: NULL.
 #' @param overwrite_keys (logical or NULL). If NULL (default), becomes TRUE when
 #'   `data_keys` is NULL or empty; otherwise FALSE.
-#' @param use_baseline (character vector, optional). mcnode names to override with
-#'   `sensi_baseline` values from `mctable`. Default: NULL.
 #' @param use_variation (character vector, optional). mcnode names to apply
 #'   `sensi_variation` expression from `mctable` before node creation. Default: NULL.
 #'
@@ -95,7 +93,6 @@ eval_module <- function(
   match_keys = NULL,
   keys = NULL,
   overwrite_keys = NULL,
-  use_baseline = NULL,
   use_variation = NULL
 ) {
   data_name <- deparse(substitute(data))
@@ -108,11 +105,6 @@ eval_module <- function(
   }
 
   # Normalize optional OAT arguments
-  use_baseline <- if (is.null(use_baseline)) {
-    character()
-  } else {
-    unique(use_baseline[!is.na(use_baseline) & use_baseline != ""])
-  }
   use_variation <- if (is.null(use_variation)) {
     character()
   } else {
@@ -122,15 +114,8 @@ eval_module <- function(
   data_eval <- data
   mctable_eval <- mctable
 
-  if (length(c(use_baseline, use_variation)) > 0) {
-    target_nodes <- unique(c(use_baseline, use_variation))
-
-    parse_param_list <- function(text_value) {
-      if (is.na(text_value) || text_value == "") {
-        return(NULL)
-      }
-      eval(parse(text = paste0("list(", text_value, ")")), envir = baseenv())
-    }
+  if (length(use_variation) > 0) {
+    target_nodes <- unique(use_variation)
 
     for (mc_name in target_nodes) {
       row_idx <- which(mctable_eval$mcnode == mc_name)
@@ -140,28 +125,6 @@ eval_module <- function(
       }
       row_idx <- row_idx[[1]]
       mc_row <- mctable_eval[row_idx, ]
-
-      if (mc_name %in% use_baseline) {
-        baseline_list <- parse_param_list(as.character(mc_row$sensi_baseline))
-        if (is.null(baseline_list)) {
-          warning(sprintf("sensi_baseline not specified for %s", mc_name))
-        } else if ("value" %in% names(baseline_list)) {
-          value_name <- ifelse(
-            is.na(mc_row$from_variable),
-            mc_name,
-            as.character(mc_row$from_variable)
-          )
-          data_eval[[value_name]] <- rep(baseline_list$value, nrow(data_eval))
-        } else {
-          for (param in names(baseline_list)) {
-            param_col <- paste(mc_name, param, sep = "_")
-            data_eval[[param_col]] <- rep(
-              baseline_list[[param]],
-              nrow(data_eval)
-            )
-          }
-        }
-      }
 
       if (mc_name %in% use_variation) {
         transformation <- as.character(mc_row$transformation)

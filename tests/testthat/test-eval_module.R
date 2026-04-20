@@ -121,7 +121,6 @@ suppressMessages({
       mc_func = c("runif"),
       from_variable = c(NA),
       transformation = c(NA),
-      sensi_baseline = c(NA_character_),
       sensi_variation = c(NA_character_)
     )
     current_exp <- quote({
@@ -234,7 +233,6 @@ suppressMessages({
       mc_func = c("runif"),
       from_variable = c(NA),
       transformation = c(NA),
-      sensi_baseline = c(NA_character_),
       sensi_variation = c(NA_character_)
     )
 
@@ -295,7 +293,6 @@ suppressMessages({
       mc_func = c("runif"),
       from_variable = c(NA),
       transformation = c(NA),
-      sensi_baseline = c(NA_character_),
       sensi_variation = c(NA_character_)
     )
     # Get previous module
@@ -362,7 +359,6 @@ suppressMessages({
       mc_func = c(NA),
       from_variable = c(NA),
       transformation = c(NA),
-      sensi_baseline = c(NA_character_),
       sensi_variation = c(NA_character_)
     )
 
@@ -430,7 +426,6 @@ suppressMessages({
       mc_func = c("runif"),
       from_variable = c(NA),
       transformation = c(NA),
-      sensi_baseline = c(NA_character_),
       sensi_variation = c(NA_character_)
     )
 
@@ -522,7 +517,6 @@ suppressMessages({
       mc_func = NA,
       from_variable = NA,
       transformation = NA,
-      sensi_baseline = NA_character_,
       sensi_variation = NA_character_
     )
 
@@ -595,7 +589,6 @@ suppressMessages({
       mc_func = c(NA),
       from_variable = c(NA),
       transformation = c(NA),
-      sensi_baseline = c(NA_character_),
       sensi_variation = c(NA_character_),
       stringsAsFactors = FALSE
     )
@@ -636,7 +629,6 @@ suppressMessages({
       stringsAsFactors = FALSE,
       from_variable = c(NA),
       transformation = c(NA),
-      sensi_baseline = c(NA_character_),
       sensi_variation = c(NA_character_)
     )
 
@@ -658,25 +650,6 @@ suppressMessages({
     )
   })
 
-  test_that("eval_module works with use_baseline parameter", {
-    # Test basic use_baseline functionality
-    result_baseline <- eval_module(
-      exp = c(imports = imports_exp),
-      data = imports_data,
-      mctable = imports_mctable,
-      data_keys = imports_data_keys,
-      use_baseline = c("h_prev", "w_prev")
-    )
-
-    # Verify it created an mcmodule
-    expect_equal(class(result_baseline), "mcmodule")
-    expect_true("inf_a" %in% names(result_baseline$node_list))
-
-    # Verify mcnodes were created successfully
-    expect_true(is.mcnode(result_baseline$node_list$inf_a$mcnode))
-    expect_true(is.mcnode(result_baseline$node_list$w_prev$mcnode))
-  })
-
   test_that("eval_module works with use_variation parameter", {
     # Test basic use_variation functionality
     result_variation <- eval_module(
@@ -696,25 +669,6 @@ suppressMessages({
     expect_true(is.mcnode(result_variation$node_list$test_sensi$mcnode))
   })
 
-  test_that("eval_module works with both use_baseline and use_variation", {
-    # Test combined use_baseline and use_variation on same node
-    result_combined <- eval_module(
-      exp = c(imports = imports_exp),
-      data = imports_data,
-      mctable = imports_mctable,
-      data_keys = imports_data_keys,
-      use_baseline = c("h_prev"),
-      use_variation = c("h_prev")
-    )
-
-    # Verify it created an mcmodule
-    expect_equal(class(result_combined), "mcmodule")
-    expect_true("inf_a" %in% names(result_combined$node_list))
-
-    # Verify mcnodes were created
-    expect_true(is.mcnode(result_combined$node_list$inf_a$mcnode))
-  })
-
   test_that("eval_module handles NULL defaults for OAT parameters", {
     # Test that NULL defaults work (no errors)
     result_null_defaults <- eval_module(
@@ -722,7 +676,6 @@ suppressMessages({
       data = imports_data,
       mctable = imports_mctable,
       data_keys = imports_data_keys,
-      use_baseline = NULL,
       use_variation = NULL
     )
 
@@ -746,7 +699,6 @@ suppressMessages({
       description = c("Test input"),
       from_variable = c(NA),
       transformation = c(NA),
-      sensi_baseline = c(NA_character_),
       sensi_variation = c(NA_character_),
       stringsAsFactors = FALSE
     )
@@ -857,7 +809,6 @@ suppressMessages({
       description = c("Base value"),
       from_variable = c(NA),
       transformation = c(NA),
-      sensi_baseline = c(NA_character_),
       sensi_variation = c(NA_character_),
       stringsAsFactors = FALSE
     )

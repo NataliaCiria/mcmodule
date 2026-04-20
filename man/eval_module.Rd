@@ -15,7 +15,6 @@ eval_module(
   match_keys = NULL,
   keys = NULL,
   overwrite_keys = NULL,
-  use_baseline = NULL,
   use_variation = NULL
 )
 }
@@ -48,9 +47,6 @@ mcnodes with current data. Default: NULL.}
 
 \item{overwrite_keys}{(logical or NULL). If NULL (default), becomes TRUE when
 \code{data_keys} is NULL or empty; otherwise FALSE.}
-
-\item{use_baseline}{(character vector, optional). mcnode names to override with
-\code{sensi_baseline} values from \code{mctable}. Default: NULL.}
 
 \item{use_variation}{(character vector, optional). mcnode names to apply
 \code{sensi_variation} expression from \code{mctable} before node creation. Default: NULL.}
