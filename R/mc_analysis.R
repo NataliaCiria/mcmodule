@@ -140,6 +140,8 @@ mcmodule_to_mc <- function(
 #'   Default: "all.obs".
 #' @param lim (numeric vector). Quantiles for credible interval computation (reserved
 #'   for two-dimensional models). Default: `c(0.025, 0.975)`.
+#' @param plot (logical). If TRUE, plots a tornado plot generated from the
+#'   computed correlation table using [mcmodule_tornado()]. Default: FALSE.
 #' @return A data frame with correlation coefficients and metadata. Columns include:
 #'   \itemize{
 #'     \item exp: Expression name
@@ -177,7 +179,8 @@ mcmodule_corr <- function(
   progress = FALSE,
   method = c("spearman", "kendall", "pearson"),
   use = "all.obs",
-  lim = c(0.025, 0.975)
+  lim = c(0.025, 0.975),
+  plot = FALSE
 ) {
   info <- mcmodule_info(mcmodule)
   module_names <- unique(info$module_exp_data$module)
@@ -546,6 +549,10 @@ mcmodule_corr <- function(
     }
 
     cat("\n")
+  }
+
+  if (isTRUE(plot)) {
+    plot(mcmodule_tornado(corr_results = coor))
   }
 
   coor

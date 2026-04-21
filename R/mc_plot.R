@@ -697,3 +697,273 @@ mc_plot <- function(
 
   return(p)
 }
+
+
+#' Plot Tornado-Style Correlation Results Across Variates
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Creates a tornado-style plot from [mcmodule_corr()] results. For each input node,
+#' the plot shows all variate-level correlations as small vertical ticks, a black
+#' horizontal range line (min to max), a median marker, and a larger marker at the
+#' maximum absolute correlation.
+#'
+#' @param mcmodule (mcmodule object, optional). Module used to compute correlations
+#'   when `corr_results` is NULL.
+#' @param corr_results (data frame, optional). Output table from [mcmodule_corr()].
+#'   If provided, no new correlation analysis is run. Default: NULL.
+#' @param output (character, optional). Output node name. Passed to
+#'   [mcmodule_corr()] when `corr_results` is NULL.
+#' @param by_exp (logical). Passed to [mcmodule_corr()]. Default: FALSE.
+#' @param match_variates (logical). Passed to [mcmodule_corr()]. Default: TRUE.
+#' @param variates_as_nsv (logical). Passed to [mcmodule_corr()]. Default: FALSE.
+#' @param print_summary (logical). Passed to [mcmodule_corr()]. Default: TRUE.
+#' @param progress (logical). Passed to [mcmodule_corr()]. Default: FALSE.
+#' @param method (character). Passed to [mcmodule_corr()].
+#'   Default: `c("spearman", "kendall", "pearson")`.
+#' @param use (character). Passed to [mcmodule_corr()]. Default: "all.obs".
+#' @param lim (numeric vector). Passed to [mcmodule_corr()].
+#'   Default: `c(0.025, 0.975)`.
+#' @param colour (character or logical). Colouring for max absolute points.
+#'   Default: "strength". If `TRUE` or "strength", points are coloured by
+#'   qualitative correlation strength.
+#'
+#' @return A ggplot2 object.
+#'
+#' @details
+#' `mcmodule_tornado()` returns a ggplot object. Use [mcmodule_corr()] when you
+#' need the correlation table; use `mcmodule_tornado()` when you need a plot
+#' object that can be further customised.
+#'
+#' @export
+mcmodule_tornado <- function(
+  mcmodule = NULL,
+  corr_results = NULL,
+  output = NULL,
+  by_exp = FALSE,
+  match_variates = TRUE,
+  variates_as_nsv = FALSE,
+  print_summary = TRUE,
+  progress = FALSE,
+  method = c("spearman", "kendall", "pearson"),
+  use = "all.obs",
+  lim = c(0.025, 0.975),
+  colour = "strength"
+) {
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop(
+      "ggplot2 is required for mcmodule_tornado. Install it using: install.packages('ggplot2')"
+    )
+  }
+
+  if (is.null(corr_results)) {
+    if (is.null(mcmodule)) {
+      stop("Provide either mcmodule or corr_results")
+    }
+
+    corr_results <- mcmodule_corr(
+      mcmodule = mcmodule,
+      output = output,
+      by_exp = by_exp,
+      match_variates = match_variates,
+      variates_as_nsv = variates_as_nsv,
+      print_summary = print_summary,
+      progress = progress,
+      method = method,
+      use = use,
+      lim = lim,
+      plot = FALSE
+    )
+  }
+
+  if (!is.data.frame(corr_results)) {
+    stop("corr_results must be a data frame returned by mcmodule_corr")
+  }
+
+  required_cols <- c("input", "value")
+  missing_cols <- required_cols[!required_cols %in% names(corr_results)]
+  if (length(missing_cols) > 0) {
+    stop(sprintf(
+      "corr_results is missing required columns: %s",
+      paste(missing_cols, collapse = ", ")
+    ))
+  }
+
+  corr_results <- corr_results[!is.na(corr_results$input), , drop = FALSE]
+  corr_results <- corr_results[!is.na(corr_results$value), , drop = FALSE]
+
+  if (nrow(corr_results) == 0) {
+    stop("No non-missing correlation values available to plot")
+  }
+
+  if (!"strength" %in% names(corr_results)) {
+    corr_results$strength <- vapply(
+      corr_results$value,
+      function(r) {
+        abs_r <- abs(r)
+        if (is.na(abs_r)) {
+          NA_character_
+        } else if (abs_r >= 0.8) {
+          "Very strong"
+        } else if (abs_r >= 0.6) {
+          "Strong"
+        } else if (abs_r >= 0.4) {
+          "Moderate"
+        } else if (abs_r >= 0.2) {
+          "Weak"
+        } else {
+          "None"
+        }
+      },
+      FUN.VALUE = character(1)
+    )
+  }
+
+  by_input <- split(corr_results, corr_results$input)
+
+  summary_list <- lapply(names(by_input), function(input_name) {
+    input_df <- by_input[[input_name]]
+    max_idx <- which.max(abs(input_df$value))
+
+    data.frame(
+      input = input_name,
+      min_value = min(input_df$value, na.rm = TRUE),
+      max_value = max(input_df$value, na.rm = TRUE),
+      median_value = stats::median(input_df$value, na.rm = TRUE),
+      max_abs_value = input_df$value[max_idx],
+      strength = input_df$strength[max_idx],
+      stringsAsFactors = FALSE
+    )
+  })
+
+  summary_df <- do.call(rbind, summary_list)
+
+  ordered_inputs <- summary_df$input[
+    order(abs(summary_df$max_abs_value), decreasing = TRUE)
+  ]
+  y_levels <- rev(ordered_inputs)
+
+  corr_results$input <- factor(corr_results$input, levels = y_levels)
+  summary_df$input <- factor(summary_df$input, levels = y_levels)
+
+  method_vals <- unique(stats::na.omit(corr_results$method))
+  if (length(method_vals) == 1) {
+    method_name <- method_vals[1]
+  } else if (length(method) == 1) {
+    method_name <- method
+  } else {
+    method_name <- NULL
+  }
+
+  x_axis_title <- if (!is.null(method_name) && !is.na(method_name)) {
+    paste0(
+      toupper(substr(method_name, 1, 1)),
+      substring(method_name, 2),
+      " correlation coefficient"
+    )
+  } else {
+    "Correlation coefficient"
+  }
+
+  p <- ggplot2::ggplot(
+    corr_results,
+    ggplot2::aes(x = .data$value, y = .data$input)
+  ) +
+    ggplot2::geom_vline(
+      xintercept = 0,
+      linetype = "dashed",
+      color = "gray40",
+      linewidth = 0.6
+    ) +
+    ggplot2::geom_segment(
+      data = summary_df,
+      ggplot2::aes(
+        x = .data$min_value,
+        xend = .data$max_value,
+        y = .data$input,
+        yend = .data$input
+      ),
+      inherit.aes = FALSE,
+      color = "black",
+      linewidth = 0.5
+    ) +
+    ggplot2::geom_point(
+      shape = 124,
+      size = 2,
+      stroke = 0.8,
+      alpha = 0.2,
+      color = "gray20",
+      position = ggplot2::position_jitter(width = 0, height = 0.1)
+    ) +
+    ggplot2::geom_point(
+      data = summary_df,
+      ggplot2::aes(x = .data$median_value, y = .data$input),
+      inherit.aes = FALSE,
+      shape = 16,
+      size = 3,
+      alpha = 0.9,
+      color = "black"
+    )
+
+  use_strength_colour <- isTRUE(colour) ||
+    (is.character(colour) &&
+      length(colour) == 1 &&
+      tolower(colour) == "strength")
+
+  if (use_strength_colour) {
+    strength_levels <- c("None", "Weak", "Moderate", "Strong", "Very strong")
+    summary_df$strength <- factor(summary_df$strength, levels = strength_levels)
+
+    p <- p +
+      ggplot2::geom_point(
+        data = summary_df,
+        ggplot2::aes(
+          x = .data$max_abs_value,
+          y = .data$input,
+          color = .data$strength
+        ),
+        inherit.aes = FALSE,
+        shape = 16,
+        alpha = 0.9,
+        size = 3.4
+      ) +
+      ggplot2::scale_color_manual(
+        values = c(
+          "None" = "#D9D9D9",
+          "Weak" = "#A5D6A7",
+          "Moderate" = "#FFD54F",
+          "Strong" = "#FF8A65",
+          "Very strong" = "#D73027"
+        ),
+        drop = FALSE,
+        na.value = "gray60",
+        name = "Strength"
+      )
+  } else {
+    p <- p +
+      ggplot2::geom_point(
+        data = summary_df,
+        ggplot2::aes(x = .data$max_abs_value, y = .data$input),
+        inherit.aes = FALSE,
+        shape = 16,
+        size = 3.4,
+        color = "black"
+      )
+  }
+
+  p <- p +
+    ggplot2::labs(
+      x = x_axis_title,
+      y = "Input node"
+    ) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      panel.grid.major.y = ggplot2::element_blank(),
+      panel.grid.minor = ggplot2::element_blank(),
+      axis.text.y = ggplot2::element_text(size = 10),
+      legend.position = if (use_strength_colour) "right" else "none"
+    )
+
+  p
+}

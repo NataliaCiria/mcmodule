@@ -14,7 +14,8 @@ mcmodule_corr(
   progress = FALSE,
   method = c("spearman", "kendall", "pearson"),
   use = "all.obs",
-  lim = c(0.025, 0.975)
+  lim = c(0.025, 0.975),
+  plot = FALSE
 )
 }
 \arguments{
@@ -49,6 +50,9 @@ Default: "all.obs".}
 
 \item{lim}{(numeric vector). Quantiles for credible interval computation (reserved
 for two-dimensional models). Default: \code{c(0.025, 0.975)}.}
+
+\item{plot}{(logical). If TRUE, plots a tornado plot generated from the
+computed correlation table using \code{\link[=mcmodule_tornado]{mcmodule_tornado()}}. Default: FALSE.}
 }
 \value{
 A data frame with correlation coefficients and metadata. Columns include:

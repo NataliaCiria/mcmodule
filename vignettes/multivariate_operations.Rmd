@@ -24,8 +24,6 @@ knitr::opts_chunk$set(
 library(mcmodule)
 ```
 
-> *Work in progress!* 🏗
-
 # Element-wise operations {#sec-element-wise-operations}
 
 Most operations in this model are element-wise, meaning each calculation occurs independently on matching elements across nodes. These operations preserve node dimensions while applying functions (such as multiplication or addition) to corresponding elements, allowing uncertainties and variates to propagate through the calculations.

@@ -467,6 +467,26 @@ suppressMessages({
     expect_equal(unique(result$variate), 1)
   })
 
+  test_that("mcmodule_corr plot parameter returns ggplot", {
+    skip_if_not_installed("ggplot2")
+
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    result <- mcmodule_corr(
+      test_module,
+      print_summary = FALSE,
+      progress = FALSE,
+      plot = TRUE
+    )
+
+    expect_s3_class(result, "data.frame")
+  })
+
   # Tests for mcmodule_converg
   test_that("mcmodule_converg returns correct structure", {
     test_module <- eval_module(

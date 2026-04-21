@@ -354,9 +354,9 @@ imports_exp <- quote({
 
 Starting with version 1.2.0, you can create mcnodes directly inside expressions using `mcstoc()` or `mcdata()` from the `mc2d` package. However, these functions do not behave exactly as they do in `mc2d` when used within `mcmodule`. Keep the following points in mind:
 
-- Do not set `nvariates`. It is automatically set to match the number of rows in your data.
-- Use `type = "V"` (variability, the default) or `type = "0"` (deterministic).
-- All other `mcstoc()` and `mcdata()` arguments behave as documented in `mc2d`.
+-   Do not set `nvariates`. It is automatically set to match the number of rows in your data.
+-   Use `type = "V"` (variability, the default) or `type = "0"` (deterministic).
+-   All other `mcstoc()` and `mcdata()` arguments behave as documented in `mc2d`.
 
 ```{r}
 # Example expression with mcnodes created on-the-fly
@@ -379,7 +379,6 @@ imports_exp_inline <- quote({
   no_detect <- false_neg + no_test
 })
 ```
-
 
 ## Evaluating an mcmodule
 
@@ -639,9 +638,7 @@ imports_wif <- imports_wif %>%
 imports_wif$node_list$no_detect_set_agg$summary
 ```
 
-Once scenario totals are available, we can directly compare each what-if scenario
-against baseline using `mc_compare()`. Here we compute the **relative risk
-reduction** in `no_detect_set_agg` for each pathogen:
+Once scenario totals are available, we can directly compare each what-if scenario against baseline using `mc_compare()`. Here we compute the **relative risk reduction** in `no_detect_set_agg` for each pathogen:
 
 ```{r}
 imports_wif <- mc_compare(
@@ -835,7 +832,6 @@ h_prev
 ```{r}
 mc_summary(data = prevalence_region, mcnode = h_prev, keys_names = c("pathogen", "origin"))
 ```
-
 
 # Next steps
 

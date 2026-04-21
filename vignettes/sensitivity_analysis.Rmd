@@ -1,0 +1,71 @@
+---
+title: "Sensitivity analysis"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Sensitivity analysis-vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: references.bib
+number-sections: true
+number-equations: true
+crossref:
+  chapters: true
+link-citations: true
+---
+
+> *Work in progress!* 🏗
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r, include = FALSE}
+library(mcmodule)
+```
+
+# Risk analysis sensitivity analysis
+
+Definition, correlation, Morris and Sobol indices.
+
+Other packages needed
+
+```{r, warning=FALSE, message=FALSE}
+library(sensitivity)
+library(dplyr)
+library(ggplot2)
+```
+
+# Correlation analysis
+
+The `mcmodule_corr()` function calculates correlation coefficients between input and output nodes across your mcmodule. This helps identify which input parameters have the strongest influence on your results. It is based on `mc2d::tornado()` but applied to many distinct variates.
+
+```{r}
+# Calculate correlations using Spearman's method (default)
+cor_results <- mcmodule_corr(imports_mcmodule)
+
+# View correlation results
+head(cor_results)
+
+# Use different correlation method
+cor_pearson <- mcmodule_corr(imports_mcmodule, method = "pearson")
+cor_kendall <- mcmodule_corr(imports_mcmodule, method = "kendall")
+```
+
+Visualize results
+
+```{r}
+cor_results%>%
+  ggplot(aes(x=value, y=input))+
+  geom_point()
+```
+
+
+# Morris index
+
+
+# Sobol index
+
+

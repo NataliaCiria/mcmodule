@@ -36,7 +36,7 @@ Default: FALSE.}
 
 \item{mctable}{(data frame). Reference table for mcnodes with \code{mcnode} and
 \code{mc_func} columns. If NULL or not provided, nodes matching \code{data} column names
-are automatically created. Default: empty mctable().}
+are automatically created. Default \code{\link[=set_mctable]{set_mctable()}}.}
 
 \item{data_keys}{(list). Data structure and keys for input data. Default:
 \code{\link[=set_data_keys]{set_data_keys()}}.}
