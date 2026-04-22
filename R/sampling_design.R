@@ -37,12 +37,12 @@ mcmodule_to_matrices <- function(mcmodule, mc_names = NULL) {
 #' Set or Get Global Sample Design
 #'
 #' Manages a global sample design matrix/data frame by setting or retrieving it.
-#' This object is typically the output of [sample_design()] and can be used as
+#' This object is typically the output of [sampling_design()] and can be used as
 #' default input in [eval_module()].
 #'
 #' @param data (matrix, data frame, or list, optional). Sample design to store
 #'   globally. Accepts a matrix/data frame or a list with element `X`
-#'   (typically output of [sample_design()]). If `NULL`, returns the current
+#'   (typically output of [sampling_design()]). If `NULL`, returns the current
 #'   global sample design. Default: `NULL`.
 #'
 #' @return Current or newly set sample design (`list` with elements `sa` and
@@ -50,22 +50,22 @@ mcmodule_to_matrices <- function(mcmodule, mc_names = NULL) {
 #'
 #' @examples
 #' # Get current sample design (NULL if not set)
-#' current_sample_design <- set_sample_design()
+#' current_sample_design <- set_sampling_design()
 #'
 #' # Set sample design
 #' X <- data.frame(a = c(0.1, 0.2), b = c(1, 2))
-#' set_sample_design(X)
+#' set_sampling_design(X)
 #'
 #' # Reset sample design
-#' reset_sample_desing()
+#' reset_sampling_design()
 #'
 #' @export
-set_sample_design <- function(data = NULL) {
+set_sampling_design <- function(data = NULL) {
   if (is.null(data)) {
-    if (!exists("sample_design", envir = .pkgglobalenv)) {
-      assign("sample_design", NULL, envir = .pkgglobalenv)
+    if (!exists("sampling_design", envir = .pkgglobalenv)) {
+      assign("sampling_design", NULL, envir = .pkgglobalenv)
     }
-    return(get("sample_design", envir = .pkgglobalenv))
+    return(get("sampling_design", envir = .pkgglobalenv))
   }
 
   sample_design_obj <- NULL
@@ -80,10 +80,10 @@ set_sample_design <- function(data = NULL) {
     )
   } else if (is.list(data)) {
     if (!"X" %in% names(data)) {
-      stop("sample_design list must contain element 'X'")
+      stop("sampling_design list must contain element 'X'")
     }
     if (!(is.matrix(data$X) || is.data.frame(data$X))) {
-      stop("sample_design$X must be a matrix or data frame")
+      stop("sampling_design$X must be a matrix or data frame")
     }
     sample_design_obj <- list(
       sa = data$sa,
@@ -94,11 +94,13 @@ set_sample_design <- function(data = NULL) {
       )
     )
   } else {
-    stop("sample_design must be a matrix, data frame, or list with element 'X'")
+    stop(
+      "sampling_design must be a matrix, data frame, or list with element 'X'"
+    )
   }
 
-  assign("sample_design", sample_design_obj, envir = .pkgglobalenv)
-  message("sample_design set to ", deparse(substitute(data)))
+  assign("sampling_design", sample_design_obj, envir = .pkgglobalenv)
+  message("sampling_design set to ", deparse(substitute(data)))
 }
 
 #' Reset Global Sample Design
@@ -108,24 +110,23 @@ set_sample_design <- function(data = NULL) {
 #' @return `NULL` (invisibly). Clears global sample design.
 #'
 #' @examples
-#' reset_sample_desing()
+#' reset_sampling_design()
 #'
 #' @export
-reset_sample_desing <- function() {
-  assign("sample_design", NULL, envir = .pkgglobalenv)
-  message("sample_design reset")
+reset_sampling_design <- function() {
+  assign("sampling_design", NULL, envir = .pkgglobalenv)
+  message("sampling_design reset")
 }
 
 #' Generate Sampling Design Matrix
 #'
-#' Builds a design matrix from `mctable` definitions using Latin, Morris, or
-#' Sobol sampling. Optionally samples only a subset of nodes via `mc_names`
-#' and controls treatment of non-sampled nodes with `if_not_sampled`.
+#' Builds a design object from `mctable` definitions using Morris or Sobol
+#' sampling. Optionally samples only a subset of nodes via `mc_names` and
+#' controls treatment of non-sampled nodes with `if_not_sampled`.
 #'
 #' @param mctable (data frame). Table containing at least `mcnode` and
 #'   `sample_space`; may also contain `transformation`. Default: [set_mctable()].
-#' @param n (integer). Number of samples for Latin and Sobol methods.
-#'   Default: 1000.
+#' @param n (integer). Number of samples for Sobol methods. Default: 1000.
 #' @param method (character). Sampling method: one of `"morris"` or
 #'  `"sobol"`. Default: `"morris"`.
 #' @param mc_names (character vector, optional). Node names to sample. If
@@ -145,14 +146,15 @@ reset_sample_desing <- function() {
 #'   [sensitivity::sobolSalt()]. Default: `"A"`.
 #' @param ... Additional arguments reserved for future extensions.
 #'
-#' @return A list with two elements:
-#'   \\itemize{
-#'     \\item `sa`: sensitivity object returned by the method constructor
-#'       (e.g., [sensitivity::morris()] for `method = "morris"`).
-#'     \\item `X`: sampled design as a data frame. If
-#'       `if_not_sampled != "exclude"`, non-sampled inputs are added as fixed
-#'       columns prefixed with `"fix."`.
+#' @return A sensitivity object directly:
+#'   \itemize{
+#'     \item For `method = "morris"`: an object of class `"morris"`
+#'       returned by [sensitivity::morris()].
+#'     \item For `method = "sobol"`: an object of class `"sobolSalt"`
+#'       returned by [sensitivity::sobolSalt()].
 #'   }
+#'   The sampled design matrix can be accessed from object components
+#'   (`$X` for Morris; `$X1`, `$X2`, and `$X` for Sobol).
 #'
 #' @examples
 #' mctable <- data.frame(
@@ -160,9 +162,12 @@ reset_sample_desing <- function() {
 #'   sample_space = c("min = 0, max = 1", "min = 10, max = 20"),
 #'   stringsAsFactors = FALSE
 #' )
-#' sd <- sample_design(mctable, n = 10)
-#' head(sd$X)
-sample_design <- function(
+#' sd_morris <- sampling_design(mctable, n = 10, method = "morris")
+#' head(sd_morris$X)
+#'
+#' sd_sobol <- sampling_design(mctable, n = 16, method = "sobol")
+#' head(sd_sobol$X1)
+sampling_design <- function(
   mctable = set_mctable(),
   n = 1000,
   method = c("morris", "sobol"),
@@ -502,6 +507,8 @@ sample_design <- function(
 
     colnames(sobol_res$X1) <- input_names
     colnames(sobol_res$X2) <- input_names
+    colnames(sobol_res$X) <- input_names
+
     sa <- sobol_res
   }
 
@@ -616,7 +623,7 @@ sample_design <- function(
   # Print notification if fixed factors were used
   if (!is.null(fixed_factors_info) && method %in% c("morris", "sobol")) {
     message(
-      "sample_design: ",
+      "sampling_design: ",
       method,
       " sampling with fixed factors (prefix 'fix.')\n  ",
       fixed_factors_info

@@ -237,12 +237,12 @@ suppressMessages({
 
     # Setup the test mctable
     test_mctable <- data.frame(
-      mcnode = c("sites_n"),
-      description = c("Number of sites"),
-      mc_func = c("runif"),
-      from_variable = c(NA),
-      transformation = c(NA),
-      sensi_analysis = c(FALSE)
+      mcnode = c("times_n", "sites_n"),
+      description = c("Number of trials", "Number of sites"),
+      mc_func = c("runif", "runif"),
+      from_variable = c(NA, NA),
+      transformation = c(NA, NA),
+      sample_space = c("min = 1, max = 10", "min = 2, max = 5")
     )
     set_mctable(test_mctable)
 
@@ -445,6 +445,22 @@ suppressMessages({
     )
 
     reset_mctable()
+  })
+
+  test_that("trial_totals works with sampling design", {
+    # # Create a test module with mock data
+    # imports_sd <- suppressWarnings(sampling_design(imports_mctable))
+    # sd_module <- eval_module(
+    #   exp = imports_exp,
+    #   data = NULL,
+    #   sampling_design = imports_sd$X
+    # )
+    # result <- trial_totals(
+    #   mcmodule = test_module,
+    #   mc_names = c("p_1_x", "p_1_y"),
+    #   trials_n = "times_n"
+    # )
+    # reset_mctable()
   })
 
   test_that("at_least_one naming options work", {

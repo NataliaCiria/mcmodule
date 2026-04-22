@@ -517,6 +517,10 @@ agg_totals <- function(
 #'   Default: c(trial="trial", subset="subset", set="set").
 #' @param mctable (data frame, optional). Monte Carlo nodes definitions.
 #'   Default: set_mctable().
+#' @param sampling_design (matrix, data frame, or list, optional). Sampling
+#'   design used to create missing input nodes via [matrix_to_mcnodes()].
+#'   Accepts a matrix/data frame or a list with element `X` (typically output
+#'   of [sampling_design()]). Defaults to [set_sampling_design()].
 #' @param agg_keys (character vector, optional). Column names for aggregation.
 #'   Default: NULL.
 #' @param agg_suffix (character). Suffix for aggregated node names. Default: "hag".
@@ -552,6 +556,7 @@ trial_totals <- function(
   all_suffix = NULL,
   level_suffix = c(trial = "trial", subset = "subset", set = "set"),
   mctable = set_mctable(),
+  sampling_design = set_sampling_design(),
   agg_keys = NULL,
   agg_suffix = NULL,
   keep_variates = FALSE,
@@ -613,6 +618,43 @@ trial_totals <- function(
 
   # All unique data_names across all nodes
   all_data_names <- unique(unlist(filtered_node_data_names))
+
+  sampling_design_data <- NULL
+  if (!is.null(sampling_design)) {
+    sample_design_input <- sampling_design
+    if (
+      is.list(sample_design_input) &&
+        !is.data.frame(sample_design_input) &&
+        !is.matrix(sample_design_input)
+    ) {
+      if (!"X" %in% names(sample_design_input)) {
+        stop("sampling_design list must contain element 'X'")
+      }
+      sample_design_input <- sample_design_input$X
+    }
+
+    if (
+      !(is.matrix(sample_design_input) || is.data.frame(sample_design_input))
+    ) {
+      stop(
+        "sampling_design must be a matrix, data frame, or list with element 'X'"
+      )
+    }
+
+    sampling_design_data <- as.data.frame(
+      sample_design_input,
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+
+    if (nrow(sampling_design_data) < 1) {
+      stop("sampling_design has 0 rows")
+    }
+
+    if (ncol(sampling_design_data) < 1) {
+      stop("sampling_design has 0 columns")
+    }
+  }
 
   # Calculate combined probability for all nodes if requested
   # (if more than one node is provided)
@@ -811,7 +853,16 @@ trial_totals <- function(
     agg_suffix
   }
 
-  data <- mcmodule$data[[ref_data_name]]
+  data <- NULL
+  if (!is.null(ref_data_name) && ref_data_name %in% names(mcmodule$data)) {
+    data <- mcmodule$data[[ref_data_name]]
+  }
+
+  if (is.null(data) && is.null(sampling_design_data)) {
+    stop(
+      "No input data found for trial_totals and sampling_design is NULL"
+    )
+  }
 
   # Function for individual mcnode creation and processing
   process_trial_mcnode <- function(
@@ -825,42 +876,75 @@ trial_totals <- function(
     mctable,
     keep_variates,
     ref_data_name,
+    sampling_design_data = NULL,
     agg_func = NULL
   ) {
     if (mc_name %in% names(mcmodule$node_list)) {
       mc_node <- mcmodule$node_list[[mc_name]][["mcnode"]]
     } else {
-      if (!mc_name %in% mctable$mcnode) {
-        stop(sprintf("%s not found in mctable", mc_name))
+      if (
+        !is.null(sampling_design_data) &&
+          mc_name %in% colnames(sampling_design_data)
+      ) {
+        matrix_to_mcnodes(
+          X = sampling_design_data[, mc_name, drop = FALSE],
+          envir = environment()
+        )
+      } else {
+        if (!mc_name %in% mctable$mcnode) {
+          stop(sprintf("%s not found in mctable", mc_name))
+        }
+
+        if (is.null(data)) {
+          stop(sprintf(
+            "data is NULL and '%s' is not present in sampling_design",
+            mc_name
+          ))
+        }
+
+        mc_row <- mctable[mctable$mcnode %in% mc_name, ]
+        create_mcnodes(data, mctable = mc_row)
       }
-
-      mc_row <- mctable[mctable$mcnode %in% mc_name, ]
-
-      create_mcnodes(data, mctable = mc_row)
 
       mc_node <- get(mc_name)
 
+      if (mc_name %in% mctable$mcnode) {
+        mc_row <- mctable[mctable$mcnode %in% mc_name, ]
+      } else {
+        mc_row <- NULL
+      }
+
       # Add metadata
       pattern <- paste0("\\<", mc_name, "(\\>|[^>]*\\>)")
-      inputs_col <- names(data[grepl(pattern, names(data))])
+      inputs_col <- if (!is.null(data)) {
+        names(data[grepl(pattern, names(data))])
+      } else {
+        character(0)
+      }
       mcmodule$node_list[[mc_name]][["inputs_col"]] <- inputs_col
 
-      if (!is.na(mc_row$mc_func)) {
+      if (!is.null(mc_row) && !is.na(mc_row$mc_func)) {
         mcmodule$node_list[[mc_name]][["mc_func"]] <- as.character(
           mc_row$mc_func
         )
       }
 
-      mcmodule$node_list[[mc_name]][["description"]] <- as.character(
-        mc_row$description
-      )
+      mcmodule$node_list[[mc_name]][["description"]] <- if (!is.null(mc_row)) {
+        as.character(mc_row$description)
+      } else {
+        NA_character_
+      }
       mcmodule$node_list[[mc_name]][["type"]] <- node_type
       mcmodule$node_list[[mc_name]][["module"]] <- module_name
       mcmodule$node_list[[mc_name]][["data_name"]] <- ref_data_name
       mcmodule$node_list[[mc_name]][["mcnode"]] <- mc_node
-      mcmodule$node_list[[mc_name]][["mc_func"]] <- mc_row$mc_func
+      mcmodule$node_list[[mc_name]][["mc_func"]] <- if (!is.null(mc_row)) {
+        mc_row$mc_func
+      } else {
+        NA
+      }
 
-      if ("scenario_id" %in% names(data)) {
+      if (!is.null(data) && "scenario_id" %in% names(data)) {
         mcmodule$node_list[[mc_name]][["scenario"]] <- data$scenario_id
       }
     }
@@ -914,7 +998,8 @@ trial_totals <- function(
     hag_suffix,
     mctable,
     keep_variates,
-    ref_data_name
+    ref_data_name,
+    sampling_design_data
   )
 
   # mc_match if several data names are provided
@@ -946,6 +1031,7 @@ trial_totals <- function(
       mctable,
       keep_variates,
       ref_data_name,
+      sampling_design_data,
       agg_func = "avg"
     )
 
@@ -983,6 +1069,7 @@ trial_totals <- function(
       mctable,
       keep_variates,
       ref_data_name,
+      sampling_design_data,
       agg_func = "avg"
     )
 
@@ -1025,7 +1112,11 @@ trial_totals <- function(
       type = type,
       module = module_name,
       keys = keys_names,
-      scenario = data$scenario_id,
+      scenario = if (!is.null(data) && "scenario_id" %in% names(data)) {
+        data$scenario_id
+      } else {
+        NULL
+      },
       data_name = all_data_names,
       prefix = prefix,
       total_type = total_type
@@ -1309,7 +1400,7 @@ trial_totals <- function(
         )
 
         # Add summary if requested
-        if (summary) {
+        if (summary && !is.null(data)) {
           if (!is.null(agg_keys) && !keep_variates) {
             mcmodule$node_list[[new_mc_name]][["summary"]] <- mc_summary(
               mcmodule = mcmodule,
