@@ -40,12 +40,13 @@ mcmodule_to_matrices <- function(mcmodule, mc_names = NULL) {
 #' This object is typically the output of [sample_design()] and can be used as
 #' default input in [eval_module()].
 #'
-#' @param data (matrix or data frame, optional). Sample design to store
-#'   globally. If `NULL`, returns the current global sample design. Default:
-#'   `NULL`.
+#' @param data (matrix, data frame, or list, optional). Sample design to store
+#'   globally. Accepts a matrix/data frame or a list with element `X`
+#'   (typically output of [sample_design()]). If `NULL`, returns the current
+#'   global sample design. Default: `NULL`.
 #'
-#' @return Current or newly set sample design (`data.frame`) or `NULL` if no
-#'   sample design has been set.
+#' @return Current or newly set sample design (`list` with elements `sa` and
+#'   `X`) or `NULL` if no sample design has been set.
 #'
 #' @examples
 #' # Get current sample design (NULL if not set)
@@ -67,17 +68,36 @@ set_sample_design <- function(data = NULL) {
     return(get("sample_design", envir = .pkgglobalenv))
   }
 
-  if (!(is.matrix(data) || is.data.frame(data))) {
-    stop("sample_design must be a matrix or data frame")
+  sample_design_obj <- NULL
+  if (is.matrix(data) || is.data.frame(data)) {
+    sample_design_obj <- list(
+      sa = NULL,
+      X = as.data.frame(
+        data,
+        stringsAsFactors = FALSE,
+        check.names = FALSE
+      )
+    )
+  } else if (is.list(data)) {
+    if (!"X" %in% names(data)) {
+      stop("sample_design list must contain element 'X'")
+    }
+    if (!(is.matrix(data$X) || is.data.frame(data$X))) {
+      stop("sample_design$X must be a matrix or data frame")
+    }
+    sample_design_obj <- list(
+      sa = data$sa,
+      X = as.data.frame(
+        data$X,
+        stringsAsFactors = FALSE,
+        check.names = FALSE
+      )
+    )
+  } else {
+    stop("sample_design must be a matrix, data frame, or list with element 'X'")
   }
 
-  sample_design_df <- as.data.frame(
-    data,
-    stringsAsFactors = FALSE,
-    check.names = FALSE
-  )
-
-  assign("sample_design", sample_design_df, envir = .pkgglobalenv)
+  assign("sample_design", sample_design_obj, envir = .pkgglobalenv)
   message("sample_design set to ", deparse(substitute(data)))
 }
 
@@ -103,14 +123,11 @@ reset_sample_desing <- function() {
 #' and controls treatment of non-sampled nodes with `if_not_sampled`.
 #'
 #' @param mctable (data frame). Table containing at least `mcnode` and
-#'   `sample_space`; may also contain `transformation`.
-#' @param data (data frame, optional). Source data used for sampling when
-#'   `method = "latin"`. If `NULL`, sampling is performed directly from
-#'   `sample_space`.
+#'   `sample_space`; may also contain `transformation`. Default: [set_mctable()].
 #' @param n (integer). Number of samples for Latin and Sobol methods.
 #'   Default: 1000.
-#' @param method (character). Sampling method: one of `"latin"`, `"morris"`,
-#'   or `"sobol"`. Default: `"latin"`.
+#' @param method (character). Sampling method: one of `"morris"` or
+#'  `"sobol"`. Default: `"morris"`.
 #' @param mc_names (character vector, optional). Node names to sample. If
 #'   `NULL`, all nodes in `mctable$mcnode` are sampled.
 #' @param if_not_sampled (character). How to handle nodes not listed in
@@ -119,16 +136,23 @@ reset_sample_desing <- function() {
 #' @param transformation (logical). Whether to apply `transformation` rules.
 #'   Default: `TRUE`.
 #' @param morris_r (integer). Number of Morris repetitions.
-#'   Default: 10.
+#'   Default: 10 (aligned with this package's default Morris setup).
 #' @param morris_design (list). Morris design specification passed to
-#'   [sensitivity::morris()].
+#'   [sensitivity::morris()]. Default: `list(type = "oat", levels = 4,
+#'   grid.jump = 2)`, matching the defaults used by this package for Morris
+#'   sampling.
 #' @param sobol_scheme (character). Scheme passed to
 #'   [sensitivity::sobolSalt()]. Default: `"A"`.
 #' @param ... Additional arguments reserved for future extensions.
 #'
-#' @return A data frame with sampled inputs as columns. If
-#'   `if_not_sampled != "exclude"`, non-sampled inputs are added as fixed
-#'   columns prefixed with `"fix."`.
+#' @return A list with two elements:
+#'   \\itemize{
+#'     \\item `sa`: sensitivity object returned by the method constructor
+#'       (e.g., [sensitivity::morris()] for `method = "morris"`).
+#'     \\item `X`: sampled design as a data frame. If
+#'       `if_not_sampled != "exclude"`, non-sampled inputs are added as fixed
+#'       columns prefixed with `"fix."`.
+#'   }
 #'
 #' @examples
 #' mctable <- data.frame(
@@ -136,12 +160,12 @@ reset_sample_desing <- function() {
 #'   sample_space = c("min = 0, max = 1", "min = 10, max = 20"),
 #'   stringsAsFactors = FALSE
 #' )
-#' sample_design(mctable, n = 10)
+#' sd <- sample_design(mctable, n = 10)
+#' head(sd$X)
 sample_design <- function(
-  mctable,
-  data = NULL,
+  mctable = set_mctable(),
   n = 1000,
-  method = c("latin", "morris", "sobol"),
+  method = c("morris", "sobol"),
   mc_names = NULL,
   if_not_sampled = c("exclude", "median", "mean", "max", "min"),
   transformation = TRUE,
@@ -152,6 +176,7 @@ sample_design <- function(
 ) {
   method <- match.arg(method)
   if_not_sampled <- match.arg(if_not_sampled)
+  sa <- NULL
 
   # Filter mctable by mc_names if provided
   all_mcnode_names <- mctable$mcnode
@@ -170,6 +195,15 @@ sample_design <- function(
     mc_names <- all_mcnode_names
     mctable_sampled <- mctable
     mctable_not_sampled <- mctable[FALSE, ] # Empty data frame with same structure
+  }
+
+  # Treat NA/empty sample_space as non-sampled inputs
+  sampled_ss <- trimws(as.character(mctable_sampled$sample_space))
+  na_sample_space_idx <- is.na(mctable_sampled$sample_space) | sampled_ss == ""
+  if (any(na_sample_space_idx)) {
+    moved_to_not_sampled <- mctable_sampled[na_sample_space_idx, , drop = FALSE]
+    mctable_sampled <- mctable_sampled[!na_sample_space_idx, , drop = FALSE]
+    mctable_not_sampled <- rbind(mctable_not_sampled, moved_to_not_sampled)
   }
 
   input_names <- mctable_sampled$mcnode
@@ -294,7 +328,7 @@ sample_design <- function(
     }
 
     if (grepl("^c\\s*\\(", ss)) {
-      vals <- eval(parse(text = ss), envir = baseenv())
+      vals <- as.numeric(eval(parse(text = ss), envir = baseenv()))
       return(list(kind = "vector", values = vals))
     }
 
@@ -304,7 +338,7 @@ sample_design <- function(
       vals_chr <- trimws(sub("^[^=]*=", "", parts))
       vals <- lapply(vals_chr, function(x) {
         if (x %in% c("TRUE", "FALSE")) {
-          return(as.logical(x))
+          return(as.numeric(x))
         }
         if (grepl("^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$", x)) {
           return(as.numeric(x))
@@ -411,33 +445,7 @@ sample_design <- function(
   }
 
   # Route by method
-  if (method == "latin") {
-    # Latin hypercube: default behavior from sample_space
-    if (is.null(data)) {
-      cols <- vector("list", length(input_names))
-      names(cols) <- input_names
-      for (i in seq_along(input_names)) {
-        ss <- sample_space[i]
-        cols[[i]] <- sample_from_space(ss, n)
-      }
-      X <- as.data.frame(cols, stringsAsFactors = FALSE, check.names = FALSE)
-    } else {
-      # Use create_mcnodes to generate mcnodes in a temp env
-      tmp_env <- new.env(parent = emptyenv())
-      create_mcnodes(data = data, mctable = mctable, envir = tmp_env)
-      cols <- vector("list", length(input_names))
-      names(cols) <- input_names
-      for (i in seq_along(input_names)) {
-        node <- get(input_names[i], envir = tmp_env)
-        vals <- as.vector(node)
-        if (is.factor(vals)) {
-          vals <- as.character(vals)
-        }
-        cols[[i]] <- sample(vals, size = n, replace = TRUE)
-      }
-      X <- as.data.frame(cols, stringsAsFactors = FALSE, check.names = FALSE)
-    }
-  } else if (method == "morris") {
+  if (method == "morris") {
     # For Morris, only sample the factors in input_names
     # Non-sampled factors (if any) will be added later with fixed values
     bounds <- extract_numeric_bounds()
@@ -463,6 +471,7 @@ sample_design <- function(
       check.names = FALSE
     )
     colnames(X) <- input_names
+    sa <- morris_res
   } else if (method == "sobol") {
     # For Sobol, only sample the factors in input_names
     bounds <- extract_numeric_bounds()
@@ -491,39 +500,9 @@ sample_design <- function(
       nboot = 0
     )
 
-    X <- as.data.frame(X1, stringsAsFactors = FALSE, check.names = FALSE)
-    colnames(X) <- input_names
-  }
-
-  # Apply transformations post-sampling only for "latin" method
-  # (Morris/Sobol already applied transformations upfront to determine bounds)
-  if (isTRUE(transformation) && method == "latin") {
-    transformations <- if ("transformation" %in% names(mctable)) {
-      mctable$transformation
-    } else {
-      rep(NA_character_, length(input_names))
-    }
-
-    for (i in seq_along(input_names)) {
-      values <- X[[i]]
-      transform_i <- transformations[i]
-
-      if (!is.na(transform_i) && nzchar(trimws(transform_i))) {
-        values <- eval(
-          parse(text = transform_i),
-          envir = list2env(list(value = values), parent = baseenv())
-        )
-      }
-
-      if (is.factor(values)) {
-        values <- as.character(values)
-      }
-      if (is.logical(values)) {
-        values <- as.numeric(values)
-      }
-
-      X[[i]] <- values
-    }
+    colnames(sobol_res$X1) <- input_names
+    colnames(sobol_res$X2) <- input_names
+    sa <- sobol_res
   }
 
   # Handle non-sampled nodes based on if_not_sampled argument
@@ -536,72 +515,78 @@ sample_design <- function(
       node_name <- mctable_not_sampled$mcnode[i]
       ss <- mctable_not_sampled$sample_space[i]
 
-      # Parse the sample space to extract bounds/values
-      parsed_ss <- parse_sample_space(ss)
-
-      # Compute fixed value directly from parsed sample space
-      if (identical(parsed_ss$kind, "named")) {
-        vals <- parsed_ss$values
-        # For named values like "min=X, max=Y"
-        if (all(c("min", "max") %in% names(vals))) {
-          min_val <- as.numeric(vals$min)
-          max_val <- as.numeric(vals$max)
-          fixed_val <- switch(
-            if_not_sampled,
-            median = (min_val + max_val) / 2,
-            mean = (min_val + max_val) / 2,
-            max = max_val,
-            min = min_val
-          )
-        } else {
-          # For other named values, use first value
-          fixed_val <- as.numeric(vals[[1]])
-        }
-      } else if (identical(parsed_ss$kind, "vector")) {
-        vals <- parsed_ss$values
-        # For vector like c(min, max) or categorical
-        if (is.numeric(vals) && length(vals) == 2) {
-          fixed_val <- switch(
-            if_not_sampled,
-            median = (vals[1] + vals[2]) / 2,
-            mean = (vals[1] + vals[2]) / 2,
-            max = vals[2],
-            min = vals[1]
-          )
-        } else if (is.numeric(vals)) {
-          # Numeric vector: compute statistic
-          fixed_val <- switch(
-            if_not_sampled,
-            median = median(vals, na.rm = TRUE),
-            mean = mean(vals, na.rm = TRUE),
-            max = max(vals, na.rm = TRUE),
-            min = min(vals, na.rm = TRUE)
-          )
-        } else {
-          # Categorical vector: use transformation if available
-          transform_val <- if (
-            "transformation" %in% names(mctable_not_sampled)
-          ) {
-            mctable_not_sampled$transformation[i]
-          } else {
-            NA_character_
-          }
-
-          if (
-            !is.na(transform_val) && nzchar(trimws(as.character(transform_val)))
-          ) {
-            # Apply transformation to first value
-            transformed <- eval(
-              parse(text = trimws(as.character(transform_val))),
-              envir = list2env(list(value = vals[1]), parent = baseenv())
-            )
-            fixed_val <- as.numeric(transformed)
-          } else {
-            fixed_val <- NA_real_
-          }
-        }
+      # Nodes without sample_space default to 0 when held constant
+      if (is.na(ss) || !nzchar(trimws(as.character(ss)))) {
+        fixed_val <- 0
       } else {
-        fixed_val <- NA_real_
+        # Parse the sample space to extract bounds/values
+        parsed_ss <- parse_sample_space(ss)
+
+        # Compute fixed value directly from parsed sample space
+        if (identical(parsed_ss$kind, "named")) {
+          vals <- parsed_ss$values
+          # For named values like "min=X, max=Y"
+          if (all(c("min", "max") %in% names(vals))) {
+            min_val <- as.numeric(vals$min)
+            max_val <- as.numeric(vals$max)
+            fixed_val <- switch(
+              if_not_sampled,
+              median = (min_val + max_val) / 2,
+              mean = (min_val + max_val) / 2,
+              max = max_val,
+              min = min_val
+            )
+          } else {
+            # For other named values, use first value
+            fixed_val <- as.numeric(vals[[1]])
+          }
+        } else if (identical(parsed_ss$kind, "vector")) {
+          vals <- parsed_ss$values
+          # For vector like c(min, max) or categorical
+          if (is.numeric(vals) && length(vals) == 2) {
+            fixed_val <- switch(
+              if_not_sampled,
+              median = (vals[1] + vals[2]) / 2,
+              mean = (vals[1] + vals[2]) / 2,
+              max = vals[2],
+              min = vals[1]
+            )
+          } else if (is.numeric(vals)) {
+            # Numeric vector: compute statistic
+            fixed_val <- switch(
+              if_not_sampled,
+              median = median(vals, na.rm = TRUE),
+              mean = mean(vals, na.rm = TRUE),
+              max = max(vals, na.rm = TRUE),
+              min = min(vals, na.rm = TRUE)
+            )
+          } else {
+            # Categorical vector: use transformation if available
+            transform_val <- if (
+              "transformation" %in% names(mctable_not_sampled)
+            ) {
+              mctable_not_sampled$transformation[i]
+            } else {
+              NA_character_
+            }
+
+            if (
+              !is.na(transform_val) &&
+                nzchar(trimws(as.character(transform_val)))
+            ) {
+              # Apply transformation to first value
+              transformed <- eval(
+                parse(text = trimws(as.character(transform_val))),
+                envir = list2env(list(value = vals[1]), parent = baseenv())
+              )
+              fixed_val <- as.numeric(transformed)
+            } else {
+              fixed_val <- NA_real_
+            }
+          }
+        } else {
+          fixed_val <- NA_real_
+        }
       }
 
       # Store with "fix." prefix
@@ -638,5 +623,5 @@ sample_design <- function(
     )
   }
 
-  X
+  return(sa)
 }

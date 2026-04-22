@@ -57,13 +57,56 @@ cor_kendall <- mcmodule_corr(imports_mcmodule, method = "kendall")
 Visualize results
 
 ```{r}
-cor_results%>%
-  ggplot(aes(x=value, y=input))+
-  geom_point()
+# Plot tornado plot of correlations
+mcmodule_tornado(imports_mcmodule)
 ```
 
 
 # Morris index
+
+Get sampling design matrix
+
+```{r}
+eval_module(
+  exp = imports_exp,
+  data = imports_data,
+  mctable = imports_mctable
+)
+
+a <- eval_module(
+  exp = imports_exp,
+  data = imports_data,
+  mctable = imports_mctable
+)
+
+X1 <- sample_design(
+  imports_mctable, 
+  transformation = FALSE, 
+  method = "morris",
+  mc_names = c("h_prev", "w_prev", "test_sensi", "farms_n", "animals_n", "test_origin"),
+  if_not_sample = "median")
+
+b <- eval_module(
+  exp = imports_exp,
+  data = NULL,
+  mctable = imports_mctable,
+  sample_design = X1
+)
+
+
+X2 <- as.matrix(b$node_list$no_detect_a$mcnode)
+#mcnode_to_matrix()
+
+b <- trial_totals(
+  mcmodule = b,
+  mc_names = "no_detect_a",
+  trials_n = "animals_n",
+  subsets_n = "farms_n",
+  subsets_p = "h_prev",
+  mctable = imports_mctable,
+)
+
+```
 
 
 # Sobol index

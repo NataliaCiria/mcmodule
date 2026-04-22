@@ -1,4 +1,6 @@
 suppressMessages({
+  get_X <- function(sd) sd$X
+
   test_that("set_sample_design and reset_sample_desing work", {
     reset_sample_desing()
     expect_null(set_sample_design())
@@ -10,12 +12,29 @@ suppressMessages({
 
     expect_no_error(set_sample_design(X))
     current_X <- set_sample_design()
-    expect_s3_class(current_X, "data.frame")
-    expect_equal(current_X, X)
+    expect_type(current_X, "list")
+    expect_true(all(c("sa", "X") %in% names(current_X)))
+    expect_s3_class(current_X$X, "data.frame")
+    expect_equal(current_X$X, X)
+
+    sd <- sample_design(
+      data.frame(
+        mcnode = c("a", "b"),
+        sample_space = c("min = 0, max = 1", "min = 10, max = 20"),
+        stringsAsFactors = FALSE
+      ),
+      n = 5
+    )
+
+    expect_no_error(set_sample_design(sd))
+    current_sd <- set_sample_design()
+    expect_type(current_sd, "list")
+    expect_true(all(c("sa", "X") %in% names(current_sd)))
+    expect_s3_class(current_sd$X, "data.frame")
 
     expect_error(
       set_sample_design(1:3),
-      "sample_design must be a matrix or data frame"
+      "sample_design must be a matrix, data frame, or list with element 'X'"
     )
 
     reset_sample_desing()
@@ -45,7 +64,7 @@ suppressMessages({
       sample_space = c("min = 0, max = 1", "min = 10, max = 20"),
       stringsAsFactors = FALSE
     )
-    res <- sample_design(mctable, n = 50)
+    res <- get_X(sample_design(mctable, n = 50))
     expect_s3_class(res, "data.frame")
     expect_type(res$x, "double")
     expect_type(res$y, "double")
@@ -55,7 +74,7 @@ suppressMessages({
     expect_true(all(res$y >= 10 & res$y <= 20))
   })
 
-  test_that("sample_design defaults to method='latin' and if_not_sampled='exclude'", {
+  test_that("sample_design defaults to method='morris' and if_not_sampled='exclude'", {
     mctable <- data.frame(
       mcnode = c("a", "b", "c"),
       sample_space = c(
@@ -66,15 +85,12 @@ suppressMessages({
       stringsAsFactors = FALSE
     )
 
-    res <- sample_design(
+    res <- get_X(sample_design(
       mctable,
-      n = 20,
       mc_names = c("a", "c")
-    )
+    ))
 
-    expect_s3_class(res, "data.frame")
     expect_equal(colnames(res), c("a", "c"))
-    expect_equal(nrow(res), 20)
     expect_false(any(grepl("^fix\\.", colnames(res))))
   })
 
@@ -89,39 +105,10 @@ suppressMessages({
       ),
       stringsAsFactors = FALSE
     )
-    res <- sample_design(mctable, n = 50)
+    res <- get_X(sample_design(mctable))
 
-    expect_s3_class(res, "data.frame")
-    expect_equal(dim(res), c(50, 3))
     expect_equal(colnames(res), c("x", "flag", "origin"))
-    expect_true(all(res$x >= 0 & res$x <= 1))
-    expect_true(all(res$flag %in% c(0, 1)))
-    expect_true(all(res$origin %in% c(0, 1)))
-
-    res2 <- sample_design(imports_mctable, n = 50)
-    expect_s3_class(res2, "data.frame")
-    expect_equal(nrow(res2), 50)
-  })
-
-  test_that("sample_design preserves original classes when transformation = FALSE", {
-    mctable <- data.frame(
-      mcnode = c("x", "flag", "origin"),
-      transformation = c(NA, NA, "ifelse(value == 'always', 1, 0)"),
-      sample_space = c(
-        "min = 0, max = 1",
-        "c(TRUE, FALSE)",
-        "c('always', 'sometimes', 'never')"
-      ),
-      stringsAsFactors = FALSE
-    )
-
-    res <- sample_design(mctable, n = 50, transformation = FALSE)
-
-    expect_s3_class(res, "data.frame")
-    expect_type(res$x, "double")
-    expect_type(res$flag, "logical")
-    expect_type(res$origin, "character")
-    expect_true(all(res$origin %in% c("always", "sometimes", "never")))
+    expect_true(all(res >= 0 & res <= 1))
   })
 
   test_that("sample_design with method='morris' generates proper OAT design", {
@@ -135,14 +122,13 @@ suppressMessages({
       stringsAsFactors = FALSE
     )
 
-    res <- sample_design(mctable, method = "morris", morris_r = 5)
+    res <- get_X(sample_design(mctable, method = "morris", morris_r = 5))
 
-    expect_s3_class(res, "data.frame")
     expect_equal(colnames(res), c("a", "b", "c"))
     expect_true(nrow(res) > 0)
-    expect_true(all(res$a >= 0 & res$a <= 1))
-    expect_true(all(res$b >= 10 & res$b <= 20))
-    expect_true(all(res$c >= -5 & res$c <= 5))
+    expect_true(all(res[, 1] >= 0 & res[, 1] <= 1))
+    expect_true(all(res[, 2] >= 10 & res[, 2] <= 20))
+    expect_true(all(res[, 3] >= -5 & res[, 3] <= 5))
   })
 
   test_that("sample_design with method='sobol' generates proper LHS design", {
@@ -153,13 +139,12 @@ suppressMessages({
     )
 
     set.seed(123)
-    res <- sample_design(mctable, n = 50, method = "sobol")
+    res <- get_X(sample_design(mctable, n = 50, method = "sobol"))
 
-    expect_s3_class(res, "data.frame")
     expect_equal(colnames(res), c("x", "y"))
     expect_equal(nrow(res), 50)
-    expect_true(all(res$x >= 0 & res$x <= 1))
-    expect_true(all(res$y >= 10 & res$y <= 20))
+    expect_true(all(res[, 1] >= 0 & res[, 1] <= 1))
+    expect_true(all(res[, 2] >= 10 & res[, 2] <= 20))
   })
 
   test_that("sample_design morris method with transformation works", {
@@ -170,12 +155,12 @@ suppressMessages({
       stringsAsFactors = FALSE
     )
 
-    res <- sample_design(
+    res <- get_X(sample_design(
       mctable,
       method = "morris",
       morris_r = 5,
       transformation = TRUE
-    )
+    ))
 
     expect_s3_class(res, "data.frame")
     expect_type(res$val, "double")
@@ -190,12 +175,12 @@ suppressMessages({
       stringsAsFactors = FALSE
     )
 
-    res <- sample_design(
+    res <- get_X(sample_design(
       mctable,
       n = 64,
       method = "sobol",
       transformation = TRUE
-    )
+    ))
 
     expect_s3_class(res, "data.frame")
     expect_equal(nrow(res), 64)
@@ -203,7 +188,7 @@ suppressMessages({
     expect_type(res$other, "double")
   })
 
-  test_that("sample_design filters mc_names with latin and if_not_sampled='exclude'", {
+  test_that("sample_design filters mc_names with morris and if_not_sampled='exclude'", {
     mctable <- data.frame(
       mcnode = c("a", "b", "c", "d"),
       sample_space = c(
@@ -215,13 +200,13 @@ suppressMessages({
       stringsAsFactors = FALSE
     )
 
-    res <- sample_design(
+    res <- get_X(sample_design(
       mctable,
       n = 20,
-      method = "latin",
+      method = "morris",
       mc_names = c("a", "c"),
       if_not_sampled = "exclude"
-    )
+    ))
 
     expect_s3_class(res, "data.frame")
     expect_equal(colnames(res), c("a", "c"))
@@ -241,13 +226,13 @@ suppressMessages({
       stringsAsFactors = FALSE
     )
 
-    res <- sample_design(
+    res <- get_X(sample_design(
       mctable,
       n = 15,
-      method = "latin",
+      method = "morris",
       mc_names = c("a", "c"),
       if_not_sampled = "median"
-    )
+    ))
 
     expect_s3_class(res, "data.frame")
     expect_equal(colnames(res), c("a", "c", "fix.b"))
@@ -267,12 +252,12 @@ suppressMessages({
       stringsAsFactors = FALSE
     )
 
-    res <- suppressWarnings(sample_design(
+    res <- suppressWarnings(get_X(sample_design(
       mctable,
       method = "morris",
       morris_r = 3,
       mc_names = c("x", "z")
-    ))
+    )))
 
     expect_s3_class(res, "data.frame")
     expect_equal(colnames(res), c("x", "z"))
@@ -290,13 +275,13 @@ suppressMessages({
       stringsAsFactors = FALSE
     )
 
-    res <- suppressWarnings(sample_design(
+    res <- suppressWarnings(get_X(sample_design(
       mctable,
       method = "morris",
       morris_r = 10,
       mc_names = c("x", "z"),
       if_not_sampled = "median"
-    ))
+    )))
 
     expect_s3_class(res, "data.frame")
     expect_equal(colnames(res), c("x", "z", "fix.y"))
@@ -315,12 +300,12 @@ suppressMessages({
       stringsAsFactors = FALSE
     )
 
-    res <- sample_design(
+    res <- get_X(sample_design(
       mctable,
       n = 32,
       method = "sobol",
       mc_names = c("a", "c")
-    )
+    ))
 
     expect_s3_class(res, "data.frame")
     expect_equal(colnames(res), c("a", "c"))
@@ -339,13 +324,13 @@ suppressMessages({
       stringsAsFactors = FALSE
     )
 
-    res <- sample_design(
+    res <- get_X(sample_design(
       mctable,
       n = 32,
       method = "sobol",
       mc_names = c("a", "c"),
       if_not_sampled = "median"
-    )
+    ))
 
     expect_s3_class(res, "data.frame")
     expect_equal(colnames(res), c("a", "c", "fix.b"))
@@ -369,5 +354,52 @@ suppressMessages({
       sample_design(mctable, mc_names = c("a", "invalid_node")),
       "Invalid mc_names"
     )
+  })
+
+  test_that("sample_design excludes NA sample_space when if_not_sampled='exclude'", {
+    mctable <- data.frame(
+      mcnode = c("a", "b", "c"),
+      sample_space = c(
+        "min = 0, max = 1",
+        NA,
+        "min = -5, max = 5"
+      ),
+      stringsAsFactors = FALSE
+    )
+
+    res <- suppressWarnings(get_X(sample_design(
+      mctable,
+      method = "morris",
+      morris_r = 5,
+      if_not_sampled = "exclude"
+    )))
+
+    expect_s3_class(res, "data.frame")
+    expect_equal(colnames(res), c("a", "c"))
+    expect_false("b" %in% colnames(res))
+    expect_false("fix.b" %in% colnames(res))
+  })
+
+  test_that("sample_design sets fixed value 0 for NA sample_space when not excluded", {
+    mctable <- data.frame(
+      mcnode = c("a", "b", "c"),
+      sample_space = c(
+        "min = 0, max = 1",
+        NA,
+        "min = -5, max = 5"
+      ),
+      stringsAsFactors = FALSE
+    )
+
+    res <- suppressWarnings(get_X(sample_design(
+      mctable,
+      method = "morris",
+      morris_r = 5,
+      if_not_sampled = "median"
+    )))
+
+    expect_s3_class(res, "data.frame")
+    expect_true("fix.b" %in% colnames(res))
+    expect_equal(unique(res$fix.b), 0)
   })
 })

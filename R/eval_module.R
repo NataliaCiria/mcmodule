@@ -42,9 +42,10 @@
 #' @param keys (character vector, optional). Explicit keys for input data. Default: NULL.
 #' @param overwrite_keys (logical or NULL). If NULL (default), becomes TRUE when
 #'   `data_keys` is NULL or empty; otherwise FALSE.
-#' @param sample_design (matrix or data frame, optional). Sampling design matrix
-#'   (typically output of [sample_design()]) used to create input nodes via
-#'   [matrix_to_mcnodes()]. Columns matching expression input nodes are created
+#' @param sample_design (matrix, data frame, or list, optional). Sampling
+#'   design used to create input nodes via [matrix_to_mcnodes()]. Accepts a
+#'   matrix/data frame or a list with element `X` (typically output of
+#'   [sample_design()]). Columns matching expression input nodes are created
 #'   from this matrix. Defaults to [set_sample_design()].
 #' @param use_variation (character vector, optional). mcnode names to apply
 #'   `sensi_variation` expression from `mctable` before node creation. Default: NULL.
@@ -108,11 +109,27 @@ eval_module <- function(
 
   sample_design_data <- NULL
   if (!is.null(sample_design)) {
-    if (!(is.matrix(sample_design) || is.data.frame(sample_design))) {
-      stop("sample_design must be a matrix or data frame")
+    sample_design_input <- sample_design
+    if (
+      is.list(sample_design_input) &&
+        !is.data.frame(sample_design_input) &&
+        !is.matrix(sample_design_input)
+    ) {
+      if (!"X" %in% names(sample_design_input)) {
+        stop("sample_design list must contain element 'X'")
+      }
+      sample_design_input <- sample_design_input$X
+    }
+
+    if (
+      !(is.matrix(sample_design_input) || is.data.frame(sample_design_input))
+    ) {
+      stop(
+        "sample_design must be a matrix, data frame, or list with element 'X'"
+      )
     }
     sample_design_data <- as.data.frame(
-      sample_design,
+      sample_design_input,
       stringsAsFactors = FALSE,
       check.names = FALSE
     )

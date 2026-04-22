@@ -5,10 +5,9 @@
 \title{Generate Sampling Design Matrix}
 \usage{
 sample_design(
-  mctable,
-  data = NULL,
+  mctable = set_mctable(),
   n = 1000,
-  method = c("latin", "morris", "sobol"),
+  method = c("morris", "sobol"),
   mc_names = NULL,
   if_not_sampled = c("exclude", "median", "mean", "max", "min"),
   transformation = TRUE,
@@ -20,17 +19,13 @@ sample_design(
 }
 \arguments{
 \item{mctable}{(data frame). Table containing at least \code{mcnode} and
-\code{sample_space}; may also contain \code{transformation}.}
-
-\item{data}{(data frame, optional). Source data used for sampling when
-\code{method = "latin"}. If \code{NULL}, sampling is performed directly from
-\code{sample_space}.}
+\code{sample_space}; may also contain \code{transformation}. Default: \code{\link[=set_mctable]{set_mctable()}}.}
 
 \item{n}{(integer). Number of samples for Latin and Sobol methods.
 Default: 1000.}
 
-\item{method}{(character). Sampling method: one of \code{"latin"}, \code{"morris"},
-or \code{"sobol"}. Default: \code{"latin"}.}
+\item{method}{(character). Sampling method: one of \code{"morris"} or
+\code{"sobol"}. Default: \code{"morris"}.}
 
 \item{mc_names}{(character vector, optional). Node names to sample. If
 \code{NULL}, all nodes in \code{mctable$mcnode} are sampled.}
@@ -43,10 +38,11 @@ Default: \code{"exclude"}.}
 Default: \code{TRUE}.}
 
 \item{morris_r}{(integer). Number of Morris repetitions.
-Default: 10.}
+Default: 10 (aligned with this package's default Morris setup).}
 
 \item{morris_design}{(list). Morris design specification passed to
-\code{\link[sensitivity:morris]{sensitivity::morris()}}.}
+\code{\link[sensitivity:morris]{sensitivity::morris()}}. Default: \code{list(type = "oat", levels = 4, grid.jump = 2)}, matching the defaults used by this package for Morris
+sampling.}
 
 \item{sobol_scheme}{(character). Scheme passed to
 \code{\link[sensitivity:sobolSalt]{sensitivity::sobolSalt()}}. Default: \code{"A"}.}
@@ -54,9 +50,14 @@ Default: 10.}
 \item{...}{Additional arguments reserved for future extensions.}
 }
 \value{
-A data frame with sampled inputs as columns. If
+A list with two elements:
+\\itemize{
+\\item \code{sa}: sensitivity object returned by the method constructor
+(e.g., \code{\link[sensitivity:morris]{sensitivity::morris()}} for \code{method = "morris"}).
+\\item \code{X}: sampled design as a data frame. If
 \code{if_not_sampled != "exclude"}, non-sampled inputs are added as fixed
 columns prefixed with \code{"fix."}.
+}
 }
 \description{
 Builds a design matrix from \code{mctable} definitions using Latin, Morris, or
@@ -69,5 +70,6 @@ mctable <- data.frame(
   sample_space = c("min = 0, max = 1", "min = 10, max = 20"),
   stringsAsFactors = FALSE
 )
-sample_design(mctable, n = 10)
+sd <- sample_design(mctable, n = 10)
+head(sd$X)
 }

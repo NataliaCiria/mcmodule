@@ -7,13 +7,14 @@
 set_sample_design(data = NULL)
 }
 \arguments{
-\item{data}{(matrix or data frame, optional). Sample design to store
-globally. If \code{NULL}, returns the current global sample design. Default:
-\code{NULL}.}
+\item{data}{(matrix, data frame, or list, optional). Sample design to store
+globally. Accepts a matrix/data frame or a list with element \code{X}
+(typically output of \code{\link[=sample_design]{sample_design()}}). If \code{NULL}, returns the current
+global sample design. Default: \code{NULL}.}
 }
 \value{
-Current or newly set sample design (\code{data.frame}) or \code{NULL} if no
-sample design has been set.
+Current or newly set sample design (\code{list} with elements \code{sa} and
+\code{X}) or \code{NULL} if no sample design has been set.
 }
 \description{
 Manages a global sample design matrix/data frame by setting or retrieving it.

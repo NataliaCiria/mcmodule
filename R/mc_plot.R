@@ -889,9 +889,7 @@ mcmodule_tornado <- function(
       linewidth = 0.5
     ) +
     ggplot2::geom_point(
-      shape = 124,
       size = 2,
-      stroke = 0.8,
       alpha = 0.2,
       color = "gray20",
       position = ggplot2::position_jitter(width = 0, height = 0.1)
@@ -900,7 +898,6 @@ mcmodule_tornado <- function(
       data = summary_df,
       ggplot2::aes(x = .data$median_value, y = .data$input),
       inherit.aes = FALSE,
-      shape = 16,
       size = 3,
       alpha = 0.9,
       color = "black"
@@ -924,7 +921,6 @@ mcmodule_tornado <- function(
           color = .data$strength
         ),
         inherit.aes = FALSE,
-        shape = 16,
         alpha = 0.9,
         size = 3.4
       ) +
@@ -946,7 +942,6 @@ mcmodule_tornado <- function(
         data = summary_df,
         ggplot2::aes(x = .data$max_abs_value, y = .data$input),
         inherit.aes = FALSE,
-        shape = 16,
         size = 3.4,
         color = "black"
       )
