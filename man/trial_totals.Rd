@@ -16,6 +16,7 @@ trial_totals(
   all_suffix = NULL,
   level_suffix = c(trial = "trial", subset = "subset", set = "set"),
   mctable = set_mctable(),
+  sample_design = set_sample_design(),
   agg_keys = NULL,
   agg_suffix = NULL,
   keep_variates = FALSE,
@@ -48,6 +49,11 @@ Default: c(trial="trial", subset="subset", set="set").}
 
 \item{mctable}{(data frame, optional). Monte Carlo nodes definitions.
 Default: set_mctable().}
+
+\item{sample_design}{(matrix, data frame, or list, optional). Sampling
+design used to create missing input nodes via \code{\link[=matrix_to_mcnodes]{matrix_to_mcnodes()}}.
+Accepts a matrix/data frame or a list with element \code{X} (typically output
+of \code{\link[=sample_design]{sample_design()}}). Defaults to \code{\link[=set_sample_design]{set_sample_design()}}.}
 
 \item{agg_keys}{(character vector, optional). Column names for aggregation.
 Default: NULL.}

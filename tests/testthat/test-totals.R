@@ -448,19 +448,24 @@ suppressMessages({
   })
 
   test_that("trial_totals works with sampling design", {
-    # # Create a test module with mock data
-    # imports_sd <- suppressWarnings(sampling_design(imports_mctable))
-    # sd_module <- eval_module(
-    #   exp = imports_exp,
-    #   data = NULL,
-    #   sampling_design = imports_sd$X
-    # )
-    # result <- trial_totals(
-    #   mcmodule = test_module,
-    #   mc_names = c("p_1_x", "p_1_y"),
-    #   trials_n = "times_n"
-    # )
-    # reset_mctable()
+    # Create a test module with mock data
+    imports_sd <- suppressWarnings(sample_design(imports_mctable))
+    sd_module <- eval_module(
+      exp = imports_exp,
+      data = NULL,
+      sample_design = imports_sd,
+      mctable = imports_mctable
+    )
+    result <- trial_totals(
+      mcmodule = sd_module,
+      mc_names = c("no_detect_a"),
+      trials_n = "animals_n",
+      subsets_n = "farms_n",
+      subsets_p = "h_prev",
+      sample_design = imports_sd,
+      mctable = imports_mctable
+    )
+    expect_true("no_detect_a_set" %in% names(result$node_list))
   })
 
   test_that("at_least_one naming options work", {

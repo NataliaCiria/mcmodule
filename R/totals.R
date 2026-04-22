@@ -517,10 +517,10 @@ agg_totals <- function(
 #'   Default: c(trial="trial", subset="subset", set="set").
 #' @param mctable (data frame, optional). Monte Carlo nodes definitions.
 #'   Default: set_mctable().
-#' @param sampling_design (matrix, data frame, or list, optional). Sampling
+#' @param sample_design (matrix, data frame, or list, optional). Sampling
 #'   design used to create missing input nodes via [matrix_to_mcnodes()].
 #'   Accepts a matrix/data frame or a list with element `X` (typically output
-#'   of [sampling_design()]). Defaults to [set_sampling_design()].
+#'   of [sample_design()]). Defaults to [set_sample_design()].
 #' @param agg_keys (character vector, optional). Column names for aggregation.
 #'   Default: NULL.
 #' @param agg_suffix (character). Suffix for aggregated node names. Default: "hag".
@@ -556,7 +556,7 @@ trial_totals <- function(
   all_suffix = NULL,
   level_suffix = c(trial = "trial", subset = "subset", set = "set"),
   mctable = set_mctable(),
-  sampling_design = set_sampling_design(),
+  sample_design = set_sample_design(),
   agg_keys = NULL,
   agg_suffix = NULL,
   keep_variates = FALSE,
@@ -619,16 +619,16 @@ trial_totals <- function(
   # All unique data_names across all nodes
   all_data_names <- unique(unlist(filtered_node_data_names))
 
-  sampling_design_data <- NULL
-  if (!is.null(sampling_design)) {
-    sample_design_input <- sampling_design
+  sample_design_data <- NULL
+  if (!is.null(sample_design)) {
+    sample_design_input <- sample_design
     if (
       is.list(sample_design_input) &&
         !is.data.frame(sample_design_input) &&
         !is.matrix(sample_design_input)
     ) {
       if (!"X" %in% names(sample_design_input)) {
-        stop("sampling_design list must contain element 'X'")
+        stop("sample_design list must contain element 'X'")
       }
       sample_design_input <- sample_design_input$X
     }
@@ -637,22 +637,22 @@ trial_totals <- function(
       !(is.matrix(sample_design_input) || is.data.frame(sample_design_input))
     ) {
       stop(
-        "sampling_design must be a matrix, data frame, or list with element 'X'"
+        "sample_design must be a matrix, data frame, or list with element 'X'"
       )
     }
 
-    sampling_design_data <- as.data.frame(
+    sample_design_data <- as.data.frame(
       sample_design_input,
       stringsAsFactors = FALSE,
       check.names = FALSE
     )
 
-    if (nrow(sampling_design_data) < 1) {
-      stop("sampling_design has 0 rows")
+    if (nrow(sample_design_data) < 1) {
+      stop("sample_design has 0 rows")
     }
 
-    if (ncol(sampling_design_data) < 1) {
-      stop("sampling_design has 0 columns")
+    if (ncol(sample_design_data) < 1) {
+      stop("sample_design has 0 columns")
     }
   }
 
@@ -858,9 +858,9 @@ trial_totals <- function(
     data <- mcmodule$data[[ref_data_name]]
   }
 
-  if (is.null(data) && is.null(sampling_design_data)) {
+  if (is.null(data) && is.null(sample_design_data)) {
     stop(
-      "No input data found for trial_totals and sampling_design is NULL"
+      "No input data found for trial_totals and sample_design is NULL"
     )
   }
 
@@ -876,18 +876,18 @@ trial_totals <- function(
     mctable,
     keep_variates,
     ref_data_name,
-    sampling_design_data = NULL,
+    sample_design_data = NULL,
     agg_func = NULL
   ) {
     if (mc_name %in% names(mcmodule$node_list)) {
       mc_node <- mcmodule$node_list[[mc_name]][["mcnode"]]
     } else {
       if (
-        !is.null(sampling_design_data) &&
-          mc_name %in% colnames(sampling_design_data)
+        !is.null(sample_design_data) &&
+          mc_name %in% colnames(sample_design_data)
       ) {
         matrix_to_mcnodes(
-          X = sampling_design_data[, mc_name, drop = FALSE],
+          X = sample_design_data[, mc_name, drop = FALSE],
           envir = environment()
         )
       } else {
@@ -897,7 +897,7 @@ trial_totals <- function(
 
         if (is.null(data)) {
           stop(sprintf(
-            "data is NULL and '%s' is not present in sampling_design",
+            "data is NULL and '%s' is not present in sample_design",
             mc_name
           ))
         }
@@ -999,7 +999,7 @@ trial_totals <- function(
     mctable,
     keep_variates,
     ref_data_name,
-    sampling_design_data
+    sample_design_data
   )
 
   # mc_match if several data names are provided
@@ -1031,7 +1031,7 @@ trial_totals <- function(
       mctable,
       keep_variates,
       ref_data_name,
-      sampling_design_data,
+      sample_design_data,
       agg_func = "avg"
     )
 
@@ -1069,7 +1069,7 @@ trial_totals <- function(
       mctable,
       keep_variates,
       ref_data_name,
-      sampling_design_data,
+      sample_design_data,
       agg_func = "avg"
     )
 
@@ -1400,7 +1400,7 @@ trial_totals <- function(
         )
 
         # Add summary if requested
-        if (summary && !is.null(data)) {
+        if (summary && !is.null(data) && nrow(data) > 0) {
           if (!is.null(agg_keys) && !keep_variates) {
             mcmodule$node_list[[new_mc_name]][["summary"]] <- mc_summary(
               mcmodule = mcmodule,

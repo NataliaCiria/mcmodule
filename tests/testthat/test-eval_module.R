@@ -608,7 +608,7 @@ suppressMessages({
     expect_true(is.mcnode(result_mcmodule$node_list$external_input$mcnode))
   })
 
-  test_that("eval_module creates input nodes from sampling_design and allows empty data", {
+  test_that("eval_module creates input nodes from sample_design and allows empty data", {
     test_exp <- quote({
       result <- input_a + input_b
     })
@@ -633,7 +633,7 @@ suppressMessages({
       exp = c(test = test_exp),
       data = data.frame(),
       mctable = test_mctable,
-      sampling_design = X
+      sample_design = X
     )
 
     expect_equal(class(result_mcmodule), "mcmodule")
@@ -663,13 +663,13 @@ suppressMessages({
         exp = c(test = test_exp),
         data = NULL,
         mctable = test_mctable,
-        sampling_design = X
+        sample_design = X
       )
     )
   })
 
-  test_that("eval_module uses global sampling_design by default", {
-    reset_sampling_design()
+  test_that("eval_module uses global sample_design by default", {
+    reset_sample_design()
 
     test_exp <- quote({
       result <- input_a + input_b
@@ -691,7 +691,7 @@ suppressMessages({
       input_b = c(1, 2, 3)
     )
 
-    set_sampling_design(X)
+    set_sample_design(X)
 
     result_mcmodule <- eval_module(
       exp = c(test = test_exp),
@@ -702,10 +702,10 @@ suppressMessages({
     expect_true(result_mcmodule$node_list$input_a$from_sample_design)
     expect_true(result_mcmodule$node_list$input_b$from_sample_design)
 
-    reset_sampling_design()
+    reset_sample_design()
   })
 
-  test_that("eval_module enforces input ndvar compatibility when sampling_design is used", {
+  test_that("eval_module enforces input ndvar compatibility when sample_design is used", {
     test_data <- data.frame(
       other_min = 0.2,
       other_max = 0.4
@@ -732,7 +732,7 @@ suppressMessages({
       exp = c(test = test_exp),
       data = test_data,
       mctable = test_mctable,
-      sampling_design = X
+      sample_design = X
     )
 
     expect_equal(
@@ -744,7 +744,7 @@ suppressMessages({
     expect_equal(result_mcmodule$node_list$other$data_name, "test_data")
   })
 
-  test_that("eval_module keeps type 0 nodes at original dimension with sampling_design", {
+  test_that("eval_module keeps type 0 nodes at original dimension with sample_design", {
     test_data <- data.frame(
       fixed_value = 2
     )
@@ -770,7 +770,7 @@ suppressMessages({
       exp = c(test = test_exp),
       data = test_data,
       mctable = test_mctable,
-      sampling_design = X
+      sample_design = X
     )
 
     expect_equal(
@@ -784,7 +784,7 @@ suppressMessages({
     )
   })
 
-  test_that("eval_module errors when sampling_design misses required inputs and data is empty", {
+  test_that("eval_module errors when sample_design misses required inputs and data is empty", {
     test_exp <- quote({
       result <- input_a + input_b
     })
@@ -807,9 +807,9 @@ suppressMessages({
         exp = c(test = test_exp),
         data = data.frame(),
         mctable = test_mctable,
-        sampling_design = X
+        sample_design = X
       ),
-      "not provided in sampling_design"
+      "not provided in sample_design"
     )
   })
 

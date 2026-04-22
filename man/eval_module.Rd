@@ -15,7 +15,7 @@ eval_module(
   match_keys = NULL,
   keys = NULL,
   overwrite_keys = NULL,
-  sampling_design = set_sampling_design(),
+  sample_design = set_sample_design(),
   use_variation = NULL
 )
 }
@@ -49,11 +49,11 @@ mcnodes with current data. Default: NULL.}
 \item{overwrite_keys}{(logical or NULL). If NULL (default), becomes TRUE when
 \code{data_keys} is NULL or empty; otherwise FALSE.}
 
-\item{sampling_design}{(matrix, data frame, or list, optional). Sampling
+\item{sample_design}{(matrix, data frame, or list, optional). Sampling
 design used to create input nodes via \code{\link[=matrix_to_mcnodes]{matrix_to_mcnodes()}}. Accepts a
 matrix/data frame or a list with element \code{X} (typically output of
-\code{\link[=sampling_design]{sampling_design()}}). Columns matching expression input nodes are created
-from this matrix. Defaults to \code{\link[=set_sampling_design]{set_sampling_design()}}.}
+\code{\link[=sample_design]{sample_design()}}). Columns matching expression input nodes are created
+from this matrix. Defaults to \code{\link[=set_sample_design]{set_sample_design()}}.}
 
 \item{use_variation}{(character vector, optional). mcnode names to apply
 \code{sensi_variation} expression from \code{mctable} before node creation. Default: NULL.}

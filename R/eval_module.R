@@ -25,7 +25,8 @@
 #'
 #' @param exp (language or list). Model expression or list of expressions to evaluate.
 #' @param data (data frame). Input data; number of rows determines nvariates for
-#'   [mc2d::mcstoc()]/[mc2d::mcdata()] in expressions. Default: required.
+#'   [mc2d::mcstoc()]/[mc2d::mcdata()] in expressions. Default: NULL (can only be NULL
+#'   if `sample_design` with all inputs is provided).
 #' @param param_names (named character vector, optional). Names to rename parameters.
 #'   Default: NULL.
 #' @param prev_mcmodule (mcmodule or list, optional). Previous module(s) for
@@ -42,11 +43,11 @@
 #' @param keys (character vector, optional). Explicit keys for input data. Default: NULL.
 #' @param overwrite_keys (logical or NULL). If NULL (default), becomes TRUE when
 #'   `data_keys` is NULL or empty; otherwise FALSE.
-#' @param sampling_design (matrix, data frame, or list, optional). Sampling
+#' @param sample_design (matrix, data frame, or list, optional). Sampling
 #'   design used to create input nodes via [matrix_to_mcnodes()]. Accepts a
 #'   matrix/data frame or a list with element `X` (typically output of
-#'   [sampling_design()]). Columns matching expression input nodes are created
-#'   from this matrix. Defaults to [set_sampling_design()].
+#'   [sample_design()]). Columns matching expression input nodes are created
+#'   from this matrix. Defaults to [set_sample_design()].
 #' @param use_variation (character vector, optional). mcnode names to apply
 #'   `sensi_variation` expression from `mctable` before node creation. Default: NULL.
 #'
@@ -89,7 +90,7 @@
 #' )
 eval_module <- function(
   exp,
-  data,
+  data = NULL,
   param_names = NULL,
   prev_mcmodule = NULL,
   summary = FALSE,
@@ -98,7 +99,7 @@ eval_module <- function(
   match_keys = NULL,
   keys = NULL,
   overwrite_keys = NULL,
-  sampling_design = set_sampling_design(),
+  sample_design = set_sample_design(),
   use_variation = NULL
 ) {
   if (is.null(data)) {
@@ -108,15 +109,15 @@ eval_module <- function(
   data_name <- deparse(substitute(data))
 
   sample_design_data <- NULL
-  if (!is.null(sampling_design)) {
-    sample_design_input <- sampling_design
+  if (!is.null(sample_design)) {
+    sample_design_input <- sample_design
     if (
       is.list(sample_design_input) &&
         !is.data.frame(sample_design_input) &&
         !is.matrix(sample_design_input)
     ) {
       if (!"X" %in% names(sample_design_input)) {
-        stop("sampling_design list must contain element 'X'")
+        stop("sample_design list must contain element 'X'")
       }
       sample_design_input <- sample_design_input$X
     }
@@ -125,7 +126,7 @@ eval_module <- function(
       !(is.matrix(sample_design_input) || is.data.frame(sample_design_input))
     ) {
       stop(
-        "sampling_design must be a matrix, data frame, or list with element 'X'"
+        "sample_design must be a matrix, data frame, or list with element 'X'"
       )
     }
     sample_design_data <- as.data.frame(
@@ -135,10 +136,10 @@ eval_module <- function(
     )
 
     if (nrow(sample_design_data) < 1) {
-      stop("sampling_design has 0 rows")
+      stop("sample_design has 0 rows")
     }
     if (ncol(sample_design_data) < 1) {
-      stop("sampling_design has 0 columns")
+      stop("sample_design has 0 columns")
     }
   }
 
@@ -582,7 +583,7 @@ eval_module <- function(
 
     if (!is.null(sample_design_data) && nrow(mctable_i) > 0 && nrow(data) < 1) {
       stop(sprintf(
-        "data has 0 rows and the following input nodes are not provided in sampling_design: %s",
+        "data has 0 rows and the following input nodes are not provided in sample_design: %s",
         paste(mctable_i$mcnode, collapse = ", ")
       ))
     }
