@@ -1,446 +1,351 @@
 suppressMessages({
-  get_design <- function(sd) {
-    if (inherits(sd, "sobolSalt")) {
-      return(as.data.frame(
-        sd$X1,
-        stringsAsFactors = FALSE,
-        check.names = FALSE
-      ))
-    }
-
-    if (!is.null(sd$X)) {
-      return(as.data.frame(sd$X, stringsAsFactors = FALSE, check.names = FALSE))
-    }
-
-    stop("Unable to extract design matrix from sample_design output")
-  }
-
-  test_that("set_sample_design and reset_sample_design work", {
+  test_that("set_sample_design and reset_sample_design manage the global design", {
+    # Start clean
     reset_sample_design()
     expect_null(set_sample_design())
 
-    X <- data.frame(
-      a = c(0.1, 0.2, 0.3),
-      b = c(1, 2, 3)
+    X <- data.frame(a = c(0.1, 0.2), b = c(1, 2), stringsAsFactors = FALSE)
+    expect_message(set_sample_design(X), "sample_design set")
+
+    current <- set_sample_design()
+    expect_type(current, "list")
+    expect_true(all(c("sa", "X") %in% names(current)))
+    expect_null(current$sa)
+    expect_true(is.data.frame(current$X))
+    expect_equal(current$X, X)
+
+    expect_message(reset_sample_design(), "sample_design reset")
+    expect_null(set_sample_design())
+    reset_sample_design()
+  })
+
+  test_that("set_sample_design accepts a list input with X", {
+    X <- data.frame(a = c(1, 2), stringsAsFactors = FALSE)
+    obj <- list(sa = "dummy", X = X)
+
+    set_sample_design(obj)
+    current <- set_sample_design()
+    expect_equal(current$sa, "dummy")
+    expect_equal(current$X, X)
+    reset_sample_design()
+  })
+
+  test_that("mctable_bounds errors when required columns are missing", {
+    mctable <- data.frame(
+      mcnode = "x",
+      stringsAsFactors = FALSE
+    )
+    expect_error(
+      mctable_bounds(mctable),
+      "mctable must contain columns 'mcnode' and 'sample_space'"
+    )
+  })
+
+  test_that("mctable_bounds supports categorical sample_space via numeric transformation", {
+    set.seed(456)
+    mctable <- data.frame(
+      mcnode = "x",
+      sample_space = "c('always','sometimes','never')",
+      transformation = "ifelse(value == 'always', 1, ifelse(value == 'sometimes', 0.5, 0))",
+      stringsAsFactors = FALSE
     )
 
-    expect_no_error(set_sample_design(X))
-    current_X <- set_sample_design()
-    expect_type(current_X, "list")
-    expect_true(all(c("sa", "X") %in% names(current_X)))
-    expect_s3_class(current_X$X, "data.frame")
-    expect_equal(current_X$X, X)
+    b <- mctable_bounds(mctable, transformation = TRUE, n_probe = 2000)
 
-    sd <- suppressWarnings(sample_design(
-      data.frame(
-        mcnode = c("a", "b"),
-        sample_space = c("min = 0, max = 1", "min = 10, max = 20"),
-        stringsAsFactors = FALSE
+    expect_equal(b$factors, "x")
+    # Expected bounds after mapping {never, sometimes, always} -> {0, 0.5, 1}.
+    expect_equal(b$binf[[1]], 0)
+    expect_equal(b$bsup[[1]], 1)
+  })
+
+  test_that("mctable_bounds uses n_probe to approximate bounds for non-monotone transformations", {
+    set.seed(123)
+    mctable <- data.frame(
+      mcnode = c("x"),
+      sample_space = c("min = 0, max = 1"),
+      # Non-monotone on [0, 1], maximum at value = 0.3
+      transformation = c("-(value - 0.3)^2"),
+      stringsAsFactors = FALSE
+    )
+
+    b <- mctable_bounds(mctable, transformation = TRUE, n_probe = 5000)
+    expect_equal(b$factors, "x")
+    # True bounds are [-0.49, 0]. Probing should get close to 0 for bsup.
+    expect_true(b$binf[[1]] <= -0.45)
+    expect_true(b$bsup[[1]] > -0.01)
+    expect_true(b$bsup[[1]] <= 0.001)
+  })
+
+  test_that("mctable_bounds returns numeric bounds and factor names", {
+    mctable <- data.frame(
+      mcnode = c("x", "y"),
+      sample_space = c("min = 0, max = 1", "min = 10, max = 20"),
+      stringsAsFactors = FALSE
+    )
+
+    b <- mctable_bounds(mctable)
+    expect_type(b, "list")
+    expect_true(all(c("binf", "bsup", "factors", "fixed") %in% names(b)))
+    expect_equal(b$factors, c("x", "y"))
+    expect_type(b$binf, "double")
+    expect_type(b$bsup, "double")
+    expect_equal(b$binf, c(0, 10))
+    expect_equal(b$bsup, c(1, 20))
+    expect_equal(length(b$fixed), 0)
+  })
+
+  test_that("mctable_bounds supports c(min, max) bounds", {
+    mctable <- data.frame(
+      mcnode = c("x", "y"),
+      sample_space = c("c(0, 1)", "c(10, 20)"),
+      stringsAsFactors = FALSE
+    )
+
+    b <- mctable_bounds(mctable)
+    expect_equal(b$binf, c(0, 10))
+    expect_equal(b$bsup, c(1, 20))
+  })
+
+  test_that("mctable_bounds filters mc_names and errors on invalid names", {
+    mctable <- data.frame(
+      mcnode = c("a", "b", "c"),
+      sample_space = c(
+        "min = 0, max = 1",
+        "min = 10, max = 20",
+        "min = -5, max = 5"
       ),
-      n = 5
-    ))
+      stringsAsFactors = FALSE
+    )
 
-    expect_no_error(set_sample_design(sd))
-    current_sd <- set_sample_design()
-    expect_type(current_sd, "list")
-    expect_true(all(c("sa", "X") %in% names(current_sd)))
-    expect_s3_class(current_sd$X, "data.frame")
+    b <- mctable_bounds(mctable, mc_names = c("a", "c"))
+    expect_equal(b$factors, c("a", "c"))
+    expect_equal(b$binf, c(0, -5))
+    expect_equal(b$bsup, c(1, 5))
 
     expect_error(
-      set_sample_design(1:3),
-      "sample_design must be a matrix, data frame, or list with element 'X'"
+      mctable_bounds(mctable, mc_names = c("a", "nope")),
+      "Invalid mc_names"
     )
-
-    reset_sample_design()
-    expect_null(set_sample_design())
   })
 
-  test_that("mcmodule_to_matrices returns correct structure", {
-    # Minimal mock mcmodule object
-    mcmodule <- list(
-      node_list = list(
-        a = list(mcnode = array(1:6, dim = c(3, 1, 2))),
-        b = list(mcnode = array(7:12, dim = c(3, 1, 2)))
-      )
-    )
-    mats <- mcmodule_to_matrices(mcmodule)
-    expect_type(mats, "list")
-    expect_equal(length(mats), 2) # 2 variates
-    expect_equal(dim(mats[[1]]), c(3, 2))
-    expect_equal(dim(mats[[2]]), c(3, 2))
-    expect_equal(mats[[1]][1, 1], 1)
-    expect_equal(mats[[2]][3, 2], 12)
-  })
-
-  test_that("sample_design works with sample_space only", {
+  test_that("mctable_bounds drops NA/empty sample_space from factors by default", {
     mctable <- data.frame(
-      mcnode = c("x", "y"),
-      sample_space = c("min = 0, max = 1", "min = 10, max = 20"),
-      stringsAsFactors = FALSE
-    )
-    sd <- suppressWarnings(sample_design(mctable, n = 50))
-    expect_s3_class(sd, "morris")
-    res <- get_design(sd)
-    expect_s3_class(res, "data.frame")
-    expect_type(res$x, "double")
-    expect_type(res$y, "double")
-    expect_equal(ncol(res), 2)
-    expect_true(nrow(res) > 0)
-    expect_equal(colnames(res), c("x", "y"))
-    expect_true(all(res$x >= 0 & res$x <= 1))
-    expect_true(all(res$y >= 10 & res$y <= 20))
-  })
-
-  test_that("sample_design defaults to method='morris' and if_not_sampled='exclude'", {
-    mctable <- data.frame(
-      mcnode = c("a", "b", "c"),
-      sample_space = c(
-        "min = 0, max = 1",
-        "min = 10, max = 20",
-        "min = -5, max = 5"
-      ),
+      mcnode = c("a", "b", "c", "d"),
+      sample_space = c("min = 0, max = 1", NA, "", "NA"),
       stringsAsFactors = FALSE
     )
 
-    sd <- suppressWarnings(sample_design(
-      mctable,
-      mc_names = c("a", "c")
-    ))
-    expect_s3_class(sd, "morris")
-    res <- get_design(sd)
-
-    expect_equal(colnames(res), c("a", "c"))
-    expect_false(any(grepl("^fix\\.", colnames(res))))
+    b <- mctable_bounds(mctable)
+    expect_equal(b$factors, "a")
+    expect_equal(b$binf, 0)
+    expect_equal(b$bsup, 1)
+    expect_equal(length(b$fixed), 0)
   })
 
-  test_that("sample_design applies transformation and logical coercion by default", {
-    mctable <- data.frame(
-      mcnode = c("x", "flag", "origin"),
-      transformation = c(NA, NA, "ifelse(value == 'always', 1, 0)"),
-      sample_space = c(
-        "min = 0, max = 1",
-        "c(TRUE, FALSE)",
-        "c('always', 'sometimes', 'never')"
-      ),
-      stringsAsFactors = FALSE
-    )
-    sd <- suppressWarnings(sample_design(mctable))
-    expect_s3_class(sd, "morris")
-    res <- get_design(sd)
-
-    expect_equal(colnames(res), c("x", "flag", "origin"))
-    expect_true(all(res >= 0 & res <= 1))
-  })
-
-  test_that("sample_design with method='morris' generates proper OAT design", {
-    mctable <- data.frame(
-      mcnode = c("a", "b", "c"),
-      sample_space = c(
-        "min = 0, max = 1",
-        "min = 10, max = 20",
-        "min = -5, max = 5"
-      ),
-      stringsAsFactors = FALSE
-    )
-
-    sd <- suppressWarnings(sample_design(
-      mctable,
-      method = "morris",
-      morris_r = 5
-    ))
-    expect_s3_class(sd, "morris")
-    res <- get_design(sd)
-
-    expect_equal(colnames(res), c("a", "b", "c"))
-    expect_true(nrow(res) > 0)
-    expect_true(all(res[, 1] >= 0 & res[, 1] <= 1))
-    expect_true(all(res[, 2] >= 10 & res[, 2] <= 20))
-    expect_true(all(res[, 3] >= -5 & res[, 3] <= 5))
-  })
-
-  test_that("sample_design with method='sobol' generates proper LHS design", {
-    mctable <- data.frame(
-      mcnode = c("x", "y"),
-      sample_space = c("min = 0, max = 1", "min = 10, max = 20"),
-      stringsAsFactors = FALSE
-    )
-
-    set.seed(123)
-    sd <- sample_design(mctable, n = 50, method = "sobol")
-    expect_s3_class(sd, "sobolSalt")
-    res <- get_design(sd)
-
-    expect_equal(colnames(res), c("x", "y"))
-    expect_equal(nrow(res), 50)
-    expect_true(all(res[, 1] >= 0 & res[, 1] <= 1))
-    expect_true(all(res[, 2] >= 10 & res[, 2] <= 20))
-  })
-
-  test_that("sample_design morris method with transformation works", {
-    mctable <- data.frame(
-      mcnode = c("val", "other"),
-      sample_space = c("min = 0, max = 1", "min = -10, max = 10"),
-      transformation = c(NA, NA),
-      stringsAsFactors = FALSE
-    )
-
-    sd <- suppressWarnings(sample_design(
-      mctable,
-      method = "morris",
-      morris_r = 5,
-      transformation = TRUE
-    ))
-    expect_s3_class(sd, "morris")
-    res <- get_design(sd)
-
-    expect_s3_class(res, "data.frame")
-    expect_type(res$val, "double")
-    expect_type(res$other, "double")
-  })
-
-  test_that("sample_design sobol method with transformation works", {
-    mctable <- data.frame(
-      mcnode = c("val", "other"),
-      sample_space = c("min = 0, max = 1", "min = -10, max = 10"),
-      transformation = c(NA, NA),
-      stringsAsFactors = FALSE
-    )
-
-    sd <- sample_design(
-      mctable,
-      n = 64,
-      method = "sobol",
-      transformation = TRUE
-    )
-    expect_s3_class(sd, "sobolSalt")
-    res <- get_design(sd)
-
-    expect_s3_class(res, "data.frame")
-    expect_equal(nrow(res), 64)
-    expect_type(res$val, "double")
-    expect_type(res$other, "double")
-  })
-
-  test_that("sample_design filters mc_names with morris and if_not_sampled='exclude'", {
+  test_that("mctable_bounds sets fixed values for non-sampled nodes", {
     mctable <- data.frame(
       mcnode = c("a", "b", "c", "d"),
       sample_space = c(
         "min = 0, max = 1",
         "min = 10, max = 20",
-        "min = -5, max = 5",
-        "min = 100, max = 200"
+        NA,
+        "NA"
       ),
       stringsAsFactors = FALSE
     )
 
-    sd <- suppressWarnings(sample_design(
+    b <- mctable_bounds(
       mctable,
-      n = 20,
-      method = "morris",
-      mc_names = c("a", "c"),
-      if_not_sampled = "exclude"
-    ))
-    expect_s3_class(sd, "morris")
-    res <- get_design(sd)
+      mc_names = "a",
+      if_not_sampled = "median",
+      transformation = FALSE
+    )
 
-    expect_s3_class(res, "data.frame")
-    expect_equal(colnames(res), c("a", "c"))
-    expect_true(nrow(res) > 0)
-    expect_true(all(res$a >= 0 & res$a <= 1))
-    expect_true(all(res$c >= -5 & res$c <= 5))
+    expect_equal(b$factors, "a")
+    expect_equal(b$binf, 0)
+    expect_equal(b$bsup, 1)
+    expect_true(all(c("b", "c", "d") %in% names(b$fixed)))
+    expect_equal(unname(b$fixed[["b"]]), 15)
+    expect_equal(unname(b$fixed[["c"]]), 0)
+    expect_equal(unname(b$fixed[["d"]]), 0)
   })
 
-  test_that("sample_design with morris and if_not_sampled='median' returns morris design", {
+  test_that("mctable_bounds applies transformation to bounds when requested", {
+    set.seed(1)
     mctable <- data.frame(
-      mcnode = c("a", "b", "c"),
-      sample_space = c(
-        "min = 0, max = 1",
-        "min = 10, max = 20",
-        "min = -5, max = 5"
-      ),
+      mcnode = c("x"),
+      sample_space = c("min = 0, max = 1"),
+      transformation = c("value^2"),
       stringsAsFactors = FALSE
     )
 
-    sd <- suppressWarnings(sample_design(
-      mctable,
-      n = 15,
-      method = "morris",
-      mc_names = c("a", "c"),
-      if_not_sampled = "median"
-    ))
-    expect_s3_class(sd, "morris")
-    res <- get_design(sd)
-
-    expect_s3_class(res, "data.frame")
-    expect_equal(colnames(res), c("a", "c"))
-    expect_false(any(grepl("^fix\\.", colnames(res))))
+    b <- mctable_bounds(mctable, transformation = TRUE, n_probe = 2000)
+    expect_equal(b$factors, "x")
+    expect_true(b$binf[[1]] >= 0)
+    expect_true(b$bsup[[1]] <= 1)
   })
 
-  test_that("sample_design morris with mc_names defaults to if_not_sampled='exclude'", {
+  test_that("mctable_bounds errors for unsupported bounds formats", {
     mctable <- data.frame(
-      mcnode = c("x", "y", "z"),
-      sample_space = c(
-        "min = 0, max = 1",
-        "min = 10, max = 20",
-        "min = -5, max = 5"
-      ),
-      stringsAsFactors = FALSE
-    )
-
-    sd <- suppressWarnings(sample_design(
-      mctable,
-      method = "morris",
-      morris_r = 3,
-      mc_names = c("x", "z")
-    ))
-    expect_s3_class(sd, "morris")
-    res <- get_design(sd)
-
-    expect_s3_class(res, "data.frame")
-    expect_equal(colnames(res), c("x", "z"))
-    expect_false(any(grepl("^fix\\.", colnames(res))))
-  })
-
-  test_that("sample_design morris with if_not_sampled='median' keeps sampled columns", {
-    mctable <- data.frame(
-      mcnode = c("x", "y", "z"),
-      sample_space = c(
-        "min = 0, max = 1",
-        "min = 10, max = 20",
-        "min = -5, max = 5"
-      ),
-      stringsAsFactors = FALSE
-    )
-
-    sd <- suppressWarnings(sample_design(
-      mctable,
-      method = "morris",
-      morris_r = 10,
-      mc_names = c("x", "z"),
-      if_not_sampled = "median"
-    ))
-    expect_s3_class(sd, "morris")
-    res <- get_design(sd)
-
-    expect_s3_class(res, "data.frame")
-    expect_equal(colnames(res), c("x", "z"))
-    expect_false(any(grepl("^fix\\.", colnames(res))))
-  })
-
-  test_that("sample_design sobol with mc_names defaults to if_not_sampled='exclude'", {
-    mctable <- data.frame(
-      mcnode = c("a", "b", "c"),
-      sample_space = c(
-        "min = 0, max = 1",
-        "min = 10, max = 20",
-        "min = -5, max = 5"
-      ),
-      stringsAsFactors = FALSE
-    )
-
-    sd <- sample_design(
-      mctable,
-      n = 32,
-      method = "sobol",
-      mc_names = c("a", "c")
-    )
-    expect_s3_class(sd, "sobolSalt")
-    res <- get_design(sd)
-
-    expect_s3_class(res, "data.frame")
-    expect_equal(colnames(res), c("a", "c"))
-    expect_equal(nrow(res), 32)
-    expect_false(any(grepl("^fix\\.", colnames(res))))
-  })
-
-  test_that("sample_design sobol with if_not_sampled='median' currently errors", {
-    mctable <- data.frame(
-      mcnode = c("a", "b", "c"),
-      sample_space = c(
-        "min = 0, max = 1",
-        "min = 10, max = 20",
-        "min = -5, max = 5"
-      ),
+      mcnode = c("cat"),
+      sample_space = c("c('a','b')"),
       stringsAsFactors = FALSE
     )
 
     expect_error(
-      sample_design(
-        mctable,
-        n = 32,
-        method = "sobol",
-        mc_names = c("a", "c"),
-        if_not_sampled = "median"
-      ),
-      "object 'X' not found"
+      mctable_bounds(mctable),
+      "Cannot extract numeric bounds"
     )
   })
 
-  test_that("sample_design rejects invalid mc_names", {
+  test_that("mctable_sobol_matrices returns mapped draws for runif bounds", {
+    skip_if_not_installed("sensobol")
+
     mctable <- data.frame(
-      mcnode = c("a", "b", "c"),
-      sample_space = c(
-        "min = 0, max = 1",
-        "min = 10, max = 20",
-        "min = -5, max = 5"
-      ),
+      mcnode = c("a", "b"),
+      sample_space = c("min = 0, max = 1", "min = 10, max = 20"),
       stringsAsFactors = FALSE
     )
+
+    X <- mctable_sobol_matrices(
+      mctable = mctable,
+      N = 32,
+      order = "first"
+    )
+
+    expect_true(is.matrix(X))
+    expect_equal(ncol(X), 2)
+    expect_true(all(X[, 1] >= 0 & X[, 1] <= 1))
+    expect_true(all(X[, 2] >= 10 & X[, 2] <= 20))
+  })
+
+  test_that("mctable_sobol_matrices maps rnorm using qnorm", {
+    skip_if_not_installed("sensobol")
+
+    mctable <- data.frame(
+      mcnode = "x",
+      mc_func = "rnorm",
+      sample_space = "mean = 0, sd = 1",
+      stringsAsFactors = FALSE
+    )
+
+    X <- mctable_sobol_matrices(
+      mctable = mctable,
+      N = 64,
+      order = "first"
+    )
+
+    expect_true(is.matrix(X))
+    expect_equal(ncol(X), 1)
+    expect_true(all(is.finite(X[, 1])))
+    expect_true(abs(mean(X[, 1])) < 0.25)
+    expect_true(sd(X[, 1]) > 0.5)
+  })
+
+  test_that("mctable_sobol_matrices supports mc_names", {
+    skip_if_not_installed("sensobol")
+
+    mctable <- data.frame(
+      mcnode = c("a", "b", "c"),
+      sample_space = c("min = 0, max = 1", "min = 10, max = 20", NA),
+      stringsAsFactors = FALSE
+    )
+
+    X <- mctable_sobol_matrices(
+      mctable = mctable,
+      N = 16,
+      order = "first",
+      mc_names = "a"
+    )
+
+    expect_true(is.matrix(X))
+    expect_equal(ncol(X), 1)
+  })
+
+  test_that("eval_module fills missing sample_design inputs from mctable sample_space", {
+    # Only 'a' is provided in sample_design; 'b' is required by expression.
+    sample_design <- data.frame(a = c(0, 1), stringsAsFactors = FALSE)
+
+    mctable <- data.frame(
+      mcnode = c("a", "b"),
+      mc_func = NA,
+      sample_space = c("min = 0, max = 1", "min = 10, max = 20"),
+      stringsAsFactors = FALSE
+    )
+
+    expr <- quote({
+      out <- a + b
+    })
+
+    m <- eval_module(
+      exp = expr,
+      data = NULL,
+      mctable = mctable,
+      sample_design = sample_design,
+      if_not_sampled = "median"
+    )
+
+    expect_true(inherits(m, "mcmodule"))
+    expect_true(isTRUE(m$node_list$b$from_sample_design))
+    expect_true(isTRUE(m$node_list$b$from_sample_design_fixed))
+    # b fixed at mean(10, 20) = 15 for both samples
+    expect_equal(as.numeric(m$node_list$b$mcnode[, 1, 1]), c(15, 15))
+    # out = a + b
+    expect_equal(as.numeric(m$node_list$out$mcnode[, 1, 1]), c(15, 16))
+  })
+
+  test_that("eval_module if_not_sampled supports min/max", {
+    sample_design <- data.frame(a = c(0, 1), stringsAsFactors = FALSE)
+    mctable <- data.frame(
+      mcnode = c("a", "b"),
+      mc_func = NA,
+      sample_space = c("min = 0, max = 1", "min = 10, max = 20"),
+      stringsAsFactors = FALSE
+    )
+    expr <- quote({
+      out <- a + b
+    })
+
+    m_min <- eval_module(
+      exp = expr,
+      data = NULL,
+      mctable = mctable,
+      sample_design = sample_design,
+      if_not_sampled = "min"
+    )
+    expect_equal(as.numeric(m_min$node_list$b$mcnode[, 1, 1]), c(10, 10))
+
+    m_max <- eval_module(
+      exp = expr,
+      data = NULL,
+      mctable = mctable,
+      sample_design = sample_design,
+      if_not_sampled = "max"
+    )
+    expect_equal(as.numeric(m_max$node_list$b$mcnode[, 1, 1]), c(20, 20))
+  })
+
+  test_that("eval_module errors only when missing from sample_design and cannot be created from mctable", {
+    sample_design <- data.frame(a = c(0, 1), stringsAsFactors = FALSE)
+    mctable <- data.frame(
+      mcnode = c("a"),
+      mc_func = NA,
+      sample_space = c("min = 0, max = 1"),
+      stringsAsFactors = FALSE
+    )
+
+    expr <- quote({
+      out <- a + b
+    })
 
     expect_error(
-      sample_design(mctable, mc_names = c("a", "invalid_node")),
-      "Invalid mc_names"
-    )
-  })
-
-  test_that("sample_design excludes NA sample_space when if_not_sampled='exclude'", {
-    mctable <- data.frame(
-      mcnode = c("a", "b", "c"),
-      sample_space = c(
-        "min = 0, max = 1",
-        NA,
-        "min = -5, max = 5"
+      eval_module(
+        exp = expr,
+        data = NULL,
+        mctable = mctable,
+        sample_design = sample_design
       ),
-      stringsAsFactors = FALSE
+      "Input 'b' is missing from sample_design and not found in mctable"
     )
-
-    sd <- suppressWarnings(sample_design(
-      mctable,
-      method = "morris",
-      morris_r = 5,
-      if_not_sampled = "exclude"
-    ))
-    expect_s3_class(sd, "morris")
-    res <- get_design(sd)
-
-    expect_s3_class(res, "data.frame")
-    expect_equal(colnames(res), c("a", "c"))
-    expect_false("b" %in% colnames(res))
-    expect_false("fix.b" %in% colnames(res))
-  })
-
-  test_that("sample_design sets fixed value 0 for NA sample_space when not excluded", {
-    mctable <- data.frame(
-      mcnode = c("a", "b", "c"),
-      sample_space = c(
-        "min = 0, max = 1",
-        NA,
-        "min = -5, max = 5"
-      ),
-      stringsAsFactors = FALSE
-    )
-
-    sd <- suppressWarnings(sample_design(
-      mctable,
-      method = "morris",
-      morris_r = 5,
-      if_not_sampled = "median"
-    ))
-    expect_s3_class(sd, "morris")
-    res <- get_design(sd)
-
-    expect_s3_class(res, "data.frame")
-    expect_false("b" %in% colnames(res))
-    expect_false("fix.b" %in% colnames(res))
   })
 })

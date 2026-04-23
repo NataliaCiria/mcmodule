@@ -449,11 +449,11 @@ suppressMessages({
 
   test_that("trial_totals works with sampling design", {
     # Create a test module with mock data
-    imports_sd <- suppressWarnings(sample_design(imports_mctable))
+    X <- mctable_sobol_matrices(imports_mctable, N = 1000)
     sd_module <- eval_module(
       exp = imports_exp,
       data = NULL,
-      sample_design = imports_sd,
+      sample_design = X,
       mctable = imports_mctable
     )
     result <- trial_totals(
@@ -462,7 +462,7 @@ suppressMessages({
       trials_n = "animals_n",
       subsets_n = "farms_n",
       subsets_p = "h_prev",
-      sample_design = imports_sd,
+      sample_design = X,
       mctable = imports_mctable
     )
     expect_true("no_detect_a_set" %in% names(result$node_list))

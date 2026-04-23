@@ -46,8 +46,12 @@
 #' @param sample_design (matrix, data frame, or list, optional). Sampling
 #'   design used to create input nodes via [matrix_to_mcnodes()]. Accepts a
 #'   matrix/data frame or a list with element `X` (typically output of
-#'   [sample_design()]). Columns matching expression input nodes are created
+#'   [sensitivity::sensitivity] functions). Columns matching expression input nodes are created
 #'   from this matrix. Defaults to [set_sample_design()].
+#' @param if_not_sampled (character). How to fill input nodes that are required
+#'   by the expression but do not appear as columns in `sample_design`. A fixed
+#'   value is computed from `mctable$sample_space` and replicated across all
+#'   samples. Options are `"median"` (default), `"mean"`, `"max"`, and `"min"`.
 #' @param use_variation (character vector, optional). mcnode names to apply
 #'   `sensi_variation` expression from `mctable` before node creation. Default: NULL.
 #'
@@ -100,6 +104,7 @@ eval_module <- function(
   keys = NULL,
   overwrite_keys = NULL,
   sample_design = set_sample_design(),
+  if_not_sampled = c("median", "mean", "max", "min"),
   use_variation = NULL
 ) {
   if (is.null(data)) {
@@ -142,6 +147,8 @@ eval_module <- function(
       stop("sample_design has 0 columns")
     }
   }
+
+  if_not_sampled <- match.arg(if_not_sampled)
 
   mctable <- check_mctable(mctable)
 
@@ -309,6 +316,7 @@ eval_module <- function(
 
   node_list <- list()
   sampled_nodes_all <- character()
+  fixed_nodes_all <- character()
   target_ndvar <- if (!is.null(sample_design_data)) {
     nrow(sample_design_data)
   } else {
@@ -335,6 +343,40 @@ eval_module <- function(
 
     sampled_nodes_i <- character()
     if (!is.null(sample_design_data)) {
+      # For any input node not present in the sample_design, create a fixed
+      # column from mctable$sample_space and append it to sample_design_data.
+      not_sampled_nodes_i <- setdiff(in_nodes_i, colnames(sample_design_data))
+      if (length(not_sampled_nodes_i) > 0) {
+        for (mc_name_fix in not_sampled_nodes_i) {
+          row_idx_fix <- which(mctable$mcnode == mc_name_fix)
+          if (length(row_idx_fix) == 0) {
+            stop(sprintf(
+              "Input '%s' is missing from sample_design and not found in mctable",
+              mc_name_fix
+            ))
+          }
+          row_idx_fix <- row_idx_fix[[1]]
+
+          ss_fix <- as.character(mctable$sample_space[row_idx_fix])
+          bounds_fix <- parse_sample_space_bounds(ss_fix)
+          if (is.null(bounds_fix)) {
+            stop(sprintf(
+              "Input '%s' is missing from sample_design and has no numeric bounds in mctable$sample_space",
+              mc_name_fix
+            ))
+          }
+
+          fixed_val <- fixed_from_bounds(bounds_fix, if_not_sampled)
+          sample_design_data[[mc_name_fix]] <- rep(
+            fixed_val,
+            nrow(sample_design_data)
+          )
+
+          fixed_nodes_all <- unique(c(fixed_nodes_all, mc_name_fix))
+        }
+      }
+
+      # Recompute sampled nodes after appending fixed columns.
       sampled_nodes_i <- intersect(in_nodes_i, colnames(sample_design_data))
       sampled_nodes_all <- unique(c(sampled_nodes_all, sampled_nodes_i))
 
@@ -350,6 +392,50 @@ eval_module <- function(
     all_prev_nodes <- names(node_list_i)[
       sapply(node_list_i, function(x) identical(x[["type"]], "prev_node"))
     ]
+
+    # If sample_design is provided, and there is no data/prev_mcmodule to build
+    # these nodes, attempt to create them as fixed columns from mctable$sample_space.
+    if (
+      !is.null(sample_design_data) && is.null(prev_mcmodule) && nrow(data) < 1
+    ) {
+      missing_prev <- setdiff(all_prev_nodes, colnames(sample_design_data))
+      if (length(missing_prev) > 0) {
+        for (mc_name_fix in missing_prev) {
+          row_idx_fix <- which(mctable$mcnode == mc_name_fix)
+          if (length(row_idx_fix) == 0) {
+            stop(sprintf(
+              "Input '%s' is missing from sample_design and not found in mctable",
+              mc_name_fix
+            ))
+          }
+          row_idx_fix <- row_idx_fix[[1]]
+
+          ss_fix <- as.character(mctable$sample_space[row_idx_fix])
+          bounds_fix <- parse_sample_space_bounds(ss_fix)
+          if (is.null(bounds_fix)) {
+            stop(sprintf(
+              "Input '%s' is missing from sample_design and has no numeric bounds in mctable$sample_space",
+              mc_name_fix
+            ))
+          }
+
+          fixed_val <- fixed_from_bounds(bounds_fix, if_not_sampled)
+          sample_design_data[[mc_name_fix]] <- rep(
+            fixed_val,
+            nrow(sample_design_data)
+          )
+
+          fixed_nodes_all <- unique(c(fixed_nodes_all, mc_name_fix))
+        }
+
+        # materialize these newly-added columns as mcnodes
+        matrix_to_mcnodes(
+          X = sample_design_data[, missing_prev, drop = FALSE],
+          envir = environment()
+        )
+        sampled_nodes_all <- unique(c(sampled_nodes_all, missing_prev))
+      }
+    }
 
     prev_nodes <- all_prev_nodes[!all_prev_nodes %in% names(node_list)]
 
@@ -583,7 +669,7 @@ eval_module <- function(
 
     if (!is.null(sample_design_data) && nrow(mctable_i) > 0 && nrow(data) < 1) {
       stop(sprintf(
-        "data has 0 rows and the following input nodes are not provided in sample_design: %s",
+        "data has 0 rows and the following input nodes are not provided in sample_design and cannot be created from mctable$sample_space: %s",
         paste(mctable_i$mcnode, collapse = ", ")
       ))
     }
@@ -701,6 +787,12 @@ eval_module <- function(
       if (mc_name %in% sampled_nodes_all) {
         node_list[[mc_name]][["from_sample_design"]] <- TRUE
         node_list[[mc_name]][["data_name"]] <- NULL
+
+        if (mc_name %in% fixed_nodes_all) {
+          node_list[[mc_name]][["from_sample_design_fixed"]] <- TRUE
+        } else {
+          node_list[[mc_name]][["from_sample_design_fixed"]] <- FALSE
+        }
       } else {
         node_list[[mc_name]][["data_name"]] <- data_name
       }

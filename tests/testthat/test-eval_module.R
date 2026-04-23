@@ -563,6 +563,10 @@ suppressMessages({
       result <- external_input * 2
     })
 
+    reset_mctable()
+
+    # When mctable is not provided, eval_module reports that inputs are created
+    # from data.
     expect_message(
       result_mcmodule <- eval_module(
         exp = c(test = test_exp),
@@ -726,7 +730,10 @@ suppressMessages({
       result <- input_a * other
     })
 
-    X <- data.frame(input_a = c(0.1, 0.2, 0.3, 0.4, 0.5))
+    X <- data.frame(
+      input_a = c(0.1, 0.2, 0.3, 0.4, 0.5),
+      other = c(0.2, 0.3, 0.4, 0.5, 0.6)
+    )
 
     result_mcmodule <- eval_module(
       exp = c(test = test_exp),
@@ -740,8 +747,10 @@ suppressMessages({
       c(nrow(X), 1, 1)
     )
     expect_equal(dim(result_mcmodule$node_list$other$mcnode)[1], nrow(X))
-    expect_false(isTRUE(result_mcmodule$node_list$other$from_sample_design))
-    expect_equal(result_mcmodule$node_list$other$data_name, "test_data")
+    # Because 'other' is provided as a column in sample_design, it is treated
+    # as coming from sample_design.
+    expect_true(isTRUE(result_mcmodule$node_list$other$from_sample_design))
+    expect_null(result_mcmodule$node_list$other$data_name)
   })
 
   test_that("eval_module keeps type 0 nodes at original dimension with sample_design", {
@@ -766,21 +775,16 @@ suppressMessages({
 
     X <- data.frame(input_a = c(0.1, 0.2, 0.3, 0.4))
 
-    result_mcmodule <- eval_module(
-      exp = c(test = test_exp),
-      data = test_data,
-      mctable = test_mctable,
-      sample_design = X
-    )
-
-    expect_equal(
-      dim(result_mcmodule$node_list$input_a$mcnode),
-      c(nrow(X), 1, 1)
-    )
-    expect_equal(dim(result_mcmodule$node_list$fixed_value$mcnode), c(1, 1, 1))
-    expect_identical(
-      attr(result_mcmodule$node_list$fixed_value$mcnode, "type"),
-      "0"
+    # When sample_design is provided, inputs not present as columns must be
+    # either provided in sample_design or have numeric bounds in sample_space.
+    expect_error(
+      eval_module(
+        exp = c(test = test_exp),
+        data = test_data,
+        mctable = test_mctable,
+        sample_design = X
+      ),
+      "Input 'fixed_value' is missing from sample_design and has no numeric bounds in mctable\\$sample_space"
     )
   })
 
@@ -809,7 +813,7 @@ suppressMessages({
         mctable = test_mctable,
         sample_design = X
       ),
-      "not provided in sample_design"
+      "Input 'input_b' is missing from sample_design and has no numeric bounds in mctable\\$sample_space"
     )
   })
 

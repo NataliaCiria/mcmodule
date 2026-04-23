@@ -8,8 +8,8 @@ set_sample_design(data = NULL)
 }
 \arguments{
 \item{data}{(matrix, data frame, or list, optional). Sample design to store
-globally. Accepts a matrix/data frame or a list with element \code{X}
-(typically output of \code{\link[=sample_design]{sample_design()}}). If \code{NULL}, returns the current
+globally. Accepts a matrix/data frame or a list with a matrix in element \code{X}
+(typically output of \link[sensitivity:sensitivity-package]{sensitivity::sensitivity} functions). If \code{NULL}, returns the current
 global sample design. Default: \code{NULL}.}
 }
 \value{
@@ -18,7 +18,8 @@ Current or newly set sample design (\code{list} with elements \code{sa} and
 }
 \description{
 Manages a global sample design matrix/data frame by setting or retrieving it.
-This object is typically the output of \code{\link[=sample_design]{sample_design()}} and can be used as
+This object is typically a matrix with one column per input parameter and one row per sample, or
+the output of \link[sensitivity:sensitivity-package]{sensitivity::sensitivity} functions. It can be used as
 default input in \code{\link[=eval_module]{eval_module()}}.
 }
 \examples{

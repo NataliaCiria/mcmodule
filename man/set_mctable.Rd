@@ -30,7 +30,7 @@ mctable columns are interpreted as follows:
 (for example \code{runif}, \code{rpert}). If missing/\code{NA}, node is deterministic.
 \item \code{from_variable}: Source column name in \code{data} when different from
 \code{mcnode}.
-\item \code{sample_space}: Sampling definition used by \code{\link[=sample_design]{sample_design()}}.
+\item \code{sample_space}: Sampling definition used by \code{\link[=mctable_bounds]{mctable_bounds()}} and \code{\link[=mctable_sobol_matrices]{mctable_sobol_matrices()}}.
 Supported formats include \code{c(...)} and named bounds such as
 \verb{min = X, max = Y}.
 \item \code{transformation}: R expression applied using \code{value} as placeholder

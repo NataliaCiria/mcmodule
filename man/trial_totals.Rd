@@ -52,8 +52,8 @@ Default: set_mctable().}
 
 \item{sample_design}{(matrix, data frame, or list, optional). Sampling
 design used to create missing input nodes via \code{\link[=matrix_to_mcnodes]{matrix_to_mcnodes()}}.
-Accepts a matrix/data frame or a list with element \code{X} (typically output
-of \code{\link[=sample_design]{sample_design()}}). Defaults to \code{\link[=set_sample_design]{set_sample_design()}}.}
+Accepts a matrix/data frame (for example from \code{\link[sensobol:sobol_matrices]{sensobol::sobol_matrices()}}) or a list with element \code{X} (typically output
+of \link[sensitivity:sensitivity-package]{sensitivity::sensitivity} functions such as \code{\link[sensitivity:morris]{sensitivity::morris()}}). Defaults to \code{\link[=set_sample_design]{set_sample_design()}}.}
 
 \item{agg_keys}{(character vector, optional). Column names for aggregation.
 Default: NULL.}

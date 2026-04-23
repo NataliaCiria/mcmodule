@@ -6,7 +6,7 @@
 \usage{
 eval_module(
   exp,
-  data,
+  data = NULL,
   param_names = NULL,
   prev_mcmodule = NULL,
   summary = FALSE,
@@ -16,6 +16,7 @@ eval_module(
   keys = NULL,
   overwrite_keys = NULL,
   sample_design = set_sample_design(),
+  if_not_sampled = c("median", "mean", "max", "min"),
   use_variation = NULL
 )
 }
@@ -23,7 +24,8 @@ eval_module(
 \item{exp}{(language or list). Model expression or list of expressions to evaluate.}
 
 \item{data}{(data frame). Input data; number of rows determines nvariates for
-\code{\link[mc2d:mcstoc]{mc2d::mcstoc()}}/\code{\link[mc2d:mcnode]{mc2d::mcdata()}} in expressions. Default: required.}
+\code{\link[mc2d:mcstoc]{mc2d::mcstoc()}}/\code{\link[mc2d:mcnode]{mc2d::mcdata()}} in expressions. Default: NULL (can only be NULL
+if \code{sample_design} with all inputs is provided).}
 
 \item{param_names}{(named character vector, optional). Names to rename parameters.
 Default: NULL.}
@@ -52,8 +54,13 @@ mcnodes with current data. Default: NULL.}
 \item{sample_design}{(matrix, data frame, or list, optional). Sampling
 design used to create input nodes via \code{\link[=matrix_to_mcnodes]{matrix_to_mcnodes()}}. Accepts a
 matrix/data frame or a list with element \code{X} (typically output of
-\code{\link[=sample_design]{sample_design()}}). Columns matching expression input nodes are created
+\link[sensitivity:sensitivity-package]{sensitivity::sensitivity} functions). Columns matching expression input nodes are created
 from this matrix. Defaults to \code{\link[=set_sample_design]{set_sample_design()}}.}
+
+\item{if_not_sampled}{(character). How to fill input nodes that are required
+by the expression but do not appear as columns in \code{sample_design}. A fixed
+value is computed from \code{mctable$sample_space} and replicated across all
+samples. Options are \code{"median"} (default), \code{"mean"}, \code{"max"}, and \code{"min"}.}
 
 \item{use_variation}{(character vector, optional). mcnode names to apply
 \code{sensi_variation} expression from \code{mctable} before node creation. Default: NULL.}

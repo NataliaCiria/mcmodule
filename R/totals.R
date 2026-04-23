@@ -519,8 +519,8 @@ agg_totals <- function(
 #'   Default: set_mctable().
 #' @param sample_design (matrix, data frame, or list, optional). Sampling
 #'   design used to create missing input nodes via [matrix_to_mcnodes()].
-#'   Accepts a matrix/data frame or a list with element `X` (typically output
-#'   of [sample_design()]). Defaults to [set_sample_design()].
+#'   Accepts a matrix/data frame (for example from [sensobol::sobol_matrices()]) or a list with element `X` (typically output
+#'   of [sensitivity::sensitivity] functions such as [sensitivity::morris()]). Defaults to [set_sample_design()].
 #' @param agg_keys (character vector, optional). Column names for aggregation.
 #'   Default: NULL.
 #' @param agg_suffix (character). Suffix for aggregated node names. Default: "hag".
