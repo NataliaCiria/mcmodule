@@ -26,49 +26,96 @@ knitr::opts_chunk$set(
 library(mcmodule)
 ```
 
-# Risk analysis sensitivity analysis
+# Introduction
 
-Definition, correlation, Morris and Sobol indices.
+This vignette shows how to identify influential inputs in `mcmodule`.
+It starts with correlation (tornado) analysis on an existing `mcmodel`, then moves to sample-design-based approaches (Morris and Sobol) built from `mctable$sample_space`.
 
-Other packages needed
+## Additional packages used
 
 ```{r, warning=FALSE, message=FALSE}
 library(sensitivity)
+library(sensobol)
 library(dplyr)
 library(ggplot2)
 ```
 
 # Correlation analysis
 
-The `mcmodule_corr()` function calculates correlation coefficients between input and output nodes across your mcmodule. This helps identify which input parameters have the strongest influence on your results. It is based on `mc2d::tornado()` but applied to many distinct variates.
+`mcmodule_corr()` computes correlation coefficients between input and output nodes across the module.
+It provides a fast first ranking of influential parameters and is based on `mc2d::tornado()` generalized to multiple variates.
+
+Unlike Morris and Sobol, this approach is applied on an `mcmodel` based on model data and does not require a dedicated `sample_design` object. This allows analysis across different variates directly from the model output structure. Correlations are computed for inputs that carry uncertainty (stochastic nodes built with `func`) and, when `variates_as_nsv = TRUE`, also for inputs with multiple variates.
+
+First, compute correlations (Spearman by default) and inspect the table.
 
 ```{r}
 # Calculate correlations using Spearman's method (default)
-cor_results <- mcmodule_corr(imports_mcmodule)
+cor_results <- mcmodule_corr(imports_mcmodule, method = "spearman")
 
 # View correlation results
 head(cor_results)
-
-# Use different correlation method
-cor_pearson <- mcmodule_corr(imports_mcmodule, method = "pearson")
-cor_kendall <- mcmodule_corr(imports_mcmodule, method = "kendall")
 ```
 
-Visualize results
+Then visualize the ranking with a tornado plot.
 
 ```{r}
 # Plot tornado plot of correlations
 mcmodule_tornado(imports_mcmodule)
 ```
 
+In this example, `w_prev` is consistently the dominant driver of `no_detect_a` (very strong positive association), while `test_sensi` shows a weaker negative association.
 
-# Morris index
+# Build an `mctable` for sample-design sensitivity analysis
+
+For sample-design-based methods, `mctable` defines how inputs are sampled. In particular, `mctable$sample_space` stores the domain or distribution parameters used to generate sensitivity samples.
+
+The example `imports_mctable` can be used as a template:
+
+```{r}
+imports_mctable
+```
+
+In this table:
+
+- `mcnode` names the model input node.
+- `mc_func` defines the sampling distribution (for example `runif`, `rnorm`, `rpert`).
+- `sample_space` provides distribution parameters (for example `min/max`, `mean/sd`, or `min/mode/max`).
+- `transformation` can map sampled values before evaluation.
+
+`sample_design` in `mcmodule` is intentionally flexible: it can be a matrix/data frame or a sensitivity object with sampled values for the expression input nodes. You can pass it directly to `eval_module()`, or set a global default with `set_sample_design()`.
+
+```{r, eval=FALSE}
+# Set global sample design
+set_sample_design(X)
+
+# Retrieve current global sample design
+current_design <- set_sample_design()
+
+# Reset global sample design
+reset_sample_design()
+```
+
+Two helper functions support common sensitivity workflows from `mctable`:
+
+- `mctable_bounds()` for bound extraction (for Morris and related approaches).
+- `mctable_sobol_matrices()` for Sobol design matrices.
+
+# Morris elementary effects
+
+Morris is a screening method that identifies influential factors at moderate computational cost.
+
+Start by deriving parameter bounds from `mctable`.
 
 ```{r}
 # Get bounds for Morris sampling design
 b <- mctable_bounds(imports_mctable, transformation = FALSE)
+```
 
-sa <- sensitivity::morris(
+Build the Morris design with `sensitivity::morris()`. The resulting object can be passed directly as `sample_design`.
+
+```{r}
+morris_sa <- sensitivity::morris(
   model = NULL,
   factors = b$factors,
   r = 10,
@@ -76,43 +123,73 @@ sa <- sensitivity::morris(
   binf = b$binf,
   bsup = b$bsup,
   scale = TRUE
- )
+)
+```
 
-imports_mcmodule_morris<-eval_module(
+Evaluate the module with that design.
+
+```{r}
+imports_mcmodule_morris <- eval_module(
   exp = imports_exp,
-  sample_design = sa,
+  sample_design = morris_sa,
   mctable = imports_mctable
 )
+```
 
-imports_mcmodule_morris<-trial_totals(
+Compute the target output and aggregate where needed.
+
+```{r}
+imports_mcmodule_morris <- trial_totals(
   imports_mcmodule_morris,
   mc_names = c("no_detect_a"),
   trials_n = "animals_n",
   subsets_n = "farms_n",
   subsets_p = "h_prev",
-  sample_design = sa,
+  sample_design = morris_sa,
   mctable = imports_mctable
 )
-
-y <-  unmc(imports_mcmodule_morris$node_list$no_detect_a_set$mcnode)
-
-sensitivity::tell(sa, y)
-
-sa
 ```
 
-
-# Sobol index using `sensobol` package
+Extract the output vector and estimate Morris indices.
 
 ```{r}
-N = 10000
+y <- unmc(imports_mcmodule_morris$node_list$no_detect_a_set$mcnode)
+
+sensitivity::tell(morris_sa, y)
+
+morris_sa
+```
+
+```{r}
+plot(morris_sa)
+```
+
+In this example, `h_prev` has by far the largest `mu.star` (overall influence magnitude) and also a high `sigma` (nonlinearity and/or interaction effects), indicating it is both influential and non-additive. `farms_n` is a secondary contributor, while `w_prev`, `test_sensi`, `animals_n`, and `test_origin` have much smaller elementary effects.
+
+
+# Sobol indices
+
+Sobol analysis decomposes output variance into first-order and higher-order effects.
+
+First, generate Sobol sampling matrices from `mctable`.
+
+`mctable_sobol_matrices()` creates a Sobol design from your `mctable` definitions.
+
+```{r}
+N <- 1000
 X <- mctable_sobol_matrices(imports_mctable, N = N)
+```
+
+Evaluate the module and compute the target output.
+
+```{r}
 imports_mcmodule_sobol <- eval_module(
   exp = imports_exp,
   data = NULL,
   sample_design = X,
   mctable = imports_mctable
 )
+
 imports_mcmodule_sobol <- trial_totals(
   mcmodule = imports_mcmodule_sobol,
   mc_names = c("no_detect_a"),
@@ -122,13 +199,19 @@ imports_mcmodule_sobol <- trial_totals(
   sample_design = X,
   mctable = imports_mctable
 )
+```
 
+Then compute first-order (`Si`) and total-order (`Ti`) Sobol indices.
+
+```{r}
 y <- unmc(imports_mcmodule_sobol$node_list$no_detect_a_set$mcnode)
 
-## Compute and bootstrap the Sobol' indices:
-sobol_result <- sobol_indices(Y = y, N = N, params = colnames(X))
+# Compute Sobol indices
+sobol_sa <- sensobol::sobol_indices(Y = y, N = N, params = colnames(X))
 
-sobol_result
+sobol_sa
 ```
+
+In this run, `h_prev` explains almost all output variance (`Si` around 0.96 and `Ti` around 0.98), while `farms_n` contributes a small but non-negligible share. The remaining parameters are near zero, and slightly negative `Si` values are interpreted as Monte Carlo estimation noise rather than true negative variance contributions.
 
 
