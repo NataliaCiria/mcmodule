@@ -612,21 +612,12 @@ suppressMessages({
     expect_true(is.mcnode(result_mcmodule$node_list$external_input$mcnode))
   })
 
-  test_that("eval_module creates input nodes from sample_design and allows empty data", {
+  test_that("eval_module creates input nodes from sample_design without mctable and allows empty data", {
     test_exp <- quote({
       result <- input_a + input_b
     })
 
-    test_mctable <- data.frame(
-      mcnode = c("input_a", "input_b"),
-      mc_func = c(NA, NA),
-      description = c("A", "B"),
-      from_variable = c(NA, NA),
-      sample_space = c(NA_character_, NA_character_),
-      transformation = c(NA, NA),
-      sensi_variation = c(NA_character_, NA_character_),
-      stringsAsFactors = FALSE
-    )
+    reset_mctable()
 
     X <- data.frame(
       input_a = c(0.1, 0.2, 0.3, 0.4),
@@ -636,7 +627,6 @@ suppressMessages({
     result_mcmodule <- eval_module(
       exp = c(test = test_exp),
       data = data.frame(),
-      mctable = test_mctable,
       sample_design = X
     )
 
@@ -666,7 +656,6 @@ suppressMessages({
       eval_module(
         exp = c(test = test_exp),
         data = NULL,
-        mctable = test_mctable,
         sample_design = X
       )
     )
@@ -674,21 +663,11 @@ suppressMessages({
 
   test_that("eval_module uses global sample_design by default", {
     reset_sample_design()
+    reset_mctable()
 
     test_exp <- quote({
       result <- input_a + input_b
     })
-
-    test_mctable <- data.frame(
-      mcnode = c("input_a", "input_b"),
-      mc_func = c(NA, NA),
-      description = c("A", "B"),
-      from_variable = c(NA, NA),
-      sample_space = c(NA_character_, NA_character_),
-      transformation = c(NA, NA),
-      sensi_variation = c(NA_character_, NA_character_),
-      stringsAsFactors = FALSE
-    )
 
     X <- data.frame(
       input_a = c(0.1, 0.2, 0.3),
@@ -699,8 +678,7 @@ suppressMessages({
 
     result_mcmodule <- eval_module(
       exp = c(test = test_exp),
-      data = data.frame(),
-      mctable = test_mctable
+      data = data.frame()
     )
 
     expect_true(result_mcmodule$node_list$input_a$from_sample_design)

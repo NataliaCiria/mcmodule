@@ -13,7 +13,7 @@ crossref:
 link-citations: true
 ---
 
-> *Work in progress!* 🏗
+> *Work in progress*
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
@@ -28,8 +28,16 @@ library(mcmodule)
 
 # Introduction
 
-This vignette shows how to identify influential inputs in `mcmodule`.
-It starts with correlation (tornado) analysis on an existing `mcmodel`, then moves to sample-design-based approaches (Morris and Sobol) built from `mctable$sample_space`.
+In risk analysis, sensitivity analysis answers a practical question: *which uncertain inputs matter most for the decision-relevant output?*
+
+This vignette shows how to do that in `mcmodule` using three complementary approaches:
+
+1. Correlation (tornado) analysis on an existing model run.
+2. Morris elementary effects for screening.
+3. Sobol indices for variance decomposition.
+
+The goal is not to force one method to be "the truth". The goal is to build a stable understanding of which inputs drive risk, and why.
+These methods answer different questions; use them together to build a robust picture of which inputs drive risk and why.
 
 ## Additional packages used
 
@@ -42,38 +50,109 @@ library(ggplot2)
 
 # Correlation analysis
 
-`mcmodule_corr()` computes correlation coefficients between input and output nodes across the module.
-It provides a fast first ranking of influential parameters and is based on `mc2d::tornado()` generalized to multiple variates.
+`mcmodule_corr()` computes correlation coefficients between input and output nodes across the module. It gives a fast, first ranking of influential inputs and is based on `mc2d::tornado()`, extended to multiple variates.
 
-Unlike Morris and Sobol, this approach is applied on an `mcmodel` based on model data and does not require a dedicated `sample_design` object. This allows analysis across different variates directly from the model output structure. Correlations are computed for inputs that carry uncertainty (stochastic nodes built with `func`) and, when `variates_as_nsv = TRUE`, also for inputs with multiple variates.
+It computes correlations across the rows of the module runs, using the uncertain input nodes and the chosen output node.
+
+Unlike methods that require a sample design, this approach works directly on an `mcmodule` based on model data and does not require a dedicated `sample_design`. `mcmodule_corr()` computes correlations for uncertain inputs (stochastic nodes built with `func`) and, when `variates_as_nsv = TRUE`, also for multi-variate inputs.
 
 First, compute correlations (Spearman by default) and inspect the table.
 
 ```{r}
 # Calculate correlations using Spearman's method (default)
-cor_results <- mcmodule_corr(imports_mcmodule, method = "spearman")
+cor_results <- mcmodule_corr(imports_mcmodule, output = "no_detect_a", method = "spearman")
 
 # View correlation results
 head(cor_results)
 ```
 
-Then visualize the ranking with a tornado plot.
+Then visualise the ranking with a tornado plot. The output is a ggplot object, so you can customise it with standard `ggplot2` layers.
 
 ```{r}
 # Plot tornado plot of correlations
-mcmodule_tornado(imports_mcmodule)
+mcmodule_tornado(imports_mcmodule, output = "no_detect_a", method = "spearman") + 
+  labs(title = "Tornado Plot of Correlations") +
+  theme(axis.text.y = element_text(size = 10))
 ```
 
-In this example, `w_prev` is consistently the dominant driver of `no_detect_a` (very strong positive association), while `test_sensi` shows a weaker negative association.
+In this example, `w_prev` is the dominant driver of `no_detect_a` (very strong positive association), while `test_sensi` shows a weaker negative association.
 
-# Build an `mctable` for sample-design sensitivity analysis
+For a risk analyst, this is the quickest way to identify where improved data quality may reduce decision uncertainty.
 
-For sample-design-based methods, `mctable` defines how inputs are sampled. In particular, `mctable$sample_space` stores the domain or distribution parameters used to generate sensitivity samples.
+# Sensitivity analysis with sample design
 
-The example `imports_mctable` can be used as a template:
+## Create a sample design
+
+Before building anything, let’s clarify two concepts that are easy to confuse:
+
+- **Sample space**: the allowable range or distribution definition for each input from which those combinations are generated.
+
+- **Sample design**: the specific set of sampled input combinations used to run the model (for example, a matrix with one row per scenario).
+
+In short, the sample space defines *where* values can come from; the sample design defines *which* values are actually used in model runs.
+
+Here we use a global design so the same sampling matrix is available to the model evaluation and to any downstream sensitivity functions. Passing the design directly is just as valid; the global option keeps the example compact.
+
+A `sample_design` in `mcmodule` can be either:
+
+- a matrix/data frame, or
+- a sensitivity object from the `sensitivity` package (for example, a Morris design object).
+
+The sampling matrix must have one column per input node and one row per sample. Each row is one scenario in the `mcnode` uncertainty dimension. When you provide `sample_design`, that uncertainty dimension is no longer sampled from the original model inputs; it is mapped to the values in your design. This is useful when you want to explore uncertainty for inputs that were fixed in the original data (for example, `farms_n` and `animals_n` below). Currently, `sample_design` supports one variate.
+
+You can pass the sampling matrix (or sensitivity object) directly to `eval_module()`, or set it as a global default with `set_sample_design()`.
+
+```{r, eval=FALSE}
+# Create a sample design as a data frame
+X <- data.frame(
+  w_prev = runif(1000, 0.15, 0.6),
+  h_prev = runif(1000, 0.02, 0.7),
+  test_sensi = runif(1000, 0.8, 0.91),
+  animals_n = sample(5:10, 1000, replace = TRUE),
+  farms_n = sample(82:176, 1000, replace = TRUE),
+  test_origin = runif(1000, 0, 1)
+)
+
+dim(X)
+head(X)
+
+# Set global sample design
+set_sample_design(X)
+
+# Retrieve current global sample design
+current_design <- set_sample_design()
+
+# Evaluate the module with the global sample design
+imports_mcmodule_X <- eval_module(
+  exp = imports_exp
+)
+
+imports_mcmodule_X <- trial_totals(
+  imports_mcmodule_X,
+  mc_names = c("no_detect_a"),
+  trials_n = "animals_n",
+  subsets_n = "farms_n",
+  subsets_p = "h_prev"
+)
+
+mcmodule_tornado(imports_mcmodule_X, output = "no_detect_a_set", method = "spearman")
+
+# Reset global sample design
+reset_sample_design()
+```
+
+This 1000-sample design produces a different ranking from the first tornado analysis. Here, `h_prev` is the main positive driver of `no_detect_a_set`. `test_origin` is the next most influential input and is negatively associated with the output. `w_prev` and `animals_n` have smaller positive effects, while `farms_n` and `test_sensi` are weak or negligible within these bounds.
+
+This change is expected: the analysis now reflects your designed sampling space rather than the original model inputs.
+
+## Build an `mctable` for sample-design sensitivity analysis
+
+For sample-design based methods, `mctable` defines how inputs are sampled. In particular, `mctable$sample_space` stores the bounds or distribution parameters used to generate sensitivity samples.
+
+We use `mctable` here to extract bounds and to build designs that stay consistent with the distributions used in the model.
 
 ```{r}
-imports_mctable
+imports_mctable[,c("mcnode","mc_func", "transformation","sample_space")]
 ```
 
 In this table:
@@ -83,27 +162,16 @@ In this table:
 - `sample_space` provides distribution parameters (for example `min/max`, `mean/sd`, or `min/mode/max`).
 - `transformation` can map sampled values before evaluation.
 
-`sample_design` in `mcmodule` is intentionally flexible: it can be a matrix/data frame or a sensitivity object with sampled values for the expression input nodes. You can pass it directly to `eval_module()`, or set a global default with `set_sample_design()`.
-
-```{r, eval=FALSE}
-# Set global sample design
-set_sample_design(X)
-
-# Retrieve current global sample design
-current_design <- set_sample_design()
-
-# Reset global sample design
-reset_sample_design()
-```
-
-Two helper functions support common sensitivity workflows from `mctable`:
+Two helper functions support common workflows from `mctable`:
 
 - `mctable_bounds()` for bound extraction (for Morris and related approaches).
 - `mctable_sobol_matrices()` for Sobol design matrices.
 
-# Morris elementary effects
+## Morris elementary effects
 
-Morris is a screening method that identifies influential factors at moderate computational cost.
+Morris is a screening method. It identifies influential inputs at moderate computational cost and highlights potential nonlinearity or interactions.
+
+The arguments `r`, `levels`, and `grid.jump` control the number of trajectories, the number of levels per factor, and the step size between levels.
 
 Start by deriving parameter bounds from `mctable`.
 
@@ -155,6 +223,7 @@ Extract the output vector and estimate Morris indices.
 ```{r}
 y <- unmc(imports_mcmodule_morris$node_list$no_detect_a_set$mcnode)
 
+# Aggregated output used for sensitivity analysis.
 sensitivity::tell(morris_sa, y)
 
 morris_sa
@@ -164,16 +233,16 @@ morris_sa
 plot(morris_sa)
 ```
 
-In this example, `h_prev` has by far the largest `mu.star` (overall influence magnitude) and also a high `sigma` (nonlinearity and/or interaction effects), indicating it is both influential and non-additive. `farms_n` is a secondary contributor, while `w_prev`, `test_sensi`, `animals_n`, and `test_origin` have much smaller elementary effects.
+In this example, `h_prev` has by far the largest `mu.star` (overall influence magnitude) and a high `sigma` (nonlinearity and/or interaction effects). This indicates that `h_prev` is both influential and not purely additive. `farms_n` is a secondary contributor, while `w_prev`, `test_sensi`, `animals_n`, and `test_origin` have much smaller elementary effects.
 
 
-# Sobol indices
+## Sobol indices
 
 Sobol analysis decomposes output variance into first-order and higher-order effects.
 
 First, generate Sobol sampling matrices from `mctable`.
 
-`mctable_sobol_matrices()` creates a Sobol design from your `mctable` definitions.
+`mctable_sobol_matrices()` creates Sobol design matrices from your `mctable` definitions.
 
 ```{r}
 N <- 1000
@@ -212,6 +281,35 @@ sobol_sa <- sensobol::sobol_indices(Y = y, N = N, params = colnames(X))
 sobol_sa
 ```
 
-In this run, `h_prev` explains almost all output variance (`Si` around 0.96 and `Ti` around 0.98), while `farms_n` contributes a small but non-negligible share. The remaining parameters are near zero, and slightly negative `Si` values are interpreted as Monte Carlo estimation noise rather than true negative variance contributions.
+In this run, `h_prev` explains most of the output variance (`Si` around 0.96 and `Ti` around 0.98), while `farms_n` contributes a small but non-negligible share. The remaining parameters are near zero. Slightly negative `Si` estimates are interpreted as Monte Carlo noise, not true negative variance contributions.
+
+The gap between `Ti` and `Si` suggests interactions and/or non-additivity, but that difference can be noisy when `N` is small.
+
+# Comparing methods and interpreting differences
+
+For risk decisions, interpretation matters as much as computation. The three methods answer related, but different, questions.
+
+- **Correlation/tornado**: Which inputs move with the output in the current model runs?
+- **Morris**: Which inputs have large local effects across the sampled space, and where do interactions/nonlinearity appear?
+- **Sobol**: Which inputs explain output variance globally, including interaction effects?
+
+In this vignette, the three methods agree that `h_prev` is highly influential once analysis is performed on a designed sample space. Secondary rankings and magnitudes vary. That is expected, not a contradiction.
+
+The main reasons are:
+
+1. **Different estimands**  
+  Correlation measures association, Morris measures elementary effects, and Sobol measures variance contributions.
+
+2. **Different sampling spaces**  
+  The first tornado analysis uses the original model structure, while Morris/Sobol use ranges defined in `mctable$sample_space`.
+
+3. **Different output definitions**  
+  You compare `no_detect_a` in the initial correlation analysis and `no_detect_a_set`/`no_detect_a_set` after aggregation with `trial_totals()`. Aggregation can change influence patterns.
+
+4. **Model nonlinearity and interactions**  
+  Morris `sigma` and the Sobol gap between `Ti` and `Si` indicate behaviour that simple rank correlation may understate.
+
+5. **Monte Carlo error and design size**  
+  Finite sample size introduces estimation noise, especially for small effects.
 
 

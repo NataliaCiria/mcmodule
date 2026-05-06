@@ -251,17 +251,20 @@ mcmodule_corr <- function(
         total_modules
       ))
     }
-    # Get input (type == "in_node") mcnodes names in mcmodule$node_list for this expression (module == exp_h)
+    # Get input (type == "in_node") mcnodes names in mcmodule$node_list for this expression (module == exp_h) or from sample design (from_sample_design == TRUE) if match_variates = TRUE
     # Only include nodes that have more than 1 uncertainty simulation (nrow > 1) or more than 1 variate (if variates_as_nsv = TRUE)
     exp_h_inputs <- names(mcmodule$node_list)[
       unlist(lapply(names(mcmodule$node_list), function(x) {
         mcnode_x <- mcmodule$node_list[[x]][["mcnode"]]
-        mcmodule$node_list[[x]][["exp_name"]] %in%
+        (((mcmodule$node_list[[x]][["exp_name"]] %in%
           exp_h &&
-          mcmodule$node_list[[x]][["type"]] == "in_node" &&
+          (mcmodule$node_list[[x]][["type"]] == "in_node")) ||
+          (!is.null(mcmodule$node_list[[x]][["from_sample_design"]]) &&
+            mcmodule$node_list[[x]][["from_sample_design"]]))) &&
           (dim(mcnode_x)[1] > 1 || (variates_as_nsv && dim(mcnode_x)[3] > 1))
       }))
     ]
+    exp_h_inputs <- exp_h_inputs[exp_h_inputs %in% names(mcmodule$node_list)]
 
     if (is.null(output)) {
       if (by_exp) {
@@ -288,61 +291,85 @@ mcmodule_corr <- function(
       info$module_exp_data$exp == exp_h
     ])
 
-    suppressMessages({
-      mc_match_data_h <- mc_match_data(
-        mcmodule,
-        output_h,
-        mcmodule$data[[data_name_h]]
-      )
-    })
+    if (!is.null(data_name_h) && !is.na(data_name_h)) {
+      suppressMessages({
+        mc_match_data_h <- mc_match_data(
+          mcmodule,
+          output_h,
+          mcmodule$data[[data_name_h]]
+        )
+      })
+      mc_output_h <- mc_match_data_h[[1]]
+      data_h <- mc_match_data_h[[2]]
+      keys_h <- mc_match_data_h[[3]]
 
-    mc_output_h <- mc_match_data_h[[1]]
-    data_h <- mc_match_data_h[[2]]
-    keys_h <- mc_match_data_h[[3]]
+      # Check data and keys are compatible
+      if (
+        !all(
+          keys_h[intersect(names(keys_h), names(data_h))] ==
+            data_h[intersect(names(keys_h), names(data_h))]
+        )
+      ) {
+        stop(paste0(
+          "Data and keys are not compatible for expression '",
+          exp_h,
+          "'"
+        ))
+      }
 
-    # Check data and keys are compatible
-    if (
-      !all(
-        keys_h[intersect(names(keys_h), names(data_h))] ==
-          data_h[intersect(names(keys_h), names(data_h))]
-      )
-    ) {
-      stop(paste0(
-        "Data and keys are not compatible for expression '",
-        exp_h,
-        "'"
-      ))
-    }
+      # Create a copy of mcmodule to modify
+      mcmodule_h <- mcmodule
 
-    # Create a copy of mcmodule to modify
-    mcmodule_h <- mcmodule
+      # Match input mcnodes to output mcnode if match_variates is TRUE and data dimensions differ
+      if (
+        match_variates &&
+          (!all(
+            dim(data_h) == dim(mcmodule_h$data[[data_name_h]]),
+            na.rm = TRUE
+          ) ||
+            !all(data_h == mcmodule_h$data[[data_name_h]], na.rm = TRUE))
+      ) {
+        for (input_name in exp_h_inputs) {
+          mc_input <- mcmodule_h$node_list[[input_name]][["mcnode"]]
+          suppressMessages({
+            mc_input_matched <- mc_match_data(
+              mcmodule_h,
+              input_name,
+              data_h,
+              keys_names = intersect(names(data_h), info$global_keys)
+            )[[1]]
+            mc_input_matched
+            mcmodule_h$node_list[[input_name]][["mcnode"]] <- mc_input_matched
+          })
+        }
+      }
 
-    # Match input mcnodes to output mcnode if match_variates is TRUE and data dimensions differ
-    if (
-      match_variates &&
-        (!all(
-          dim(data_h) == dim(mcmodule_h$data[[data_name_h]]),
-          na.rm = TRUE
-        ) ||
-          !all(data_h == mcmodule_h$data[[data_name_h]], na.rm = TRUE))
-    ) {
+      # Temporarily replace output mcnode with matched output
+      mcmodule_h$node_list[[output_h]][["mcnode"]] <- mc_output_h
+    } else {
+      # Create a copy of mcmodule to modify
+      mcmodule_h <- mcmodule
+
+      # Check that all nodes only have one variate
       for (input_name in exp_h_inputs) {
         mc_input <- mcmodule_h$node_list[[input_name]][["mcnode"]]
-        suppressMessages({
-          mc_input_matched <- mc_match_data(
-            mcmodule_h,
+        if (dim(mc_input)[3] > 1) {
+          stop(paste0(
+            "Input node '",
             input_name,
-            data_h,
-            keys_names = intersect(names(data_h), info$global_keys)
-          )[[1]]
-          mc_input_matched
-          mcmodule_h$node_list[[input_name]][["mcnode"]] <- mc_input_matched
-        })
+            "' has more than one variate. Please provide matching data or set match_variates = FALSE."
+          ))
+        }
+      }
+
+      if (dim(mc_output)[3] > 1) {
+        stop(paste0(
+          "Output node '",
+          output_h,
+          "' has more than one variate. Please provide matching data or set match_variates = FALSE."
+        ))
       }
     }
-
-    # Temporarily replace output mcnode with matched output
-    mcmodule_h$node_list[[output_h]][["mcnode"]] <- mc_output_h
 
     # Convert mcmodule to mc object with only inputs and output
     mc_h <- mcmodule_to_mc(
@@ -401,11 +428,12 @@ mcmodule_corr <- function(
       coor_h_i$exp <- paste(exp_h, collapse = ", ")
       coor_h_i$exp_n <- h
       coor_h_i$module <- module_names[h]
-      coor_h_i[intersect(names(data_h), info$global_keys)] <- data_h[
-        i,
-        intersect(names(data_h), info$global_keys)
-      ]
-
+      if (!is.null(data_name_h) && !is.na(data_name_h)) {
+        coor_h_i[intersect(names(data_h), info$global_keys)] <- data_h[
+          i,
+          intersect(names(data_h), info$global_keys)
+        ]
+      }
       if (length(tornado_result$warnings) > 0) {
         coor_h_i$warnings <- paste(tornado_result$warnings, collapse = "; ")
       }
@@ -431,6 +459,11 @@ mcmodule_corr <- function(
       return("None")
     }
   })
+
+  coor$strength <- ordered(
+    coor$strength,
+    levels = c("None", "Weak", "Moderate", "Strong", "Very strong")
+  )
 
   #Move warnings column to the end if it exists base R
   if ("warnings" %in% names(coor)) {

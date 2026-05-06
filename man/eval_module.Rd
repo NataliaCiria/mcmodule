@@ -38,7 +38,9 @@ Default: FALSE.}
 
 \item{mctable}{(data frame). Reference table for mcnodes with \code{mcnode} and
 \code{mc_func} columns. If NULL or not provided, nodes matching \code{data} column names
-are automatically created. Default \code{\link[=set_mctable]{set_mctable()}}.}
+are automatically created. If \code{sample_design} is provided, required inputs
+present in \code{sample_design} are created from it even when absent from
+\code{mctable}. Default \code{\link[=set_mctable]{set_mctable()}}.}
 
 \item{data_keys}{(list). Data structure and keys for input data. Default:
 \code{\link[=set_data_keys]{set_data_keys()}}.}
@@ -92,9 +94,11 @@ types ("U" or "VU") are not fully supported and downstream compatibility is not
 guaranteed.
 \item An explicit \code{mctable} is optional but highly recommended. If no mctable is
 provided, any model nodes that match column names in \code{data} will be built
-from the data. If a \code{mctable} is provided and a node is not found there but
-exists as a data column, a warning will be issued and the node will be created
-from the data column.
+from the data. If a \code{mctable} is provided and a node is
+not found there but exists as a data column, a warning will be issued and
+the node will be created from the data column. When \code{sample_design} is provided,
+required inputs that match \code{sample_design} column names are also created from
+\code{sample_design} even if they are not listed in \code{mctable}.
 \item Within expressions reference input mcnodes by their bare names (e.g.
 column1). Do not use \code{data$column1} or \code{data["column1"]}.
 }

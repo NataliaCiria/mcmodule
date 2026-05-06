@@ -169,6 +169,36 @@ suppressMessages({
     expect_equal(result$n_modules, 1)
   })
 
+  test_that("mcmodule_corr works for sample_design modules without mctable", {
+    reset_sample_design()
+    reset_mctable()
+    on.exit(
+      {
+        reset_sample_design()
+        reset_mctable()
+      },
+      add = TRUE
+    )
+
+    test_exp <- quote({
+      result <- input_a + input_b
+    })
+
+    X <- data.frame(
+      input_a = c(0.1, 0.2, 0.3, 0.4),
+      input_b = c(1, 2, 3, 4)
+    )
+
+    test_module <- eval_module(
+      exp = test_exp,
+      sample_design = X
+    )
+
+    corr <- mcmodule_corr(test_module, print_summary = FALSE)
+    expect_s3_class(corr, "data.frame")
+    expect_true(nrow(corr) >= 1)
+  })
+
   # Tests for mcmodule_corr
   test_that("mcmodule_corr works with one expression", {
     test_module <- eval_module(

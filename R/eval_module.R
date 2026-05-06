@@ -17,9 +17,11 @@
 #'   guaranteed.
 #' - An explicit `mctable` is optional but highly recommended. If no mctable is
 #'   provided, any model nodes that match column names in `data` will be built
-#'   from the data. If a `mctable` is provided and a node is not found there but
-#'   exists as a data column, a warning will be issued and the node will be created
-#'   from the data column.
+#'   from the data. If a `mctable` is provided and a node is
+#'   not found there but exists as a data column, a warning will be issued and
+#'   the node will be created from the data column. When `sample_design` is provided,
+#'   required inputs that match `sample_design` column names are also created from
+#'   `sample_design` even if they are not listed in `mctable`.
 #' - Within expressions reference input mcnodes by their bare names (e.g.
 #'   column1). Do not use `data$column1` or `data["column1"]`.
 #'
@@ -35,7 +37,9 @@
 #'   Default: FALSE.
 #' @param mctable (data frame). Reference table for mcnodes with `mcnode` and
 #'   `mc_func` columns. If NULL or not provided, nodes matching `data` column names
-#'   are automatically created. Default [set_mctable()].
+#'   are automatically created. If `sample_design` is provided, required inputs
+#'   present in `sample_design` are created from it even when absent from
+#'   `mctable`. Default [set_mctable()].
 #' @param data_keys (list). Data structure and keys for input data. Default:
 #'   [set_data_keys()].
 #' @param match_keys (character vector, optional). Keys to match `prev_mcmodule`
@@ -336,6 +340,21 @@ eval_module <- function(
       data_keys = data_keys,
       keys = keys_arg
     )
+
+    if (!is.null(sample_design_data)) {
+      sampled_prev_nodes_i <- names(node_list_i)[
+        sapply(node_list_i, function(x) identical(x[["type"]], "prev_node")) &
+          names(node_list_i) %in% colnames(sample_design_data)
+      ]
+
+      if (length(sampled_prev_nodes_i) > 0) {
+        for (mc_name_sampled in sampled_prev_nodes_i) {
+          node_list_i[[mc_name_sampled]][["type"]] <- "in_node"
+          node_list_i[[mc_name_sampled]][["mc_name"]] <- mc_name_sampled
+          node_list_i[[mc_name_sampled]][["exp_name"]] <- exp_name_i
+        }
+      }
+    }
 
     in_nodes_i <- names(node_list_i)[
       sapply(node_list_i, function(x) identical(x[["type"]], "in_node"))
@@ -843,7 +862,7 @@ eval_module <- function(
   # Return results
   mcmodule <- list(
     data = list(data),
-    exp = exp,
+    exp = exp_list,
     node_list = node_list
   )
 

@@ -198,11 +198,19 @@ mcmodule_info <- function(mcmodule) {
 
   # Process data keys
   data_keys <- data.frame()
-  for (i in unique(data_name)[unique(data_name) %in% names(mcmodule$data)]) {
-    data_i <- mcmodule$data[[i]][names(mcmodule$data[[i]]) %in% global_keys]
-    data_i$variate <- seq_len(nrow(data_i))
-    data_i$data_name <- i
-    data_keys <- dplyr::bind_rows(data_keys, data_i)
+
+  if (all(unlist(lapply(mcmodule$data, nrow)) == 0)) {
+    warning(
+      "No data frames found in mcmodule$data for any expressions in mcmodule$node_list"
+    )
+    data_keys = NULL
+  } else {
+    for (i in unique(data_name)[unique(data_name) %in% names(mcmodule$data)]) {
+      data_i <- mcmodule$data[[i]][names(mcmodule$data[[i]]) %in% global_keys]
+      data_i$variate <- seq_len(nrow(data_i))
+      data_i$data_name <- i
+      data_keys <- dplyr::bind_rows(data_keys, data_i)
+    }
   }
 
   list(

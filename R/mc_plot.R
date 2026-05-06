@@ -797,29 +797,6 @@ mcmodule_tornado <- function(
     stop("No non-missing correlation values available to plot")
   }
 
-  if (!"strength" %in% names(corr_results)) {
-    corr_results$strength <- vapply(
-      corr_results$value,
-      function(r) {
-        abs_r <- abs(r)
-        if (is.na(abs_r)) {
-          NA_character_
-        } else if (abs_r >= 0.8) {
-          "Very strong"
-        } else if (abs_r >= 0.6) {
-          "Strong"
-        } else if (abs_r >= 0.4) {
-          "Moderate"
-        } else if (abs_r >= 0.2) {
-          "Weak"
-        } else {
-          "None"
-        }
-      },
-      FUN.VALUE = character(1)
-    )
-  }
-
   by_input <- split(corr_results, corr_results$input)
 
   summary_list <- lapply(names(by_input), function(input_name) {
@@ -879,6 +856,18 @@ mcmodule_tornado <- function(
     ggplot2::geom_segment(
       data = summary_df,
       ggplot2::aes(
+        x = ifelse(.data$min_value < 0, .data$min_value, 0),
+        xend = ifelse(.data$max_value > 0, .data$max_value, 0),
+        y = .data$input,
+        yend = .data$input
+      ),
+      inherit.aes = FALSE,
+      color = "gray40",
+      linewidth = 0.2
+    ) +
+    ggplot2::geom_segment(
+      data = summary_df,
+      ggplot2::aes(
         x = .data$min_value,
         xend = .data$max_value,
         y = .data$input,
@@ -898,7 +887,7 @@ mcmodule_tornado <- function(
       data = summary_df,
       ggplot2::aes(x = .data$median_value, y = .data$input),
       inherit.aes = FALSE,
-      size = 3,
+      size = 2,
       alpha = 0.9,
       color = "black"
     )
@@ -910,7 +899,10 @@ mcmodule_tornado <- function(
 
   if (use_strength_colour) {
     strength_levels <- c("None", "Weak", "Moderate", "Strong", "Very strong")
-    summary_df$strength <- factor(summary_df$strength, levels = strength_levels)
+    summary_df$strength <- ordered(
+      summary_df$strength,
+      levels = strength_levels
+    )
 
     p <- p +
       ggplot2::geom_point(
@@ -921,6 +913,7 @@ mcmodule_tornado <- function(
           color = .data$strength
         ),
         inherit.aes = FALSE,
+        show.legend = TRUE,
         alpha = 0.9,
         size = 3.4
       ) +

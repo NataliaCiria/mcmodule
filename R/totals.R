@@ -947,6 +947,13 @@ trial_totals <- function(
       if (!is.null(data) && "scenario_id" %in% names(data)) {
         mcmodule$node_list[[mc_name]][["scenario"]] <- data$scenario_id
       }
+
+      if (
+        !is.null(sample_design_data) &&
+          mc_name %in% colnames(sample_design_data)
+      ) {
+        mcmodule$node_list[[mc_name]][["from_sample_design"]] <- TRUE
+      }
     }
 
     if (!is.null(agg_keys)) {
