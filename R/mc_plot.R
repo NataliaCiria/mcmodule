@@ -735,6 +735,16 @@ mc_plot <- function(
 #' `mcmodule_tornado()` returns a ggplot object. Use [mcmodule_corr()] when you
 #' need the correlation table; use `mcmodule_tornado()` when you need a plot
 #' object that can be further customised.
+#' **Interpretation:** In the tornado plot each point (one per variate) shows the
+#' correlation between that input and the chosen output across the model variates.
+#' The coloured point highlights the variate with the maximum absolute correlation
+#' for each input and is used to rank inputs. The black point is the median
+#' correlation across variates and the black horizontal line shows the range
+#' (minimum to maximum) of correlations for that input. The grey horizontal line
+#' connects the maximum-absolute point to the zero-correlation vertical line to
+#' facilitate interpretation. Use `mcmodule_corr()` to inspect the numeric
+#' per-variate correlations, the plot is designed to give a compact visual
+#' summary.
 #'
 #' @export
 mcmodule_tornado <- function(
@@ -865,6 +875,7 @@ mcmodule_tornado <- function(
       color = "gray40",
       linewidth = 0.2
     ) +
+    ## per-variate points removed for clarity (use mcmodule_corr() to inspect values)
     ggplot2::geom_segment(
       data = summary_df,
       ggplot2::aes(
@@ -876,12 +887,6 @@ mcmodule_tornado <- function(
       inherit.aes = FALSE,
       color = "black",
       linewidth = 0.5
-    ) +
-    ggplot2::geom_point(
-      size = 2,
-      alpha = 0.2,
-      color = "gray20",
-      position = ggplot2::position_jitter(width = 0, height = 0.1)
     ) +
     ggplot2::geom_point(
       data = summary_df,

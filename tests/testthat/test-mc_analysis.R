@@ -342,7 +342,7 @@ suppressMessages({
         "None"
       }
 
-      expect_equal(result$strength[i], expected_strength)
+      expect_equal(as.character(result$strength[i]), expected_strength)
     }
 
     # Verify summary includes strength distribution

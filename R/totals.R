@@ -867,7 +867,6 @@ trial_totals <- function(
   # Function for individual mcnode creation and processing
   process_trial_mcnode <- function(
     mc_name,
-    node_type,
     mcmodule,
     data,
     module_name,
@@ -934,7 +933,7 @@ trial_totals <- function(
       } else {
         NA_character_
       }
-      mcmodule$node_list[[mc_name]][["type"]] <- node_type
+      mcmodule$node_list[[mc_name]][["type"]] <- "in_node"
       mcmodule$node_list[[mc_name]][["module"]] <- module_name
       mcmodule$node_list[[mc_name]][["data_name"]] <- ref_data_name
       mcmodule$node_list[[mc_name]][["mcnode"]] <- mc_node
@@ -997,7 +996,6 @@ trial_totals <- function(
   # Process all nodes
   mcmodule <- process_trial_mcnode(
     trials_n,
-    "trials_n",
     mcmodule,
     data,
     module_name,
@@ -1029,7 +1027,6 @@ trial_totals <- function(
   } else {
     mcmodule <- process_trial_mcnode(
       subsets_n,
-      "subsets_n",
       mcmodule,
       data,
       module_name,
@@ -1067,7 +1064,6 @@ trial_totals <- function(
     multilevel <- TRUE
     mcmodule <- process_trial_mcnode(
       subsets_p,
-      "subsets_p",
       mcmodule,
       data,
       module_name,
