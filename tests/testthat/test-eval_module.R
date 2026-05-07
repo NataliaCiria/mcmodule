@@ -32,7 +32,7 @@ suppressMessages({
     exp_list <- list(
       imports = imports_exp,
       additional = quote({
-        final_result <- no_detect_a * 2
+        final_result <- no_detect * 2
       })
     )
 
@@ -47,7 +47,7 @@ suppressMessages({
     expect_equal(names(multi_result$exp), c("imports", "additional"))
 
     # Check that variables from first module are available in second
-    expect_true("no_detect_a" %in% names(multi_result$node_list))
+    expect_true("no_detect" %in% names(multi_result$node_list))
     expect_true("final_result" %in% names(multi_result$node_list))
 
     # Check that inputs have the right metadata
@@ -65,19 +65,19 @@ suppressMessages({
 
     # Check that outputs have the right metadata
     expect_equal(
-      multi_result$node_list$no_detect_a$keys,
+      multi_result$node_list$no_detect$keys,
       c("pathogen", "origin")
     )
     expect_equal(
-      multi_result$node_list$no_detect_a$inputs,
-      c("false_neg_a", "no_test_a")
+      multi_result$node_list$no_detect$inputs,
+      c("false_neg", "no_test")
     )
 
     expect_equal(
       multi_result$node_list$final_result$keys,
       c("pathogen", "origin")
     )
-    expect_equal(multi_result$node_list$final_result$inputs, c("no_detect_a"))
+    expect_equal(multi_result$node_list$final_result$inputs, c("no_detect"))
   })
 
   test_that("eval_module gets previous nodes", {
@@ -91,7 +91,7 @@ suppressMessages({
 
     previous_module <- trial_totals(
       previous_module,
-      mc_names = "no_detect_a",
+      mc_names = "no_detect",
       trials_n = "animals_n",
       subsets_n = "farms_n",
       subsets_p = "h_prev",
@@ -124,7 +124,7 @@ suppressMessages({
       sensi_variation = c(NA_character_)
     )
     current_exp <- quote({
-      imported_contaminated <- no_detect_a_set * survival_p
+      imported_contaminated <- no_detect_set * survival_p
     })
 
     current_module <- eval_module(
@@ -139,15 +139,15 @@ suppressMessages({
 
     combined_module <- at_least_one(
       combined_module,
-      c("no_detect_a", "imported_contaminated"),
+      c("no_detect", "imported_contaminated"),
       name = "total"
     )
 
     expect_equal(
-      combined_module$node_list$no_detect_a$keys,
+      combined_module$node_list$no_detect$keys,
       c("pathogen", "origin")
     )
-    summary1 <- mc_summary(combined_module, "no_detect_a_set")
+    summary1 <- mc_summary(combined_module, "no_detect_set")
     expect_equal(summary1$pathogen, c("a", "a", "a", "b", "b", "b"))
 
     expect_equal(
@@ -238,7 +238,7 @@ suppressMessages({
 
     # Test expression
     transmission_exp <- quote({
-      infection_risk <- no_detect_a * inf_dc
+      infection_risk <- no_detect * inf_dc
     })
 
     # Evaluate module with previous module
@@ -251,7 +251,7 @@ suppressMessages({
     )
 
     # Verify dimensions
-    expect_equal(dim(result_module$node_list$no_detect_a$mcnode)[3], 6)
+    expect_equal(dim(result_module$node_list$no_detect$mcnode)[3], 6)
     expect_equal(dim(result_module$node_list$infection_risk$mcnode)[3], 6)
 
     # Verify keys are correctly combined
@@ -263,7 +263,7 @@ suppressMessages({
     # Verify input tracking
     expect_equal(
       result_module$node_list$infection_risk$inputs,
-      c("no_detect_a", "inf_dc")
+      c("no_detect", "inf_dc")
     )
 
     # Verify no null matches in the dimension matching process
@@ -298,13 +298,13 @@ suppressMessages({
     # Get previous module
     imports_mcmodule <- agg_totals(
       imports_mcmodule,
-      "no_detect_a",
+      "no_detect",
       agg_keys = "pathogen"
     )
 
     # Test expression
     transmission_exp <- quote({
-      infection_risk <- no_detect_a_agg * inf_dc
+      infection_risk <- no_detect_agg * inf_dc
     })
 
     # Evaluate module with previous module
@@ -318,8 +318,8 @@ suppressMessages({
     )
 
     # Verify dimensions
-    expect_equal(dim(imports_mcmodule$node_list$no_detect_a$mcnode)[3], 6)
-    expect_equal(dim(result_module$node_list$no_detect_a_agg$mcnode)[3], 2)
+    expect_equal(dim(imports_mcmodule$node_list$no_detect$mcnode)[3], 6)
+    expect_equal(dim(result_module$node_list$no_detect_agg$mcnode)[3], 2)
     expect_equal(dim(result_module$node_list$infection_risk$mcnode)[3], 3)
 
     # Verify keys are correctly combined
@@ -328,7 +328,7 @@ suppressMessages({
     # Verify input tracking
     expect_equal(
       result_module$node_list$infection_risk$inputs,
-      c("no_detect_a_agg", "inf_dc")
+      c("no_detect_agg", "inf_dc")
     )
 
     # Verify no null matches in the dimension matching process
@@ -364,7 +364,7 @@ suppressMessages({
 
     # Test expression
     contamination_exp <- quote({
-      introduction_risk <- no_detect_a * contaminated
+      introduction_risk <- no_detect * contaminated
     })
 
     # Evaluate module with previous module
@@ -399,7 +399,7 @@ suppressMessages({
     # Verify input tracking
     expect_equal(
       result_custom$node_list$introduction_risk$inputs,
-      c("no_detect_a", "contaminated")
+      c("no_detect", "contaminated")
     )
 
     # Verify no null matches in the dimension matching process

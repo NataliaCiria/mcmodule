@@ -347,12 +347,12 @@ suppressMessages({
     module <- combine_modules(previous_module, current_module)
 
     # Match output nodes in both modules
-    no_detect_a_keys <- mc_keys(mcmodule = module, mc_name = "no_detect_a")
+    no_detect_keys <- mc_keys(mcmodule = module, mc_name = "no_detect")
     expect_equal(
-      names(no_detect_a_keys),
+      names(no_detect_keys),
       c("scenario_id", "pathogen", "origin")
     )
-    expect_equal(dim(no_detect_a_keys), c(6, 3))
+    expect_equal(dim(no_detect_keys), c(6, 3))
 
     imported_contaminated_keys <- mc_keys(
       mcmodule = module,
@@ -364,7 +364,7 @@ suppressMessages({
     )
     expect_equal(dim(imported_contaminated_keys), c(4, 3))
 
-    result <- mc_match(module, "no_detect_a", "imported_contaminated")
+    result <- mc_match(module, "no_detect", "imported_contaminated")
     expect_equal(result$keys_xy$g_row.y, c(1, NA, NA, 2, NA, NA, 3, 4))
 
     # Aggregate imported_contaminated
@@ -377,27 +377,27 @@ suppressMessages({
     expect_equal(names(imported_contaminated_agg_keys), c("scenario_id"))
     expect_equal(dim(imported_contaminated_agg_keys), c(2, 1))
 
-    result <- mc_match(module, "no_detect_a", "imported_contaminated_agg")
+    result <- mc_match(module, "no_detect", "imported_contaminated_agg")
     expect_equal(result$keys_xy$g_row.x, c(1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6))
     expect_equal(result$keys_xy$g_row.y, c(1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2))
 
-    # Aggregate no_detect_a
-    module <- agg_totals(module, "no_detect_a")
-    no_detect_a_agg_keys <- mc_keys(
+    # Aggregate no_detect
+    module <- agg_totals(module, "no_detect")
+    no_detect_agg_keys <- mc_keys(
       mcmodule = module,
-      mc_name = "no_detect_a_agg"
+      mc_name = "no_detect_agg"
     )
 
-    expect_equal(names(no_detect_a_agg_keys), c("scenario_id"))
-    expect_equal(dim(no_detect_a_agg_keys), c(1, 1))
+    expect_equal(names(no_detect_agg_keys), c("scenario_id"))
+    expect_equal(dim(no_detect_agg_keys), c(1, 1))
 
-    result <- mc_match(module, "no_detect_a_agg", "imported_contaminated_agg")
+    result <- mc_match(module, "no_detect_agg", "imported_contaminated_agg")
     expect_equal(result$keys_xy$g_row.y, c(1, 2))
 
     # Match mcnodes already matching
     test_sensi_keys <- mc_keys(mcmodule = module, mc_name = "test_sensi")
 
-    result <- mc_match(module, "no_detect_a", "test_sensi")
+    result <- mc_match(module, "no_detect", "test_sensi")
     expect_equal(result$keys_xy$g_row.y, c(1, 2, 3, 4, 5, 6))
   })
 
@@ -409,7 +409,7 @@ suppressMessages({
       inf_dc_max = c(0.08, 0.4)
     )
 
-    result <- mc_match_data(imports_mcmodule, "no_detect_a", test_data)
+    result <- mc_match_data(imports_mcmodule, "no_detect", test_data)
 
     # Check dimensions
     expect_equal(dim(result$test_data_match), c(6, 4))
@@ -433,10 +433,10 @@ suppressMessages({
       products_n = c(1500, 1500, 0, 0)
     )
 
-    result_default <- mc_match_data(imports_mcmodule, "no_detect_a", test_data)
+    result_default <- mc_match_data(imports_mcmodule, "no_detect", test_data)
     result_custom <- mc_match_data(
       imports_mcmodule,
-      "no_detect_a",
+      "no_detect",
       test_data,
       keys_names = c("pathogen")
     )

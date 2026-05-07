@@ -50,5 +50,5 @@ and then maps them to the target distributions defined in \code{mctable$mc_func}
 \details{
 If the distribution function is missing but numeric bounds are available in
 \code{sample_space} (e.g. \verb{min = 0, max = 1} or \code{c(0, 1)}), the function assumes a
-uniform distribution (\code{runif}).
+uniform distribution (\code{stats::runif}).
 }

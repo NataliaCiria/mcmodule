@@ -244,7 +244,7 @@ suppressMessages({
     expect_true(all(c("pathogen", "origin") %in% names(result)))
 
     # Check output column values
-    expect_true(all(result$output == "no_detect_a"))
+    expect_true(all(result$output == "no_detect"))
 
     # Check method values (default is spearman, kendall, pearson)
     expect_true(all(result$method %in% c("spearman", "kendall", "pearson")))
@@ -368,7 +368,7 @@ suppressMessages({
 
     previous_module <- trial_totals(
       previous_module,
-      mc_names = "no_detect_a",
+      mc_names = "no_detect",
       trials_n = "animals_n",
       subsets_n = "farms_n",
       subsets_p = "h_prev",
@@ -402,7 +402,7 @@ suppressMessages({
     )
 
     current_exp <- quote({
-      imported_contaminated <- no_detect_a_set * survival_p * (1 - clean)
+      imported_contaminated <- no_detect_set * survival_p * (1 - clean)
     })
 
     current_module <- eval_module(
@@ -417,7 +417,7 @@ suppressMessages({
 
     combined_module <- at_least_one(
       combined_module,
-      c("no_detect_a", "imported_contaminated"),
+      c("no_detect", "imported_contaminated"),
       name = "total"
     )
 

@@ -166,7 +166,7 @@ suppressMessages({
 
     combined_module <- at_least_one(
       combined_module,
-      c("no_detect_a", "imported_contaminated"),
+      c("no_detect", "imported_contaminated"),
       name = "total"
     )
 

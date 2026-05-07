@@ -295,10 +295,10 @@ generate_all_name <- function(mc_names, all_suffix = NULL) {
 #'
 #' @examples
 #' imports_mcmodule <- agg_totals(
-#'   imports_mcmodule, "no_detect_a",
+#'   imports_mcmodule, "no_detect",
 #'   agg_keys = c("scenario_id", "pathogen")
 #' )
-#' print(imports_mcmodule$node_list$no_detect_a_agg$summary)
+#' print(imports_mcmodule$node_list$no_detect_agg$summary)
 #' @export
 agg_totals <- function(
   mcmodule,
@@ -536,13 +536,13 @@ agg_totals <- function(
 #' @examples
 #' imports_mcmodule <- trial_totals(
 #'   mcmodule = imports_mcmodule,
-#'   mc_names = "no_detect_a",
+#'   mc_names = "no_detect",
 #'   trials_n = "animals_n",
 #'   subsets_n = "farms_n",
 #'   subsets_p = "h_prev",
 #'   mctable = imports_mctable
 #' )
-#' print(imports_mcmodule$node_list$no_detect_a_set$summary)
+#' print(imports_mcmodule$node_list$no_detect_set$summary)
 #' @export
 trial_totals <- function(
   mcmodule,

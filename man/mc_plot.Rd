@@ -93,7 +93,7 @@ mc_plot(imports_mcmodule, "w_prev",
 )
 
 # Plot with threshold and scale transformation
-mc_plot(imports_mcmodule, "no_detect_a",
+mc_plot(imports_mcmodule, "no_detect",
   threshold = 0.5,
   scale = "log10"
 )

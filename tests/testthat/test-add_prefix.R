@@ -36,7 +36,7 @@ suppressMessages({
     # Create mcmodule with total nodes
     test_mcmodule <- trial_totals(
       mcmodule = test_mcmodule,
-      mc_names = "no_detect_a",
+      mc_names = "no_detect",
       trials_n = "animals_n",
       mctable = imports_mctable
     )
@@ -48,8 +48,8 @@ suppressMessages({
     new_names <- names(test_mcmodule$node_list)
 
     # Check that total nodes are prefixed (note: trial_totals creates nodes with "_a_set" suffix)
-    expect_true(any(grepl("prefixed_no_detect_a_set", new_names)))
-    expect_true(any(grepl("prefixed_no_detect_a_set_n", new_names)))
+    expect_true(any(grepl("prefixed_no_detect_set", new_names)))
+    expect_true(any(grepl("prefixed_no_detect_set_n", new_names)))
 
     # Verify all nodes from module and its inputs are prefixed (animals_n is input to totals)
     expect_true(all(startsWith(new_names, "prefixed_")))
@@ -103,12 +103,12 @@ suppressMessages({
     combined <- combine_modules(prefixed_a, prefixed_b)
     combined <- at_least_one(
       combined,
-      mc_names = c("imports_mcmodule_no_detect_a", "transmission_result"),
+      mc_names = c("imports_mcmodule_no_detect", "transmission_result"),
       name = "combined_result"
     )
     # Check that combined module has prefixed nodes from both modules
     expect_true(any(grepl(
-      "imports_mcmodule_no_detect_a",
+      "imports_mcmodule_no_detect",
       names(combined$node_list)
     )))
     expect_true(any(grepl("transmission_result", names(combined$node_list))))
@@ -157,18 +157,18 @@ suppressMessages({
     # Create mcmodule with aggregated totals
     mcmodule_agg <- imports_mcmodule %>%
       trial_totals(
-        mc_names = "no_detect_a",
+        mc_names = "no_detect",
         trials_n = "animals_n",
         mctable = imports_mctable
       ) %>%
-      agg_totals(mc_name = "no_detect_a_set", agg_keys = "pathogen")
+      agg_totals(mc_name = "no_detect_set", agg_keys = "pathogen")
 
     # Apply prefix
     prefixed <- add_prefix(mcmodule_agg, prefix = "prefixed")
 
     # Check that aggregated nodes are also prefixed
     expect_true(any(grepl(
-      "prefixed_no_detect_a_set_agg",
+      "prefixed_no_detect_set_agg",
       names(prefixed$node_list)
     )))
   })
@@ -206,7 +206,7 @@ suppressMessages({
 
     combined <- at_least_one(
       combined,
-      mc_names = c("no_detect_a", "result"),
+      mc_names = c("no_detect", "result"),
       name = "combined_detect"
     )
 

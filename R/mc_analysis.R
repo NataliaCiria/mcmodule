@@ -199,7 +199,7 @@ mcmodule_to_mc <- function(
 #' @examples
 #' mcmodule <- agg_totals(
 #'   mcmodule = imports_mcmodule,
-#'   mc_name = "no_detect_a",
+#'   mc_name = "no_detect",
 #'   agg_keys = "pathogen"
 #' )
 #' cor_results <- mcmodule_corr(mcmodule)

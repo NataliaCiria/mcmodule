@@ -26,7 +26,8 @@ Suggests:
     visNetwork,
     igraph,
     ggplot2,
-    sensitivity
+    sensitivity,
+    sensobol
 Config/testthat/edition: 3
 Imports: 
     dplyr,

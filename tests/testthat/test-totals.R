@@ -458,14 +458,14 @@ suppressMessages({
     )
     result <- trial_totals(
       mcmodule = sd_module,
-      mc_names = c("no_detect_a"),
+      mc_names = c("no_detect"),
       trials_n = "animals_n",
       subsets_n = "farms_n",
       subsets_p = "h_prev",
       sample_design = X,
       mctable = imports_mctable
     )
-    expect_true("no_detect_a_set" %in% names(result$node_list))
+    expect_true("no_detect_set" %in% names(result$node_list))
   })
 
   test_that("at_least_one naming options work", {

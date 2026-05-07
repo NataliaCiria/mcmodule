@@ -24,7 +24,7 @@ knitr::opts_chunk$set(
 #library(mcmodule)
 ```
 
-Sensitivity analysis quantifies how changes in an input affect the model output. In risk analysis, it answers a practical question: *which uncertain inputs are more important for a decision-relevant output?* Answering this helps to understand the model behaviour even without real data, to identify where to intervene to reduce risk, and to prioritise reducing uncertainty in the inputs that matter most.
+Sensitivity analysis quantifies how changes in an input affect the model output. In risk analysis, it can be used to identify which uncertain inputs are most important for a decision-relevant output. This analysis helps to understand the model behaviour before running it with real data, to prioritise where to intervene to reduce risk, and to increase efforts to reduce uncertainty in the most sensitive inputs.
 
 In `mcmodule`, you can perform sensitivity analysis using different methods:
 
@@ -48,7 +48,7 @@ First, compute correlations (Spearman by default) and inspect the table.
 # Calculate output (expected number of animals not detected)
 imports_mcmodule_corr <- trial_totals(
   imports_mcmodule,
-  mc_names = c("no_detect_a"),
+  mc_names = c("no_detect"),
   trials_n = "animals_n",
   subsets_n = "farms_n",
   subsets_p = "h_prev",
@@ -56,10 +56,10 @@ imports_mcmodule_corr <- trial_totals(
 )
 
 # Calculate correlations using Spearman's method (default)
-corr_results <- mcmodule_corr(imports_mcmodule_corr, output = "no_detect_a_set_n", method = "spearman")
+corr_results <- mcmodule_corr(imports_mcmodule_corr, output = "no_detect_set_n", method = "spearman")
 ```
 
-In this example, `h_prev` is the main driver of `no_detect_a_set_n` (very strong positive association). `w_prev` and `animals_n` also show positive correlation, while `test_sensi` is close to zero or slightly negative across variates.
+In this example, `h_prev` is the main driver of `no_detect_set_n` (very strong positive association). `w_prev` and `animals_n` also show positive correlation, while `test_sensi` is close to zero or slightly negative across variates.
 
 ```{r}
 # View correlation results
@@ -72,7 +72,7 @@ Then visualise the ranking with a tornado plot. `ggplot2` must be installed to c
 library(ggplot2)
 
 # Plot tornado plot of correlations
-mcmodule_tornado(imports_mcmodule_corr, output = "no_detect_a_set_n", method = "spearman", print_summary = FALSE)
+mcmodule_tornado(imports_mcmodule_corr, output = "no_detect_set_n", method = "spearman", print_summary = FALSE)
 ```
 
 Each row in the plot represents one input node. The coloured point marks the variate with the largest absolute correlation for that input, and that value is used to rank the inputs. The black point shows the median correlation across variates, which is often a useful summary when correlations vary across the model. The black horizontal line shows the full range of correlations across variates, so you can see whether an input is consistently influential or only influential in certain variates.
@@ -94,7 +94,7 @@ The **sampling matrix** must have **one column per input node and one row per sa
 
 You can pass the sampling matrix (or sensitivity object) directly to `eval_module()`, or set it as a global default with `set_sample_design()`. Using a global design ensures the same sampling matrix is available across all model steps, which is convenient when you run sensitivity analysis after building a complex model. You can also pass the design to each function call, but that is more verbose, and you must remove it later to run the model with the original data inputs.
 
-```{r, eval=FALSE}
+```{r}
 # Create a sample design as a data frame
 X <- data.frame(
   w_prev = runif(1000, 0.15, 0.6),
@@ -122,19 +122,19 @@ imports_mcmodule_X <- eval_module(
 # Calculate output (expected number of animals not detected)
 imports_mcmodule_X <- trial_totals(
   imports_mcmodule_X,
-  mc_names = c("no_detect_a"),
+  mc_names = c("no_detect"),
   trials_n = "animals_n",
   subsets_n = "farms_n",
   subsets_p = "h_prev"
 )
 
-mcmodule_tornado(imports_mcmodule_X, output = "no_detect_a_set_n", method = "spearman")
+mcmodule_tornado(imports_mcmodule_X, output = "no_detect_set_n", method = "spearman")
 
 # Reset global sample design
 reset_sample_design()
 ```
 
-This sample design produces a different ranking from the first tornado analysis, because we're using the inputs sampling space rather than the original model inputs. Here, `h_prev` is the main positive driver of `no_detect_a_set_n`. `test_origin` is the next most influential input and is negatively associated with the output. `w_prev` and `animals_n` have smaller positive effects, while `farms_n` and `test_sensi` are weak or negligible within these bounds.
+This sample design produces a different ranking from the first tornado analysis, because we're using the inputs sampling space rather than the original model inputs. Here, `h_prev` is the main positive driver of `no_detect_set_n`. `test_origin` is the next most influential input and is negatively associated with the output. `w_prev` and `animals_n` have smaller positive effects, while `farms_n` and `test_sensi` are weak or negligible within these bounds.
 
 ## Build an `mctable` for sample design sensitivity analysis
 
@@ -196,7 +196,7 @@ imports_mcmodule_morris <- eval_module(
 # Calculate output (expected number of animals not detected)
 imports_mcmodule_morris <- trial_totals(
   imports_mcmodule_morris,
-  mc_names = c("no_detect_a"),
+  mc_names = c("no_detect"),
   trials_n = "animals_n",
   subsets_n = "farms_n",
   subsets_p = "h_prev",
@@ -209,7 +209,7 @@ Finally, extract the output vector and estimate Morris indices. The `tell()` fun
 
 ```{r}
 # Extract the output vector and estimate Morris indices.
-y <- unmc(imports_mcmodule_morris$node_list$no_detect_a_set_n$mcnode)
+y <- unmc(imports_mcmodule_morris$node_list$no_detect_set_n$mcnode)
 
 # Aggregated output used for sensitivity analysis.
 sensitivity::tell(morris_sa, y)
@@ -250,7 +250,7 @@ imports_mcmodule_sobol <- eval_module(
 
 imports_mcmodule_sobol <- trial_totals(
   mcmodule = imports_mcmodule_sobol,
-  mc_names = c("no_detect_a"),
+  mc_names = c("no_detect"),
   trials_n = "animals_n",
   subsets_n = "farms_n",
   subsets_p = "h_prev",
@@ -262,7 +262,7 @@ imports_mcmodule_sobol <- trial_totals(
 Then compute first-order (`Si`) and total-order (`Ti`) Sobol indices and print and plot the results. The `Si` index quantifies the contribution of each input to output variance, while the `Ti` index captures the total contribution of each input, including interactions.
 
 ```{r}
-y <- unmc(imports_mcmodule_sobol$node_list$no_detect_a_set_n$mcnode)
+y <- unmc(imports_mcmodule_sobol$node_list$no_detect_set_n$mcnode)
 
 # Compute Sobol indices
 sobol_sa <- sensobol::sobol_indices(Y = y, N = N, params = colnames(X))
@@ -270,6 +270,10 @@ sobol_sa <- sensobol::sobol_indices(Y = y, N = N, params = colnames(X))
 sobol_sa
 
 plot(sobol_sa)
+
+plot_scatter(data = X, N = N, Y = y, params = colnames(X), method="bin")
+
+plot_multiscatter(data = X, N = N, Y = y, params = colnames(X))
 ```
 
 Here `h_prev` explains the largest share of output variance, `test_origin` is the next most important input, followed by `w_prev`. `farms_n` and `animals_n` have smaller but non-zero effects, while `test_sensi` is negligible. Further exploration could be done using `sensobol::plot_scatter()` and `sensobol::plot_multiscatter()`. Exploring interactions and nonlinearity would require more computationally intensive methods, such as second-order Sobol indices.

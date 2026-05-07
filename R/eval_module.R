@@ -80,13 +80,13 @@
 #'   clinic_sensi <- mcstoc(runif, min = 0.6, max = 0.8)
 #'
 #'   # Probability an infected animal is tested in origin and not detected
-#'   false_neg_a <- inf_a * test_origin * (1 - test_sensi) * (1 - clinic_sensi)
+#'   false_neg <- inf_a * test_origin * (1 - test_sensi) * (1 - clinic_sensi)
 #'
 #'   # Probability an infected animal is not tested and not detected
-#'   no_test_a <- inf_a * (1 - test_origin) * (1 - clinic_sensi)
+#'   no_test <- inf_a * (1 - test_origin) * (1 - clinic_sensi)
 #'
-#'   # no_detect_a: total probability an infected animal is not detected
-#'   no_detect_a <- false_neg_a + no_test_a
+#'   # no_detect: total probability an infected animal is not detected
+#'   no_detect <- false_neg + no_test
 #' })
 #'
 #' # Evaluate

@@ -173,7 +173,7 @@ sample_from_space <- function(ss, n) {
       stop("sample_space vector cannot be empty")
     }
     if (is.numeric(vals) && length(vals) == 2) {
-      return(runif(n, min = vals[1], max = vals[2]))
+      return(stats::runif(n, min = vals[1], max = vals[2]))
     }
     return(sample(vals, size = n, replace = TRUE))
   }
@@ -185,7 +185,7 @@ sample_from_space <- function(ss, n) {
     all(vapply(vals, is.numeric, logical(1))) &&
       all(c("min", "max") %in% names(vals))
   ) {
-    return(runif(n, min = vals$min, max = vals$max))
+    return(stats::runif(n, min = vals$min, max = vals$max))
   }
 
   if (all(vapply(vals, is.numeric, logical(1))) && length(vals_un) == 1) {
@@ -359,7 +359,7 @@ mctable_bounds <- function(
 #'
 #' If the distribution function is missing but numeric bounds are available in
 #' `sample_space` (e.g. `min = 0, max = 1` or `c(0, 1)`), the function assumes a
-#' uniform distribution (`runif`).
+#' uniform distribution (`stats::runif`).
 #'
 #' @param mctable (data frame). Table containing at least `mcnode` and
 #'   `sample_space`; may also contain `mc_func` / `func`.
@@ -478,7 +478,7 @@ mctable_sobol_matrices <- function(
           all(c("mean", "sd") %in% names(vals)) &&
             all(vapply(vals[c("mean", "sd")], is.numeric, logical(1)))
         ) {
-          X[, j] <- qnorm(
+          X[, j] <- stats::qnorm(
             Uc[, j],
             mean = as.numeric(vals$mean),
             sd = as.numeric(vals$sd)

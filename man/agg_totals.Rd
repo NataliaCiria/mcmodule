@@ -49,8 +49,8 @@ updated mcmodule with new aggregated node.
 }
 \examples{
 imports_mcmodule <- agg_totals(
-  imports_mcmodule, "no_detect_a",
+  imports_mcmodule, "no_detect",
   agg_keys = c("scenario_id", "pathogen")
 )
-print(imports_mcmodule$node_list$no_detect_a_agg$summary)
+print(imports_mcmodule$node_list$no_detect_agg$summary)
 }

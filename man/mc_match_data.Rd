@@ -46,5 +46,5 @@ Matching proceeds in order:
 test_data  <- data.frame(pathogen=c("a","b"),
                          inf_dc_min=c(0.05,0.3),
                          inf_dc_max=c(0.08,0.4))
-result<-mc_match_data(imports_mcmodule,"no_detect_a", test_data)
+result<-mc_match_data(imports_mcmodule,"no_detect", test_data)
 }

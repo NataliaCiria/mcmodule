@@ -80,11 +80,11 @@ handles nested sampling with conditional probabilities.
 \examples{
 imports_mcmodule <- trial_totals(
   mcmodule = imports_mcmodule,
-  mc_names = "no_detect_a",
+  mc_names = "no_detect",
   trials_n = "animals_n",
   subsets_n = "farms_n",
   subsets_p = "h_prev",
   mctable = imports_mctable
 )
-print(imports_mcmodule$node_list$no_detect_a_set$summary)
+print(imports_mcmodule$node_list$no_detect_set$summary)
 }
