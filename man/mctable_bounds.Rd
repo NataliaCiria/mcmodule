@@ -47,5 +47,5 @@ Extract the bounds required by \code{\link[sensitivity:morris]{sensitivity::morr
 Supports sampling only a subset of nodes via \code{mc_names} and controls how
 non-sampled nodes are handled via \code{if_not_sampled}. If \code{transformation} is
 enabled and \code{mctable} includes a \code{transformation} column, the function
-computes bounds on the transformed scale.
+computes bounds on the transformed values.
 }

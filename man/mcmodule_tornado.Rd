@@ -66,4 +66,14 @@ maximum absolute correlation.
 \code{mcmodule_tornado()} returns a ggplot object. Use \code{\link[=mcmodule_corr]{mcmodule_corr()}} when you
 need the correlation table; use \code{mcmodule_tornado()} when you need a plot
 object that can be further customised.
+\strong{Interpretation:} In the tornado plot each point (one per variate) shows the
+correlation between that input and the chosen output across the model variates.
+The coloured point highlights the variate with the maximum absolute correlation
+for each input and is used to rank inputs. The black point is the median
+correlation across variates and the black horizontal line shows the range
+(minimum to maximum) of correlations for that input. The grey horizontal line
+connects the maximum-absolute point to the zero-correlation vertical line to
+facilitate interpretation. Use \code{mcmodule_corr()} to inspect the numeric
+per-variate correlations, the plot is designed to give a compact visual
+summary.
 }

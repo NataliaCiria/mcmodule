@@ -247,7 +247,7 @@ split_mctable_for_sampling <- function(mctable, mc_names = NULL) {
 #' Supports sampling only a subset of nodes via `mc_names` and controls how
 #' non-sampled nodes are handled via `if_not_sampled`. If `transformation` is
 #' enabled and `mctable` includes a `transformation` column, the function
-#' computes bounds on the transformed scale.
+#' computes bounds on the transformed values.
 #'
 #' @param mctable (data frame). Table containing at least `mcnode` and
 #'   `sample_space`; may also contain `transformation`. Default: [set_mctable()].
