@@ -839,20 +839,28 @@ suppressMessages({
 
   test_that("eval_module removes inline nvariates when sample_design is provided", {
     test_exp <- quote({
-      input_b <- mcdata(data = 0.5, type = "0", nvariates = 999)
-      input_c <- mcstoc(runif, min = 0, max = 1, nvariates = 999)
-      result <- input_b + input_c
+      input_b <- mcdata(data = 0.5, type = "0")
+      input_c <- mcstoc(runif, min = 0, max = 1)
+      result <- input_b + input_c + sample_a
     })
+
+    sample_design <- data.frame(sample_a = c(0.1, 0.2, 0.3))
 
     result_mcmodule <- eval_module(
       exp = c(test = test_exp),
       data = data.frame(),
-      sample_design = data.frame(sample_a = c(0.1, 0.2, 0.3))
+      sample_design = sample_design
     )
 
-    expect_equal(dim(result_mcmodule$node_list$input_b$mcnode)[3], 1)
-    expect_equal(dim(result_mcmodule$node_list$input_c$mcnode)[3], 1)
-    expect_equal(dim(result_mcmodule$node_list$result$mcnode)[3], 1)
+    expect_equal(dim(result_mcmodule$node_list$input_b$mcnode), c(1, 1, 1))
+    expect_equal(
+      dim(result_mcmodule$node_list$input_c$mcnode),
+      c(nrow(sample_design), 1, 1)
+    )
+    expect_equal(
+      dim(result_mcmodule$node_list$result$mcnode),
+      c(nrow(sample_design), 1, 1)
+    )
   })
 
   test_that("eval_module works with use_variation parameter", {

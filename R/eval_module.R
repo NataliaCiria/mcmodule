@@ -337,8 +337,8 @@ eval_module <- function(
     exp_i <- exp_list[[i]]
     exp_name_i <- names(exp_list)[[i]]
 
-    # When sample_design is provided, remove inline nvariates from mcdata/mcstoc
-    # before node parsing so get_node_list() does not reject these expressions.
+    # When sample_design is provided, rewrite inline mcdata/mcstoc so they use
+    # nsv = nrow(sample_design) and omit nvariates.
     if (!is.null(sample_design_data)) {
       strip_inline_nvariates_ast <- function(expr) {
         if (is.call(expr)) {
@@ -354,10 +354,21 @@ eval_module <- function(
 
           if (is_target) {
             nm <- names(expr)
+            expr_list <- as.list(expr)
+
             if (!is.null(nm) && "nvariates" %in% nm) {
               keep <- nm != "nvariates"
-              expr <- as.call(as.list(expr)[keep])
+              expr_list <- expr_list[keep]
+              nm <- nm[keep]
             }
+
+            if (!is.null(nm) && "nsv" %in% nm) {
+              expr_list[["nsv"]] <- nrow(sample_design_data)
+            } else {
+              expr_list[["nsv"]] <- nrow(sample_design_data)
+            }
+
+            expr <- as.call(expr_list)
           }
           return(expr)
         }
@@ -752,9 +763,9 @@ eval_module <- function(
       }
     }
 
-    # Add/remove nvariates in mcstoc/mcdata in current expression
+    # Add/remove nvariates/nsv in mcstoc/mcdata in current expression
     # - without sample_design: enforce inferred nvariates = nrow(data)
-    # - with sample_design: remove explicit nvariates so inline nodes use default (nvariates = 1)
+    # - with sample_design: enforce nsv = nrow(sample_design) and remove explicit nvariates
     # Only run if at least one node was created inside the expression
     if (any(sapply(node_list_i, function(x) isTRUE(x$created_in_exp)))) {
       add_nvariates_ast <- function(
@@ -784,12 +795,18 @@ eval_module <- function(
             nm <- names(expr)
 
             if (isTRUE(use_sample_design)) {
+              expr_list <- as.list(expr)
+
               # Remove explicit nvariates; inline nodes should use default nvariates (=1)
               if (!is.null(nm) && "nvariates" %in% nm) {
                 keep <- nm != "nvariates"
-                expr <- as.call(as.list(expr)[keep])
-                nm <- names(expr)
+                expr_list <- expr_list[keep]
+                nm <- nm[keep]
               }
+
+              # Force compatibility with sample_design-created nodes.
+              expr_list[["nsv"]] <- call("nrow", as.name("sample_design_data"))
+              expr <- as.call(expr_list)
             } else {
               if (!is.null(nm) && "nvariates" %in% nm) {
                 stop("Remove 'nvariates' argument")
