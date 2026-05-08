@@ -10,7 +10,7 @@ A quoted R expression containing the following variables:
 \item{w_prev}{Within-herd prevalence}
 \item{test_origin}{Probability of testing at origin}
 \item{test_sensi}{Test sensitivity}
-\item{inf_a}{Probability of animal being infected}
+\item{infected}{Probability of animal being infected}
 \item{false_neg}{Probability of false negative test result}
 \item{no_test}{Probability of no testing}
 \item{no_detect}{Overall probability of non-detection}

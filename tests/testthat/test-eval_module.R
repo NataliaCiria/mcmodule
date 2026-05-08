@@ -837,6 +837,24 @@ suppressMessages({
     )
   })
 
+  test_that("eval_module removes inline nvariates when sample_design is provided", {
+    test_exp <- quote({
+      input_b <- mcdata(data = 0.5, type = "0", nvariates = 999)
+      input_c <- mcstoc(runif, min = 0, max = 1, nvariates = 999)
+      result <- input_b + input_c
+    })
+
+    result_mcmodule <- eval_module(
+      exp = c(test = test_exp),
+      data = data.frame(),
+      sample_design = data.frame(sample_a = c(0.1, 0.2, 0.3))
+    )
+
+    expect_equal(dim(result_mcmodule$node_list$input_b$mcnode)[3], 1)
+    expect_equal(dim(result_mcmodule$node_list$input_c$mcnode)[3], 1)
+    expect_equal(dim(result_mcmodule$node_list$result$mcnode)[3], 1)
+  })
+
   test_that("eval_module works with use_variation parameter", {
     # Test basic use_variation functionality
     result_variation <- eval_module(
@@ -849,10 +867,10 @@ suppressMessages({
 
     # Verify it created an mcmodule
     expect_equal(class(result_variation), "mcmodule")
-    expect_true("inf_a" %in% names(result_variation$node_list))
+    expect_true("infected" %in% names(result_variation$node_list))
 
     # Verify mcnodes were created with variation applied
-    expect_true(is.mcnode(result_variation$node_list$inf_a$mcnode))
+    expect_true(is.mcnode(result_variation$node_list$infected$mcnode))
     expect_true(is.mcnode(result_variation$node_list$test_sensi$mcnode))
   })
 
@@ -867,8 +885,8 @@ suppressMessages({
     )
 
     expect_equal(class(result_null_defaults), "mcmodule")
-    expect_true("inf_a" %in% names(result_null_defaults$node_list))
-    expect_true(is.mcnode(result_null_defaults$node_list$inf_a$mcnode))
+    expect_true("infected" %in% names(result_null_defaults$node_list))
+    expect_true(is.mcnode(result_null_defaults$node_list$infected$mcnode))
   })
 
   test_that("eval_module works with mcnode_na_rm() in expressions", {

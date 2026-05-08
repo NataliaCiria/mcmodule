@@ -24,8 +24,12 @@ eval_module(
 \item{exp}{(language or list). Model expression or list of expressions to evaluate.}
 
 \item{data}{(data frame). Input data; number of rows determines nvariates for
-\code{\link[mc2d:mcstoc]{mc2d::mcstoc()}}/\code{\link[mc2d:mcnode]{mc2d::mcdata()}} in expressions. Default: NULL (can only be NULL
-if \code{sample_design} with all inputs is provided).}
+\code{\link[mc2d:mcstoc]{mc2d::mcstoc()}}/\code{\link[mc2d:mcnode]{mc2d::mcdata()}} in expressions when \code{sample_design} is not
+provided. With \code{sample_design}, inline \code{nvariates} is removed and defaults to
+\enumerate{
+\item Default: NULL (can only be NULL
+if \code{sample_design} with all inputs is provided).
+}}
 
 \item{param_names}{(named character vector, optional). Names to rename parameters.
 Default: NULL.}
@@ -79,13 +83,15 @@ An mcmodule object (list) with elements:
 Evaluates a model expression or list of expressions to produce an mcmodule
 object containing simulation results and metadata. Expression may use
 \code{\link[mc2d:mcstoc]{mc2d::mcstoc()}} and \code{\link[mc2d:mcnode]{mc2d::mcdata()}} to create nodes inline; nvariates is automatically
-inferred from the data.
+inferred from the data unless \code{sample_design} is provided.
 }
 \details{
 \itemize{
 \item \code{\link[mc2d:mcstoc]{mc2d::mcstoc()}} and \code{\link[mc2d:mcnode]{mc2d::mcdata()}} may be used directly inside model expressions.
 When these are used you should NOT explicitly supply nvariates, nvariates
 will be inferred automatically as the number of rows in the input \code{data}.
+If \code{sample_design} is provided, any inline \code{nvariates} argument is removed
+and the default \code{nvariates = 1} is used for inline nodes.
 Other arguments are preserved, for example specify \code{type = "0"} when
 providing data without variability/uncertainty (see \code{\link[mc2d:mcnode]{mc2d::mcdata()}} and \code{\link[mc2d:mcstoc]{mc2d::mcstoc()}}).
 \item By design, mcmodule supports type = "V" (the default, with variability) and
@@ -107,19 +113,20 @@ column1). Do not use \code{data$column1} or \code{data["column1"]}.
 # Basic usage with single expression
 # Build a quoted expression using mcnodes defined in mctable or built with
 # mcstoc()/mcdata within the expression (do NOT set nvariates, it is
-# inferred from nrow(data) when evaluated by eval_module()).
+# inferred from nrow(data) when evaluated by eval_module() unless
+# sample_design is provided, in which case inline nvariates defaults to 1).
 expr_example <- quote({
   # Within-herd prevalence (assigned from a pre-built mcnode w_prev)
-  inf_a <- w_prev
+  infected <- w_prev
 
   # Estimate of clinic sensitivity
   clinic_sensi <- mcstoc(runif, min = 0.6, max = 0.8)
 
   # Probability an infected animal is tested in origin and not detected
-  false_neg <- inf_a * test_origin * (1 - test_sensi) * (1 - clinic_sensi)
+  false_neg <- infected * test_origin * (1 - test_sensi) * (1 - clinic_sensi)
 
   # Probability an infected animal is not tested and not detected
-  no_test <- inf_a * (1 - test_origin) * (1 - clinic_sensi)
+  no_test <- infected * (1 - test_origin) * (1 - clinic_sensi)
 
   # no_detect: total probability an infected animal is not detected
   no_detect <- false_neg + no_test

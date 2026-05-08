@@ -3,12 +3,14 @@
 #' Evaluates a model expression or list of expressions to produce an mcmodule
 #' object containing simulation results and metadata. Expression may use
 #' [mc2d::mcstoc()] and [mc2d::mcdata()] to create nodes inline; nvariates is automatically
-#' inferred from the data.
+#' inferred from the data unless `sample_design` is provided.
 #'
 #' @details
 #' - [mc2d::mcstoc()] and [mc2d::mcdata()] may be used directly inside model expressions.
 #'   When these are used you should NOT explicitly supply nvariates, nvariates
 #'   will be inferred automatically as the number of rows in the input `data`.
+#'   If `sample_design` is provided, any inline `nvariates` argument is removed
+#'   and the default `nvariates = 1` is used for inline nodes.
 #'   Other arguments are preserved, for example specify `type = "0"` when
 #'   providing data without variability/uncertainty (see [mc2d::mcdata()] and [mc2d::mcstoc()]).
 #' - By design, mcmodule supports type = "V" (the default, with variability) and
@@ -27,7 +29,9 @@
 #'
 #' @param exp (language or list). Model expression or list of expressions to evaluate.
 #' @param data (data frame). Input data; number of rows determines nvariates for
-#'   [mc2d::mcstoc()]/[mc2d::mcdata()] in expressions. Default: NULL (can only be NULL
+#'   [mc2d::mcstoc()]/[mc2d::mcdata()] in expressions when `sample_design` is not
+#'   provided. With `sample_design`, inline `nvariates` is removed and defaults to
+#'   1. Default: NULL (can only be NULL
 #'   if `sample_design` with all inputs is provided).
 #' @param param_names (named character vector, optional). Names to rename parameters.
 #'   Default: NULL.
@@ -71,19 +75,20 @@
 #' # Basic usage with single expression
 #' # Build a quoted expression using mcnodes defined in mctable or built with
 #' # mcstoc()/mcdata within the expression (do NOT set nvariates, it is
-#' # inferred from nrow(data) when evaluated by eval_module()).
+#' # inferred from nrow(data) when evaluated by eval_module() unless
+#' # sample_design is provided, in which case inline nvariates defaults to 1).
 #' expr_example <- quote({
 #'   # Within-herd prevalence (assigned from a pre-built mcnode w_prev)
-#'   inf_a <- w_prev
+#'   infected <- w_prev
 #'
 #'   # Estimate of clinic sensitivity
 #'   clinic_sensi <- mcstoc(runif, min = 0.6, max = 0.8)
 #'
 #'   # Probability an infected animal is tested in origin and not detected
-#'   false_neg <- inf_a * test_origin * (1 - test_sensi) * (1 - clinic_sensi)
+#'   false_neg <- infected * test_origin * (1 - test_sensi) * (1 - clinic_sensi)
 #'
 #'   # Probability an infected animal is not tested and not detected
-#'   no_test <- inf_a * (1 - test_origin) * (1 - clinic_sensi)
+#'   no_test <- infected * (1 - test_origin) * (1 - clinic_sensi)
 #'
 #'   # no_detect: total probability an infected animal is not detected
 #'   no_detect <- false_neg + no_test
@@ -331,6 +336,44 @@ eval_module <- function(
   for (i in 1:length(exp_list)) {
     exp_i <- exp_list[[i]]
     exp_name_i <- names(exp_list)[[i]]
+
+    # When sample_design is provided, remove inline nvariates from mcdata/mcstoc
+    # before node parsing so get_node_list() does not reject these expressions.
+    if (!is.null(sample_design_data)) {
+      strip_inline_nvariates_ast <- function(expr) {
+        if (is.call(expr)) {
+          for (idx in seq_along(expr)) {
+            if (idx == 1) {
+              next
+            }
+            expr[[idx]] <- strip_inline_nvariates_ast(expr[[idx]])
+          }
+
+          fn_deparsed <- paste(deparse(expr[[1]]), collapse = "")
+          is_target <- grepl("(^|::)mcdata$|(^|::)mcstoc$", fn_deparsed)
+
+          if (is_target) {
+            nm <- names(expr)
+            if (!is.null(nm) && "nvariates" %in% nm) {
+              keep <- nm != "nvariates"
+              expr <- as.call(as.list(expr)[keep])
+            }
+          }
+          return(expr)
+        }
+
+        if (is.expression(expr)) {
+          for (idx in seq_along(expr)) {
+            expr[[idx]] <- strip_inline_nvariates_ast(expr[[idx]])
+          }
+          return(expr)
+        }
+
+        expr
+      }
+
+      exp_i <- strip_inline_nvariates_ast(exp_i)
+    }
 
     # Get initial node list (forward keys_arg as character vector or NULL)
     node_list_i <- get_node_list(
@@ -709,10 +752,16 @@ eval_module <- function(
       }
     }
 
-    # Add nvariates to mcstoc and mcdata in current expression (handle multi-line & nested calls)
+    # Add/remove nvariates in mcstoc/mcdata in current expression
+    # - without sample_design: enforce inferred nvariates = nrow(data)
+    # - with sample_design: remove explicit nvariates so inline nodes use default (nvariates = 1)
     # Only run if at least one node was created inside the expression
     if (any(sapply(node_list_i, function(x) isTRUE(x$created_in_exp)))) {
-      add_nvariates_ast <- function(expr, data_name = "data") {
+      add_nvariates_ast <- function(
+        expr,
+        data_name = "data",
+        use_sample_design = FALSE
+      ) {
         # Recursively walk and modify calls
         if (is.call(expr)) {
           # Recurse into function name if it's a call (e.g. pkg::fn)
@@ -721,7 +770,11 @@ eval_module <- function(
             if (i == 1) {
               next
             }
-            expr[[i]] <- add_nvariates_ast(expr[[i]], data_name)
+            expr[[i]] <- add_nvariates_ast(
+              expr[[i]],
+              data_name,
+              use_sample_design
+            )
           }
 
           fn_deparsed <- paste(deparse(expr[[1]]), collapse = "")
@@ -729,24 +782,38 @@ eval_module <- function(
 
           if (is_target) {
             nm <- names(expr)
-            if (!is.null(nm) && "nvariates" %in% nm) {
-              stop("Remove 'nvariates' argument")
+
+            if (isTRUE(use_sample_design)) {
+              # Remove explicit nvariates; inline nodes should use default nvariates (=1)
+              if (!is.null(nm) && "nvariates" %in% nm) {
+                keep <- nm != "nvariates"
+                expr <- as.call(as.list(expr)[keep])
+                nm <- names(expr)
+              }
+            } else {
+              if (!is.null(nm) && "nvariates" %in% nm) {
+                stop("Remove 'nvariates' argument")
+              }
+              # append nvariates = nrow(data)
+              idx <- length(expr) + 1
+              expr[[idx]] <- call("nrow", as.name(data_name))
+              nms <- names(expr)
+              if (is.null(nms)) {
+                nms <- rep("", length(expr))
+              }
+              nms[idx] <- "nvariates"
+              names(expr) <- nms
             }
-            # append nvariates = nrow(data)
-            idx <- length(expr) + 1
-            expr[[idx]] <- call("nrow", as.name(data_name))
-            nms <- names(expr)
-            if (is.null(nms)) {
-              nms <- rep("", length(expr))
-            }
-            nms[idx] <- "nvariates"
-            names(expr) <- nms
           }
           return(expr)
         } else if (is.expression(expr)) {
           # expression vector: apply to each element
           for (i in seq_along(expr)) {
-            expr[[i]] <- add_nvariates_ast(expr[[i]], data_name)
+            expr[[i]] <- add_nvariates_ast(
+              expr[[i]],
+              data_name,
+              use_sample_design
+            )
           }
           return(expr)
         } else {
@@ -755,7 +822,11 @@ eval_module <- function(
       }
 
       # modify the quoted expression in place
-      exp_i <- add_nvariates_ast(exp_i, data_name = "data")
+      exp_i <- add_nvariates_ast(
+        exp_i,
+        data_name = "data",
+        use_sample_design = !is.null(sample_design_data)
+      )
     }
     # Evaluate current expression
     eval(exp_i)
