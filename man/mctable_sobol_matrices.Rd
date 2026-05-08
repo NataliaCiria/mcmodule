@@ -8,8 +8,8 @@ mctable_sobol_matrices(
   mctable = set_mctable(),
   N,
   matrices = c("A", "B", "AB"),
-  order = c("first", "second"),
-  type = "QRN",
+  order = c("first", "second", "third", "fourth"),
+  type = c("QRN", "LHS", "R"),
   mc_names = NULL,
   ...
 )
@@ -23,7 +23,7 @@ mctable_sobol_matrices(
 \item{matrices}{(character). Which Sobol matrices to create (see
 \code{\link[sensobol:sobol_matrices]{sensobol::sobol_matrices()}}). Default: \code{c("A", "B", "AB")}.}
 
-\item{order}{(character). Either \code{"first"} or \code{"second"} (see
+\item{order}{(character). Either \code{"first"},  \code{"second"}, \code{"third"}, or \code{"fourth"} (see
 \code{\link[sensobol:sobol_matrices]{sensobol::sobol_matrices()}}).}
 
 \item{type}{(character). Sampling design used by \code{sensobol::sobol_matrices()}.

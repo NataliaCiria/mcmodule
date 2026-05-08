@@ -235,7 +235,7 @@ suppressMessages({
       "Strong",
       "Moderate",
       "Weak",
-      "None",
+      "Very weak/None",
       NA_character_
     )
     expect_true(all(result$strength %in% valid_strengths))
@@ -339,7 +339,7 @@ suppressMessages({
       } else if (abs_val >= 0.2) {
         "Weak"
       } else {
-        "None"
+        "Very weak/None"
       }
 
       expect_equal(as.character(result$strength[i]), expected_strength)

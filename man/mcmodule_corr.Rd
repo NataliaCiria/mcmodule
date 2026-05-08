@@ -60,10 +60,10 @@ A data frame with correlation coefficients and metadata. Columns include:
 \item exp: Expression name
 \item exp_n: Expression number
 \item variate: Variate number
-\item output: Output node name
+\item output: Output node names
 \item input: Input node name
 \item value: Correlation coefficient value
-\item strength: Qualitative strength of association (Very strong, Strong, Moderate, Weak, None)
+\item strength: Qualitative strength of association (Very strong, Strong, Moderate, Weak, Very weak/None)
 \item method: Correlation method used (spearman, kendall, or pearson)
 \item use: Method for handling missing values (passed to the correlation function)
 \item warnings: Any warnings generated during correlation calculation (if present)

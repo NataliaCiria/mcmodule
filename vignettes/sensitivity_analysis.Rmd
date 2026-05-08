@@ -21,16 +21,17 @@ knitr::opts_chunk$set(
 ```
 
 ```{r, include = FALSE}
-#library(mcmodule)
+library(mcmodule)
+set.seed(123)
 ```
 
-Sensitivity analysis quantifies how changes in an input affect the model output. In risk analysis, it can be used to identify which uncertain inputs are most important for a decision-relevant output. This analysis helps to understand the model behaviour before running it with real data, to prioritise where to intervene to reduce risk, and to increase efforts to reduce uncertainty in the most sensitive inputs.
+Sensitivity analysis quantifies how changes in an input affect the model output. In risk analysis, it can be used to identify which uncertain inputs are most important for a decision-relevant output. This helps to understand the model behaviour before running it with real data, to prioritise where to intervene to reduce risk, and to increase efforts to reduce uncertainty in the most sensitive inputs.
 
 In `mcmodule`, you can perform sensitivity analysis using different methods:
 
--   **Scenario (“what-if”) analysis:** Compares output changes under targeted input variations, practical for model runs using real data, but does not produce formal sensitivity indices.
--   **Correlation (tornado) analysis:** Ranking of influential inputs by correlating each input uncertainty with output uncertainty across existing runs. Only captures inputs that are uncertain in those runs.
--   **Sample design based sensitivity analysis:** Evaluates the model on a predefined input design (e.g., Morris/Sobol) to estimate sensitivity over a chosen input space using packages such as **sensitivity** or **sensobol**. In `mcmodule`, this method is currently limited to one variate.
+-   **Scenario (“what-if”) analysis:** Compares output changes under targeted input variations, practical for model runs using real data. It does not produce sensitivity indices, but it can be useful for complex models where the most important inputs depend on context.
+-   **Correlation (tornado) analysis:** Ranking of influential inputs by correlating each input uncertainty with output uncertainty across existing runs. Only captures inputs that are uncertain in those runs. It can be applied to multi-variate inputs, but interpretation can be more complex when correlations vary across variates.
+-   **Sample design based sensitivity analysis:** Evaluates the model on a predefined input design (e.g., Morris/Sobol) to estimate sensitivity over a chosen input space using packages such as **sensitivity** or **sensobol** and yield sensitivity indices. In `mcmodule`, this method is currently limited to one variate.
 
 # Scenario analysis
 
@@ -38,9 +39,9 @@ Scenario analysis (or “what-if analysis”) is a non-statistical but still use
 
 # Correlation analysis
 
-`mcmodule_corr()` ranks inputs by correlating each input node with the chosen output node across the model runs. It extends `mc2d::tornado()` to work with `mcmodule` objects and multiple variates.
+`mcmodule_corr()` is a **screening** method. It ranks inputs by their correlation with a chosen output across the current model runs (an extension of `mc2d::tornado()` for `mcmodule` objects and multiple variates). It can quickly highlight influential inputs, but results must be interpreted with care. A weak correlation does not necessarily mean an input is unimportant (e.g., symmetric nonlinear effects can cancel out), and a strong correlation may reflect confounding with other correlated inputs rather than a uniquely attributable effect.
 
-Unlike methods that require a sample design, this approach works directly on an `mcmodule` built from model input data. `mcmodule_corr()` computes correlations for uncertain inputs (stochastic nodes built with `func`) and, when `variates_as_nsv = TRUE`, also for multi-variate inputs.
+Unlike methods that require a sample design, this approach works directly on an `mcmodule` built from model input data. Note that `mcmodule_corr()` only computes correlations for uncertain inputs (stochastic nodes built with `func`) and, when `variates_as_nsv = TRUE`, also for multi-variate inputs.
 
 First, compute correlations (Spearman by default) and inspect the table.
 
@@ -66,7 +67,7 @@ In this example, `h_prev` is the main driver of `no_detect_set_n` (very strong p
 head(corr_results)
 ```
 
-Then visualise the ranking with a tornado plot. `ggplot2` must be installed to create the plot, and it can be customised with standard `ggplot2` layers.
+Then visualise the ranking with a tornado plot. It can be customised with standard `ggplot2` layers.
 
 ```{r}
 library(ggplot2)
@@ -75,9 +76,9 @@ library(ggplot2)
 mcmodule_tornado(imports_mcmodule_corr, output = "no_detect_set_n", method = "spearman", print_summary = FALSE)
 ```
 
-Each row in the plot represents one input node. The coloured point marks the variate with the largest absolute correlation for that input, and that value is used to rank the inputs. The black point shows the median correlation across variates, which is often a useful summary when correlations vary across the model. The black horizontal line shows the full range of correlations across variates, so you can see whether an input is consistently influential or only influential in certain variates.
+Each point in the plot represents one input variate. The coloured point marks the variate with the largest absolute correlation for that input, and that value is used to rank the inputs. The black point shows the median correlation across variates, which is often a useful summary when correlations vary across the model. The black horizontal line shows the full range of correlations across variates, so you can see whether an input is consistently influential or only influential in certain variates.
 
-Note that `farms_n` and `test_origin` are not shown in this analysis because they are fixed in the original model data and therefore have zero correlation with the output. This is a key limitation of correlation-based methods: they can only identify influential inputs that vary in the original model runs. To explore uncertainty for fixed inputs, you need a method that evaluates a sample design.
+Note that `farms_n` and `test_origin` are not shown in this analysis because they are fixed in the original model data and therefore have zero correlation with the output. This is an important limitation of correlation-based methods using real input data: they can only identify influential inputs that vary in the original model runs. To explore uncertainty for fixed inputs, you need a method that evaluates a sample design.
 
 # Sensitivity analysis with sample design
 
@@ -88,7 +89,7 @@ An input **sample space** is the allowable range of values it can take (or distr
 A `sample_design` in `mcmodule` can be either:
 
 -   a matrix/data frame, or
--   a sensitivity object from the `sensitivity::sensitivity` package (for example, a Morris design object).
+-   a sensitivity object from the `sensitivity::sensitivity` package (for example, a Morris design object) that has an `X` element containing the sampling matrix.
 
 The **sampling matrix** must have **one column per input node and one row per sample**. Each row is one scenario in the mcnode uncertainty dimension. When you provide a sample_design, that uncertainty dimension is no longer sampled from the original model inputs; it is mapped to the values in your design. Currently, sample_design supports one variate.
 
@@ -97,12 +98,12 @@ You can pass the sampling matrix (or sensitivity object) directly to `eval_modul
 ```{r}
 # Create a sample design as a data frame
 X <- data.frame(
-  w_prev = runif(1000, 0.15, 0.6),
-  h_prev = runif(1000, 0.02, 0.7),
-  test_sensi = runif(1000, 0.8, 0.91),
-  animals_n = sample(5:10, 1000, replace = TRUE),
-  farms_n = sample(82:176, 1000, replace = TRUE),
-  test_origin = runif(1000, 0, 1)
+  w_prev = runif(10000, 0.15, 0.6),
+  h_prev = runif(10000, 0.02, 0.7),
+  test_sensi = runif(10000, 0.8, 0.91),
+  animals_n = sample(5:10, 10000, replace = TRUE),
+  farms_n = sample(82:176, 10000, replace = TRUE),
+  test_origin = runif(10000, 0, 1)
 )
 
 dim(X)
@@ -134,21 +135,15 @@ mcmodule_tornado(imports_mcmodule_X, output = "no_detect_set_n", method = "spear
 reset_sample_design()
 ```
 
-This sample design produces a different ranking from the first tornado analysis, because we're using the inputs sampling space rather than the original model inputs. Here, `h_prev` is the main positive driver of `no_detect_set_n`. `test_origin` is the next most influential input and is negatively associated with the output. `w_prev` and `animals_n` have smaller positive effects, while `farms_n` and `test_sensi` are weak or negligible within these bounds.
+This sample design produces a different ranking from the first tornado analysis, because we're using the inputs sampling space rather than the original model inputs. Here, `h_prev` is the main positive driver of `no_detect_set_n`. `test_origin` is the next most influential input and is negatively associated with the output. `w_prev`, `animals_n` and `farms_n` have smaller positive effects, while `test_sensi` is weak or negligible within these bounds.
 
-## Build an `mctable` for sample design sensitivity analysis
+## Define sample space in `mctable`
 
-For methods that use a sample design, `mctable` defines how inputs are sampled. In particular, `mctable$sample_space` stores the bounds or distribution parameters used to generate sensitivity samples.
+For methods that use a sample design, `mctable` can be used to define how inputs are sampled. In particular, `mctable$sample_space` stores the bounds or distribution parameters used to generate sensitivity samples. To read more about `mctable` see the [package vignette](https://nataliaciria.com/mcmodule/articles/mcmodule.html#mcnodes-table).
 
 ```{r}
 imports_mctable[,c("mcnode","mc_func", "sample_space")]
 ```
-
-In this table:
-
--   `mcnode` names the model input node.
--   `mc_func` defines the sampling distribution (for example `runif`, `rnorm`, `rpert`).
--   `sample_space` provides distribution parameters (for example `min/max`, `mean/sd`, or `min/mode/max`).
 
 Two helper functions support common sampling designs from `mctable`:
 
@@ -159,7 +154,7 @@ Currently, `mcmodule` only provides direct conversion from `mctable` to Sobol sa
 
 ## Morris elementary effects
 
-Morris is a screening method. It identifies influential inputs at moderate computational cost and highlights potential nonlinearity or interactions.
+Morris is another **screening** method. It identifies influential inputs at moderate computational cost and highlights potential nonlinearity or interactions.
 
 Start by getting parameter bounds from `mctable`.
 
@@ -170,7 +165,7 @@ b <- mctable_bounds(imports_mctable, transformation = FALSE)
 
 Build the Morris design with `sensitivity::morris()`. The resulting object can be passed directly as `sample_design`. The arguments `factors`, `r`, and `design` control the the factors (inputs) sampled, the number of repetitions of the design, and the step size between sampled values, respectively. The arguments `binf` and `bsup` provide the bounds for each input, and `scale = TRUE` scales the inputs to [0,1] for better comparability of Morris indices across inputs with different ranges.
 
-To have stable Morris indices in large sample designs (with many inputs), you need to run the model with a large number of repetitions, which can be computationally intensive. Always check the sensitivity indices stability in diferent runs before interpreting them, and adjust `r` accordingly. 
+To have stable Morris indices in large sample designs (with many inputs), you need to run the model with a large number of repetitions, which can be computationally intensive. Always check the sensitivity indices stability in diferent runs before interpreting them, increase r until rankings stabilise.
 
 ```{r}
 library(sensitivity)
@@ -221,11 +216,10 @@ morris_sa
 plot(morris_sa)
 ```
 
-`h_prev` has the largest `mu.star`, making it the most influential input overall, followed by `test_origin`. `w_prev` is the next most important, while `farms_n` and `animals_n` have more moderate effects, and `test_sensi` is negligible within the explored bounds (note that the uncertainty is small, 0.875-0.91). The large `sigma` values suggest nonlinearity and/or interaction effects.
+In the Morris method, `mu` ( $\mu$ ) is the mean of the elementary effects across trajectories and  `mu.star` ( $\mu^*$ ) is the absolute value of `mu`, which summarises each input’s overall importance (larger values indicate a stronger average influence on the output, regardless of direction). `h_prev` has the largest `mu.star`, making it the most influential input overall, followed by `test_origin`. `w_prev` is the next most important, while `farms_n` and `animals_n` have more moderate effects, and `test_sensi` is negligible within the explored bounds (note that the uncertainty is small, 0.875-0.91). `sigma` ( $\sigma$ ) is the standard deviation of the elementary effects. Large `sigma` values indicate that the effect of an input varies substantially across the sampled space, which typically reflects nonlinearity and/or interactions with other inputs.
 
 ## Sobol indices
-
-Sobol analysis decomposes output variance into first-order and higher-order effects, providing a global sensitivity analysis. It is more computationally intensive than Morris, but it gives a more complete picture of input importance, including interactions.
+Sobol analysis decomposes output variance into first-order and higher-order effects, providing a global sensitivity analysis. It is more computationally intensive than Morris, but it gives a more complete picture of input importance, including interactions. Sobol variance decomposition assumes independent inputs, if inputs are dependent, interpret Sobol indices with care or consider other approaches.
 
 First, generate Sobol sampling matrices from `mctable`.
 
@@ -234,8 +228,8 @@ First, generate Sobol sampling matrices from `mctable`.
 ```{r}
 library(sensobol)
 
-N <- 1000
-X <- mctable_sobol_matrices(imports_mctable, N = N)
+N <- 10000
+X <- mctable_sobol_matrices(imports_mctable, N = N, order = "second")
 ```
 
 Evaluate the module, compute the target output as before.
@@ -259,25 +253,26 @@ imports_mcmodule_sobol <- trial_totals(
 )
 ```
 
-Then compute first-order (`Si`) and total-order (`Ti`) Sobol indices and print and plot the results. The `Si` index quantifies the contribution of each input to output variance, while the `Ti` index captures the total contribution of each input, including interactions.
+Then compute first-order (`Si`) and total-order (`Ti`) Sobol indices and print and plot the results.
 
 ```{r}
 y <- unmc(imports_mcmodule_sobol$node_list$no_detect_set_n$mcnode)
 
 # Compute Sobol indices
-sobol_sa <- sensobol::sobol_indices(Y = y, N = N, params = colnames(X))
+sobol_sa <- sensobol::sobol_indices(Y = y, N = N, params = colnames(X), order = "second", boot = TRUE, R = 1000)
 
 sobol_sa
 
 plot(sobol_sa)
-
-plot_scatter(data = X, N = N, Y = y, params = colnames(X), method="bin")
-
-plot_multiscatter(data = X, N = N, Y = y, params = colnames(X))
+plot(sobol_sa, order = "second")
 ```
 
-Here `h_prev` explains the largest share of output variance, `test_origin` is the next most important input, followed by `w_prev`. `farms_n` and `animals_n` have smaller but non-zero effects, while `test_sensi` is negligible. Further exploration could be done using `sensobol::plot_scatter()` and `sensobol::plot_multiscatter()`. Exploring interactions and nonlinearity would require more computationally intensive methods, such as second-order Sobol indices.
+First-order indices (`Si`) measure each input’s *main effect,* the share of output variance attributable to changing that input alone, averaged over uncertainty in all other inputs. Larger `Si` values indicate the model output is more sensitive to that factor. Here, `h_prev` is the dominant driver of variance, `test_origin` is the next most influential, and `w_prev` also contributes materially; `farms_n` and `animals_n` have smaller but non-zero effects, while `test_sensi` is negligible. Negative estimates can occur due to Monte Carlo error and should be interpreted as ~0 if the confidence interval overlaps 0. If important factors have wide CIs or many negatives appear, increase N (and/or bootstrap replicates) before interpreting small effects.
+
+Total-order indices (`Ti`) measure each input’s *total effect* on output variance, including its main effect plus all interaction effects with other inputs; `Ti` is therefore always at least as large as `Si` for the same parameter.
+
+Second-order indices (`Sij`) quantify interaction effects: how much variance is explained *only* by varying two inputs together beyond what their individual first-order effects (`Si`) explain. Values near 0 indicate little interaction; larger values indicate the combined effect of the pair is important (e.g., `h_prev.test_origin` suggests a meaningful interaction between `h_prev` and `test_origin`).
 
 ## Other methods
 
-Other sensitivity analysis methods include regression based approaches (for example, using `sensitivity::fast99()`), cooperative game theory approaches (for example, using `iml::shapley()`), and others. These methods are not currently implemented in `mcmodule`, but you can use the sample design approach to implement them yourself by creating the appropriate sample design and then applying the method to the model outputs.
+You can use other sensitivity methods with `mcmodule` as long as you can build a table/matrix of input values to run the model with, and collect the corresponding model output(s). For example, `sensitivity::fast99()` can estimate first-order variance-based indices with structured sampling and can be cheaper than second-order Sobol, depending on the design and number of factors. If you want a more familiar “risk-factor style” summary, regression/ANOVA approaches can quantify how the output changes as inputs change, but they work best when the model response is reasonably smooth and the design explores the input space well. Tools such as Shapley values (`iml::shapley()`) can help interpret complex, nonlinear relationships, but they answer a slightly different question and can be computationally heavy. The best method will depend on your model, computational resources, and the specific questions you want to answer about input importance.

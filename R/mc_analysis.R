@@ -185,10 +185,10 @@ mcmodule_to_mc <- function(
 #'     \item exp: Expression name
 #'     \item exp_n: Expression number
 #'     \item variate: Variate number
-#'     \item output: Output node name
+#'     \item output: Output node names
 #'     \item input: Input node name
 #'     \item value: Correlation coefficient value
-#'     \item strength: Qualitative strength of association (Very strong, Strong, Moderate, Weak, None)
+#'     \item strength: Qualitative strength of association (Very strong, Strong, Moderate, Weak, Very weak/None)
 #'     \item method: Correlation method used (spearman, kendall, or pearson)
 #'     \item use: Method for handling missing values (passed to the correlation function)
 #'     \item warnings: Any warnings generated during correlation calculation (if present)
@@ -462,13 +462,13 @@ mcmodule_corr <- function(
     } else if (abs_r >= 0.2) {
       return("Weak")
     } else {
-      return("None")
+      return("Very weak/None")
     }
   })
 
   coor$strength <- ordered(
     coor$strength,
-    levels = c("None", "Weak", "Moderate", "Strong", "Very strong")
+    levels = c("Very weak/None", "Weak", "Moderate", "Strong", "Very strong")
   )
 
   #Move warnings column to the end if it exists base R
@@ -562,7 +562,13 @@ mcmodule_corr <- function(
       # Classify inputs by correlation strength using the new classification
       cat("\n\nInput Correlation Strength Distribution:")
       strength_counts <- table(coor$strength)
-      strength_order <- c("Very strong", "Strong", "Moderate", "Weak", "None")
+      strength_order <- c(
+        "Very strong",
+        "Strong",
+        "Moderate",
+        "Weak",
+        "Very weak/None"
+      )
       for (s in strength_order) {
         if (s %in% names(strength_counts)) {
           pct_strength <- strength_counts[s] / nrow(coor) * 100

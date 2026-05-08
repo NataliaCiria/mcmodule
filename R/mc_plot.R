@@ -853,10 +853,27 @@ mcmodule_tornado <- function(
     "Correlation coefficient"
   }
 
+  # Check if we have multiple values per input
+  values_per_input <- table(corr_results$input)
+  has_multiple_values <- any(values_per_input > 1)
+
   p <- ggplot2::ggplot(
     corr_results,
     ggplot2::aes(x = .data$value, y = .data$input)
-  ) +
+  )
+
+  # Add scatter points only if there's more than one value per input
+  if (has_multiple_values) {
+    p <- p +
+      ggplot2::geom_point(
+        position = ggplot2::position_jitter(width = 0, height = 0.12),
+        size = 1.3,
+        alpha = 0.3,
+        color = "black"
+      )
+  }
+
+  p <- p +
     ggplot2::geom_vline(
       xintercept = 0,
       linetype = "dashed",
@@ -875,7 +892,7 @@ mcmodule_tornado <- function(
       color = "gray40",
       linewidth = 0.2
     ) +
-    ## per-variate points removed for clarity (use mcmodule_corr() to inspect values)
+    ## per-variate scatter points (use mcmodule_corr() to inspect exact values)
     ggplot2::geom_segment(
       data = summary_df,
       ggplot2::aes(
@@ -903,7 +920,13 @@ mcmodule_tornado <- function(
       tolower(colour) == "strength")
 
   if (use_strength_colour) {
-    strength_levels <- c("None", "Weak", "Moderate", "Strong", "Very strong")
+    strength_levels <- c(
+      "Very weak/None",
+      "Weak",
+      "Moderate",
+      "Strong",
+      "Very strong"
+    )
     summary_df$strength <- ordered(
       summary_df$strength,
       levels = strength_levels
@@ -924,7 +947,7 @@ mcmodule_tornado <- function(
       ) +
       ggplot2::scale_color_manual(
         values = c(
-          "None" = "#D9D9D9",
+          "Very weak/None" = "#D9D9D9",
           "Weak" = "#A5D6A7",
           "Moderate" = "#FFD54F",
           "Strong" = "#FF8A65",

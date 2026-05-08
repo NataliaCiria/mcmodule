@@ -263,7 +263,11 @@ suppressMessages({
   test_that("mcmodule_tornado works with corr_results input", {
     skip_if_not_installed("ggplot2")
 
-    corr_results <- mcmodule_corr(imports_mcmodule)
+    corr_results <- mcmodule_corr(
+      imports_mcmodule,
+      print_summary = FALSE,
+      progress = FALSE
+    )
 
     p <- mcmodule_tornado(corr_results = corr_results)
     expect_s3_class(p, "gg")

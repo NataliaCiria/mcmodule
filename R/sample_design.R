@@ -366,7 +366,7 @@ mctable_bounds <- function(
 #' @param N (integer). Base sample size (see [sensobol::sobol_matrices()]).
 #' @param matrices (character). Which Sobol matrices to create (see
 #'   [sensobol::sobol_matrices()]). Default: `c("A", "B", "AB")`.
-#' @param order (character). Either `"first"` or `"second"` (see
+#' @param order (character). Either `"first"`,  `"second"`, `"third"`, or `"fourth"` (see
 #'   [sensobol::sobol_matrices()]).
 #' @param type (character). Sampling design used by `sensobol::sobol_matrices()`.
 #'   In sensobol 1.1.6, options include `"QRN"` (default), `"LHS"`, and `"R"`.
@@ -385,8 +385,8 @@ mctable_sobol_matrices <- function(
   mctable = set_mctable(),
   N,
   matrices = c("A", "B", "AB"),
-  order = c("first", "second"),
-  type = "QRN",
+  order = c("first", "second", "third", "fourth"),
+  type = c("QRN", "LHS", "R"),
   mc_names = NULL,
   ...
 ) {
@@ -398,6 +398,7 @@ mctable_sobol_matrices <- function(
 
   matrices <- as.character(matrices)
   order <- match.arg(order)
+  type <- match.arg(type)
 
   if (!all(c("mcnode", "sample_space") %in% names(mctable))) {
     stop("mctable must contain columns 'mcnode' and 'sample_space'")
