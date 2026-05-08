@@ -778,7 +778,7 @@ Sobol analysis decomposes output variance into first-order and higher-order effe
 
 To perform Sobol analysis, first generate sampling matrices from your `mctable` definitions, then evaluate the module with these sample designs, and finally compute the indices:
 
-```{r, eval=FALSE}
+```{r}
 library(sensobol)
 
 # Generate Sobol sampling matrices from mctable
