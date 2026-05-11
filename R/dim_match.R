@@ -31,6 +31,14 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
   # Get the node from module
   node <- mcmodule$node_list[[mc_name]]
 
+  # Sample-design nodes do not carry data_name/keys, but they always have a
+  # single variate and can be matched directly by row count.
+  if (isTRUE(node[["from_sample_design"]])) {
+    data <- sample_design_node_data(node)
+    keys_names <- character(0)
+    return(data["scenario_id"])
+  }
+
   # Determine keys to extract:
   # 1. Use provided keys_names if not NULL
   # 2. Otherwise use agg_keys if available
@@ -255,6 +263,44 @@ mc_match <- function(
   mcnode_x <- mcmodule$node_list[[mc_name_x]][["mcnode"]]
   mcnode_y <- mcmodule$node_list[[mc_name_y]][["mcnode"]]
 
+  sample_x <- isTRUE(mcmodule$node_list[[mc_name_x]][["from_sample_design"]])
+  sample_y <- isTRUE(mcmodule$node_list[[mc_name_y]][["from_sample_design"]])
+
+  if (sample_x && !sample_y) {
+    target_nvariates <- if (
+      !is.null(dim(mcnode_y)) && length(dim(mcnode_y)) >= 3
+    ) {
+      dim(mcnode_y)[[3]]
+    } else {
+      1L
+    }
+    mcnode_x <- recycle_mcnode_variates(mcnode_x, target_nvariates)
+  } else if (!sample_x && sample_y) {
+    target_nvariates <- if (
+      !is.null(dim(mcnode_x)) && length(dim(mcnode_x)) >= 3
+    ) {
+      dim(mcnode_x)[[3]]
+    } else {
+      1L
+    }
+    mcnode_y <- recycle_mcnode_variates(mcnode_y, target_nvariates)
+  } else if (sample_x && sample_y) {
+    target_nvariates <- max(
+      if (!is.null(dim(mcnode_x)) && length(dim(mcnode_x)) >= 3) {
+        dim(mcnode_x)[[3]]
+      } else {
+        1L
+      },
+      if (!is.null(dim(mcnode_y)) && length(dim(mcnode_y)) >= 3) {
+        dim(mcnode_y)[[3]]
+      } else {
+        1L
+      }
+    )
+    mcnode_x <- recycle_mcnode_variates(mcnode_x, target_nvariates)
+    mcnode_y <- recycle_mcnode_variates(mcnode_y, target_nvariates)
+  }
+
   # Get nodes data name
   data_name_x <- mcmodule$node_list[[mc_name_x]][["data_name"]]
   data_name_y <- mcmodule$node_list[[mc_name_y]][["data_name"]]
@@ -284,6 +330,17 @@ mc_match <- function(
         na.rm = TRUE
       )
   ) {
+    nvariates_x <- if (!is.null(dim(mcnode_x)) && length(dim(mcnode_x)) >= 3) {
+      dim(mcnode_x)[[3]]
+    } else {
+      NA_integer_
+    }
+    nvariates_y <- if (!is.null(dim(mcnode_y)) && length(dim(mcnode_y)) >= 3) {
+      dim(mcnode_y)[[3]]
+    } else {
+      NA_integer_
+    }
+
     # Find keys that are only pressent in one of the mcnodes
     keys_x_only <- setdiff(names(keys_x), names(keys_y))
     keys_y_only <- setdiff(names(keys_y), names(keys_x))
@@ -319,19 +376,23 @@ mc_match <- function(
       keys_y[keys_y_only]
     )
 
-    # Return nodes as they are if they already match
-    message(sprintf(
-      "%s and %s already match, dim: [%s]",
-      mc_name_x,
-      mc_name_y,
-      paste(dim(mcnode_x), collapse = ", ")
-    ))
+    # Return nodes as they are if they already match and have the same
+    # variate structure. Sample-design nodes should continue to the matching
+    # path when paired with higher-variate nodes so they can be recycled.
+    if (identical(nvariates_x, nvariates_y)) {
+      message(sprintf(
+        "%s and %s already match, dim: [%s]",
+        mc_name_x,
+        mc_name_y,
+        paste(dim(mcnode_x), collapse = ", ")
+      ))
 
-    return(list(
-      mcnode_x_match = mcnode_x,
-      mcnode_y_match = mcnode_y,
-      keys_xy = keys_match(keys_x, keys_y, keys_names, match_scenario)$xy
-    ))
+      return(list(
+        mcnode_x_match = mcnode_x,
+        mcnode_y_match = mcnode_y,
+        keys_xy = keys_match(keys_x, keys_y, keys_names, match_scenario)$xy
+      ))
+    }
   }
 
   # Match keys
@@ -477,6 +538,10 @@ mc_match_data <- function(
 
   # Get node
   mcnode_x <- mcmodule$node_list[[mc_name]][["mcnode"]]
+
+  if (isTRUE(mcmodule$node_list[[mc_name]][["from_sample_design"]])) {
+    mcnode_x <- recycle_mcnode_variates(mcnode_x, max(1L, nrow(data)))
+  }
 
   # Get nodes data name
   data_name_x <- mcmodule$node_list[[mc_name]][["data_name"]]
@@ -799,4 +864,52 @@ check_baseline_keys <- function(
   }
 
   invisible(TRUE)
+}
+
+# Helper: create keys dataframe for sample-design nodes based on mcnode variate count
+sample_design_node_data <- function(node) {
+  mcnode <- node[["mcnode"]]
+  mc_dim <- dim(mcnode)
+
+  n_rows <- if (!is.null(mc_dim) && length(mc_dim) >= 1) {
+    mc_dim[[1]]
+  } else if (is.atomic(mcnode)) {
+    length(mcnode)
+  } else {
+    0
+  }
+
+  if (n_rows < 1) {
+    return(data.frame(scenario_id = character(), stringsAsFactors = FALSE))
+  }
+
+  data.frame(
+    scenario_id = rep("0", n_rows),
+    stringsAsFactors = FALSE
+  )
+}
+
+# Helper: recycle sample-design mcnode variates to match target nvariates
+recycle_mcnode_variates <- function(mcnode, target_nvariates) {
+  if (!is.mcnode(mcnode) || is.null(target_nvariates) || target_nvariates < 1) {
+    return(mcnode)
+  }
+
+  mc_dim <- dim(mcnode)
+  current_nvariates <- if (!is.null(mc_dim) && length(mc_dim) >= 3) {
+    mc_dim[[3]]
+  } else {
+    1L
+  }
+
+  if (current_nvariates >= target_nvariates) {
+    return(mcnode)
+  }
+
+  recycled <- mcnode
+  for (ii in seq_len(target_nvariates - current_nvariates)) {
+    recycled <- addvar(recycled, mcnode)
+  }
+
+  recycled
 }

@@ -457,6 +457,106 @@ suppressMessages({
     )
   })
 
+  test_that("mc_match handles sample_design nodes without keys or data_name", {
+    reset_mctable()
+
+    sample_design <- data.frame(
+      input_a = c(0.1, 0.2, 0.3),
+      input_b = c(1, 2, 3),
+      stringsAsFactors = FALSE
+    )
+
+    sample_module <- eval_module(
+      exp = c(
+        sample = quote({
+          result <- input_a + input_b
+        })
+      ),
+      data = data.frame(),
+      sample_design = sample_design
+    )
+
+    expect_true(isTRUE(sample_module$node_list$input_a$from_sample_design))
+    expect_true(isTRUE(sample_module$node_list$input_b$from_sample_design))
+    expect_null(sample_module$node_list$input_a$data_name)
+    expect_null(sample_module$node_list$input_b$data_name)
+    expect_null(sample_module$node_list$input_a$keys)
+    expect_null(sample_module$node_list$input_b$keys)
+
+    result <- mc_match(sample_module, "input_a", "input_b")
+
+    expect_length(result, 3)
+    expect_equal(dim(result[[1]]), c(3, 1, 1))
+    expect_equal(dim(result[[2]]), c(3, 1, 1))
+  })
+
+  test_that("mc_match recycles sample_design nodes to higher variate nodes", {
+    reset_mctable()
+
+    sample_design <- data.frame(
+      input_a = c(0.1, 0.2, 0.3),
+      stringsAsFactors = FALSE
+    )
+
+    sample_module <- eval_module(
+      exp = c(
+        sample = quote({
+          result <- input_a
+        })
+      ),
+      data = data.frame(),
+      sample_design = sample_design
+    )
+
+    regular_module <- eval_module(
+      exp = c(
+        regular = quote({
+          ref_result <- ref_input
+        })
+      ),
+      data = data.frame(ref_input = c(10, 20, 30)),
+      data_keys = list()
+    )
+
+    module <- combine_modules(sample_module, regular_module)
+
+    result <- mc_match(module, "input_a", "ref_input")
+
+    expect_length(result, 3)
+    expect_equal(dim(result[[1]])[3], 3)
+    expect_equal(dim(result[[2]])[3], 3)
+  })
+
+  test_that("mc_match_data handles sample_design nodes without keys", {
+    reset_mctable()
+
+    sample_design <- data.frame(
+      input_a = c(0.1, 0.2, 0.3),
+      stringsAsFactors = FALSE
+    )
+
+    sample_module <- eval_module(
+      exp = c(
+        sample = quote({
+          result <- input_a
+        })
+      ),
+      data = data.frame(),
+      sample_design = sample_design
+    )
+
+    test_data <- data.frame(
+      measure = c(10, 20, 30),
+      stringsAsFactors = FALSE
+    )
+
+    result <- mc_match_data(sample_module, "input_a", test_data)
+
+    expect_length(result, 3)
+    expect_equal(dim(result[[1]])[3], 3)
+    expect_equal(nrow(result[[2]]), 3)
+  })
+
   test_that("mc_match errors when baseline scenario '0' is missing key combinations", {
     bad_module <- list(
       node_list = list(
