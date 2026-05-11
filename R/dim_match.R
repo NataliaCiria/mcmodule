@@ -2,12 +2,15 @@
 #'
 #' Extracts key columns from a mcnode's associated data.
 #'
+#' Sample-design nodes are treated as row-aligned inputs: they have no data
+#' name or key columns, and key extraction returns only `scenario_id`.
+#'
 #' @param mcmodule (mcmodule object). Module containing node.
 #' @param mc_name (character). Node name to extract keys from.
 #' @param keys_names (character vector, optional). Column names to extract.
 #'   If NULL, uses all keys for the node. Default: NULL.
 #'
-#' @return A data frame with scenario_id and requested key columns.
+#' @return A data frame with `scenario_id` and requested key columns.
 #'
 #' @examples
 #' keys_df <- mc_keys(imports_mcmodule, "w_prev")
@@ -190,6 +193,8 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
 #' 1. Group matching — align nodes with same scenarios but different group order
 #' 2. Scenario matching — align nodes with same groups but different scenarios
 #' 3. Null matching — add missing groups across different scenarios
+#'
+#' Sample-design nodes behave as 1-variate that can be matched directly.
 #'
 #' @param mcmodule (mcmodule object). Module containing nodes.
 #' @param mc_name_x (character). First mcnode name.
@@ -506,6 +511,9 @@ mc_match <- function(
 #' 1. Group matching — same scenarios but different group order
 #' 2. Scenario matching — same groups but different scenarios
 #' 3. Null matching — add missing groups across different scenarios
+#'
+#' Sample-design nodes behave as 1-variate that can be matched directly.
+#'
 #'
 #' @param mcmodule (mcmodule object). Module containing node.
 #' @param mc_name (character). Node name.

@@ -41,6 +41,8 @@ Matching proceeds in order:
 \item Scenario matching — same groups but different scenarios
 \item Null matching — add missing groups across different scenarios
 }
+
+Sample-design nodes behave as 1-variate that can be matched directly.
 }
 \examples{
 test_data  <- data.frame(pathogen=c("a","b"),
