@@ -1152,8 +1152,11 @@ trial_totals <- function(
 
     if (
       all(params %in% names(node_list)) &&
+        !is.null(sample_design) &&
         all(sapply(params, function(x) {
-          isTRUE(node_list[[x]][["from_sample_design"]])
+          isTRUE(node_list[[x]][["from_sample_design"]]) ||
+            isTRUE(node_list[[x]][["type"]] == "scalar") ||
+            isTRUE(node_list[[x]][["created_in_exp"]])
         }))
     ) {
       node_list[[name]][["from_sample_design"]] <- TRUE

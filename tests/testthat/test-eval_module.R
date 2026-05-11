@@ -841,7 +841,8 @@ suppressMessages({
     test_exp <- quote({
       input_b <- mcdata(data = 0.5, type = "0")
       input_c <- mcstoc(runif, min = 0, max = 1)
-      result <- input_b + input_c + sample_a
+      input_d <- 5
+      result <- input_b + input_c + sample_a + input_d
     })
 
     sample_design <- data.frame(sample_a = c(0.1, 0.2, 0.3))
@@ -861,6 +862,9 @@ suppressMessages({
       dim(result_mcmodule$node_list$result$mcnode),
       c(nrow(sample_design), 1, 1)
     )
+    expect_true(result_mcmodule$node_list$input_b$created_in_exp)
+    expect_true(is.null(result_mcmodule$node_list$input_b$from_sample_design))
+    expect_true(result_mcmodule$node_list$result$from_sample_design)
   })
 
   test_that("eval_module works with use_variation parameter", {
