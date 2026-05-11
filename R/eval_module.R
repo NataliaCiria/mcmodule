@@ -945,14 +945,6 @@ eval_module <- function(
 
         node_list[[mc_name]][["summary"]] <- node_summary
       }
-
-      # Add scenario information if available
-      if ("scenario_id" %in% names(data)) {
-        node_list[[mc_name]][["scenario"]] <- data$scenario_id
-        if ("hg" %in% names(data)) {
-          node_list[[mc_name]][["hg"]] <- data$hg
-        }
-      }
     }
   }
 

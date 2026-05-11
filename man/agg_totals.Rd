@@ -47,6 +47,10 @@ Aggregates node values across grouping variables using various methods
 (combined probability, sum, mean, or automatic selection). Returns an
 updated mcmodule with new aggregated node.
 }
+\details{
+If sample-design nodes are aggregated, the resulting node will be equal
+to the original node, but with the "agg_total" type and summary statistics added.
+}
 \examples{
 imports_mcmodule <- agg_totals(
   imports_mcmodule, "no_detect",

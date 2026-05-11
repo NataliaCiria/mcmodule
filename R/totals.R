@@ -217,6 +217,16 @@ at_least_one <- function(
     )))
   }
 
+  # Mark as from_sample_design if all input nodes are from_sample_design
+  if (
+    all(mc_names %in% names(mcmodule$node_list)) &&
+      all(sapply(mc_names, function(x) {
+        isTRUE(mcmodule$node_list[[x]][["from_sample_design"]])
+      }))
+  ) {
+    mcmodule$node_list[[p_all_mc_name]][["from_sample_design"]] <- TRUE
+  }
+
   # Add summary if requested
   if (summary) {
     mcmodule$node_list[[p_all_mc_name]][["summary"]] <-
@@ -276,6 +286,9 @@ generate_all_name <- function(mc_names, all_suffix = NULL) {
 #' Aggregates node values across grouping variables using various methods
 #' (combined probability, sum, mean, or automatic selection). Returns an
 #' updated mcmodule with new aggregated node.
+#'
+#' If sample-design nodes are aggregated, the resulting node will be equal
+#' to the original node, but with the "agg_total" type and summary statistics added.
 #'
 #' @param mcmodule (mcmodule object). Module containing node list and data.
 #' @param mc_name (character). Name of node to aggregate.
@@ -363,53 +376,60 @@ agg_totals <- function(
     prefix <- NULL
   }
 
-  # Extract variates
-  variates_list <- list()
-  inv_variates_list <- list()
-  for (i in seq_len(dim(mcnode)[3])) {
-    variates_list[[i]] <- mc2d::extractvar(mcnode, i)
-    inv_variates_list[[i]] <- 1 - mc2d::extractvar(mcnode, i)
-  }
-
   # Create grouping index
   key_col$key <- do.call(paste, c(key_col, sep = ", "))
   key_levels <- unique(key_col$key)
 
-  # Process each group
-  for (i in seq_along(key_levels)) {
-    index <- key_col$key %in% key_levels[i]
-
-    if (!is.null(agg_func) && agg_func == "avg") {
-      # Calculate average value
-      total_lev <- Reduce("+", variates_list[index]) / sum(index)
-    } else if (
-      (is.null(agg_func) &&
-        grepl("_n$", mc_name)) ||
-        (!is.null(agg_func) && agg_func == "sum")
-    ) {
-      # Sum for counts
-      total_lev <- Reduce("+", variates_list[index])
-    } else {
-      # Combine probabilities
-      total_lev <- 1 - Reduce("*", inv_variates_list[index])
+  #If sample-design nodes are aggregated
+  if (isTRUE(mcmodule$node_list[[mc_name]][["from_sample_design"]])) {
+    # Return original node with new type and summary
+    total_agg <- mcnode
+    mcmodule$node_list[[agg_mc_name]][["from_sample_design"]] <- TRUE
+  } else {
+    # Extract variates
+    variates_list <- list()
+    inv_variates_list <- list()
+    for (i in seq_len(dim(mcnode)[3])) {
+      variates_list[[i]] <- mc2d::extractvar(mcnode, i)
+      inv_variates_list[[i]] <- 1 - mc2d::extractvar(mcnode, i)
     }
 
-    # Aggregate results
-    if (keep_variates) {
-      # One row per original variate
-      agg_index <- mc2d::mcdata(index, type = "0", nvariates = length(index))
+    # Process each group
+    for (i in seq_along(key_levels)) {
+      index <- key_col$key %in% key_levels[i]
 
-      if (i != 1) {
-        total_agg <- total_agg + agg_index * total_lev
+      if (!is.null(agg_func) && agg_func == "avg") {
+        # Calculate average value
+        total_lev <- Reduce("+", variates_list[index]) / sum(index)
+      } else if (
+        (is.null(agg_func) &&
+          grepl("_n$", mc_name)) ||
+          (!is.null(agg_func) && agg_func == "sum")
+      ) {
+        # Sum for counts
+        total_lev <- Reduce("+", variates_list[index])
       } else {
-        total_agg <- agg_index * total_lev
+        # Combine probabilities
+        total_lev <- 1 - Reduce("*", inv_variates_list[index])
       }
-    } else {
-      # One row per result
-      if (i != 1) {
-        total_agg <- mc2d::addvar(total_agg, total_lev)
+
+      # Aggregate results
+      if (keep_variates) {
+        # One row per original variate
+        agg_index <- mc2d::mcdata(index, type = "0", nvariates = length(index))
+
+        if (i != 1) {
+          total_agg <- total_agg + agg_index * total_lev
+        } else {
+          total_agg <- agg_index * total_lev
+        }
       } else {
-        total_agg <- total_lev
+        # One row per result
+        if (i != 1) {
+          total_agg <- mc2d::addvar(total_agg, total_lev)
+        } else {
+          total_agg <- total_lev
+        }
       }
     }
   }
@@ -483,12 +503,17 @@ agg_totals <- function(
   }
 
   if (summary) {
+    if (isTRUE(mcmodule$node_list[[mc_name]][["from_sample_design"]])) {
+      summary_keys <- names(key_data)
+    } else {
+      summary_keys <- new_agg_keys
+    }
     mcmodule$node_list[[agg_mc_name]][["summary"]] <-
       mc_summary(
         mcmodule = mcmodule,
         data = key_data,
         mc_name = agg_mc_name,
-        keys_names = new_agg_keys
+        keys_names = summary_keys
       )
   }
 
@@ -1124,6 +1149,15 @@ trial_totals <- function(
       prefix = prefix,
       total_type = total_type
     )
+
+    if (
+      all(params %in% names(node_list)) &&
+        all(sapply(params, function(x) {
+          isTRUE(node_list[[x]][["from_sample_design"]])
+        }))
+    ) {
+      node_list[[name]][["from_sample_design"]] <- TRUE
+    }
 
     if (!is.null(agg_keys)) {
       node_list[[name]]$agg_keys <- agg_keys
