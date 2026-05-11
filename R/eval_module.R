@@ -891,6 +891,7 @@ eval_module <- function(
       # Update node metadata
       node_list[[mc_name]][["mcnode"]] <- mcnode
 
+      # Update data_name and sample design flags
       if (mc_name %in% sampled_nodes_all) {
         node_list[[mc_name]][["from_sample_design"]] <- TRUE
         node_list[[mc_name]][["data_name"]] <- NULL
@@ -902,6 +903,17 @@ eval_module <- function(
         }
       } else {
         node_list[[mc_name]][["data_name"]] <- data_name
+      }
+
+      # If all mcnode inputs are from sample_design, mark this node as from_sample_design
+      if (
+        length(inputs) > 0 &&
+          all(inputs %in% names(node_list)) &&
+          all(sapply(inputs, function(x) {
+            isTRUE(node_list[[x]][["from_sample_design"]])
+          }))
+      ) {
+        node_list[[mc_name]][["from_sample_design"]] <- TRUE
       }
 
       node_list[[mc_name]][["mc_name"]] <- mc_name

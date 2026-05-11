@@ -109,6 +109,66 @@ suppressMessages({
       "3 variates per group"
     )
   })
+  test_that("mc_keys works for sample design nodes with no keys", {
+    # Create mock module with sample design node
+    sample_module <- list(
+      node_list = list(
+        sample_node = list(
+          from_sample_design = TRUE
+        )
+      )
+    )
+
+    result <- mc_keys(sample_module, "sample_node")
+    expect_equal(ncol(result), 1) # Only scenario_id
+    expect_true(all(result$scenario_id == "0"))
+  })
+
+  test_that("mc_keys works for sample design nodes with keys", {
+    # Create mock module with sample design node that has keys
+    sample_module <- list(
+      node_list = list(
+        sample_node = list(
+          from_sample_design = TRUE,
+          data_name = "sample_data",
+          keys = c("key1", "key2")
+        )
+      ),
+      data = list(
+        sample_data = data.frame(
+          key1 = c("A", "B"),
+          key2 = c(1, 2)
+        )
+      )
+    )
+
+    result <- mc_keys(sample_module, "sample_node")
+    expect_equal(ncol(result), 1) # Only scenario_id
+    expect_true(all(result$scenario_id == "0"))
+  })
+  test_that("mc_keys works for output nodes created with input nodes from sample design", {
+    # Evaluate module with sample design node and output node
+    reset_mctable()
+    sample_design <- data.frame(
+      input_a = c(1, 2),
+      input_b = c(3, 4),
+      stringsAsFactors = FALSE
+    )
+    sample_module <- eval_module(
+      exp = c(
+        sample = quote({
+          output_node <- input_a + input_b
+        })
+      ),
+      sample_design = sample_design
+    )
+
+    result <- mc_keys(sample_module, "output_node")
+    expect_true(sample_module$node_list$output_node$from_sample_design)
+    expect_equal(nrow(result), 1) # Only one variate
+    expect_equal(ncol(result), 1) # Only scenario_id
+    expect_true(all(result$scenario_id == "0"))
+  })
 
   test_that("mc_match group matching works", {
     test_module <- list(
@@ -536,7 +596,7 @@ suppressMessages({
     )
 
     sample_module <- eval_module(
-      exp = c(
+      exp = list(
         sample = quote({
           result <- input_a
         })
@@ -547,10 +607,63 @@ suppressMessages({
 
     test_data <- data.frame(
       measure = c(10, 20, 30),
+      category = c("A", "B", "C"),
       stringsAsFactors = FALSE
     )
 
     result <- mc_match_data(sample_module, "input_a", test_data)
+
+    expect_length(result, 3)
+    expect_equal(dim(result[[1]])[3], 3)
+    expect_equal(nrow(result[[2]]), 3)
+  })
+
+  test_that("mc_match_data handles sample_design nodes with keys", {
+    sample_design <- data.frame(
+      input_a = c(0.1, 0.2, 0.3),
+      stringsAsFactors = FALSE
+    )
+
+    data_test <- data.frame(
+      input_a = c(0.1, 0.2, 0.3),
+      category = c("A", "B", "C"),
+      stringsAsFactors = FALSE
+    )
+
+    mctable_test <- data.frame(
+      mcnode = "input_a",
+      description = "Sample design input",
+      mc_func = NA,
+      from_variable = NA,
+      transformation = NA,
+      sensi_analysis = FALSE
+    )
+
+    data_keys_test <- list(
+      data_test = list(
+        cols = names(data_test),
+        keys = c("category")
+      )
+    )
+
+    sample_module <- eval_module(
+      exp = list(
+        sample = quote({
+          result <- input_a + 1
+        })
+      ),
+      data = data_test,
+      data_keys = data_keys_test,
+      sample_design = sample_design,
+      mctable = mctable_test
+    )
+
+    data_test_b <- data.frame(
+      count = c(100, 200, 300),
+      stringsAsFactors = FALSE
+    )
+
+    result <- mc_match_data(sample_module, "input_a", data_test_b)
 
     expect_length(result, 3)
     expect_equal(dim(result[[1]])[3], 3)

@@ -653,6 +653,12 @@ mc_match_data <- function(
       mcnode_x_match <- addvar(mcnode_x_match, mc_i)
     }
   }
+
+  # To avoid coherce to vector when data has only one column, add dummy column with NA values
+  if (ncol(data) == 1) {
+    data$dummy.temp <- NA
+  }
+
   # Process data
   for (i in 1:nrow(keys_xy)) {
     g_row_y_i <- keys_xy$g_row.y[i]
@@ -670,6 +676,11 @@ mc_match_data <- function(
     } else {
       data_match <- dplyr::bind_rows(data_match, row_i)
     }
+  }
+
+  # Remove dummy column if it was added
+  if ("dummy.temp" %in% names(data)) {
+    data$dummy.temp <- NULL
   }
 
   # Log results
@@ -880,7 +891,7 @@ sample_design_node_data <- function(node) {
   mc_dim <- dim(mcnode)
 
   n_rows <- if (!is.null(mc_dim) && length(mc_dim) >= 1) {
-    mc_dim[[1]]
+    mc_dim[[3]]
   } else if (is.atomic(mcnode)) {
     length(mcnode)
   } else {
