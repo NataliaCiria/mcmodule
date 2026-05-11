@@ -905,6 +905,13 @@ eval_module <- function(
         node_list[[mc_name]][["data_name"]] <- data_name
       }
 
+      if (
+        !is.null(sample_design_data) &&
+          isTRUE(node_list[[mc_name]][["created_in_exp"]])
+      ) {
+        node_list[[mc_name]][["from_sample_design"]] <- TRUE
+      }
+
       # If all mcnode inputs are from sample_design, mark this node as from_sample_design
       if (
         length(inputs) > 0 &&

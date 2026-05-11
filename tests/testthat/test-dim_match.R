@@ -154,17 +154,34 @@ suppressMessages({
       input_b = c(3, 4),
       stringsAsFactors = FALSE
     )
-    sample_module <- eval_module(
+
+    test_data <- data.frame(
+      input_a = c(1, 2),
+      input_b = c(3, 4),
+      category = c("A", "B"),
+      stringsAsFactors = FALSE
+    )
+
+    test_data_keys <- list(
+      sample_data = list(
+        cols = names(sample_data),
+        keys = c("category")
+      )
+    )
+
+    test_module <- eval_module(
       exp = c(
         sample = quote({
           output_node <- input_a + input_b
         })
       ),
-      sample_design = sample_design
+      sample_design = sample_design,
+      data = test_data,
+      data_keys = test_data_keys
     )
 
-    result <- mc_keys(sample_module, "output_node")
-    expect_true(sample_module$node_list$output_node$from_sample_design)
+    result <- mc_keys(test_module, "output_node")
+    expect_true(test_module$node_list$output_node$from_sample_design)
     expect_equal(nrow(result), 1) # Only one variate
     expect_equal(ncol(result), 1) # Only scenario_id
     expect_true(all(result$scenario_id == "0"))
