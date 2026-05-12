@@ -386,22 +386,22 @@ mcmodule_corr <- function(
     if (variates_as_nsv && inherits(mc_h, "mc")) {
       mc_h <- list(mc_h)
     }
-
+    warnings <- c()
     # Calculate correlation for this expression and variate
     for (i in seq_along(mc_h)) {
       tornado_result <- local({
-        warnings <- character()
+        wanings_h_i <- character()
 
         tornado_h_i <- tryCatch(
           withCallingHandlers(
             tornado(mc_h[[i]], output = output_h, method = method),
             warning = function(w) {
-              warnings <<- c(warnings, conditionMessage(w))
+              wanings_h_i <<- c(wanings_h_i, conditionMessage(w))
               invokeRestart("muffleWarning")
             }
           ),
           error = function(e) {
-            warnings <<- c(warnings, paste("Error:", conditionMessage(e)))
+            wanings_h_i <<- c(wanings_h_i, paste("Error:", conditionMessage(e)))
             NULL
           }
         )
@@ -438,8 +438,8 @@ mcmodule_corr <- function(
           intersect(names(data_h), info$global_keys)
         ]
       }
-      if (length(tornado_result$warnings) > 0) {
-        coor_h_i$warnings <- paste(tornado_result$warnings, collapse = "; ")
+      if (length(tornado_result$wanings_h_i) > 0) {
+        warnings <- c(warnings, wanings_h_i)
       }
 
       coor <- dplyr::bind_rows(coor, coor_h_i)
@@ -468,11 +468,6 @@ mcmodule_corr <- function(
     coor$strength,
     levels = c("Very weak/None", "Weak", "Moderate", "Strong", "Very strong")
   )
-
-  #Move warnings column to the end if it exists base R
-  if ("warnings" %in% names(coor)) {
-    coor <- coor[, c(setdiff(names(coor), "warnings"), "warnings")]
-  }
 
   if (print_summary) {
     # Print correlation analysis summary
@@ -596,8 +591,8 @@ mcmodule_corr <- function(
     }
 
     # Warning summary (only if warnings exist)
-    if ("warnings" %in% names(coor)) {
-      n_warnings <- sum(!is.na(coor$warnings))
+    if (length(warnings) > 0) {
+      n_warnings <- length(warnings)
       if (n_warnings > 0) {
         cat("\n\nWarnings and Errors:")
         cat(
@@ -606,16 +601,8 @@ mcmodule_corr <- function(
           sprintf("(%.2f%%)", n_warnings / nrow(coor) * 100)
         )
 
-        # Get unique inputs with warnings
-        inputs_with_warnings <- unique(coor$input[!is.na(coor$warnings)])
-        cat(
-          "\n- Input nodes with warnings: ",
-          paste(inputs_with_warnings, collapse = ", "),
-          sep = ""
-        )
-
         cat("\n- Unique warning/error types:")
-        unique_warnings <- unique(coor$warnings[!is.na(coor$warnings)])
+        unique_warnings <- unique(warnings)
         for (i in seq_along(unique_warnings)) {
           cat(
             "\n  ",
