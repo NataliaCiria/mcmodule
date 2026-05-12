@@ -599,8 +599,6 @@ suppressMessages({
     })
     expect_true(length(output) > 0)
     expect_true(any(grepl("Convergence Analysis Summary", output)))
-    expect_true(any(grepl("Stochastic Distributions Stability", output)))
-    expect_true(any(grepl("standardized:", output)))
     expect_s3_class(result, "data.frame")
   })
 

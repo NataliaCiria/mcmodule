@@ -912,13 +912,32 @@ mcmodule_converg <- function(
 
     cat("\n\nConvergence Results:")
     cat("\n- Total nodes analyzed:", total_nodes)
+
+    format_non_converged <- function(x) {
+      x <- unique(as.character(x))
+      x <- x[!is.na(x) & nzchar(x)]
+      if (length(x) == 0) {
+        ""
+      } else {
+        paste("\n", x, collapse = ", ")
+      }
+    }
+
     if (!is.null(conv_threshold)) {
       converged_manual <- sum(conv_df$conv_manual, na.rm = TRUE)
+      non_converged_manual <- conv_df$node[
+        !conv_df$conv_manual & !is.na(conv_df$conv_manual)
+      ]
       cat(sprintf(
         "\n- Nodes converged at %.4f threshold: %d (%s)",
         conv_threshold,
         converged_manual,
         pct(converged_manual / total_nodes * 100)
+      ))
+      cat(sprintf(
+        "\n%s",
+        conv_threshold,
+        format_non_converged(non_converged_manual)
       ))
     }
 
@@ -948,47 +967,30 @@ mcmodule_converg <- function(
       converged_01,
       pct(converged_01 / total_nodes * 100)
     ))
+    non_converged_01 <- conv_df$node[
+      !conv_df$conv_01_tiny & !is.na(conv_df$conv_01_tiny)
+    ]
+    cat(format_non_converged(non_converged_01))
 
-    # Only print 2.5% if not all nodes converged at 1%
-    if (converged_01 < total_nodes) {
-      cat(sprintf(
-        "\n- Nodes with divergence below 0.001 or 2.5%% of their mean: %d (%s)",
-        converged_025,
-        pct(converged_025 / total_nodes * 100)
-      ))
-    }
+    cat(sprintf(
+      "\n- Nodes with divergence below 0.001 or 2.5%% of their mean: %d (%s)",
+      converged_025,
+      pct(converged_025 / total_nodes * 100)
+    ))
+    non_converged_025 <- conv_df$node[
+      !conv_df$conv_025_tiny & !is.na(conv_df$conv_025_tiny)
+    ]
+    cat(format_non_converged(non_converged_025))
 
-    # Only print 5% if not all nodes converged at 2.5%
-    if (converged_025 < total_nodes) {
-      cat(sprintf(
-        "\n- Nodes with divergence below 0.001 or 5%% of their mean: %d (%s)",
-        converged_05,
-        pct(converged_05 / total_nodes * 100)
-      ))
-    }
-
-    # Print deviation statistics
-    cat("\n\nStochastic Distributions Stability:")
-    cat("\n- Maximum deviation of mean: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_mean, na.rm = TRUE)))
-    cat(" (standardized: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_mean_scaled, na.rm = TRUE)))
-    cat(")")
-    cat("\n- Maximum deviation of median: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_median, na.rm = TRUE)))
-    cat(" (standardized: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_median_scaled, na.rm = TRUE)))
-    cat(")")
-    cat("\n- Maximum deviation of 2.5% quantile: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_q025, na.rm = TRUE)))
-    cat(" (standardized: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_q025_scaled, na.rm = TRUE)))
-    cat(")")
-    cat("\n- Maximum deviation of 97.5% quantile: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_q975, na.rm = TRUE)))
-    cat(" (standardized: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_q975_scaled, na.rm = TRUE)))
-    cat(")")
+    cat(sprintf(
+      "\n- Nodes with divergence below 0.001 or 5%% of their mean: %d (%s)",
+      converged_05,
+      pct(converged_05 / total_nodes * 100)
+    ))
+    non_converged_05 <- conv_df$node[
+      !conv_df$conv_05_tiny & !is.na(conv_df$conv_05_tiny)
+    ]
+    cat(format_non_converged(non_converged_05))
 
     # Happy message if all converged at 5% threshold
     if (converged_01 == total_nodes) {
