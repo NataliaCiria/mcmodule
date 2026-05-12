@@ -900,7 +900,7 @@ mcmodule_converg <- function(
     }
 
     # Calculate convergence statistics
-    total_nodes <- nrow(conv_df)
+    total_nodes <- length(unique(conv_df$node))
 
     pct <- function(x) {
       if (x == 0) {
@@ -924,10 +924,10 @@ mcmodule_converg <- function(
     }
 
     if (!is.null(conv_threshold)) {
-      converged_manual <- sum(conv_df$conv_manual, na.rm = TRUE)
-      non_converged_manual <- conv_df$node[
-        !conv_df$conv_manual & !is.na(conv_df$conv_manual)
-      ]
+      converged_manual <- length(unique(conv_df$node[
+        conv_df$conv_manual == TRUE
+      ]))
+      non_converged_manual <- total_nodes - converged_manual
       cat(sprintf(
         "\n- Nodes converged at %.4f threshold: %d (%s)",
         conv_threshold,
@@ -941,12 +941,12 @@ mcmodule_converg <- function(
       ))
     }
 
-    n_tiny <- sum(conv_df$tiny)
-    n_conv_01 <- sum(conv_df$conv_01)
+    n_tiny <- length(unique(conv_df$node[conv_df$tiny == TRUE]))
+    n_conv_01 <- length(unique(conv_df$node[conv_df$conv_01 == TRUE]))
 
-    converged_01 <- sum(conv_df$conv_01_tiny)
-    converged_025 <- sum(conv_df$conv_025_tiny)
-    converged_05 <- sum(conv_df$conv_05_tiny)
+    converged_01 <- length(unique(conv_df$node[conv_df$conv_01_tiny == TRUE]))
+    converged_025 <- length(unique(conv_df$node[conv_df$conv_025_tiny == TRUE]))
+    converged_05 <- length(unique(conv_df$node[conv_df$conv_05_tiny == TRUE]))
 
     no_converged_05 <- total_nodes - converged_05
 
