@@ -264,9 +264,7 @@ mcmodule_corr <- function(
           exp_h &&
           (mcmodule$node_list[[x]][["type"]] == "in_node")) ||
           (all(mcmodule$node_list[[x]][["data_name"]] == data_name_h) &&
-            (mcmodule$node_list[[x]][["type"]] == "in_node")) ||
-          (!is.null(mcmodule$node_list[[x]][["from_sample_design"]]) &&
-            mcmodule$node_list[[x]][["from_sample_design"]]))) &&
+            (mcmodule$node_list[[x]][["type"]] == "in_node")))) &&
           (dim(mcnode_x)[1] > 1 || (variates_as_nsv && dim(mcnode_x)[3] > 1))
       }))
     ]

@@ -164,7 +164,7 @@ suppressMessages({
 
     test_data_keys <- list(
       sample_data = list(
-        cols = names(sample_data),
+        cols = names(test_data),
         keys = c("category")
       )
     )
