@@ -635,10 +635,10 @@ trial_totals <- function(
     filtered_node_data_names
   )
 
-  # Check if all remaining nodes have the same set of data_names
+  # Check if all remaining nodes have the same set of data_names (or null)
   all_equal <- length(unique(lapply(filtered_node_data_names, function(x) {
     paste(sort(x), collapse = ",")
-  }))) ==
+  }))) <=
     1
 
   # All unique data_names across all nodes

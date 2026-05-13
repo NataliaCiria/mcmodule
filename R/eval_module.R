@@ -894,17 +894,20 @@ eval_module <- function(
       node_list[[mc_name]][["mcnode"]] <- mcnode
 
       # Update data_name and sample design flags
+      if (!is.null(sample_design_data)) {
+        node_list[[mc_name]][["data_name"]] <- NULL
+      } else {
+        node_list[[mc_name]][["data_name"]] <- data_name
+      }
+
       if (mc_name %in% sampled_nodes_all) {
         node_list[[mc_name]][["from_sample_design"]] <- TRUE
-        node_list[[mc_name]][["data_name"]] <- NULL
 
         if (mc_name %in% fixed_nodes_all) {
           node_list[[mc_name]][["from_sample_design_fixed"]] <- TRUE
         } else {
           node_list[[mc_name]][["from_sample_design_fixed"]] <- FALSE
         }
-      } else {
-        node_list[[mc_name]][["data_name"]] <- data_name
       }
 
       # If all mcnode inputs are from sample_design, mark this node as from_sample_design
