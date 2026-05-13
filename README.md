@@ -105,7 +105,7 @@ mc_network(example_mcmodule, legend = TRUE)
 
 ![](man/figures/mc_network_example.png)
 
-Further documentation and examples can be found in the [vignette](https://nataliaciria.com/mcmodule/articles/mcmodule.html) and in the [introduction](https://nataliaciria.com/mcmodule/articles/intro.html) article.
+Further documentation and examples can be found in the [vignette](https://nataliaciria.com/mcmodule/articles/mcmodule.html).
 
 ## Citations
 

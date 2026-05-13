@@ -518,7 +518,7 @@ suppressMessages({
   })
 
   # Tests for mcmodule_converg
-  test_that("mcmodule_converg returns correct structure", {
+  test_that("mcmodule_converg works with tiny_threshold and returns correct structure", {
     test_module <- eval_module(
       exp = c(imports = imports_exp),
       data = imports_data,
@@ -526,7 +526,12 @@ suppressMessages({
       data_keys = imports_data_keys
     )
 
-    result <- mcmodule_converg(test_module, print_summary = FALSE)
+    result <- mcmodule_converg(
+      test_module,
+      print_summary = FALSE,
+      tiny_threshold = 1e-6,
+      progress = FALSE
+    )
 
     expect_s3_class(result, "data.frame")
 
@@ -610,6 +615,8 @@ suppressMessages({
       data_keys = imports_data_keys
     )
 
+    mcmodule_info(test_module)
+
     output <- capture.output({
       result <- mcmodule_converg(
         test_module,
@@ -618,12 +625,15 @@ suppressMessages({
       )
     })
 
-    expect_true(any(grepl("\\[Convergence analysis\\] Expression", output)))
+    expect_true(any(grepl(
+      "\\[Convergence analysis\\] Module: 'test_module' Expression: 'imports'",
+      output
+    )))
     expect_true(any(grepl("imports", output)))
     expect_s3_class(result, "data.frame")
   })
 
-  test_that("mcmodule_converg works with custom threshold", {
+  test_that("mcmodule_converg works with custom convergence threshold", {
     test_module <- eval_module(
       exp = c(imports = imports_exp),
       data = imports_data,
@@ -695,5 +705,49 @@ suppressMessages({
     expect_true(is.numeric(result$max_dif_median_scaled))
     expect_true(is.numeric(result$max_dif_q025_scaled))
     expect_true(is.numeric(result$max_dif_q975_scaled))
+  })
+
+  test_that("mcmodule_converg works with combined modules with different variates", {
+    # Create first module with 6 variates
+    module1 <- eval_module(
+      exp = c(imports_1 = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    module1 <- add_prefix(module1)
+
+    # Create second module with 3 variates
+    data2 <- imports_data[1:3, ]
+    module2 <- eval_module(
+      exp = c(
+        imports_2 = imports_exp,
+        exp_a = quote({
+          half_no_detect <- no_detect * 0.5
+        })
+      ),
+      data = data2,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    module2 <- add_prefix(module2)
+
+    combined_module <- combine_modules(module1, module2)
+
+    result <- mcmodule_converg(
+      combined_module,
+      # print_summary = FALSE,
+      progress = FALSE
+    )
+
+    expect_s3_class(result, "data.frame")
+    expect_equal(
+      unique(result$expression),
+      c("imports_1", "imports_2", "exp_a")
+    )
+    expect_equal(unique(result$module), c("module1", "module2"))
+    expect_equal(nrow(result), 53) # 6 imports_1 nodes × 6 variates + 6 imports_2 nodes × 3 variates + 1 exp_a nodes × 3 variates
   })
 })

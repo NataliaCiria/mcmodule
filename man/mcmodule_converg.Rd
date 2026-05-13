@@ -9,6 +9,7 @@ mcmodule_converg(
   from_quantile = 0.95,
   to_quantile = 1,
   conv_threshold = NULL,
+  tiny_threshold = NULL,
   print_summary = TRUE,
   progress = FALSE
 )
@@ -22,6 +23,8 @@ mcmodule_converg(
 
 \item{conv_threshold}{(numeric, optional). Custom convergence threshold for
 standardised differences. Default: NULL.}
+
+\item{tiny_threshold}{(numeric). Threshold for identifying negligible differences, even if they don't meet the convergence threshold. Default: 0.0001.}
 
 \item{print_summary}{(logical). If TRUE, print convergence analysis summary.
 Default: TRUE.}
@@ -37,7 +40,6 @@ Key columns:
 \item node: Node name.
 \item max_dif_scaled: Maximum standardised difference.
 \item max_dif: Maximum raw difference.
-\item conv_threshold: Convergence at custom threshold, if provided.
 \item conv_01, conv_025, conv_05: Convergence at 1\%, 2.5\%, 5\% thresholds.
 }
 }
