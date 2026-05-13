@@ -738,7 +738,7 @@ suppressMessages({
 
     result <- mcmodule_converg(
       combined_module,
-      # print_summary = FALSE,
+      print_summary = FALSE,
       progress = FALSE
     )
 

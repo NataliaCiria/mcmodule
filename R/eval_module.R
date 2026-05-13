@@ -472,6 +472,8 @@ eval_module <- function(
       !is.null(sample_design_data) && is.null(prev_mcmodule) && nrow(data) < 1
     ) {
       missing_prev <- setdiff(all_prev_nodes, colnames(sample_design_data))
+      missing_prev <- setdiff(missing_prev, names(node_list))
+
       if (length(missing_prev) > 0) {
         for (mc_name_fix in missing_prev) {
           row_idx_fix <- which(mctable$mcnode == mc_name_fix)
