@@ -199,11 +199,33 @@ mcmodule_info <- function(mcmodule) {
   # Process data keys
   data_keys <- data.frame()
 
-  if (all(unlist(lapply(mcmodule$data, nrow)) == 0)) {
-    warning(
-      "No data frames found in mcmodule$data for any expressions in mcmodule$node_list"
-    )
-    data_keys = NULL
+  # Only warn about missing data if nodes are NOT from the sample design.
+  has_sample_design_nodes <- any(vapply(
+    mcmodule$node_list,
+    function(x) isTRUE(x[["from_sample_design"]]),
+    logical(1)
+  ))
+
+  empty_data <- length(mcmodule$data) == 0 ||
+    all(vapply(
+      mcmodule$data,
+      function(df) {
+        if (is.data.frame(df)) {
+          nrow(df) == 0L
+        } else {
+          TRUE
+        }
+      },
+      logical(1)
+    ))
+
+  if (empty_data) {
+    if (!has_sample_design_nodes) {
+      warning(
+        "No data frames found in mcmodule$data for any expressions in mcmodule$node_list"
+      )
+    }
+    data_keys <- NULL
   } else {
     for (i in unique(data_name)[unique(data_name) %in% names(mcmodule$data)]) {
       data_i <- mcmodule$data[[i]][names(mcmodule$data[[i]]) %in% global_keys]

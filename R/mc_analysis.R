@@ -741,17 +741,17 @@ mcmodule_converg <- function(
     }
 
     # Convert mcmodule to mc objects for this expression
-    mc_list <- mcmodule_to_mc(mcmodule, mc_names = exp_h_nodes)
+    # mc_list <- mcmodule_to_mc(mcmodule, mc_names = exp_h_nodes)
 
-    # Process each variate
-    for (j in seq_along(mc_list)) {
-      variate <- j
-      mc_j <- mc_list[[j]]
+    # Process each node
+    for (j in seq_along(exp_h_nodes)) {
+      node_name_j <- exp_h_nodes[j]
+      mcnode_j <- mcmodule$node_list[[node_name_j]][["mcnode"]]
 
-      # Analyze convergence for each node
-      for (k in seq_along(mc_j)) {
-        node <- names(mc_j)[k]
-        x <- mc_j[[k]]
+      # Analyze convergence for variate
+      for (k in 1:dim(mcnode_j)[[3]]) {
+        variate_k <- k
+        x <- extractvar(mcnode_j, k)
 
         # Only analyze nodes with more than one iteration and that have variability/uncertainty
         if (dim(x)[1] > 1 & !max(x) == min(x)) {
@@ -830,8 +830,8 @@ mcmodule_converg <- function(
             mc_convergence_list[[list_index]] <- data.frame(
               module = module_h,
               expression = exp_h,
-              variate = variate,
-              node = node,
+              variate = variate_k,
+              node = node_name_j,
               mean_value = mean_value,
               max_dif = max_dif,
               max_dif_mean = max_dif_mean,

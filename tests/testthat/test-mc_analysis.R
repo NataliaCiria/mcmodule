@@ -169,7 +169,7 @@ suppressMessages({
     expect_equal(result$n_modules, 1)
   })
 
-  test_that("mcmodule_corr works for sample_design modules without mctable", {
+  test_that("mcmodule_corr works for sample_design modules without mctable or data", {
     reset_sample_design()
     reset_mctable()
     on.exit(
