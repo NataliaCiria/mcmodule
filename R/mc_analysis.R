@@ -1040,10 +1040,9 @@ mcmodule_converg <- function(
     cat(format_non_converged(diverged_names_05))
 
     if (!is.null(tiny_threshold)) {
-      diverged_05_tiny <- total_nodes -
-        length(unique(conv_df$mcnode[conv_df$diverged_05_tiny]))
+      diverged_05_tiny <- length(unique(conv_df$mcnode[-conv_df$conv_05_tiny]))
 
-      diverged_05_tiny_names <- conv_df$mcnode[diverged_05_tiny]
+      diverged_05_tiny_names <- conv_df$mcnode[-conv_df$conv_05_tiny]
 
       cat(sprintf(
         "\n\n- More than 5%% divergence (over %.4f): %d (%s)",
