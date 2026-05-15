@@ -540,7 +540,7 @@ suppressMessages({
       c(
         "expression",
         "variate",
-        "node",
+        "mcnode",
         "max_dif",
         "max_dif_scaled",
         "max_dif_mean",
@@ -749,5 +749,59 @@ suppressMessages({
     )
     expect_equal(unique(result$module), c("module1", "module2"))
     expect_equal(nrow(result), 53) # 6 imports_1 nodes × 6 variates + 6 imports_2 nodes × 3 variates + 1 exp_a nodes × 3 variates
+  })
+  test_that("mcmodule_converg works with combined modules with mcnodes that do not converge", {
+    ndvar(10)
+    # Create first module with a node that converges
+    module1 <- eval_module(
+      exp = c(imports_1 = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    module1 <- add_prefix(module1)
+
+    # Create second module with a node that does not converge (e.g. uniform distribution with wide range)
+    data2 <- imports_data[1:3, ]
+    module2 <- eval_module(
+      exp = c(
+        imports_2 = quote({
+          non_converging_node <- mcstoc(runif,min = 0, max = 10000)
+        })
+      ),
+      data = data2,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    module2 <- add_prefix(module2)
+
+    combined_module <- combine_modules(module1, module2)
+
+    # Expect error to adjust quantiles
+    expect_error({
+      result <- mcmodule_converg(
+        combined_module,
+        print_summary = FALSE,
+        progress = FALSE
+      )
+    }, "Only 1 iterations available for convergence analysis between quantiles 0.95 and 1.")
+
+    result <- mcmodule_converg(
+      combined_module,
+      print_summary = FALSE,
+      progress = FALSE,
+      from_quantile = 0.75,
+      to_quantile = 1
+    )
+    
+    expect_s3_class(result, "data.frame")
+    expect_true(any(result$conv_01 == FALSE))
+    expect_true(any(result$conv_025 == FALSE))
+    expect_true(any(result$conv_05 == FALSE))
+
+    ndvar(1001)
+
   })
 })

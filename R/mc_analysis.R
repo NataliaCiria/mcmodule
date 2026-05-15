@@ -760,112 +760,128 @@ mcmodule_converg <- function(
           conv_end <- floor(dim(x)[1] * to_quantile)
           n_sim <- dim(x)[1]
           n_sim_conv <- conv_end - conv_start
+        
 
-          x_conv <- vapply(
-            conv_start:conv_end,
-            mc_stat,
-            x = x,
-            FUN.VALUE = numeric(4)
-          )
-
-          # Calculate differences between iterations
-          x_conv_dif <- x_conv - cbind(0, x_conv[, 1:(ncol(x_conv) - 1)])
-          x_conv_dif <- x_conv_dif[, -1]
-
-          # Calculate convergence metrics
-          max_dif <- max(x_conv_dif)
-          mean_value <- mean(x_conv[1, ])
-          max_dif_scaled <- max_dif / mean_value
-
-          max_dif_mean <- max(abs(x_conv_dif[1, ]))
-          max_dif_median <- max(abs(x_conv_dif[2, ]))
-          max_dif_q025 <- max(abs(x_conv_dif[3, ]))
-          max_dif_q975 <- max(abs(x_conv_dif[4, ]))
-
-          mean_stat_mean <- mean(x_conv[1, ])
-          mean_stat_median <- mean(x_conv[2, ])
-          mean_stat_q025 <- mean(x_conv[3, ])
-          mean_stat_q975 <- mean(x_conv[4, ])
-
-          max_dif_mean_scaled <- ifelse(
-            mean_stat_mean == 0,
-            NA,
-            max_dif_mean / mean_stat_mean
-          )
-          max_dif_median_scaled <- ifelse(
-            mean_stat_median == 0,
-            NA,
-            max_dif_median / mean_stat_median
-          )
-          max_dif_q025_scaled <- ifelse(
-            mean_stat_q025 == 0,
-            NA,
-            max_dif_q025 / mean_stat_q025
-          )
-          max_dif_q975_scaled <- ifelse(
-            mean_stat_q975 == 0,
-            NA,
-            max_dif_q975 / mean_stat_q975
-          )
-
-          conv_01 <- abs(max_dif_scaled) < 0.01
-          conv_025 <- abs(max_dif_scaled) < 0.025
-          conv_05 <- abs(max_dif_scaled) < 0.05
-
-          if (!is.null(tiny_threshold)) {
-            tiny <- max_dif < tiny_threshold
-            conv_01_tiny <- conv_01 | tiny
-            conv_025_tiny <- conv_025 | tiny
-            conv_05_tiny <- conv_05 | tiny
-          }
-
-          if (!is.null(conv_threshold)) {
-            conv_manual <- abs(max_dif_scaled) < conv_threshold
-            if (!is.null(tiny_threshold)) {
-              conv_manual_tiny <- conv_manual | tiny
+          # Stop if insufficient iterations for convergence analysis at the specified quantiles
+          if (n_sim_conv < 3) {
+            stop(paste0(
+              "Node '",
+              node_name_j,
+              "' variate ",
+              variate_k,
+              ": Only ",
+              n_sim_conv,
+              " iterations available for convergence analysis between quantiles ",
+              from_quantile, " and ", to_quantile, ". Please adjust quantiles or ensure sufficient iterations."
+            ))
             }
-          }
 
-          if (!is.na(max_dif) && !is.na(max_dif_scaled)) {
-            mc_convergence_list[[list_index]] <- data.frame(
-              module = module_h,
-              expression = exp_h,
-              variate = variate_k,
-              node = node_name_j,
-              mean_value = mean_value,
-              max_dif = max_dif,
-              max_dif_mean = max_dif_mean,
-              max_dif_median = max_dif_median,
-              max_dif_q025 = max_dif_q025,
-              max_dif_q975 = max_dif_q975,
-              max_dif_scaled = max_dif_scaled,
-              max_dif_mean_scaled = max_dif_mean_scaled,
-              max_dif_median_scaled = max_dif_median_scaled,
-              max_dif_q025_scaled = max_dif_q025_scaled,
-              max_dif_q975_scaled = max_dif_q975_scaled,
-              conv_01 = conv_01,
-              conv_025 = conv_025,
-              conv_05 = conv_05
+            x_conv <- vapply(
+              conv_start:conv_end,
+              mc_stat,
+              x = x,
+              FUN.VALUE = numeric(4)
             )
 
+            # Calculate differences between iterations
+            x_conv_dif <- x_conv - cbind(0, x_conv[, 1:(ncol(x_conv) - 1)])
+            x_conv_dif <- x_conv_dif[, -1]
+
+            # Calculate convergence metrics
+            max_dif <- max(x_conv_dif)
+            mean_value <- mean(x_conv[1, ])
+            max_dif_scaled <- max_dif / mean_value
+
+            max_dif_mean <- max(abs(x_conv_dif[1, ]))
+            max_dif_median <- max(abs(x_conv_dif[2, ]))
+            max_dif_q025 <- max(abs(x_conv_dif[3, ]))
+            max_dif_q975 <- max(abs(x_conv_dif[4, ]))
+
+            mean_stat_mean <- mean(x_conv[1, ])
+            mean_stat_median <- mean(x_conv[2, ])
+            mean_stat_q025 <- mean(x_conv[3, ])
+            mean_stat_q975 <- mean(x_conv[4, ])
+
+            max_dif_mean_scaled <- ifelse(
+              mean_stat_mean == 0,
+              NA,
+              max_dif_mean / mean_stat_mean
+            )
+            max_dif_median_scaled <- ifelse(
+              mean_stat_median == 0,
+              NA,
+              max_dif_median / mean_stat_median
+            )
+            max_dif_q025_scaled <- ifelse(
+              mean_stat_q025 == 0,
+              NA,
+              max_dif_q025 / mean_stat_q025
+            )
+            max_dif_q975_scaled <- ifelse(
+              mean_stat_q975 == 0,
+              NA,
+              max_dif_q975 / mean_stat_q975
+            )
+
+            conv_01 <- abs(max_dif_scaled) < 0.01
+            conv_025 <- abs(max_dif_scaled) < 0.025
+            conv_05 <- abs(max_dif_scaled) < 0.05
+
+            if (!is.null(tiny_threshold)) {
+              tiny <- max_dif < tiny_threshold
+              conv_01_tiny <- conv_01 | tiny
+              conv_025_tiny <- conv_025 | tiny
+              conv_05_tiny <- conv_05 | tiny
+            }
+
             if (!is.null(conv_threshold)) {
-              mc_convergence_list[[list_index]]$conv_manual <- conv_manual
+              conv_manual <- abs(max_dif_scaled) < conv_threshold
               if (!is.null(tiny_threshold)) {
-                mc_convergence_list[[
-                  list_index
-                ]]$conv_manual_tiny <- conv_manual_tiny
+                conv_manual_tiny <- conv_manual | tiny
               }
             }
 
-            if (!is.null(tiny_threshold)) {
-              mc_convergence_list[[list_index]]$tiny <- tiny
-              mc_convergence_list[[list_index]]$conv_01_tiny <- conv_01_tiny
-              mc_convergence_list[[list_index]]$conv_025_tiny <- conv_025_tiny
-              mc_convergence_list[[list_index]]$conv_05_tiny <- conv_05_tiny
-            }
+            if (!is.na(max_dif) && !is.na(max_dif_scaled)) {
+              mc_convergence_list[[list_index]] <- data.frame(
+                module = module_h,
+                expression = exp_h,
+                variate = variate_k,
+                mcnode = node_name_j,
+                mean_value = mean_value,
+                max_dif = max_dif,
+                max_dif_mean = max_dif_mean,
+                max_dif_median = max_dif_median,
+                max_dif_q025 = max_dif_q025,
+                max_dif_q975 = max_dif_q975,
+                max_dif_scaled = max_dif_scaled,
+                max_dif_mean_scaled = max_dif_mean_scaled,
+                max_dif_median_scaled = max_dif_median_scaled,
+                max_dif_q025_scaled = max_dif_q025_scaled,
+                max_dif_q975_scaled = max_dif_q975_scaled,
+                conv_01 = conv_01,
+                conv_025 = conv_025,
+                conv_05 = conv_05
+              )
 
-            list_index <- list_index + 1
-          }
+              if (!is.null(conv_threshold)) {
+                mc_convergence_list[[list_index]]$conv_manual <- conv_manual
+                if (!is.null(tiny_threshold)) {
+                  mc_convergence_list[[
+                    list_index
+                  ]]$conv_manual_tiny <- conv_manual_tiny
+                }
+              }
+
+              if (!is.null(tiny_threshold)) {
+                mc_convergence_list[[list_index]]$tiny <- tiny
+                mc_convergence_list[[list_index]]$conv_01_tiny <- conv_01_tiny
+                mc_convergence_list[[list_index]]$conv_025_tiny <- conv_025_tiny
+                mc_convergence_list[[list_index]]$conv_05_tiny <- conv_05_tiny
+              }
+
+              list_index <- list_index + 1
+            }
+          
         }
       }
     }
@@ -876,8 +892,8 @@ mcmodule_converg <- function(
 
   # Prepare data for plotting
   # Find the point with the highest max_dif_scaled per input
-  max_points <- conv_df[order(conv_df$node, -conv_df$max_dif_scaled), ]
-  max_points <- max_points[!duplicated(max_points$node), ]
+  max_points <- conv_df[order(conv_df$mcnode, -conv_df$max_dif_scaled), ]
+  max_points <- max_points[!duplicated(max_points$mcnode), ]
 
   # Determine threshold for labeling
   label_threshold <- if (!is.null(conv_threshold)) conv_threshold else 0.025
@@ -896,16 +912,16 @@ mcmodule_converg <- function(
   # Calculate mean max_dif_scaled per node for ordering
   node_order <- stats::aggregate(
     conv_df$max_dif_scaled,
-    list(node = conv_df$node),
+    list(node = conv_df$mcnode),
     max
   )
   node_order <- node_order[order(-node_order$x), ]
 
   # Convert node to factor with levels ordered by max difference
-  conv_df$node <- factor(conv_df$node, levels = node_order$node)
-  max_points$node <- factor(max_points$node, levels = node_order$node)
+  conv_df$mcnode <- factor(conv_df$mcnode, levels = node_order$node)
+  max_points$mcnode <- factor(max_points$mcnode, levels = node_order$node)
 
-  total_nodes <- length(unique(conv_df$node))
+  total_nodes <- length(unique(conv_df$mcnode))
 
   if (print_summary) {
     # Print analysis results summary
@@ -913,6 +929,7 @@ mcmodule_converg <- function(
     cat("\nAnalysis Parameters")
     cat("\n- Number of simulations:", n_sim)
     cat("\n- Total nodes analyzed:", total_nodes)
+    cat("\n- Total variates analyzed:", nrow(conv_df))
     cat("\n- Simulation quantile range:", from_quantile, "to", to_quantile)
     cat(
       "\n- Simulations range:",
@@ -948,19 +965,16 @@ mcmodule_converg <- function(
       if (length(x) == 0) {
         ""
       } else {
-        paste("\n", x, collapse = ", ")
+        paste0("\n",paste(x, collapse = ", "))
       }
     }
 
     if (!is.null(conv_threshold)) {
-      diverged_manual <- total_nodes -
-        length(unique(conv_df$node[
-          conv_df$conv_manual
-        ]))
-      diverged_manual_names <- conv_df$node[conv_df$conv_manual]
+      diverged_manual <- length(unique(conv_df$mcnode[!conv_df$conv_manual]))
+      diverged_manual_names <- conv_df$mcnode[!conv_df$conv_manual]
 
       cat(sprintf(
-        "\n- More than %.4f divergence: %d (%s)",
+        "\n\n- More than %.4f divergence: %d (%s)",
         conv_threshold,
         diverged_manual,
         pct(diverged_manual / total_nodes * 100)
@@ -972,13 +986,12 @@ mcmodule_converg <- function(
       ))
 
       if (!is.null(tiny_threshold)) {
-        diverged_manual_tiny <- total_nodes -
-          length(unique(conv_df$node[conv_df$diverged_manual_tiny]))
+        diverged_manual_tiny <- length(unique(conv_df$mcnode[!conv_df$conv_manual_tiny]))
 
-        diverged_manual_tiny_names <- conv_df$node[diverged_manual_tiny]
+        diverged_manual_tiny_names <- conv_df$mcnode[!conv_df$conv_manual_tiny]
 
         cat(sprintf(
-          "\n- More than %.4f divergence (over %.4f): %d (%s)",
+          "\n\n- More than %.4f divergence (over %.4f): %d (%s)",
           conv_threshold,
           tiny_threshold,
           diverged_manual_tiny,
@@ -992,51 +1005,48 @@ mcmodule_converg <- function(
       }
     }
 
-    diverged_01 <- total_nodes -
-      length(unique(conv_df$node[conv_df$conv_01]))
-    diverged_025 <- total_nodes -
-      length(unique(conv_df$node[conv_df$conv_025]))
-    diverged_05 <- total_nodes -
-      length(unique(conv_df$node[conv_df$conv_05]))
+    diverged_01 <- length(unique(conv_df$mcnode[!conv_df$conv_01]))
+    diverged_025 <- length(unique(conv_df$mcnode[!conv_df$conv_025]))
+    diverged_05 <-  length(unique(conv_df$mcnode[!conv_df$conv_05]))
 
     cat(sprintf(
-      "\n- More than 1%% divergence: %d (%s)",
+      "\n\n- More than 1%% divergence: %d (%s)",
       diverged_01,
       pct(diverged_01 / total_nodes * 100)
     ))
-    diverged_names_01 <- conv_df$node[
+    diverged_names_01 <- conv_df$mcnode[
       !conv_df$conv_01 & !is.na(conv_df$conv_01)
     ]
     cat(format_non_converged(diverged_names_01))
 
     cat(sprintf(
-      "\n- More than 2.5%% divergence: %d (%s)",
+      "\n\n- More than 2.5%% divergence: %d (%s)",
       diverged_025,
       pct(diverged_025 / total_nodes * 100)
     ))
-    diverged_names_025 <- conv_df$node[
+    diverged_names_025 <- conv_df$mcnode[
       !conv_df$conv_025 & !is.na(conv_df$conv_025)
     ]
     cat(format_non_converged(diverged_names_025))
 
     cat(sprintf(
-      "\n- More than 5%% divergence: %d (%s)",
+      "\n\n- More than 5%% divergence: %d (%s)",
       diverged_05,
       pct(diverged_05 / total_nodes * 100)
     ))
-    diverged_names_05 <- conv_df$node[
+    diverged_names_05 <- conv_df$mcnode[
       !conv_df$conv_05 & !is.na(conv_df$conv_05)
     ]
     cat(format_non_converged(diverged_names_05))
 
     if (!is.null(tiny_threshold)) {
       diverged_05_tiny <- total_nodes -
-        length(unique(conv_df$node[conv_df$diverged_05_tiny]))
+        length(unique(conv_df$mcnode[conv_df$diverged_05_tiny]))
 
-      diverged_05_tiny_names <- conv_df$node[diverged_05_tiny]
+      diverged_05_tiny_names <- conv_df$mcnode[diverged_05_tiny]
 
       cat(sprintf(
-        "\n- More than 5%% divergence (over %.4f): %d (%s)",
+        "\n\n- More than 5%% divergence (over %.4f): %d (%s)",
         tiny_threshold,
         diverged_05_tiny,
         pct(diverged_05_tiny / total_nodes * 100)
@@ -1050,14 +1060,14 @@ mcmodule_converg <- function(
 
     # Happy message if all converged at 5% threshold
     if (diverged_01 == 0) {
-      cat("\n\nAll nodes successfully converged at 1% threshold! :D\n")
+      cat("\n\nAll nodes successfully converged at 1% threshold! 😄\n")
     } else if (diverged_025 == 0) {
-      cat("\n\nAll nodes successfully converged at 2.5% threshold! :)\n")
+      cat("\n\nAll nodes successfully converged at 2.5% threshold! ☺️\n")
     } else if (diverged_05 == 0) {
-      cat("\n\nAll nodes successfully converged at 5% threshold! :)\n")
+      cat("\n\nAll nodes successfully converged at 5% threshold! 🙂\n")
     } else {
       cat(sprintf(
-        "\n\n%d (%s) nodes did not converge at 5%% threshold :(",
+        "\n\n%d (%s) nodes did not converge at 5%% threshold 🙁",
         diverged_05,
         pct((diverged_05 / total_nodes) * 100)
       ))
