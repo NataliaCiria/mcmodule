@@ -517,6 +517,31 @@ suppressMessages({
     expect_s3_class(result, "data.frame")
   })
 
+  test_that("mcmodule_corr mc_names parameter filters nodes correctly", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    # Get all inputs
+    result_all <- mcmodule_corr(test_module, print_summary = FALSE)
+    all_inputs <- unique(result_all$input)
+
+    # Get results with subset of nodes
+    subset_nodes <- c("w_prev")
+    result_subset <- mcmodule_corr(
+      test_module,
+      mc_names = subset_nodes,
+      print_summary = FALSE
+    )
+
+    expect_s3_class(result_subset, "data.frame")
+    expect_true(all(result_subset$input %in% subset_nodes))
+    expect_true(nrow(result_subset) <= nrow(result_all))
+  })
+
   # Tests for mcmodule_converg
   test_that("mcmodule_converg works with tiny_threshold and returns correct structure", {
     test_module <- eval_module(
@@ -767,7 +792,7 @@ suppressMessages({
     module2 <- eval_module(
       exp = c(
         imports_2 = quote({
-          non_converging_node <- mcstoc(runif,min = 0, max = 10000)
+          non_converging_node <- mcstoc(runif, min = 0, max = 10000)
         })
       ),
       data = data2,
@@ -780,13 +805,16 @@ suppressMessages({
     combined_module <- combine_modules(module1, module2)
 
     # Expect error to adjust quantiles
-    expect_error({
-      result <- mcmodule_converg(
-        combined_module,
-        print_summary = FALSE,
-        progress = FALSE
-      )
-    }, "Only 1 iterations available for convergence analysis between quantiles 0.95 and 1.")
+    expect_error(
+      {
+        result <- mcmodule_converg(
+          combined_module,
+          print_summary = FALSE,
+          progress = FALSE
+        )
+      },
+      "Only 1 iterations available for convergence analysis between quantiles 0.95 and 1."
+    )
 
     result <- mcmodule_converg(
       combined_module,
@@ -795,13 +823,42 @@ suppressMessages({
       from_quantile = 0.75,
       to_quantile = 1
     )
-    
+
     expect_s3_class(result, "data.frame")
     expect_true(any(result$conv_01 == FALSE))
     expect_true(any(result$conv_025 == FALSE))
     expect_true(any(result$conv_05 == FALSE))
 
     ndvar(1001)
+  })
 
+  test_that("mcmodule_converg mc_names parameter filters nodes correctly", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    # Get results with all nodes
+    result_all <- mcmodule_converg(
+      test_module,
+      print_summary = FALSE,
+      progress = FALSE
+    )
+    all_nodes <- unique(result_all$mcnode)
+
+    # Get results with subset of nodes
+    subset_nodes <- c("w_prev", "test_origin")
+    result_subset <- mcmodule_converg(
+      test_module,
+      mc_names = subset_nodes,
+      print_summary = FALSE,
+      progress = FALSE
+    )
+
+    expect_s3_class(result_subset, "data.frame")
+    expect_true(all(unique(result_subset$mcnode) %in% subset_nodes))
+    expect_true(nrow(result_subset) <= nrow(result_all))
   })
 })

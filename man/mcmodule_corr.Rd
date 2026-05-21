@@ -10,6 +10,7 @@ mcmodule_corr(
   by_exp = FALSE,
   match_variates = TRUE,
   variates_as_nsv = FALSE,
+  mc_names = NULL,
   print_summary = TRUE,
   progress = FALSE,
   method = c("spearman", "kendall", "pearson"),
@@ -34,6 +35,9 @@ when data dimensions differ. Default: TRUE.}
 \item{variates_as_nsv}{(logical). If TRUE, combine all variates into one \code{mc}
 object; if FALSE, analyse each variate separately. See \code{\link[=mcmodule_to_mc]{mcmodule_to_mc()}}.
 Default: FALSE.}
+
+\item{mc_names}{(character vector, optional). Node names to include in analysis.
+If NULL (default), includes all nodes in the module. Default: NULL.}
 
 \item{print_summary}{(logical). If TRUE, print correlation analysis summary.
 Default: TRUE.}

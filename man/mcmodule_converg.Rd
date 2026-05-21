@@ -11,7 +11,8 @@ mcmodule_converg(
   conv_threshold = NULL,
   tiny_threshold = NULL,
   print_summary = TRUE,
-  progress = FALSE
+  progress = FALSE,
+  mc_names = NULL
 )
 }
 \arguments{
@@ -30,6 +31,9 @@ standardised differences. Default: NULL.}
 Default: TRUE.}
 
 \item{progress}{(logical). If TRUE, print progress information. Default: FALSE.}
+
+\item{mc_names}{(character vector, optional). Node names to include in analysis.
+If NULL (default), includes all nodes in the module. Default: NULL.}
 }
 \value{
 A data frame with convergence statistics. Each row represents one node.
