@@ -396,23 +396,26 @@ mcmodule_corr <- function(
     # Calculate correlation for this expression and variate
     for (i in seq_along(mc_h)) {
       tornado_result <- local({
-        wanings_h_i <- character()
+        warnings_h_i <- character()
 
         tornado_h_i <- tryCatch(
           withCallingHandlers(
             tornado(mc_h[[i]], output = output_h, method = method),
             warning = function(w) {
-              wanings_h_i <<- c(wanings_h_i, conditionMessage(w))
+              warnings_h_i <<- c(warnings_h_i, conditionMessage(w))
               invokeRestart("muffleWarning")
             }
           ),
           error = function(e) {
-            wanings_h_i <<- c(wanings_h_i, paste("Error:", conditionMessage(e)))
+            warnings_h_i <<- c(
+              warnings_h_i,
+              paste("Error:", conditionMessage(e))
+            )
             NULL
           }
         )
 
-        list(tornado = tornado_h_i, warnings = warnings)
+        list(tornado = tornado_h_i, warnings = warnings_h_i)
       })
 
       tornado_h_i <- tornado_result$tornado
@@ -444,8 +447,8 @@ mcmodule_corr <- function(
           intersect(names(data_h), info$global_keys)
         ]
       }
-      if (length(tornado_result$wanings_h_i) > 0) {
-        warnings <- c(warnings, wanings_h_i)
+      if (length(tornado_result$warnings) > 0) {
+        warnings <- c(warnings, tornado_result$warnings)
       }
 
       coor <- dplyr::bind_rows(coor, coor_h_i)

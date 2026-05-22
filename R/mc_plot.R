@@ -444,21 +444,26 @@ mc_plot <- function(
     )
   }
 
-  # Adapt max_dots based on number of variates
+  # Adapt max_dots based on number of variates.
+  # Allow an explicit user-supplied `max_dots` to override the internal heuristics.
   n_variates <- length(unique(long_df$variate))
-  if (n_variates < 10) {
+
+  user_provided_max_dots <- !missing(max_dots)
+
+  if (user_provided_max_dots) {
     adjusted_max_dots <- max_dots
-  } else if (n_variates < 20) {
-    adjusted_max_dots <- 100
   } else {
-    adjusted_max_dots <- 0
-    message(
-      sprintf(
-        "Plotting %d variates: showing only boxplots (no individual points). ",
+    if (n_variates < 10) {
+      adjusted_max_dots <- max_dots
+    } else if (n_variates < 20) {
+      adjusted_max_dots <- 100
+    } else {
+      adjusted_max_dots <- 0
+      message(sprintf(
+        "Plotting %d variates: showing only boxplots (no individual points). Use max_dots parameter to override.",
         n_variates
-      ),
-      "Use max_dots parameter to override."
-    )
+      ))
+    }
   }
 
   # Sampling: select which simulation dots to plot per variate

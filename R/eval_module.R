@@ -318,7 +318,19 @@ eval_module <- function(
   if (is.list(exp)) {
     exp_list <- exp
   } else {
-    exp_name <- gsub("_exp", "", deparse(substitute(exp)))
+    # Determine a sensible name for the expression.
+    # - If the caller passed a variable (e.g. `exp = test_exp`) use that symbol name.
+    # - If the caller passed a quoted expression directly (e.g. `exp = quote({...})`)
+    #   deparse(substitute(exp)) will be the expression text; warn and recommend
+    #   explicitly naming expressions in that case.
+    expr_sub <- substitute(exp)
+    exp_name <- deparse(expr_sub)
+    if (is.call(expr_sub) || is.expression(expr_sub)) {
+      warning(
+        "You passed a quoted expression directly to `exp`. Consider naming expressions explicitly, e.g. eval_module(exp = list(my_name = quote({...})))."
+      )
+    }
+
     exp_list <- list(exp)
     names(exp_list) <- exp_name
   }
@@ -971,7 +983,7 @@ eval_module <- function(
 
   message(sprintf(
     "mcmodule created (expressions: %s)",
-    paste(names(exp), collapse = ", ")
+    paste(names(exp_list), collapse = ", ")
   ))
 
   return(mcmodule)

@@ -270,7 +270,7 @@ From now on we will use only the merged `imports_data` table. However, it is use
 
 -   `test_sensitivity` provided information by `"pathogen"` only
 
-The resulting merged table, `imports_data`, will therefore have two keys: `"pathogen"` and `"origin"`. However, not all parameters will use both keys, for example, `"test_sensi"` only has information by `"pathogen"`. Knowing the keys for each parameter is crucial when performing multivariate operations, such as [calculating totals](https://nataliaciria.com/mcmodule/articles/intro.html#calculating-totals).
+The resulting merged table, `imports_data`, will therefore have two keys: `"pathogen"` and `"origin"`. However, not all parameters will use both keys, for example, `"test_sensi"` only has information by `"pathogen"`. Knowing the keys for each parameter is crucial when performing multivariate operations, such as [calculating totals](https://nataliaciria.com/mcmodule/articles/mcmodule.html#calculating-totals).
 
 To make these relationships explicit in the model, we need to provide the data keys. These are defined in a list with one element for each input dataset, specifying both the columns and the keys for each dataset.
 
@@ -334,7 +334,7 @@ For encoding categorical variables as mcnodes (or any other data transformation)
 
 ## Expressions
 
-Finally, we need to write the model's mathematical expression. These expressions should ideally include only arithmetic operations, not R functions (with some exceptions that will be covered later in "[tricks and tweaks](https://nataliaciria.com/mcmodule/articles/intro.html#tricks-and-tweaks)"). We'll wrap them using `quote()` so they aren't executed immediately but stored for later evaluation with `eval_model()`.
+Finally, we need to write the model's mathematical expression. These expressions should ideally include only arithmetic operations, not R functions (with some exceptions that will be covered later in "[tricks and tweaks](https://nataliaciria.com/mcmodule/articles/mcmodule.html#tricks-and-tweaks)"). We'll wrap them using `quote()` so they aren't executed immediately but stored for later evaluation with `eval_model()`.
 
 ```{r}
 imports_exp <- quote({

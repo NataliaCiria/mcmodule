@@ -186,7 +186,7 @@ mcmodule_info <- function(mcmodule) {
     node_df$module[is.na(node_df$module)] <- deparse(substitute(mcmodule))
 
     # Pivot counts by module and type
-    agg <- aggregate(name ~ module, data = node_df, FUN = length)
+    agg <- stats::aggregate(name ~ module, data = node_df, FUN = length)
     names(agg)[names(agg) == "name"] <- "n_nodes"
 
     types <- unique(node_df$type)
