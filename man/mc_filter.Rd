@@ -12,7 +12,7 @@ mc_filter(
   mcnode = NULL,
   name = NULL,
   prefix = NULL,
-  filter_suffix = "filtered",
+  suffix = "filtered",
   summary = TRUE
 )
 }
@@ -30,13 +30,13 @@ of the data associated with the mcnode.}
 \item{mcnode}{(mcnode object, optional). mcnode to filter directly. Default: NULL.}
 
 \item{name}{(character, optional). Name for the new filtered node when adding to
-mcmodule. If NULL, auto-generated from \code{mc_name} and \code{filter_suffix}.
+mcmodule. If NULL, auto-generated from \code{mc_name} and \code{suffix}.
 Default: NULL.}
 
 \item{prefix}{(character, optional). Prefix for the auto-generated node name.
 Default: NULL.}
 
-\item{filter_suffix}{(character). Suffix appended to auto-generated name.
+\item{suffix}{(character). Suffix appended to auto-generated name.
 Default: "filtered".}
 
 \item{summary}{(logical). If TRUE, compute summary statistics for the new node.

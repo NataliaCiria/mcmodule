@@ -158,7 +158,8 @@ suppressMessages({
         "module_names",
         "module_exp_data",
         "data_keys",
-        "global_keys"
+        "global_keys",
+        "node_counts"
       )
     )
     expect_true("variate" %in% names(result$data_keys))

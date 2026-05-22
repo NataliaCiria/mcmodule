@@ -12,11 +12,11 @@
 #' @param data (data frame, optional). Input data frame. Default: NULL.
 #' @param mcnode (mcnode object, optional). mcnode to filter directly. Default: NULL.
 #' @param name (character, optional). Name for the new filtered node when adding to
-#'   mcmodule. If NULL, auto-generated from `mc_name` and `filter_suffix`.
+#'   mcmodule. If NULL, auto-generated from `mc_name` and `suffix`.
 #'   Default: NULL.
 #' @param prefix (character, optional). Prefix for the auto-generated node name.
 #'   Default: NULL.
-#' @param filter_suffix (character). Suffix appended to auto-generated name.
+#' @param suffix (character). Suffix appended to auto-generated name.
 #'   Default: "filtered".
 #' @param summary (logical). If TRUE, compute summary statistics for the new node.
 #'   Default: TRUE.
@@ -76,7 +76,7 @@ mc_filter <- function(
   mcnode = NULL,
   name = NULL,
   prefix = NULL,
-  filter_suffix = "filtered",
+  suffix = "filtered",
   summary = TRUE
 ) {
   eval_env <- parent.frame()
@@ -214,14 +214,14 @@ mc_filter <- function(
 
   # Generate name for filtered node
   filtered_mc_name <- if (!is.null(name)) {
-    if (!is.null(filter_suffix) && filter_suffix != "") {
-      paste0(name, "_", filter_suffix)
+    if (!is.null(suffix) && suffix != "") {
+      paste0(name, "_", suffix)
     } else {
       name
     }
   } else {
-    if (!is.null(filter_suffix) && filter_suffix != "") {
-      paste0(mc_name, "_", filter_suffix)
+    if (!is.null(suffix) && suffix != "") {
+      paste0(mc_name, "_", suffix)
     } else {
       paste0(mc_name, "_flt")
     }

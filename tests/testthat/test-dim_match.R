@@ -758,7 +758,7 @@ suppressMessages({
       mcmodule = test_module,
       mc_name = "p_1",
       group == "A",
-      filter_suffix = "flt"
+      suffix = "flt"
     )
 
     keys_df <- mc_keys(filtered, "p_1_flt")

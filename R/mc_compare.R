@@ -282,7 +282,7 @@ mc_compare <- function(
       mc_name,
       scenario_id == baseline,
       name = temp_baseline_name,
-      filter_suffix = "",
+      suffix = "",
       summary = TRUE
     )
 
@@ -292,7 +292,7 @@ mc_compare <- function(
       mc_name,
       scenario_id != baseline,
       name = temp_whatif_name,
-      filter_suffix = "",
+      suffix = "",
       summary = TRUE
     )
   }

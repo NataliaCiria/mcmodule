@@ -979,7 +979,7 @@ suppressMessages({
       test_module,
       "contact",
       visit_type == "vehicle",
-      filter_suffix = "veh"
+      suffix = "veh"
     )
 
     # Verify filtered node has correct dimensions
