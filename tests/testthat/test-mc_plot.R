@@ -259,4 +259,65 @@ suppressMessages({
     expect_true(is.data.frame(tidy_data))
     expect_true("value" %in% names(tidy_data))
   })
+
+  test_that("mcmodule_tornado works with corr_results input", {
+    skip_if_not_installed("ggplot2")
+
+    corr_results <- mcmodule_corr(
+      imports_mcmodule,
+      print_summary = FALSE,
+      progress = FALSE
+    )
+
+    p <- mcmodule_tornado(corr_results = corr_results)
+    expect_s3_class(p, "gg")
+    expect_s3_class(p, "ggplot")
+
+    p_no_colour <- mcmodule_tornado(
+      corr_results = corr_results,
+      colour = FALSE
+    )
+    expect_s3_class(p_no_colour, "gg")
+  })
+
+  test_that("mcmodule_tornado works with mcmodule input", {
+    skip_if_not_installed("ggplot2")
+
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    p <- mcmodule_tornado(
+      mcmodule = test_module,
+      print_summary = FALSE,
+      progress = FALSE
+    )
+
+    expect_s3_class(p, "gg")
+    expect_s3_class(p, "ggplot")
+  })
+
+  test_that("mcmodule_tornado validates inputs", {
+    skip_if_not_installed("ggplot2")
+
+    expect_error(
+      mcmodule_tornado(),
+      "Provide either mcmodule or corr_results"
+    )
+
+    expect_error(
+      mcmodule_tornado(corr_results = data.frame(value = 0.1)),
+      "missing required columns"
+    )
+
+    expect_error(
+      mcmodule_tornado(
+        corr_results = data.frame(input = c("a", "b"), value = c(NA, NA))
+      ),
+      "No non-missing correlation values"
+    )
+  })
 })

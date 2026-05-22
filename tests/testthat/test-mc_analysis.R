@@ -169,6 +169,36 @@ suppressMessages({
     expect_equal(result$n_modules, 1)
   })
 
+  test_that("mcmodule_corr works for sample_design modules without mctable or data", {
+    reset_sample_design()
+    reset_mctable()
+    on.exit(
+      {
+        reset_sample_design()
+        reset_mctable()
+      },
+      add = TRUE
+    )
+
+    test_exp <- quote({
+      result <- input_a + input_b
+    })
+
+    X <- data.frame(
+      input_a = c(0.1, 0.2, 0.3, 0.4),
+      input_b = c(1, 2, 3, 4)
+    )
+
+    test_module <- eval_module(
+      exp = test_exp,
+      sample_design = X
+    )
+
+    corr <- mcmodule_corr(test_module, print_summary = FALSE)
+    expect_s3_class(corr, "data.frame")
+    expect_true(nrow(corr) >= 1)
+  })
+
   # Tests for mcmodule_corr
   test_that("mcmodule_corr works with one expression", {
     test_module <- eval_module(
@@ -205,7 +235,7 @@ suppressMessages({
       "Strong",
       "Moderate",
       "Weak",
-      "None",
+      "Very weak/None",
       NA_character_
     )
     expect_true(all(result$strength %in% valid_strengths))
@@ -214,7 +244,7 @@ suppressMessages({
     expect_true(all(c("pathogen", "origin") %in% names(result)))
 
     # Check output column values
-    expect_true(all(result$output == "no_detect_a"))
+    expect_true(all(result$output == "no_detect"))
 
     # Check method values (default is spearman, kendall, pearson)
     expect_true(all(result$method %in% c("spearman", "kendall", "pearson")))
@@ -309,10 +339,10 @@ suppressMessages({
       } else if (abs_val >= 0.2) {
         "Weak"
       } else {
-        "None"
+        "Very weak/None"
       }
 
-      expect_equal(result$strength[i], expected_strength)
+      expect_equal(as.character(result$strength[i]), expected_strength)
     }
 
     # Verify summary includes strength distribution
@@ -338,7 +368,7 @@ suppressMessages({
 
     previous_module <- trial_totals(
       previous_module,
-      mc_names = "no_detect_a",
+      mc_names = "no_detect",
       trials_n = "animals_n",
       subsets_n = "farms_n",
       subsets_p = "h_prev",
@@ -372,7 +402,7 @@ suppressMessages({
     )
 
     current_exp <- quote({
-      imported_contaminated <- no_detect_a_set * survival_p * (1 - clean)
+      imported_contaminated <- no_detect_set * survival_p * (1 - clean)
     })
 
     current_module <- eval_module(
@@ -387,7 +417,7 @@ suppressMessages({
 
     combined_module <- at_least_one(
       combined_module,
-      c("no_detect_a", "imported_contaminated"),
+      c("no_detect", "imported_contaminated"),
       name = "total"
     )
 
@@ -467,8 +497,9 @@ suppressMessages({
     expect_equal(unique(result$variate), 1)
   })
 
-  # Tests for mcmodule_converg
-  test_that("mcmodule_converg returns correct structure", {
+  test_that("mcmodule_corr plot parameter returns ggplot", {
+    skip_if_not_installed("ggplot2")
+
     test_module <- eval_module(
       exp = c(imports = imports_exp),
       data = imports_data,
@@ -476,7 +507,56 @@ suppressMessages({
       data_keys = imports_data_keys
     )
 
-    result <- mcmodule_converg(test_module, print_summary = FALSE)
+    result <- mcmodule_corr(
+      test_module,
+      print_summary = FALSE,
+      progress = FALSE,
+      plot = TRUE
+    )
+
+    expect_s3_class(result, "data.frame")
+  })
+
+  test_that("mcmodule_corr mc_names parameter filters nodes correctly", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    # Get all inputs
+    result_all <- mcmodule_corr(test_module, print_summary = FALSE)
+    all_inputs <- unique(result_all$input)
+
+    # Get results with subset of nodes
+    subset_nodes <- c("w_prev")
+    result_subset <- mcmodule_corr(
+      test_module,
+      mc_names = subset_nodes,
+      print_summary = FALSE
+    )
+
+    expect_s3_class(result_subset, "data.frame")
+    expect_true(all(result_subset$input %in% subset_nodes))
+    expect_true(nrow(result_subset) <= nrow(result_all))
+  })
+
+  # Tests for mcmodule_converg
+  test_that("mcmodule_converg works with tiny_threshold and returns correct structure", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    result <- mcmodule_converg(
+      test_module,
+      print_summary = FALSE,
+      tiny_threshold = 1e-6,
+      progress = FALSE
+    )
 
     expect_s3_class(result, "data.frame")
 
@@ -485,7 +565,7 @@ suppressMessages({
       c(
         "expression",
         "variate",
-        "node",
+        "mcnode",
         "max_dif",
         "max_dif_scaled",
         "max_dif_mean",
@@ -549,8 +629,6 @@ suppressMessages({
     })
     expect_true(length(output) > 0)
     expect_true(any(grepl("Convergence Analysis Summary", output)))
-    expect_true(any(grepl("Stochastic Distributions Stability", output)))
-    expect_true(any(grepl("standardized:", output)))
     expect_s3_class(result, "data.frame")
   })
 
@@ -562,6 +640,8 @@ suppressMessages({
       data_keys = imports_data_keys
     )
 
+    mcmodule_info(test_module)
+
     output <- capture.output({
       result <- mcmodule_converg(
         test_module,
@@ -570,12 +650,15 @@ suppressMessages({
       )
     })
 
-    expect_true(any(grepl("\\[Convergence analysis\\] Expression", output)))
+    expect_true(any(grepl(
+      "\\[Convergence analysis\\] Module: 'test_module' Expression: 'imports'",
+      output
+    )))
     expect_true(any(grepl("imports", output)))
     expect_s3_class(result, "data.frame")
   })
 
-  test_that("mcmodule_converg works with custom threshold", {
+  test_that("mcmodule_converg works with custom convergence threshold", {
     test_module <- eval_module(
       exp = c(imports = imports_exp),
       data = imports_data,
@@ -647,5 +730,135 @@ suppressMessages({
     expect_true(is.numeric(result$max_dif_median_scaled))
     expect_true(is.numeric(result$max_dif_q025_scaled))
     expect_true(is.numeric(result$max_dif_q975_scaled))
+  })
+
+  test_that("mcmodule_converg works with combined modules with different variates", {
+    # Create first module with 6 variates
+    module1 <- eval_module(
+      exp = c(imports_1 = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    module1 <- add_prefix(module1)
+
+    # Create second module with 3 variates
+    data2 <- imports_data[1:3, ]
+    module2 <- eval_module(
+      exp = c(
+        imports_2 = imports_exp,
+        exp_a = quote({
+          half_no_detect <- no_detect * 0.5
+        })
+      ),
+      data = data2,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    module2 <- add_prefix(module2)
+
+    combined_module <- combine_modules(module1, module2)
+
+    result <- mcmodule_converg(
+      combined_module,
+      print_summary = FALSE,
+      progress = FALSE
+    )
+
+    expect_s3_class(result, "data.frame")
+    expect_equal(
+      unique(result$expression),
+      c("imports_1", "imports_2", "exp_a")
+    )
+    expect_equal(unique(result$module), c("module1", "module2"))
+    expect_equal(nrow(result), 53) # 6 imports_1 nodes × 6 variates + 6 imports_2 nodes × 3 variates + 1 exp_a nodes × 3 variates
+  })
+  test_that("mcmodule_converg works with combined modules with mcnodes that do not converge", {
+    ndvar(10)
+    # Create first module with a node that converges
+    module1 <- eval_module(
+      exp = c(imports_1 = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    module1 <- add_prefix(module1)
+
+    # Create second module with a node that does not converge (e.g. uniform distribution with wide range)
+    data2 <- imports_data[1:3, ]
+    module2 <- eval_module(
+      exp = c(
+        imports_2 = quote({
+          non_converging_node <- mcstoc(runif, min = 0, max = 10000)
+        })
+      ),
+      data = data2,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    module2 <- add_prefix(module2)
+
+    combined_module <- combine_modules(module1, module2)
+
+    # Expect error to adjust quantiles
+    expect_error(
+      {
+        result <- mcmodule_converg(
+          combined_module,
+          print_summary = FALSE,
+          progress = FALSE
+        )
+      },
+      "Only 1 iterations available for convergence analysis between quantiles 0.95 and 1."
+    )
+
+    result <- mcmodule_converg(
+      combined_module,
+      print_summary = FALSE,
+      progress = FALSE,
+      from_quantile = 0.75,
+      to_quantile = 1
+    )
+
+    expect_s3_class(result, "data.frame")
+    expect_true(any(result$conv_01 == FALSE))
+    expect_true(any(result$conv_025 == FALSE))
+    expect_true(any(result$conv_05 == FALSE))
+
+    ndvar(1001)
+  })
+
+  test_that("mcmodule_converg mc_names parameter filters nodes correctly", {
+    test_module <- eval_module(
+      exp = c(imports = imports_exp),
+      data = imports_data,
+      mctable = imports_mctable,
+      data_keys = imports_data_keys
+    )
+
+    # Get results with all nodes
+    result_all <- mcmodule_converg(
+      test_module,
+      print_summary = FALSE,
+      progress = FALSE
+    )
+    all_nodes <- unique(result_all$mcnode)
+
+    # Get results with subset of nodes
+    subset_nodes <- c("w_prev", "test_origin")
+    result_subset <- mcmodule_converg(
+      test_module,
+      mc_names = subset_nodes,
+      print_summary = FALSE,
+      progress = FALSE
+    )
+
+    expect_s3_class(result_subset, "data.frame")
+    expect_true(all(unique(result_subset$mcnode) %in% subset_nodes))
+    expect_true(nrow(result_subset) <= nrow(result_all))
   })
 })

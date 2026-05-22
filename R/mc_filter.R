@@ -1,7 +1,7 @@
 #' Filter mcnode Variates by Condition
 #'
 #' Filters variates (data rows) from an mcnode based on logical conditions,
-#' similar to `dplyr::filter()`. Can return a new node in the mcmodule or
+#' similar to [dplyr::filter()]. Can return a new node in the mcmodule or
 #' return a filtered mcnode directly.
 #'
 #' @param mcmodule (mcmodule object, optional). Module containing the node.

@@ -97,6 +97,37 @@ suppressMessages({
     expect_error(at_least_one(test_module, c("p_1", "missing")), "not found")
   })
 
+  test_that("at_least_one works with two from_sample_design nodes", {
+    # Create test module with from_sample_design nodes
+    sample_design <- data.frame(
+      input_a = c(0.1, 0.2, 0.3),
+      stringsAsFactors = FALSE
+    )
+
+    sample_module <- eval_module(
+      exp = list(
+        sample = quote({
+          result_a <- input_a
+          result_b <- input_a + 2
+        })
+      ),
+      data = data.frame(),
+      sample_design = sample_design
+    )
+
+    # Test basic functionality
+    result <- at_least_one(
+      sample_module,
+      c("result_a", "result_b"),
+      name = "p_combined"
+    )
+
+    # Check node attributes
+    expect_equal(result$node_list$p_combined$type, "total")
+    expect_equal(result$node_list$p_combined$param, c("result_a", "result_b"))
+    expect_equal(result$node_list$p_combined$from_sample_design, TRUE)
+  })
+
   test_that("generate_all_name works", {
     # Basic functionality
     expect_equal(generate_all_name(c("test_a", "test_b")), "test_all")
@@ -237,12 +268,12 @@ suppressMessages({
 
     # Setup the test mctable
     test_mctable <- data.frame(
-      mcnode = c("sites_n"),
-      description = c("Number of sites"),
-      mc_func = c("runif"),
-      from_variable = c(NA),
-      transformation = c(NA),
-      sensi_analysis = c(FALSE)
+      mcnode = c("times_n", "sites_n"),
+      description = c("Number of trials", "Number of sites"),
+      mc_func = c("runif", "runif"),
+      from_variable = c(NA, NA),
+      transformation = c(NA, NA),
+      sample_space = c("min = 1, max = 10", "min = 2, max = 5")
     )
     set_mctable(test_mctable)
 
@@ -445,6 +476,28 @@ suppressMessages({
     )
 
     reset_mctable()
+  })
+
+  test_that("trial_totals works with sampling design", {
+    # Create a test module with mock data
+    X <- mctable_sobol_matrices(imports_mctable, N = 1000)
+    sd_module <- eval_module(
+      exp = imports_exp,
+      data = NULL,
+      sample_design = X,
+      mctable = imports_mctable
+    )
+    result <- trial_totals(
+      mcmodule = sd_module,
+      mc_names = c("no_detect"),
+      trials_n = "animals_n",
+      subsets_n = "farms_n",
+      subsets_p = "h_prev",
+      sample_design = X,
+      mctable = imports_mctable
+    )
+    expect_true("no_detect_set" %in% names(result$node_list))
+    expect_true(result$node_list$no_detect_subset_n$from_sample_design)
   })
 
   test_that("at_least_one naming options work", {
@@ -989,5 +1042,70 @@ suppressMessages({
 
     # Check summary
     expect_equal(nrow(result$node_list$risk_agg$summary), 2)
+  })
+  test_that("agg_totals handles from_sample_design nodes correctly", {
+    # Create test module with a node from sample design
+    sample_design <- data.frame(
+      input_a = c(0.1, 0.2, 0.3),
+      input_b = c(0.4, 0.5, 0.6)
+    )
+    sample_module <- eval_module(
+      exp = list(
+        sample_exp = quote({
+          result_a <- input_a + 2
+          result_b <- input_b + result_a
+        })
+      ),
+      data = NULL,
+      sample_design = sample_design
+    )
+
+    # Aggregate the results
+    result <- agg_totals(
+      sample_module,
+      mc_name = c("result_b")
+    )
+
+    # Check that the aggregated node is created and has correct metadata
+    expect_true("result_b_agg" %in% names(result$node_list))
+    expect_true(is.mcnode(result$node_list$result_b_agg$mcnode))
+    expect_equal(result$node_list$result_b_agg$from_sample_design, TRUE)
+  })
+
+  test_that("agg_totals handles from_sample_design nodes with data and keys correctly", {
+    # Create test module with a node from sample design
+    sample_design <- data.frame(
+      input_a = c(0.1, 0.2, 0.3),
+      input_b = c(0.4, 0.5, 0.6)
+    )
+
+    sample_data <- data.frame(
+      input_a = c(0.1, 0.2, 0.3, 0.1, 0.2, 0.3),
+      input_b = c(0.4, 0.5, 0.6, 0.4, 0.5, 0.6),
+      category = c("A", "B", "C", "A", "B", "C"),
+      group = c("G1", "G1", "G1", "G2", "G2", "G2")
+    )
+
+    sample_module <- eval_module(
+      exp = list(
+        sample_exp = quote({
+          result_a <- input_a + 2
+          result_b <- input_b + result_a
+        })
+      ),
+      data = sample_data,
+      sample_design = sample_design
+    )
+
+    # Aggregate the results
+    result <- agg_totals(
+      sample_module,
+      mc_name = c("result_b"),
+      agg_keys = c("category")
+    )
+    # Check that the aggregated node is created and has correct metadata
+    expect_true("result_b_agg" %in% names(result$node_list))
+    expect_true(is.mcnode(result$node_list$result_b_agg$mcnode))
+    expect_equal(result$node_list$result_b_agg$from_sample_design, TRUE)
   })
 })

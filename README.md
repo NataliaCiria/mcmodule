@@ -8,7 +8,7 @@
 
 <!-- badges: end -->
 
-Framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to facilitate working with multiple risk pathways, variates and scenarios. It provides tools to organize risk analysis in independent flexible modules, perform multivariate mcnode operations, automate the creation of mcnodes and visualise risk analysis models.
+Framework for building modular Monte Carlo risk analysis models. It extends the capabilities of `mc2d` to facilitate working with multiple risk pathways, variates and scenarios. It provides tools to organize risk analysis in independent flexible modules, align multivariate mcnodes, automate the creation of mcnodes, visualise model structure, assess convergence, and perform sensitivity analysis.
 
 ## Installation
 
@@ -105,7 +105,18 @@ mc_network(example_mcmodule, legend = TRUE)
 
 ![](man/figures/mc_network_example.png)
 
-Further documentation and examples can be found in the [vignette](https://nataliaciria.com/mcmodule/articles/mcmodule.html) and in the [introduction](https://nataliaciria.com/mcmodule/articles/intro.html) article.
+
+6.  You can also perform model diagnosis, such as checking convergence and inputs-output uncertainty correlation analysis
+
+``` r
+# Convergence analysis
+exmaple_converg<-mcmodule_converg(example_mcmodule)
+
+# Correlation analysis
+exmaple_corr<-mcmodule_corr(example_mcmodule, output = "result_agg")
+```
+
+Further documentation and examples can be found in the [vignette](https://nataliaciria.com/mcmodule/articles/mcmodule.html).
 
 ## Citations
 

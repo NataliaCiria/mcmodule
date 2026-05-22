@@ -57,7 +57,7 @@ Either:
 }
 \description{
 Filters variates (data rows) from an mcnode based on logical conditions,
-similar to \code{dplyr::filter()}. Can return a new node in the mcmodule or
+similar to \code{\link[dplyr:filter]{dplyr::filter()}}. Can return a new node in the mcmodule or
 return a filtered mcnode directly.
 }
 \details{

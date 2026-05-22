@@ -16,9 +16,10 @@ mcmodule_dim_check <- function(mcmodule, mc_names = NULL) {
   mc_names <- mc_names %||% names(mcmodule$node_list)
 
   # Check that all mcnodes have 1 or the same number of uncertainty values
-  n_uncertainty <- unique(sapply(mc_names, function(x) {
+  n_uncertainty <- unlist(unique(sapply(mc_names, function(x) {
     dim(mcmodule$node_list[[x]][["mcnode"]])[1]
-  }))
+  })))
+
   n_uncertainty <- n_uncertainty[n_uncertainty != 1]
 
   if (length(unique(n_uncertainty)) > 1) {
@@ -28,9 +29,10 @@ mcmodule_dim_check <- function(mcmodule, mc_names = NULL) {
   }
 
   # Check that all mcnodes have 1 or the same number of variate simulations
-  n_variate <- unique(sapply(mc_names, function(x) {
+  n_variate <- unlist(unique(sapply(mc_names, function(x) {
     dim(mcmodule$node_list[[x]][["mcnode"]])[3]
-  }))
+  })))
+
   n_variate <- n_variate[n_variate != 1]
   if (length(unique(n_variate)) > 1) {
     stop(
@@ -57,7 +59,7 @@ mcmodule_dim_check <- function(mcmodule, mc_names = NULL) {
 #' @return A list of matrices (one per variate). Each matrix has uncertainty
 #'   simulations as rows and mcnodes as columns.
 mcmodule_to_matrices <- function(mcmodule, mc_names = NULL) {
-  mc_names <- mc_names %||% names(mcmodule$node_list)
+  mc_names <- mc_names[mc_names %in% names(mcmodule$node_list)]
   dims <- mcmodule_dim_check(mcmodule, mc_names)
   # Initialize list to store matrices: one per n_variate
   matrices <- vector("list", dims$n_variate)
@@ -163,28 +165,32 @@ mcmodule_to_mc <- function(
 #' @param match_variates (logical). If TRUE, match input nodes to output variates
 #'   when data dimensions differ. Default: TRUE.
 #' @param variates_as_nsv (logical). If TRUE, combine all variates into one `mc`
-#'   object; if FALSE, analyse each variate separately. See `mcmodule_to_mc()`.
+#'   object; if FALSE, analyse each variate separately. See [mcmodule_to_mc()].
 #'   Default: FALSE.
 #' @param print_summary (logical). If TRUE, print correlation analysis summary.
 #'   Default: TRUE.
 #' @param progress (logical). If TRUE, print progress information while running.
 #'   Default: FALSE.
 #' @param method (character). Correlation coefficient type: "spearman" (default),
-#'   "kendall", or "pearson". See `stats::cor()`. Default: "spearman".
+#'   "kendall", or "pearson". See [stats::cor()]. Default: "spearman".
 #' @param use (character). Method for handling missing values: "all.obs",
-#'   "complete.obs", or "pairwise.complete.obs". See `stats::cor()`.
+#'   "complete.obs", or "pairwise.complete.obs". See [stats::cor()].
 #'   Default: "all.obs".
 #' @param lim (numeric vector). Quantiles for credible interval computation (reserved
 #'   for two-dimensional models). Default: `c(0.025, 0.975)`.
+#' @param mc_names (character vector, optional). Node names to include in analysis.
+#'   If NULL (default), includes all nodes in the module. Default: NULL.
+#' @param plot (logical). If TRUE, plots a tornado plot generated from the
+#'   computed correlation table using [mcmodule_tornado()]. Default: FALSE.
 #' @return A data frame with correlation coefficients and metadata. Columns include:
 #'   \itemize{
 #'     \item exp: Expression name
 #'     \item exp_n: Expression number
 #'     \item variate: Variate number
-#'     \item output: Output node name
+#'     \item output: Output node names
 #'     \item input: Input node name
 #'     \item value: Correlation coefficient value
-#'     \item strength: Qualitative strength of association (Very strong, Strong, Moderate, Weak, None)
+#'     \item strength: Qualitative strength of association (Very strong, Strong, Moderate, Weak, Very weak/None)
 #'     \item method: Correlation method used (spearman, kendall, or pearson)
 #'     \item use: Method for handling missing values (passed to the correlation function)
 #'     \item warnings: Any warnings generated during correlation calculation (if present)
@@ -195,7 +201,7 @@ mcmodule_to_mc <- function(
 #' @examples
 #' mcmodule <- agg_totals(
 #'   mcmodule = imports_mcmodule,
-#'   mc_name = "no_detect_a",
+#'   mc_name = "no_detect",
 #'   agg_keys = "pathogen"
 #' )
 #' cor_results <- mcmodule_corr(mcmodule)
@@ -209,11 +215,13 @@ mcmodule_corr <- function(
   by_exp = FALSE,
   match_variates = TRUE,
   variates_as_nsv = FALSE,
+  mc_names = NULL,
   print_summary = TRUE,
   progress = FALSE,
   method = c("spearman", "kendall", "pearson"),
   use = "all.obs",
-  lim = c(0.025, 0.975)
+  lim = c(0.025, 0.975),
+  plot = FALSE
 ) {
   info <- mcmodule_info(mcmodule)
   module_names <- unique(info$module_exp_data$module)
@@ -237,6 +245,10 @@ mcmodule_corr <- function(
       info$module_exp_data$module == module_names[h]
     ]
 
+    data_name_h <- info$module_exp_data$data_name[
+      info$module_exp_data$module == module_names[h]
+    ]
+
     if (progress) {
       exp_label <- paste(exp_h, collapse = ", ")
       cat(sprintf(
@@ -246,17 +258,23 @@ mcmodule_corr <- function(
         total_modules
       ))
     }
-    # Get input (type == "in_node") mcnodes names in mcmodule$node_list for this expression (module == exp_h)
+    # Get input (type == "in_node") mcnodes names in mcmodule$node_list for this expression (module == exp_h) or from sample design (from_sample_design) if match_variates = TRUE
     # Only include nodes that have more than 1 uncertainty simulation (nrow > 1) or more than 1 variate (if variates_as_nsv = TRUE)
     exp_h_inputs <- names(mcmodule$node_list)[
       unlist(lapply(names(mcmodule$node_list), function(x) {
         mcnode_x <- mcmodule$node_list[[x]][["mcnode"]]
-        mcmodule$node_list[[x]][["exp_name"]] %in%
+        (((mcmodule$node_list[[x]][["exp_name"]] %in%
           exp_h &&
-          mcmodule$node_list[[x]][["type"]] == "in_node" &&
+          (mcmodule$node_list[[x]][["type"]] == "in_node")) ||
+          (all(mcmodule$node_list[[x]][["data_name"]] == data_name_h) &&
+            (mcmodule$node_list[[x]][["type"]] == "in_node")))) &&
           (dim(mcnode_x)[1] > 1 || (variates_as_nsv && dim(mcnode_x)[3] > 1))
       }))
     ]
+    exp_h_inputs <- exp_h_inputs[exp_h_inputs %in% names(mcmodule$node_list)]
+    if (!is.null(mc_names)) {
+      exp_h_inputs <- exp_h_inputs[exp_h_inputs %in% mc_names]
+    }
 
     if (is.null(output)) {
       if (by_exp) {
@@ -283,61 +301,85 @@ mcmodule_corr <- function(
       info$module_exp_data$exp == exp_h
     ])
 
-    suppressMessages({
-      mc_match_data_h <- mc_match_data(
-        mcmodule,
-        output_h,
-        mcmodule$data[[data_name_h]]
-      )
-    })
+    if (!is.null(data_name_h) && !is.na(data_name_h)) {
+      suppressMessages({
+        mc_match_data_h <- mc_match_data(
+          mcmodule,
+          output_h,
+          mcmodule$data[[data_name_h]]
+        )
+      })
+      mc_output_h <- mc_match_data_h[[1]]
+      data_h <- mc_match_data_h[[2]]
+      keys_h <- mc_match_data_h[[3]]
 
-    mc_output_h <- mc_match_data_h[[1]]
-    data_h <- mc_match_data_h[[2]]
-    keys_h <- mc_match_data_h[[3]]
+      # Check data and keys are compatible
+      if (
+        !all(
+          keys_h[intersect(names(keys_h), names(data_h))] ==
+            data_h[intersect(names(keys_h), names(data_h))]
+        )
+      ) {
+        stop(paste0(
+          "Data and keys are not compatible for expression '",
+          exp_h,
+          "'"
+        ))
+      }
 
-    # Check data and keys are compatible
-    if (
-      !all(
-        keys_h[intersect(names(keys_h), names(data_h))] ==
-          data_h[intersect(names(keys_h), names(data_h))]
-      )
-    ) {
-      stop(paste0(
-        "Data and keys are not compatible for expression '",
-        exp_h,
-        "'"
-      ))
-    }
+      # Create a copy of mcmodule to modify
+      mcmodule_h <- mcmodule
 
-    # Create a copy of mcmodule to modify
-    mcmodule_h <- mcmodule
+      # Match input mcnodes to output mcnode if match_variates is TRUE and data dimensions differ
+      if (
+        match_variates &&
+          (!all(
+            dim(data_h) == dim(mcmodule_h$data[[data_name_h]]),
+            na.rm = TRUE
+          ) ||
+            !all(data_h == mcmodule_h$data[[data_name_h]], na.rm = TRUE))
+      ) {
+        for (input_name in exp_h_inputs) {
+          mc_input <- mcmodule_h$node_list[[input_name]][["mcnode"]]
+          suppressMessages({
+            mc_input_matched <- mc_match_data(
+              mcmodule_h,
+              input_name,
+              data_h,
+              keys_names = intersect(names(data_h), info$global_keys)
+            )[[1]]
+            mc_input_matched
+            mcmodule_h$node_list[[input_name]][["mcnode"]] <- mc_input_matched
+          })
+        }
+      }
 
-    # Match input mcnodes to output mcnode if match_variates is TRUE and data dimensions differ
-    if (
-      match_variates &&
-        (!all(
-          dim(data_h) == dim(mcmodule_h$data[[data_name_h]]),
-          na.rm = TRUE
-        ) ||
-          !all(data_h == mcmodule_h$data[[data_name_h]], na.rm = TRUE))
-    ) {
+      # Temporarily replace output mcnode with matched output
+      mcmodule_h$node_list[[output_h]][["mcnode"]] <- mc_output_h
+    } else {
+      # Create a copy of mcmodule to modify
+      mcmodule_h <- mcmodule
+
+      # Check that all nodes only have one variate
       for (input_name in exp_h_inputs) {
         mc_input <- mcmodule_h$node_list[[input_name]][["mcnode"]]
-        suppressMessages({
-          mc_input_matched <- mc_match_data(
-            mcmodule_h,
+        if (dim(mc_input)[3] > 1) {
+          stop(paste0(
+            "Input node '",
             input_name,
-            data_h,
-            keys_names = intersect(names(data_h), info$global_keys)
-          )[[1]]
-          mc_input_matched
-          mcmodule_h$node_list[[input_name]][["mcnode"]] <- mc_input_matched
-        })
+            "' has more than one variate. Please provide matching data or set match_variates = FALSE."
+          ))
+        }
+      }
+
+      if (dim(mc_output)[3] > 1) {
+        stop(paste0(
+          "Output node '",
+          output_h,
+          "' has more than one variate. Please provide matching data or set match_variates = FALSE."
+        ))
       }
     }
-
-    # Temporarily replace output mcnode with matched output
-    mcmodule_h$node_list[[output_h]][["mcnode"]] <- mc_output_h
 
     # Convert mcmodule to mc object with only inputs and output
     mc_h <- mcmodule_to_mc(
@@ -350,22 +392,22 @@ mcmodule_corr <- function(
     if (variates_as_nsv && inherits(mc_h, "mc")) {
       mc_h <- list(mc_h)
     }
-
+    warnings <- c()
     # Calculate correlation for this expression and variate
     for (i in seq_along(mc_h)) {
       tornado_result <- local({
-        warnings <- character()
+        wanings_h_i <- character()
 
         tornado_h_i <- tryCatch(
           withCallingHandlers(
             tornado(mc_h[[i]], output = output_h, method = method),
             warning = function(w) {
-              warnings <<- c(warnings, conditionMessage(w))
+              wanings_h_i <<- c(wanings_h_i, conditionMessage(w))
               invokeRestart("muffleWarning")
             }
           ),
           error = function(e) {
-            warnings <<- c(warnings, paste("Error:", conditionMessage(e)))
+            wanings_h_i <<- c(wanings_h_i, paste("Error:", conditionMessage(e)))
             NULL
           }
         )
@@ -396,13 +438,14 @@ mcmodule_corr <- function(
       coor_h_i$exp <- paste(exp_h, collapse = ", ")
       coor_h_i$exp_n <- h
       coor_h_i$module <- module_names[h]
-      coor_h_i[intersect(names(data_h), info$global_keys)] <- data_h[
-        i,
-        intersect(names(data_h), info$global_keys)
-      ]
-
-      if (length(tornado_result$warnings) > 0) {
-        coor_h_i$warnings <- paste(tornado_result$warnings, collapse = "; ")
+      if (!is.null(data_name_h) && !is.na(data_name_h)) {
+        coor_h_i[intersect(names(data_h), info$global_keys)] <- data_h[
+          i,
+          intersect(names(data_h), info$global_keys)
+        ]
+      }
+      if (length(tornado_result$wanings_h_i) > 0) {
+        warnings <- c(warnings, wanings_h_i)
       }
 
       coor <- dplyr::bind_rows(coor, coor_h_i)
@@ -423,14 +466,14 @@ mcmodule_corr <- function(
     } else if (abs_r >= 0.2) {
       return("Weak")
     } else {
-      return("None")
+      return("Very weak/None")
     }
   })
 
-  #Move warnings column to the end if it exists base R
-  if ("warnings" %in% names(coor)) {
-    coor <- coor[, c(setdiff(names(coor), "warnings"), "warnings")]
-  }
+  coor$strength <- ordered(
+    coor$strength,
+    levels = c("Very weak/None", "Weak", "Moderate", "Strong", "Very strong")
+  )
 
   if (print_summary) {
     # Print correlation analysis summary
@@ -518,7 +561,13 @@ mcmodule_corr <- function(
       # Classify inputs by correlation strength using the new classification
       cat("\n\nInput Correlation Strength Distribution:")
       strength_counts <- table(coor$strength)
-      strength_order <- c("Very strong", "Strong", "Moderate", "Weak", "None")
+      strength_order <- c(
+        "Very strong",
+        "Strong",
+        "Moderate",
+        "Weak",
+        "Very weak/None"
+      )
       for (s in strength_order) {
         if (s %in% names(strength_counts)) {
           pct_strength <- strength_counts[s] / nrow(coor) * 100
@@ -548,8 +597,8 @@ mcmodule_corr <- function(
     }
 
     # Warning summary (only if warnings exist)
-    if ("warnings" %in% names(coor)) {
-      n_warnings <- sum(!is.na(coor$warnings))
+    if (length(warnings) > 0) {
+      n_warnings <- length(warnings)
       if (n_warnings > 0) {
         cat("\n\nWarnings and Errors:")
         cat(
@@ -558,16 +607,8 @@ mcmodule_corr <- function(
           sprintf("(%.2f%%)", n_warnings / nrow(coor) * 100)
         )
 
-        # Get unique inputs with warnings
-        inputs_with_warnings <- unique(coor$input[!is.na(coor$warnings)])
-        cat(
-          "\n- Input nodes with warnings: ",
-          paste(inputs_with_warnings, collapse = ", "),
-          sep = ""
-        )
-
         cat("\n- Unique warning/error types:")
-        unique_warnings <- unique(coor$warnings[!is.na(coor$warnings)])
+        unique_warnings <- unique(warnings)
         for (i in seq_along(unique_warnings)) {
           cat(
             "\n  ",
@@ -582,6 +623,10 @@ mcmodule_corr <- function(
     }
 
     cat("\n")
+  }
+
+  if (isTRUE(plot)) {
+    plot(mcmodule_tornado(corr_results = coor))
   }
 
   coor
@@ -602,9 +647,12 @@ mcmodule_corr <- function(
 #' @param to_quantile (numeric). Upper bound quantile for analysis. Default: 1.
 #' @param conv_threshold (numeric, optional). Custom convergence threshold for
 #'   standardised differences. Default: NULL.
+#' @param tiny_threshold (numeric). Threshold for identifying negligible differences, even if they don't meet the convergence threshold. Default: 0.0001.
 #' @param print_summary (logical). If TRUE, print convergence analysis summary.
 #'   Default: TRUE.
 #' @param progress (logical). If TRUE, print progress information. Default: FALSE.
+#' @param mc_names (character vector, optional). Node names to include in analysis.
+#'   If NULL (default), includes all nodes in the module. Default: NULL.
 #'
 #' @return A data frame with convergence statistics. Each row represents one node.
 #'   Key columns:
@@ -614,7 +662,6 @@ mcmodule_corr <- function(
 #'     \item node: Node name.
 #'     \item max_dif_scaled: Maximum standardised difference.
 #'     \item max_dif: Maximum raw difference.
-#'     \item conv_threshold: Convergence at custom threshold, if provided.
 #'     \item conv_01, conv_025, conv_05: Convergence at 1%, 2.5%, 5% thresholds.
 #'   }
 #'
@@ -644,8 +691,10 @@ mcmodule_converg <- function(
   from_quantile = 0.95,
   to_quantile = 1,
   conv_threshold = NULL,
+  tiny_threshold = NULL,
   print_summary = TRUE,
-  progress = FALSE
+  progress = FALSE,
+  mc_names = NULL
 ) {
   # Helper function to calculate statistics (mean and quantiles) for convergence analysis
   mc_stat <- function(i, x) {
@@ -662,18 +711,25 @@ mcmodule_converg <- function(
 
   # Get mcmodule index information
   info <- mcmodule_info(mcmodule)
-  module_names <- unique(info$module_exp_data$module)
+
+  if (info$n_modules == 1) {
+    info$module_exp_data$module <- deparse(substitute(mcmodule))
+  }
+
+  module_exp_names <- paste(
+    info$module_exp_data$module,
+    info$module_exp_data$exp
+  )
 
   # Initialize list to store convergence results
   mc_convergence_list <- list()
   list_index <- 1
 
   # Iterate through each module (expression group) in the Monte Carlo module
-  for (h in seq_along(module_names)) {
-    expression <- module_names[h]
-    exp_h <- info$module_exp_data$exp[
-      info$module_exp_data$module == module_names[h]
-    ]
+  for (h in seq_along(module_exp_names)) {
+    module_exp_h <- module_exp_names[h]
+    module_h <- info$module_exp_data$module[h]
+    exp_h <- info$module_exp_data$exp[h]
 
     # Get all nodes for this expression
     exp_h_nodes <- names(mcmodule$node_list)[
@@ -681,31 +737,33 @@ mcmodule_converg <- function(
         mcmodule$node_list[[x]][["exp_name"]] %in% exp_h
       }))
     ]
-
-    dims <- mcmodule_dim_check(mcmodule, exp_h_nodes)
+    if (!is.null(mc_names)) {
+      exp_h_nodes <- exp_h_nodes[exp_h_nodes %in% mc_names]
+    }
 
     if (progress) {
-      exp_label <- paste(exp_h, collapse = ", ")
+      module_exp_label <- paste(module_exp_h, collapse = ", ")
       cat(sprintf(
-        "\n[Convergence analysis] Expression %s (%d/%d)\n",
-        exp_label,
+        "\n[Convergence analysis] Module: '%s' Expression: '%s' (%d/%d)\n",
+        module_h,
+        exp_h,
         h,
-        length(module_names)
+        length(module_exp_names)
       ))
     }
 
     # Convert mcmodule to mc objects for this expression
-    mc_list <- mcmodule_to_mc(mcmodule, mc_names = exp_h_nodes)
+    # mc_list <- mcmodule_to_mc(mcmodule, mc_names = exp_h_nodes)
 
-    # Process each variate
-    for (j in seq_along(mc_list)) {
-      variate <- j
-      mc_j <- mc_list[[j]]
+    # Process each node
+    for (j in seq_along(exp_h_nodes)) {
+      node_name_j <- exp_h_nodes[j]
+      mcnode_j <- mcmodule$node_list[[node_name_j]][["mcnode"]]
 
-      # Analyze convergence for each node
-      for (k in seq_along(mc_j)) {
-        node <- names(mc_j)[k]
-        x <- mc_j[[k]]
+      # Analyze convergence for variate
+      for (k in 1:dim(mcnode_j)[[3]]) {
+        variate_k <- k
+        x <- extractvar(mcnode_j, k)
 
         # Only analyze nodes with more than one iteration and that have variability/uncertainty
         if (dim(x)[1] > 1 & !max(x) == min(x)) {
@@ -714,6 +772,23 @@ mcmodule_converg <- function(
           conv_end <- floor(dim(x)[1] * to_quantile)
           n_sim <- dim(x)[1]
           n_sim_conv <- conv_end - conv_start
+
+          # Stop if insufficient iterations for convergence analysis at the specified quantiles
+          if (n_sim_conv < 3) {
+            stop(paste0(
+              "Node '",
+              node_name_j,
+              "' variate ",
+              variate_k,
+              ": Only ",
+              n_sim_conv,
+              " iterations available for convergence analysis between quantiles ",
+              from_quantile,
+              " and ",
+              to_quantile,
+              ". Please adjust quantiles or ensure sufficient iterations."
+            ))
+          }
 
           x_conv <- vapply(
             conv_start:conv_end,
@@ -762,25 +837,30 @@ mcmodule_converg <- function(
             max_dif_q975 / mean_stat_q975
           )
 
-          if (!is.null(conv_threshold)) {
-            conv_manual <- abs(max_dif_scaled) < conv_threshold
-          }
-
-          tiny <- max_dif < 0.001
-
           conv_01 <- abs(max_dif_scaled) < 0.01
           conv_025 <- abs(max_dif_scaled) < 0.025
           conv_05 <- abs(max_dif_scaled) < 0.05
 
-          conv_01_tiny <- conv_01 | tiny
-          conv_025_tiny <- conv_025 | tiny
-          conv_05_tiny <- conv_05 | tiny
+          if (!is.null(tiny_threshold)) {
+            tiny <- max_dif < tiny_threshold
+            conv_01_tiny <- conv_01 | tiny
+            conv_025_tiny <- conv_025 | tiny
+            conv_05_tiny <- conv_05 | tiny
+          }
+
+          if (!is.null(conv_threshold)) {
+            conv_manual <- abs(max_dif_scaled) < conv_threshold
+            if (!is.null(tiny_threshold)) {
+              conv_manual_tiny <- conv_manual | tiny
+            }
+          }
 
           if (!is.na(max_dif) && !is.na(max_dif_scaled)) {
             mc_convergence_list[[list_index]] <- data.frame(
-              expression = expression,
-              variate = variate,
-              node = node,
+              module = module_h,
+              expression = exp_h,
+              variate = variate_k,
+              mcnode = node_name_j,
               mean_value = mean_value,
               max_dif = max_dif,
               max_dif_mean = max_dif_mean,
@@ -792,15 +872,26 @@ mcmodule_converg <- function(
               max_dif_median_scaled = max_dif_median_scaled,
               max_dif_q025_scaled = max_dif_q025_scaled,
               max_dif_q975_scaled = max_dif_q975_scaled,
-              conv_manual = if (!is.null(conv_threshold)) conv_manual else NA,
               conv_01 = conv_01,
               conv_025 = conv_025,
-              conv_05 = conv_05,
-              tiny = tiny,
-              conv_01_tiny = conv_01_tiny,
-              conv_025_tiny = conv_025_tiny,
-              conv_05_tiny = conv_05_tiny
+              conv_05 = conv_05
             )
+
+            if (!is.null(conv_threshold)) {
+              mc_convergence_list[[list_index]]$conv_manual <- conv_manual
+              if (!is.null(tiny_threshold)) {
+                mc_convergence_list[[
+                  list_index
+                ]]$conv_manual_tiny <- conv_manual_tiny
+              }
+            }
+
+            if (!is.null(tiny_threshold)) {
+              mc_convergence_list[[list_index]]$tiny <- tiny
+              mc_convergence_list[[list_index]]$conv_01_tiny <- conv_01_tiny
+              mc_convergence_list[[list_index]]$conv_025_tiny <- conv_025_tiny
+              mc_convergence_list[[list_index]]$conv_05_tiny <- conv_05_tiny
+            }
 
             list_index <- list_index + 1
           }
@@ -814,8 +905,8 @@ mcmodule_converg <- function(
 
   # Prepare data for plotting
   # Find the point with the highest max_dif_scaled per input
-  max_points <- conv_df[order(conv_df$node, -conv_df$max_dif_scaled), ]
-  max_points <- max_points[!duplicated(max_points$node), ]
+  max_points <- conv_df[order(conv_df$mcnode, -conv_df$max_dif_scaled), ]
+  max_points <- max_points[!duplicated(max_points$mcnode), ]
 
   # Determine threshold for labeling
   label_threshold <- if (!is.null(conv_threshold)) conv_threshold else 0.025
@@ -834,20 +925,24 @@ mcmodule_converg <- function(
   # Calculate mean max_dif_scaled per node for ordering
   node_order <- stats::aggregate(
     conv_df$max_dif_scaled,
-    list(node = conv_df$node),
+    list(node = conv_df$mcnode),
     max
   )
   node_order <- node_order[order(-node_order$x), ]
 
   # Convert node to factor with levels ordered by max difference
-  conv_df$node <- factor(conv_df$node, levels = node_order$node)
-  max_points$node <- factor(max_points$node, levels = node_order$node)
+  conv_df$mcnode <- factor(conv_df$mcnode, levels = node_order$node)
+  max_points$mcnode <- factor(max_points$mcnode, levels = node_order$node)
+
+  total_nodes <- length(unique(conv_df$mcnode))
 
   if (print_summary) {
     # Print analysis results summary
     cat("\n=== Convergence Analysis Summary ===\n")
-    cat("\nAnalysis Parameters:")
+    cat("\nAnalysis Parameters")
     cat("\n- Number of simulations:", n_sim)
+    cat("\n- Total nodes analyzed:", total_nodes)
+    cat("\n- Total variates analyzed:", nrow(conv_df))
     cat("\n- Simulation quantile range:", from_quantile, "to", to_quantile)
     cat(
       "\n- Simulations range:",
@@ -859,10 +954,11 @@ mcmodule_converg <- function(
     if (!is.null(conv_threshold)) {
       cat("\n- Custom convergence threshold:", conv_threshold)
     }
+    if (!is.null(tiny_threshold)) {
+      cat("\n- Tiny difference threshold:", tiny_threshold)
+    }
 
     # Calculate convergence statistics
-    total_nodes <- nrow(conv_df)
-
     pct <- function(x) {
       if (x == 0) {
         "0%"
@@ -871,98 +967,123 @@ mcmodule_converg <- function(
       }
     }
 
-    cat("\n\nConvergence Results:")
-    cat("\n- Total nodes analyzed:", total_nodes)
+    cat("\n\nConvergence Results")
+    cat(
+      "\nMaximum divergence of node summary statistics (mean, median, 2.5th percentile and 97.5th percentile):"
+    )
+
+    format_non_converged <- function(x) {
+      x <- unique(as.character(x))
+      x <- x[!is.na(x) & nzchar(x)]
+      if (length(x) == 0) {
+        ""
+      } else {
+        paste0("\n", paste(x, collapse = ", "))
+      }
+    }
+
     if (!is.null(conv_threshold)) {
-      converged_manual <- sum(conv_df$conv_manual, na.rm = TRUE)
+      diverged_manual <- length(unique(conv_df$mcnode[!conv_df$conv_manual]))
+      diverged_manual_names <- conv_df$mcnode[!conv_df$conv_manual]
+
       cat(sprintf(
-        "\n- Nodes converged at %.4f threshold: %d (%s)",
+        "\n\n- More than %.4f divergence: %d (%s)",
         conv_threshold,
-        converged_manual,
-        pct(converged_manual / total_nodes * 100)
+        diverged_manual,
+        pct(diverged_manual / total_nodes * 100)
       ))
-    }
-
-    n_tiny <- sum(conv_df$tiny)
-    n_conv_01 <- sum(conv_df$conv_01)
-
-    converged_01 <- sum(conv_df$conv_01_tiny)
-    converged_025 <- sum(conv_df$conv_025_tiny)
-    converged_05 <- sum(conv_df$conv_05_tiny)
-
-    no_converged_05 <- total_nodes - converged_05
-
-    cat(sprintf(
-      "\n- Nodes with divergence below 0.001: %d (%s)",
-      n_tiny,
-      pct(n_tiny / total_nodes * 100)
-    ))
-
-    cat(sprintf(
-      "\n- Nodes with divergence below 1%% of their mean: %d (%s)",
-      n_conv_01,
-      pct(n_conv_01 / total_nodes * 100)
-    ))
-
-    cat(sprintf(
-      "\n- Nodes with divergence below 0.001 or 1%% of their mean: %d (%s)",
-      converged_01,
-      pct(converged_01 / total_nodes * 100)
-    ))
-
-    # Only print 2.5% if not all nodes converged at 1%
-    if (converged_01 < total_nodes) {
       cat(sprintf(
-        "\n- Nodes with divergence below 0.001 or 2.5%% of their mean: %d (%s)",
-        converged_025,
-        pct(converged_025 / total_nodes * 100)
+        "\n%s",
+        conv_threshold,
+        format_non_converged(diverged_manual_names)
       ))
+
+      if (!is.null(tiny_threshold)) {
+        diverged_manual_tiny <- length(unique(conv_df$mcnode[
+          !conv_df$conv_manual_tiny
+        ]))
+
+        diverged_manual_tiny_names <- conv_df$mcnode[!conv_df$conv_manual_tiny]
+
+        cat(sprintf(
+          "\n\n- More than %.4f divergence (over %.4f): %d (%s)",
+          conv_threshold,
+          tiny_threshold,
+          diverged_manual_tiny,
+          pct(diverged_manual_tiny / total_nodes * 100)
+        ))
+        cat(sprintf(
+          "\n%s",
+          conv_threshold,
+          format_non_converged(diverged_manual_tiny_names)
+        ))
+      }
     }
 
-    # Only print 5% if not all nodes converged at 2.5%
-    if (converged_025 < total_nodes) {
+    diverged_01 <- length(unique(conv_df$mcnode[!conv_df$conv_01]))
+    diverged_025 <- length(unique(conv_df$mcnode[!conv_df$conv_025]))
+    diverged_05 <- length(unique(conv_df$mcnode[!conv_df$conv_05]))
+
+    cat(sprintf(
+      "\n\n- More than 1%% divergence: %d (%s)",
+      diverged_01,
+      pct(diverged_01 / total_nodes * 100)
+    ))
+    diverged_names_01 <- conv_df$mcnode[
+      !conv_df$conv_01 & !is.na(conv_df$conv_01)
+    ]
+    cat(format_non_converged(diverged_names_01))
+
+    cat(sprintf(
+      "\n\n- More than 2.5%% divergence: %d (%s)",
+      diverged_025,
+      pct(diverged_025 / total_nodes * 100)
+    ))
+    diverged_names_025 <- conv_df$mcnode[
+      !conv_df$conv_025 & !is.na(conv_df$conv_025)
+    ]
+    cat(format_non_converged(diverged_names_025))
+
+    cat(sprintf(
+      "\n\n- More than 5%% divergence: %d (%s)",
+      diverged_05,
+      pct(diverged_05 / total_nodes * 100)
+    ))
+    diverged_names_05 <- conv_df$mcnode[
+      !conv_df$conv_05 & !is.na(conv_df$conv_05)
+    ]
+    cat(format_non_converged(diverged_names_05))
+
+    if (!is.null(tiny_threshold)) {
+      diverged_05_tiny <- length(unique(conv_df$mcnode[-conv_df$conv_05_tiny]))
+
+      diverged_05_tiny_names <- conv_df$mcnode[-conv_df$conv_05_tiny]
+
       cat(sprintf(
-        "\n- Nodes with divergence below 0.001 or 5%% of their mean: %d (%s)",
-        converged_05,
-        pct(converged_05 / total_nodes * 100)
+        "\n\n- More than 5%% divergence (over %.4f): %d (%s)",
+        tiny_threshold,
+        diverged_05_tiny,
+        pct(diverged_05_tiny / total_nodes * 100)
+      ))
+      cat(sprintf(
+        "\n%s",
+        conv_threshold,
+        format_non_converged(diverged_05_tiny_names)
       ))
     }
-
-    # Print deviation statistics
-    cat("\n\nStochastic Distributions Stability:")
-    cat("\n- Maximum deviation of mean: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_mean, na.rm = TRUE)))
-    cat(" (standardized: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_mean_scaled, na.rm = TRUE)))
-    cat(")")
-    cat("\n- Maximum deviation of median: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_median, na.rm = TRUE)))
-    cat(" (standardized: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_median_scaled, na.rm = TRUE)))
-    cat(")")
-    cat("\n- Maximum deviation of 2.5% quantile: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_q025, na.rm = TRUE)))
-    cat(" (standardized: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_q025_scaled, na.rm = TRUE)))
-    cat(")")
-    cat("\n- Maximum deviation of 97.5% quantile: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_q975, na.rm = TRUE)))
-    cat(" (standardized: ")
-    cat(sprintf("%.6f", max(conv_df$max_dif_q975_scaled, na.rm = TRUE)))
-    cat(")")
 
     # Happy message if all converged at 5% threshold
-    if (converged_01 == total_nodes) {
-      cat("\n\nAll nodes successfully converged at 1% threshold! :D\n")
-    } else if (converged_025 == total_nodes) {
-      cat("\n\nAll nodes successfully converged at 2.5% threshold! :)\n")
-    } else if (converged_05 == total_nodes) {
-      cat("\n\nAll nodes successfully converged at 5% threshold! :)\n")
+    if (diverged_01 == 0) {
+      cat("\n\nAll nodes successfully converged at 1%% threshold! :D\n")
+    } else if (diverged_025 == 0) {
+      cat("\n\nAll nodes successfully converged at 2.5%% threshold! :)\n")
+    } else if (diverged_05 == 0) {
+      cat("\n\nAll nodes successfully converged at 5%% threshold! :)\n")
     } else {
       cat(sprintf(
         "\n\n%d (%s) nodes did not converge at 5%% threshold :(",
-        no_converged_05,
-        pct((no_converged_05 / total_nodes) * 100)
+        diverged_05,
+        pct((diverged_05 / total_nodes) * 100)
       ))
     }
   }

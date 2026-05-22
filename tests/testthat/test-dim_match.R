@@ -109,6 +109,83 @@ suppressMessages({
       "3 variates per group"
     )
   })
+  test_that("mc_keys works for sample design nodes with no keys", {
+    # Create mock module with sample design node
+    sample_module <- list(
+      node_list = list(
+        sample_node = list(
+          from_sample_design = TRUE
+        )
+      )
+    )
+
+    result <- mc_keys(sample_module, "sample_node")
+    expect_equal(ncol(result), 1) # Only scenario_id
+    expect_true(all(result$scenario_id == "0"))
+  })
+
+  test_that("mc_keys works for sample design nodes with keys", {
+    # Create mock module with sample design node that has keys
+    sample_module <- list(
+      node_list = list(
+        sample_node = list(
+          from_sample_design = TRUE,
+          data_name = "sample_data",
+          keys = c("key1", "key2")
+        )
+      ),
+      data = list(
+        sample_data = data.frame(
+          key1 = c("A", "B"),
+          key2 = c(1, 2)
+        )
+      )
+    )
+
+    result <- mc_keys(sample_module, "sample_node")
+    expect_equal(ncol(result), 1) # Only scenario_id
+    expect_true(all(result$scenario_id == "0"))
+  })
+  test_that("mc_keys works for output nodes created with input nodes from sample design", {
+    # Evaluate module with sample design node and output node
+    reset_mctable()
+    sample_design <- data.frame(
+      input_a = c(1, 2),
+      input_b = c(3, 4),
+      stringsAsFactors = FALSE
+    )
+
+    test_data <- data.frame(
+      input_a = c(1, 2),
+      input_b = c(3, 4),
+      category = c("A", "B"),
+      stringsAsFactors = FALSE
+    )
+
+    test_data_keys <- list(
+      sample_data = list(
+        cols = names(test_data),
+        keys = c("category")
+      )
+    )
+
+    test_module <- eval_module(
+      exp = c(
+        sample = quote({
+          output_node <- input_a + input_b
+        })
+      ),
+      sample_design = sample_design,
+      data = test_data,
+      data_keys = test_data_keys
+    )
+
+    result <- mc_keys(test_module, "output_node")
+    expect_true(test_module$node_list$output_node$from_sample_design)
+    expect_equal(nrow(result), 1) # Only one variate
+    expect_equal(ncol(result), 1) # Only scenario_id
+    expect_true(all(result$scenario_id == "0"))
+  })
 
   test_that("mc_match group matching works", {
     test_module <- list(
@@ -347,12 +424,12 @@ suppressMessages({
     module <- combine_modules(previous_module, current_module)
 
     # Match output nodes in both modules
-    no_detect_a_keys <- mc_keys(mcmodule = module, mc_name = "no_detect_a")
+    no_detect_keys <- mc_keys(mcmodule = module, mc_name = "no_detect")
     expect_equal(
-      names(no_detect_a_keys),
+      names(no_detect_keys),
       c("scenario_id", "pathogen", "origin")
     )
-    expect_equal(dim(no_detect_a_keys), c(6, 3))
+    expect_equal(dim(no_detect_keys), c(6, 3))
 
     imported_contaminated_keys <- mc_keys(
       mcmodule = module,
@@ -364,7 +441,7 @@ suppressMessages({
     )
     expect_equal(dim(imported_contaminated_keys), c(4, 3))
 
-    result <- mc_match(module, "no_detect_a", "imported_contaminated")
+    result <- mc_match(module, "no_detect", "imported_contaminated")
     expect_equal(result$keys_xy$g_row.y, c(1, NA, NA, 2, NA, NA, 3, 4))
 
     # Aggregate imported_contaminated
@@ -377,27 +454,27 @@ suppressMessages({
     expect_equal(names(imported_contaminated_agg_keys), c("scenario_id"))
     expect_equal(dim(imported_contaminated_agg_keys), c(2, 1))
 
-    result <- mc_match(module, "no_detect_a", "imported_contaminated_agg")
+    result <- mc_match(module, "no_detect", "imported_contaminated_agg")
     expect_equal(result$keys_xy$g_row.x, c(1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6))
     expect_equal(result$keys_xy$g_row.y, c(1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2))
 
-    # Aggregate no_detect_a
-    module <- agg_totals(module, "no_detect_a")
-    no_detect_a_agg_keys <- mc_keys(
+    # Aggregate no_detect
+    module <- agg_totals(module, "no_detect")
+    no_detect_agg_keys <- mc_keys(
       mcmodule = module,
-      mc_name = "no_detect_a_agg"
+      mc_name = "no_detect_agg"
     )
 
-    expect_equal(names(no_detect_a_agg_keys), c("scenario_id"))
-    expect_equal(dim(no_detect_a_agg_keys), c(1, 1))
+    expect_equal(names(no_detect_agg_keys), c("scenario_id"))
+    expect_equal(dim(no_detect_agg_keys), c(1, 1))
 
-    result <- mc_match(module, "no_detect_a_agg", "imported_contaminated_agg")
+    result <- mc_match(module, "no_detect_agg", "imported_contaminated_agg")
     expect_equal(result$keys_xy$g_row.y, c(1, 2))
 
     # Match mcnodes already matching
     test_sensi_keys <- mc_keys(mcmodule = module, mc_name = "test_sensi")
 
-    result <- mc_match(module, "no_detect_a", "test_sensi")
+    result <- mc_match(module, "no_detect", "test_sensi")
     expect_equal(result$keys_xy$g_row.y, c(1, 2, 3, 4, 5, 6))
   })
 
@@ -409,7 +486,7 @@ suppressMessages({
       inf_dc_max = c(0.08, 0.4)
     )
 
-    result <- mc_match_data(imports_mcmodule, "no_detect_a", test_data)
+    result <- mc_match_data(imports_mcmodule, "no_detect", test_data)
 
     # Check dimensions
     expect_equal(dim(result$test_data_match), c(6, 4))
@@ -433,10 +510,10 @@ suppressMessages({
       products_n = c(1500, 1500, 0, 0)
     )
 
-    result_default <- mc_match_data(imports_mcmodule, "no_detect_a", test_data)
+    result_default <- mc_match_data(imports_mcmodule, "no_detect", test_data)
     result_custom <- mc_match_data(
       imports_mcmodule,
-      "no_detect_a",
+      "no_detect",
       test_data,
       keys_names = c("pathogen")
     )
@@ -455,6 +532,159 @@ suppressMessages({
       result_custom$keys_xy$g_row.y,
       c(1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4)
     )
+  })
+
+  test_that("mc_match handles sample_design nodes without keys or data_name", {
+    reset_mctable()
+
+    sample_design <- data.frame(
+      input_a = c(0.1, 0.2, 0.3),
+      input_b = c(1, 2, 3),
+      stringsAsFactors = FALSE
+    )
+
+    sample_module <- eval_module(
+      exp = c(
+        sample = quote({
+          result <- input_a + input_b
+        })
+      ),
+      data = data.frame(),
+      sample_design = sample_design
+    )
+
+    expect_true(isTRUE(sample_module$node_list$input_a$from_sample_design))
+    expect_true(isTRUE(sample_module$node_list$input_b$from_sample_design))
+    expect_null(sample_module$node_list$input_a$data_name)
+    expect_null(sample_module$node_list$input_b$data_name)
+    expect_null(sample_module$node_list$input_a$keys)
+    expect_null(sample_module$node_list$input_b$keys)
+
+    result <- mc_match(sample_module, "input_a", "input_b")
+
+    expect_length(result, 3)
+    expect_equal(dim(result[[1]]), c(3, 1, 1))
+    expect_equal(dim(result[[2]]), c(3, 1, 1))
+  })
+
+  test_that("mc_match recycles sample_design nodes to higher variate nodes", {
+    reset_mctable()
+
+    sample_design <- data.frame(
+      input_a = c(0.1, 0.2, 0.3),
+      stringsAsFactors = FALSE
+    )
+
+    sample_module <- eval_module(
+      exp = c(
+        sample = quote({
+          result <- input_a
+        })
+      ),
+      data = data.frame(),
+      sample_design = sample_design
+    )
+
+    regular_module <- eval_module(
+      exp = c(
+        regular = quote({
+          ref_result <- ref_input
+        })
+      ),
+      data = data.frame(ref_input = c(10, 20, 30)),
+      data_keys = list()
+    )
+
+    module <- combine_modules(sample_module, regular_module)
+
+    result <- mc_match(module, "input_a", "ref_input")
+
+    expect_length(result, 3)
+    expect_equal(dim(result[[1]])[3], 3)
+    expect_equal(dim(result[[2]])[3], 3)
+  })
+
+  test_that("mc_match_data handles sample_design nodes without keys", {
+    reset_mctable()
+
+    sample_design <- data.frame(
+      input_a = c(0.1, 0.2, 0.3),
+      stringsAsFactors = FALSE
+    )
+
+    sample_module <- eval_module(
+      exp = list(
+        sample = quote({
+          result <- input_a
+        })
+      ),
+      data = data.frame(),
+      sample_design = sample_design
+    )
+
+    test_data <- data.frame(
+      measure = c(10, 20, 30),
+      category = c("A", "B", "C"),
+      stringsAsFactors = FALSE
+    )
+
+    result <- mc_match_data(sample_module, "input_a", test_data)
+
+    expect_length(result, 3)
+    expect_equal(dim(result[[1]])[3], 3)
+    expect_equal(nrow(result[[2]]), 3)
+  })
+
+  test_that("mc_match_data handles sample_design nodes with keys", {
+    sample_design <- data.frame(
+      input_a = c(0.1, 0.2, 0.3),
+      stringsAsFactors = FALSE
+    )
+
+    data_test <- data.frame(
+      input_a = c(0.1, 0.2, 0.3),
+      category = c("A", "B", "C"),
+      stringsAsFactors = FALSE
+    )
+
+    mctable_test <- data.frame(
+      mcnode = "input_a",
+      description = "Sample design input",
+      mc_func = NA,
+      from_variable = NA,
+      transformation = NA,
+      sensi_analysis = FALSE
+    )
+
+    data_keys_test <- list(
+      data_test = list(
+        cols = names(data_test),
+        keys = c("category")
+      )
+    )
+
+    sample_module <- eval_module(
+      exp = list(
+        sample = quote({
+          result <- input_a + 1
+        })
+      ),
+      data = data_test,
+      data_keys = data_keys_test,
+      sample_design = sample_design,
+      mctable = mctable_test
+    )
+
+    data_test_b <- data.frame(
+      count = c(100, 200, 300),
+      stringsAsFactors = FALSE
+    )
+
+    result <- mc_match_data(sample_module, "input_a", data_test_b)
+
+    expect_length(result, 3)
+    expect_equal(dim(result[[1]])[3], 3)
+    expect_equal(nrow(result[[2]]), 3)
   })
 
   test_that("mc_match errors when baseline scenario '0' is missing key combinations", {

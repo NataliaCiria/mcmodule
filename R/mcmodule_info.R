@@ -20,7 +20,7 @@
 #' @details
 #' A raw module has a single expression in `mcmodule$exp`.
 #' A combined module has multiple expressions in `mcmodule$exp`, each
-#' representing a component module that was combined via `combine_modules()`.
+#' representing a component module that was combined via [combine_modules()].
 #'
 #' For combined modules, module names are recursively extracted up to one level deep.
 #' This allows identifying all base modules even in deeply nested combinations.
@@ -198,11 +198,41 @@ mcmodule_info <- function(mcmodule) {
 
   # Process data keys
   data_keys <- data.frame()
-  for (i in unique(data_name)[unique(data_name) %in% names(mcmodule$data)]) {
-    data_i <- mcmodule$data[[i]][names(mcmodule$data[[i]]) %in% global_keys]
-    data_i$variate <- seq_len(nrow(data_i))
-    data_i$data_name <- i
-    data_keys <- dplyr::bind_rows(data_keys, data_i)
+
+  # Only warn about missing data if nodes are NOT from the sample design.
+  has_sample_design_nodes <- any(vapply(
+    mcmodule$node_list,
+    function(x) isTRUE(x[["from_sample_design"]]),
+    logical(1)
+  ))
+
+  empty_data <- length(mcmodule$data) == 0 ||
+    all(vapply(
+      mcmodule$data,
+      function(df) {
+        if (is.data.frame(df)) {
+          nrow(df) == 0L
+        } else {
+          TRUE
+        }
+      },
+      logical(1)
+    ))
+
+  if (empty_data) {
+    if (!has_sample_design_nodes) {
+      warning(
+        "No data frames found in mcmodule$data for any expressions in mcmodule$node_list"
+      )
+    }
+    data_keys <- NULL
+  } else {
+    for (i in unique(data_name)[unique(data_name) %in% names(mcmodule$data)]) {
+      data_i <- mcmodule$data[[i]][names(mcmodule$data[[i]]) %in% global_keys]
+      data_i$variate <- seq_len(nrow(data_i))
+      data_i$data_name <- i
+      data_keys <- dplyr::bind_rows(data_keys, data_i)
+    }
   }
 
   list(
