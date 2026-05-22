@@ -516,8 +516,6 @@ agg_totals <- function(
         keys_names = summary_keys
       )
   }
-
-  mcmodule$modules <- unique(c(mcmodule$modules, module_name))
   return(mcmodule)
 }
 
@@ -1460,7 +1458,5 @@ trial_totals <- function(
       }
     }
   }
-
-  mcmodule$modules <- unique(c(mcmodule$modules, module_name))
   return(mcmodule)
 }
