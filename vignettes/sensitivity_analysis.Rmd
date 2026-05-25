@@ -30,20 +30,22 @@ Sensitivity analysis quantifies how changes in an input affect the model output.
 In `mcmodule`, you can perform sensitivity analysis using different methods:
 
 -   **Scenario (“what-if”) analysis:** Compares output changes under targeted input variations, practical for model runs using real data. It does not produce sensitivity indices, but it can be useful for complex models where the most important inputs depend on context.
--   **Correlation (tornado) analysis:** Ranking of influential inputs by correlating each input uncertainty with output uncertainty across existing runs. Only captures inputs that are uncertain in those runs. It can be applied to multi-variate inputs, but interpretation can be more complex when correlations vary across variates.
--   **Sample design based sensitivity analysis:** Evaluates the model on a predefined input design (e.g., Morris/Sobol) to estimate sensitivity over a chosen input space using packages such as **sensitivity** or **sensobol** and yield sensitivity indices. In `mcmodule`, this method is currently limited to one variate.
+-   **Correlation (tornado) analysis:** Ranking of influential inputs by correlating each input uncertainty with output uncertainty across existing runs. Only captures inputs that are uncertain in those runs. It can be applied to multivariate inputs, but interpretation can be more complex when correlations vary across variates.
+-   **Sample design based sensitivity analysis:** Evaluates the model on a predefined input design (e.g., Morris/Sobol) to estimate sensitivity over a chosen input space using packages such as `sensitivity`[@sensitivity] or `sensobol` [@sensobol]and yield sensitivity indices. In `mcmodule`, this method is currently limited to one variate.
 
 # Scenario analysis
 
-Scenario analysis (or “what-if analysis”) is a non-statistical but still useful approach to assess input sensitivity. It does not produce sensitivity indices, but it will show how the output changes when you make specific changes to the inputs. This makes it a practical way to compare targeted input changes using real input data. It is especially helpful for complex models where the most important inputs depend on context (for example, when estimating disease-entry risk across countries, where certain pathways will be more important in some countries than in others). Scenario analysis can therefore help you identify the most sensitive inputs for a particular use case. This topic is covered in the [working with what-if scenarios](https://nataliaciria.com/mcmodule/articles/mcmodule.html#working-with-what-if-scenarios) section.
+Scenario analysis (or “what-if analysis”) is a non-statistical but still useful approach to assess input sensitivity. It does not produce sensitivity indices, but it will show how the output changes when you make specific changes to the inputs. This makes it a practical way to compare targeted input changes using real input data. It is especially helpful for complex models where the most important inputs depend on context (for example, when estimating disease-entry risk across countries, where certain pathways will be more important in some countries than in others). Scenario analysis can therefore help you identify the most sensitive inputs for a particular use case. This is covered in the [working with what-if scenarios](https://nataliaciria.com/mcmodule/articles/mcmodule.html#working-with-what-if-scenarios) section.
 
 # Correlation analysis
 
-`mcmodule_corr()` is a **screening** method. It ranks inputs by their correlation with a chosen output across the current model runs (an extension of `mc2d::tornado()` for `mcmodule` objects and multiple variates). It can quickly highlight influential inputs, but results must be interpreted with care. A weak correlation does not necessarily mean an input is unimportant (e.g., symmetric nonlinear effects can cancel out), and a strong correlation may reflect confounding with other correlated inputs rather than a uniquely attributable effect.
+`mcmodule_corr()` ranks inputs by their correlation with a chosen output across the current model runs. It is an extension of `mc2d::tornado()` from `mc2d` [@mc2d] for `mcmodule` objects and multiple variates.
 
-Unlike methods that require a sample design, this approach works directly on an `mcmodule` built from model input data. Note that `mcmodule_corr()` only computes correlations for uncertain inputs (stochastic nodes built with `func`) and, when `variates_as_nsv = TRUE`, also for multi-variate inputs.
+Unlike methods that require a sample design, this approach works directly on an `mcmodule` built from model input data. Note that `mcmodule_corr()` only computes correlations for uncertain inputs (stochastic nodes built with `func`) and, when `variates_as_nsv = TRUE`, also for multivariate inputs.
 
-First, compute correlations (Spearman by default) and inspect the table.
+When we correlate specific model input data distributions with outputs, the particular input distributions used in each variate do not necessarily capture the full input sample space. As a result, these correlations indicate where output uncertainty “comes from”, rather than which inputs the output is most sensitive to. A weak correlation does not necessarily mean an input is unimportant (e.g., symmetric non-linear effects can cancel out), and a strong correlation may reflect confounding with other correlated inputs.
+
+Here we compute inputs-output correlations using Spearman coefficient:
 
 ```{r}
 # Calculate output (expected number of animals not detected)
@@ -154,7 +156,7 @@ Currently, `mcmodule` only provides direct conversion from `mctable` to Sobol sa
 
 ## Morris elementary effects
 
-Morris is another **screening** method. It identifies influential inputs at moderate computational cost and highlights potential nonlinearity or interactions.
+Morris [@morris1991] is another screening method. It identifies influential inputs and potential nonlinearity or interactions at moderate computational cost
 
 Start by getting parameter bounds from `mctable`.
 
@@ -220,7 +222,7 @@ In the Morris method, `mu` ( $\mu$ ) is the mean of the elementary effects acros
 
 ## Sobol indices
 
-Sobol analysis decomposes output variance into first-order and higher-order effects, providing a global sensitivity analysis. It is more computationally intensive than Morris, but it gives a more complete picture of input importance, including interactions. Sobol variance decomposition assumes independent inputs, if inputs are dependent, interpret Sobol indices with care or consider other approaches.
+Sobol analysis [@sobol1993, @saltelli2002] decomposes output variance into first-order and higher-order effects, providing a global sensitivity analysis. It is more computationally intensive than Morris, but it gives a more complete picture of input importance, including interactions. Sobol variance decomposition assumes independent inputs, if inputs are dependent, interpret Sobol indices with care or consider other approaches.
 
 First, generate Sobol sampling matrices from `mctable`.
 
@@ -270,10 +272,12 @@ plot(sobol_sa, order = "second")
 
 First-order indices (`Si`) measure each input’s *main effect,* the share of output variance attributable to changing that input alone, averaged over uncertainty in all other inputs. Larger `Si` values indicate the model output is more sensitive to that factor. Here, `h_prev` is the dominant driver of variance, `test_origin` is the next most influential, and `w_prev` also contributes materially; `farms_n` and `animals_n` have smaller but non-zero effects, while `test_sensi` is negligible. Negative estimates can occur due to Monte Carlo error and should be interpreted as \~0 if the confidence interval overlaps 0. If important factors have wide CIs or many negatives appear, increase N (and/or bootstrap replicates) before interpreting small effects.
 
-Total-order indices (`Ti`) measure each input’s *total effect* on output variance, including its main effect plus all interaction effects with other inputs; `Ti` is therefore always at least as large as `Si` for the same parameter.
+Total-order indices (`Ti`) measure each input’s *total effect* on output variance, including its main effect plus all interaction effects with other inputs. `Ti` is therefore always at least as large as `Si` for the same parameter.
 
-Second-order indices (`Sij`) quantify interaction effects: how much variance is explained *only* by varying two inputs together beyond what their individual first-order effects (`Si`) explain. Values near 0 indicate little interaction; larger values indicate the combined effect of the pair is important (e.g., `h_prev.test_origin` suggests a meaningful interaction between `h_prev` and `test_origin`).
+Second-order indices (`Sij`) quantify interaction effects. They measure how much variance is explained *only* by varying two inputs together beyond what their individual first-order effects (`Si`) explain. Values near 0 indicate little interaction; larger values indicate the combined effect of the pair is important (e.g., `h_prev.test_origin` suggests a meaningful interaction between `h_prev` and `test_origin`).
 
 ## Other methods
 
-You can use other sensitivity methods with `mcmodule` as long as you can build a table/matrix of input values to run the model with, and collect the corresponding model output(s). For example, `sensitivity::fast99()` can estimate first-order variance-based indices with structured sampling and can be cheaper than second-order Sobol, depending on the design and number of factors. If you want a more familiar “risk-factor style” summary, regression/ANOVA approaches can quantify how the output changes as inputs change. Tools such as Shapley values (`iml::shapley()`) can help interpret complex, nonlinear relationships, but they answer a slightly different question and can be computationally heavy. The best method will depend on your model, computational resources, and the specific questions you want to answer about input importance.
+You can use any method to analyse the importance of your inputs as long as you can build a table/matrix of input values to run the model with, and collect the corresponding model output(s). For example, you could use `sensitivity::fast99()` or Shapley values (`iml::shapley()`). The best method will depend on your model, computational resources, and the specific questions you want to answer.
+
+# References

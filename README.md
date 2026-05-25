@@ -22,8 +22,8 @@ library("mcmodule")
 Install latest development version from GitHub.
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("NataliaCiria/mcmodule")
+# install.packages("pak")
+pak::pkg_install("NataliaCiria/mcmodule")
 ```
 
 ## Set up an mcmodel

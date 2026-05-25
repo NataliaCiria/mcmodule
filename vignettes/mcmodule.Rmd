@@ -31,7 +31,8 @@ The `mc2d` R package [@mc2d] provides tools to build and analyse models involvin
 1.  Organize risk analysis in independent flexible modules
 2.  Perform multivariate mcnode operations
 3.  Automate the creation of mcnodes
-4.  visualise risk analysis models
+4.  Visualise risk analysis models
+5.  Perform model diagnosis such as convergence and sensitivity analysis
 
 ## Multivariate Monte-Carlo simulations
 
@@ -211,8 +212,8 @@ library("mcmodule")
 Or install latest development version from GitHub (requires `devtool` package):
 
 ```{r, eval=FALSE}
-# install.packages("devtools")
-devtools::install_github("NataliaCiria/mcmodule")
+# install.packages("pak")
+pak::pkg_install("NataliaCiria/mcmodule")
 library("mcmodule")
 ```
 
@@ -715,62 +716,31 @@ The combined module now contains all nodes and metadata from its components, ena
 The `mcmodule_info()` function provides comprehensive metadata about your mcmodule structure, including composition information, keys for each variate, and global keys used across the module.
 
 ```{r}
-info <- mcmodule_info(intro)
-
-# Check if module is combined or raw
-info$is_combined
-
-# Number of component modules
-info$n_modules
-
-# Module and expression information
-info$module_exp_data
-
-# Keys for each variate
-head(info$data_keys)
-
-# Global key names
-info$global_keys
+mcmodule_info(intro)
 ```
 
 # Model analysis
-
-## Correlation analysis
-
-The `mcmodule_corr()` function calculates correlation coefficients between input and output nodes across your mcmodule. This helps identify which input parameters have the strongest influence on your results. It is based on `mc2d::tornado()` but applied to many distinct variates.
-
-```{r, eval=FALSE}
-# Calculate correlations using Spearman's method (default)
-cor_results <- mcmodule_corr(imports)
-
-# View correlation results
-head(cor_results)
-
-# Use different correlation method
-cor_pearson <- mcmodule_corr(imports, method = "pearson")
-cor_kendall <- mcmodule_corr(imports, method = "kendall")
-```
 
 ## Convergence analysis
 
 The `mcmodule_converg()` function assesses whether your Monte Carlo simulations have run for enough iterations to produce stable results. It tracks how statistics (mean, median, quantiles) change as iterations accumulate.
 
-```{r, eval=FALSE}
-# Check convergence with default settings
-converg_results <- mcmodule_converg(imports)
+```{r}
+converg_results <- mcmodule_converg(imports)  
+```
 
-# Custom convergence analysis
-# Check the last 10% of iterations with stricter threshold
-converg_strict <- mcmodule_converg(
-  imports,
-  from_quantile = 0.90,
-  conv_threshold = 0.01
-)
+## Correlation analysis
+
+The `mcmodule_corr()` function calculates correlation coefficients between input and output nodes across your mcmodule, and `mcmodule_tornado()` creates a plot to visualize this correlations. This helps identify which input parameters have the strongest influence on your results. It is based on `mc2d::tornado()` but can be applied to multivariate inputs.
+
+```{r}
+# Calculate correlations using Spearman's method (default)
+mcmodule_tornado(imports)
 ```
 
 ## Sensitivity analysis
 
-Sensitivity analysis quantifies how changes in inputs affect model outputs, helping to identify which uncertainties are most important for decision-relevant results. In `mcmodule`, you can perform sensitivity analysis using sample design-based methods such as Sobol indices for global sensitivity analysis. Other methods are described in the *Sensitivity analysis* vignette.
+Sensitivity analysis quantifies how changes in inputs affect model outputs, helping to identify which uncertainties are most important for decision-relevant results. In `mcmodule`, you can perform sensitivity analysis using sample design-based methods such as Morris or Sobol indices for global sensitivity analysis. Different methods using `sensitivity` [@sensitivity] or `sensobol` [@sensobol] R packages are described in the [Sensitivity analysis vignette](#0).
 
 ### Sobol indices analysis
 
@@ -834,6 +804,8 @@ clean_mcnode <- mcnode_na_rm(sample_mcnode)
 
 This is especially useful in expressions where a denominator might be zero, resulting in `Inf` or `NaN`, but you want the output to be zero instead.
 
+A similar function is `mcnode_null_rm()`, that allows you replace missing nodes, required a in expression but not found in the input data with an value (usually zero).
+
 ## Customizing total node names
 
 Functions like `at_least_one()`, `agg_totals()`, and `trial_totals()` automatically generate new mcnodes with informative suffixes. You can customize these names for clarity or documentation purposes:
@@ -879,6 +851,10 @@ h_prev
 ```{r}
 mc_summary(data = prevalence_region, mcnode = h_prev, keys_names = c("pathogen", "origin"))
 ```
+
+## Convert to other formats
+
+You can transform a full mcmodule into a list of matrices or of `mc2d` `mc` objects with `mcmodule_to_matrices()` and `mcmodule_to_mc()` respectively.
 
 # Next steps
 

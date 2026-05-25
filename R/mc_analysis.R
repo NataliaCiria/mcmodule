@@ -546,7 +546,7 @@ mcmodule_corr <- function(
       cat(
         "\n- Top ",
         min(top_n, nrow(mean_cors)),
-        " most influential inputs (by absolute mean correlation):",
+        " most correlated inputs (by absolute mean correlation):",
         sep = ""
       )
       for (i in seq_len(nrow(mean_cors))) {
