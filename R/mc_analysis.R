@@ -1144,7 +1144,6 @@ mcmodule_converg <- function(
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' # Define mctable
 #' mctable <- data.frame(
 #'   mcnode = c("input_a", "input_b"),
@@ -1158,13 +1157,10 @@ mcmodule_converg <- function(
 #' )
 #'
 #' result$optimal_ndvar
-#' }
 #'
 optim_ndvar <- function(
   mctable = set_mctable(),
   exp = NULL,
-  data = NULL,
-  data_keys = NULL,
   mc_names = NULL,
   min_ndvar = 100,
   max_ndvar = 50000,
@@ -1245,7 +1241,7 @@ optim_ndvar <- function(
             bounds_str <- sub("^c\\((.*)\\)$", "\\1", sample_space)
             bounds <- as.numeric(unlist(strsplit(bounds_str, ",")))
             if (length(bounds) >= 2) {
-              sample_design_list[[mcnode_name]] <- runif(
+              sample_design_list[[mcnode_name]] <- stats::runif(
                 n,
                 bounds[1],
                 bounds[2]
@@ -1275,7 +1271,7 @@ optim_ndvar <- function(
             }
 
             if (is.finite(min_val) && is.finite(max_val)) {
-              sample_design_list[[mcnode_name]] <- runif(n, min_val, max_val)
+              sample_design_list[[mcnode_name]] <- stats::runif(n, min_val, max_val)
             }
           }
         },
@@ -1511,13 +1507,13 @@ optim_ndvar <- function(
     if (is_converged) {
       cat(
         sprintf(
-          "\n✓ Successfully optimized ndvar to %d (all nodes converge at 5%% threshold)\n",
+          "\nSuccessfully optimized ndvar to %d (all nodes converge at 5%% threshold) :)\n",
           optimal_ndvar
         )
       )
     } else {
       cat(
-        "\n✗ Could not find converging ndvar within specified limits\n"
+        "\nCould not find converging ndvar within specified limits :(\n"
       )
     }
   }

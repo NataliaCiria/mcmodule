@@ -4,22 +4,21 @@
 
 ## Submission
 
-This is a minor release (v1.2.0) that:
+This is a minor release (v1.3.0) that:
 
-* Adds comprehensive suite of Monte Carlo analysis functions 
-  (`mcmodule_info()`, `mcmodule_corr()`, `mcmodule_converg()`, 
-  `mcmodule_to_matrices()`, `mcmodule_to_mc()`)
+* New sensitivity analysis workflows using sampling designs (Morris, Sobol), 
+  with new helpers `mctable_bounds()`, `mctable_sobol_matrices()`, and `set_sampling_design()`.
+  
+* Most functions have been updated to support nodes created from sampling designs (`eval_module()`, 
+  `mc_keys()`, `mc_match()`, `mc_match_data()`, `trial_totals()`).
 
-* Adds new `mc_filter()` function for filtering mcnodes and metadata
-
-* Introduces experimental `mc_plot()` for visualization
-
-* Enhances `eval_module()` to support `mcstoc()` and `mcdata()` 
-  directly within expressions
+* Added tornado plot for correlation analysis (`mcmodule_tornado()`), an experimental 
+  optimiser for uncertainty convergence (`optim_ndvar()`), and `mcnode_null_rm()` for 
+  handling absent nodes.
 
 * Fixes multiple bugs
 
-* Extends and harmonises documentation.
+* Extends documentation, adding a sensitivity analysis vignette.
 
 See NEWS.md for detailed changes.
 

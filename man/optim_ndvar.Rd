@@ -7,8 +7,6 @@
 optim_ndvar(
   mctable = set_mctable(),
   exp = NULL,
-  data = NULL,
-  data_keys = NULL,
   mc_names = NULL,
   min_ndvar = 100,
   max_ndvar = 50000,
@@ -67,7 +65,6 @@ The optimization algorithm:
 }
 }
 \examples{
-\dontrun{
 # Define mctable
 mctable <- data.frame(
   mcnode = c("input_a", "input_b"),
@@ -81,6 +78,5 @@ result <- optim_ndvar(
 )
 
 result$optimal_ndvar
-}
 
 }

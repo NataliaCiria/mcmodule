@@ -200,7 +200,7 @@ imports_mcmodule_morris <- trial_totals(
 )
 ```
 
-Finally, extract the output vector and estimate Morris indices. The `tell()` function updates the Morris object with the model output, and then you can print and plot the indices. 
+Finally, extract the output vector and estimate Morris indices. The `tell()` function updates the Morris object with the model output, and then you can print and plot the indices.
 
 ```{r}
 # Extract the output vector and estimate Morris indices.
@@ -216,9 +216,10 @@ morris_sa
 plot(morris_sa)
 ```
 
-In the Morris method, `mu` ( $\mu$ ) is the mean of the elementary effects across trajectories and  `mu.star` ( $\mu^*$ ) is the absolute value of `mu`, which summarises each input’s overall importance (larger values indicate a stronger average influence on the output, regardless of direction). `h_prev` has the largest `mu.star`, making it the most influential input overall, followed by `test_origin`. `w_prev` is the next most important, while `farms_n` and `animals_n` have more moderate effects, and `test_sensi` is negligible within the explored bounds (note that the uncertainty is small, 0.875-0.91). `sigma` ( $\sigma$ ) is the standard deviation of the elementary effects. Large `sigma` values indicate that the effect of an input varies substantially across the sampled space, which typically reflects nonlinearity and/or interactions with other inputs.
+In the Morris method, `mu` ( $\mu$ ) is the mean of the elementary effects across trajectories and `mu.star` ( $\mu^*$ ) is the absolute value of `mu`, which summarises each input’s overall importance (larger values indicate a stronger average influence on the output, regardless of direction). `h_prev` has the largest `mu.star`, making it the most influential input overall, followed by `test_origin`. `w_prev` is the next most important, while `farms_n` and `animals_n` have more moderate effects, and `test_sensi` is negligible within the explored bounds (note that the uncertainty is small, 0.875-0.91). `sigma` ( $\sigma$ ) is the standard deviation of the elementary effects. Large `sigma` values indicate that the effect of an input varies substantially across the sampled space, which typically reflects nonlinearity and/or interactions with other inputs.
 
 ## Sobol indices
+
 Sobol analysis decomposes output variance into first-order and higher-order effects, providing a global sensitivity analysis. It is more computationally intensive than Morris, but it gives a more complete picture of input importance, including interactions. Sobol variance decomposition assumes independent inputs, if inputs are dependent, interpret Sobol indices with care or consider other approaches.
 
 First, generate Sobol sampling matrices from `mctable`.
@@ -267,7 +268,7 @@ plot(sobol_sa)
 plot(sobol_sa, order = "second")
 ```
 
-First-order indices (`Si`) measure each input’s *main effect,* the share of output variance attributable to changing that input alone, averaged over uncertainty in all other inputs. Larger `Si` values indicate the model output is more sensitive to that factor. Here, `h_prev` is the dominant driver of variance, `test_origin` is the next most influential, and `w_prev` also contributes materially; `farms_n` and `animals_n` have smaller but non-zero effects, while `test_sensi` is negligible. Negative estimates can occur due to Monte Carlo error and should be interpreted as ~0 if the confidence interval overlaps 0. If important factors have wide CIs or many negatives appear, increase N (and/or bootstrap replicates) before interpreting small effects.
+First-order indices (`Si`) measure each input’s *main effect,* the share of output variance attributable to changing that input alone, averaged over uncertainty in all other inputs. Larger `Si` values indicate the model output is more sensitive to that factor. Here, `h_prev` is the dominant driver of variance, `test_origin` is the next most influential, and `w_prev` also contributes materially; `farms_n` and `animals_n` have smaller but non-zero effects, while `test_sensi` is negligible. Negative estimates can occur due to Monte Carlo error and should be interpreted as \~0 if the confidence interval overlaps 0. If important factors have wide CIs or many negatives appear, increase N (and/or bootstrap replicates) before interpreting small effects.
 
 Total-order indices (`Ti`) measure each input’s *total effect* on output variance, including its main effect plus all interaction effects with other inputs; `Ti` is therefore always at least as large as `Si` for the same parameter.
 

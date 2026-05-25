@@ -3,9 +3,7 @@
 ### New features
 
 * Added support for sensitivity-analysis workflows based on sampling designs 
-  (Morris and Sobol),
-
-including new helpers `mctable_bounds()` and `mctable_sobol_matrices()` (#49).
+  (Morris and Sobol), including new helpers `mctable_bounds()` and `mctable_sobol_matrices()` (#49).
 
 * `eval_module()` now supports creating modules using a sampling design (#49).
 
@@ -17,7 +15,11 @@ including new helpers `mctable_bounds()` and `mctable_sobol_matrices()` (#49).
 
 * Added a tornado plot for correlation analysis via `mcmodule_tornado()` (#49).
 
-* Added a experimental function to optimize the number of iterations needed for uncertainty convergence `optim_ndvar()` (#82).
+* Added `mcnode_null_rm()` to replace absent nodes by an specific value (similar to 
+  `mcnode_na_rm()`) (#66).
+
+* Added a experimental function to optimize the number of iterations needed for uncertainty 
+  convergence `optim_ndvar()` (#82).
 
 * Improved convergence diagnostics in `mcmodule_converg()`, including clearer 
   summaries and reporting of non-converged nodes (#49).
@@ -33,8 +35,8 @@ including new helpers `mctable_bounds()` and `mctable_sobol_matrices()` (#49).
 * Fixed an `add_prefix()` bug where totals node names were not correctly 
   prefixed (#68).
 
-* Fixed a bug in `eval_module()` when using `prev_module` together with 
-  `mcnode_null_rm()` (#66).
+* Fixed a bug in `eval_module()` when `package::function()` nomenclature was used 
+  within expressions (#32).
 
 * Renamed `filter_suffix` to `suffix` (#77).
 
