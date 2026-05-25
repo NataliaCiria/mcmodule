@@ -1,6 +1,6 @@
 # mcmodule 1.3.0
 
-### New features
+## New features
 
 * Added support for sensitivity-analysis workflows based on sampling designs 
   (Morris and Sobol), including new helpers `mctable_bounds()` and `mctable_sobol_matrices()` (#49).
@@ -27,7 +27,7 @@
 * Improved  `mcmodule_info()`, now returns the number of nodes by type and handles 
   more complex module–expression combinations (#70).
 
-### Bug fixes
+## Bug fixes
 
 * Fixed a bug in `mc_compare()` when comparing a total mcnode with multiple 
   `data_names` (#71).
@@ -40,7 +40,7 @@
 
 * Renamed `filter_suffix` to `suffix` (#77).
 
-### Documentation
+## Documentation
 
 * Expanded the main package vignette, including sensitivity analysis examples (#49, #70).
 
