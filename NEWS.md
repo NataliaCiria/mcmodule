@@ -2,28 +2,41 @@
 
 ### New features
 
-* Added support for sensitivity-analysis workflows based on sampling designs (Morris and Sobol), 
-  including new helpers `mctable_bounds()` and `mctable_sobol_matrices()` (#49).
+* Added support for sensitivity-analysis workflows based on sampling designs 
+  (Morris and Sobol),
+
+including new helpers `mctable_bounds()` and `mctable_sobol_matrices()` (#49).
 
 * `eval_module()` now supports creating modules using a sampling design (#49).
 
-* Added `set_sampling_design()` to register a sampling design for use across the workflow (#49).
+* Added `set_sampling_design()` to register a sampling design for use across 
+  the workflow (#49).
 
-* Other package functions (`mc_keys()`, `mc_match()`, `mc_match_data()`, `trial_totals()`) 
-  adapted to handle nodes created from sampling designs (#49).
+* Other package functions (`mc_keys()`, `mc_match()`, `mc_match_data()`, 
+  `trial_totals()`) adapted to handle nodes created from sampling designs (#49).
 
 * Added a tornado plot for correlation analysis via `mcmodule_tornado()` (#49).
 
-* Improved convergence diagnostics in `mcmodule_converg()`, including clearer summaries 
-  and reporting of non-converged nodes (#49).
+* Added a experimental function to optimize the number of iterations needed for uncertainty convergence `optim_ndvar()` (#82).
+
+* Improved convergence diagnostics in `mcmodule_converg()`, including clearer 
+  summaries and reporting of non-converged nodes (#49).
+
+* Improved  `mcmodule_info()`, now returns the number of nodes by type and handles 
+  more complex module–expression combinations (#70).
 
 ### Bug fixes
 
-* Fixed a bug in `mc_compare()` when comparing a total mcnode with multiple `data_names` (#71).
+* Fixed a bug in `mc_compare()` when comparing a total mcnode with multiple 
+  `data_names` (#71).
 
-* Fixed an `add_prefix()` bug where totals node names were not correctly prefixed (#68).
+* Fixed an `add_prefix()` bug where totals node names were not correctly 
+  prefixed (#68).
 
-* Fixed a bug in `eval_module()` when using `prev_module` together with `mcnode_null_rm()` (#66).
+* Fixed a bug in `eval_module()` when using `prev_module` together with 
+  `mcnode_null_rm()` (#66).
+
+* Renamed `filter_suffix` to `suffix` (#77).
 
 ### Documentation
 

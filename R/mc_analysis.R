@@ -846,15 +846,15 @@ mcmodule_converg <- function(
 
           if (!is.null(tiny_threshold)) {
             tiny <- abs(max_dif) < tiny_threshold
-            conv_01_no_tiny <- conv_01 & !tiny
-            conv_025_no_tiny <- conv_025 & !tiny
-            conv_05_no_tiny <- conv_05 & !tiny
+            conv_01_tiny <- conv_01 | tiny
+            conv_025_tiny <- conv_025 | tiny
+            conv_05_tiny <- conv_05 | tiny
           }
 
           if (!is.null(conv_threshold)) {
             conv_manual <- abs(max_dif_scaled) < conv_threshold
             if (!is.null(tiny_threshold)) {
-              conv_manual_no_tiny <- conv_manual & !tiny
+              conv_manual_tiny <- conv_manual | tiny
             }
           }
 
@@ -885,7 +885,7 @@ mcmodule_converg <- function(
               if (!is.null(tiny_threshold)) {
                 mc_convergence_list[[
                   list_index
-                ]]$conv_manual_no_tiny <- conv_manual_no_tiny
+                ]]$conv_manual_tiny <- conv_manual_tiny
               }
             }
 
@@ -893,13 +893,13 @@ mcmodule_converg <- function(
               mc_convergence_list[[list_index]]$tiny <- tiny
               mc_convergence_list[[
                 list_index
-              ]]$conv_01_no_tiny <- conv_01_no_tiny
+              ]]$conv_01_tiny <- conv_01_tiny
               mc_convergence_list[[
                 list_index
-              ]]$conv_025_no_tiny <- conv_025_no_tiny
+              ]]$conv_025_tiny <- conv_025_tiny
               mc_convergence_list[[
                 list_index
-              ]]$conv_05_no_tiny <- conv_05_no_tiny
+              ]]$conv_05_tiny <- conv_05_tiny
             }
 
             list_index <- list_index + 1
@@ -1008,25 +1008,25 @@ mcmodule_converg <- function(
       ))
 
       if (!is.null(tiny_threshold)) {
-        diverged_manual_no_tiny <- length(unique(conv_df$mcnode[
-          !conv_df$conv_manual_no_tiny
+        diverged_manual_tiny <- length(unique(conv_df$mcnode[
+          !conv_df$conv_manual_tiny
         ]))
 
-        diverged_manual_no_tiny_names <- conv_df$mcnode[
-          !conv_df$conv_manual_no_tiny
+        diverged_manual_tiny_names <- conv_df$mcnode[
+          !conv_df$conv_manual_tiny
         ]
 
         cat(sprintf(
           "\n\n- More than %.4f divergence (over %.4f): %d (%s)",
           conv_threshold,
           tiny_threshold,
-          diverged_manual_no_tiny,
-          pct(diverged_manual_no_tiny / total_nodes * 100)
+          diverged_manual_tiny,
+          pct(diverged_manual_tiny / total_nodes * 100)
         ))
         cat(sprintf(
           "\n%s",
           conv_threshold,
-          format_non_converged(diverged_manual_no_tiny_names)
+          format_non_converged(diverged_manual_tiny_names)
         ))
       }
     }
@@ -1066,23 +1066,22 @@ mcmodule_converg <- function(
     cat(format_non_converged(diverged_names_05))
 
     if (!is.null(tiny_threshold)) {
-      diverged_05_no_tiny <- length(unique(conv_df$mcnode[
-        -conv_df$conv_05_no_tiny
+      diverged_05_tiny <- length(unique(conv_df$mcnode[
+        !conv_df$conv_05_tiny
       ]))
 
-      diverged_05_no_tiny_names <- conv_df$mcnode[-conv_df$conv_05_no_tiny]
+      diverged_05_tiny_names <- conv_df$mcnode[
+        !conv_df$conv_05_tiny & !is.na(conv_df$conv_05_tiny)
+      ]
 
       cat(sprintf(
         "\n\n- More than 5%% divergence (over %.4f): %d (%s)",
         tiny_threshold,
-        diverged_05_no_tiny,
-        pct(diverged_05_no_tiny / total_nodes * 100)
+        diverged_05_tiny,
+        pct(diverged_05_tiny / total_nodes * 100)
       ))
-      cat(sprintf(
-        "\n%s",
-        conv_threshold,
-        format_non_converged(diverged_05_no_tiny_names)
-      ))
+
+      cat(format_non_converged(diverged_05_tiny_names))
     }
 
     # Happy message if all converged at 5% threshold
@@ -1102,4 +1101,431 @@ mcmodule_converg <- function(
   }
 
   return(conv_df)
+}
+
+#' Optimize Number of Variability Iterations Based on Convergence
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Automatically determines the minimum number of variability iterations (ndvar) required
+#' for all input nodes in a Monte Carlo model to converge at the 5% threshold. Uses
+#' an iterative algorithm starting with 1,001 variates and adjusting up or down
+#' based on observed convergence.
+#'
+#' @param mctable (data frame). Table with `mcnode` and `sample_space`
+#'   columns defining the sampling distribution for each input. Default: `set_mctable()`.
+#' @param exp (language or list). Optional model expression(s) to evaluate. Default: NULL, will create an expression multipling all input nodes.
+#' @param mc_names (character vector, optional). Specific node names to analyze.
+#'   If NULL, analyzes all nodes. Default: NULL.
+#' @param min_ndvar (integer). Minimum allowed ndvar. Default: 100.
+#' @param max_ndvar (integer). Maximum allowed ndvar. Default: 50000.
+#' @param start_ndvar (integer). Initial ndvar to test. Default: 1001.
+#' @param conv_threshold (numeric). Convergence threshold at 5%. Default: 0.05.
+#' @param print_summary (logical). If TRUE, print optimization summary. Default: TRUE.
+#' @param progress (logical). If TRUE, print progress for each iteration. Default: FALSE.
+#'
+#' @return A list containing:
+#'   \itemize{
+#'     \item `optimal_ndvar`: The minimum ndvar where all nodes converge.
+#'     \item `converged`: Logical indicating if convergence was achieved.
+#'     \item `iterations`: Data frame with each iteration's details (ndvar, converged, reason).
+#'     \item `convergence_results`: Convergence analysis results from [mcmodule_converg()].
+#'   }
+#'
+#' @details
+#' The optimization algorithm:
+#' - Starts with `start_ndvar` (default 1,001)
+#' - If convergence achieved: tries n/2 (lower bound search)
+#' - If convergence not achieved: tries 2n (upper bound search)
+#' - Continues until minimum converging ndvar is found
+#' - Warns if limits (min_ndvar, max_ndvar) are reached
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Define mctable
+#' mctable <- data.frame(
+#'   mcnode = c("input_a", "input_b"),
+#'   sample_space = c("min = 0, max = 1", "min = 10, max = 20")
+#' )
+#'
+#' # Optimize ndvar
+#' result <- optim_ndvar(
+#'   exp = quote({result <- input_a * input_b}),
+#'   mctable = mctable
+#' )
+#'
+#' result$optimal_ndvar
+#' }
+#'
+optim_ndvar <- function(
+  mctable = set_mctable(),
+  exp = NULL,
+  data = NULL,
+  data_keys = NULL,
+  mc_names = NULL,
+  min_ndvar = 100,
+  max_ndvar = 50000,
+  start_ndvar = 1001,
+  conv_threshold = 0.05,
+  print_summary = TRUE,
+  progress = FALSE
+) {
+  # Input validation
+  if (!is.data.frame(mctable)) {
+    stop("mctable must be a data frame")
+  }
+
+  if (!all(c("mcnode", "sample_space") %in% names(mctable))) {
+    stop(
+      "mctable must contain columns 'mcnode' and 'sample_space'"
+    )
+  }
+
+  if (min_ndvar < 1) {
+    stop("min_ndvar must be >= 1")
+  }
+
+  if (max_ndvar <= min_ndvar) {
+    stop("max_ndvar must be > min_ndvar")
+  }
+
+  if (start_ndvar < min_ndvar || start_ndvar > max_ndvar) {
+    warning(
+      sprintf(
+        "start_ndvar (%d) is outside [min_ndvar, max_ndvar] range [%d, %d]. Using min_ndvar.",
+        start_ndvar,
+        min_ndvar,
+        max_ndvar
+      )
+    )
+    start_ndvar <- min_ndvar
+  }
+
+  if (is.null(exp)) {
+    # Create a expression with all the input nodes, since we only care about convergence of input nodes
+    rhs <- Reduce(
+      function(a, b) call("*", a, b),
+      lapply(as.character(mctable$mcnode), as.symbol)
+    )
+
+    exp <- as.call(list(
+      as.symbol("{"),
+      as.call(list(as.symbol("<-"), as.symbol("output"), rhs))
+    ))
+  }
+
+  # Helper function to generate sample design from sample_space
+  generate_from_sample_space <- function(mctable_input, n) {
+    # Extract only mcnodes with valid sample_space
+    valid_rows <- !is.na(mctable_input$sample_space) &
+      nzchar(trimws(mctable_input$sample_space))
+    mctable_valid <- mctable_input[valid_rows, ]
+
+    if (nrow(mctable_valid) == 0) {
+      stop("No valid sample_space entries found in mctable")
+    }
+
+    # Generate random samples for each node
+    sample_design_list <- list()
+
+    for (i in seq_len(nrow(mctable_valid))) {
+      mcnode_name <- mctable_valid$mcnode[i]
+      sample_space <- mctable_valid$sample_space[i]
+
+      # Parse sample space and generate samples
+      # Support formats: "c(min, max)", "min = X, max = Y"
+      tryCatch(
+        {
+          # Extract numeric bounds
+          if (grepl("^c\\(", sample_space)) {
+            # Format: c(min, max)
+            bounds_str <- sub("^c\\((.*)\\)$", "\\1", sample_space)
+            bounds <- as.numeric(unlist(strsplit(bounds_str, ",")))
+            if (length(bounds) >= 2) {
+              sample_design_list[[mcnode_name]] <- runif(
+                n,
+                bounds[1],
+                bounds[2]
+              )
+            }
+          } else if (grepl("min\\s*=|max\\s*=", sample_space)) {
+            # Format: min = X, max = Y
+            min_match <- regmatches(
+              sample_space,
+              regexec("min\\s*=\\s*([^,]+)", sample_space)
+            )
+            max_match <- regmatches(
+              sample_space,
+              regexec("max\\s*=\\s*([^,]+|$)", sample_space)
+            )
+
+            min_val <- if (length(min_match[[1]]) > 1) {
+              as.numeric(trimws(min_match[[1]][2]))
+            } else {
+              0
+            }
+
+            max_val <- if (length(max_match[[1]]) > 1) {
+              as.numeric(trimws(max_match[[1]][2]))
+            } else {
+              1
+            }
+
+            if (is.finite(min_val) && is.finite(max_val)) {
+              sample_design_list[[mcnode_name]] <- runif(n, min_val, max_val)
+            }
+          }
+        },
+        error = function(e) {
+          warning(
+            sprintf(
+              "Could not parse sample_space for '%s': %s. Skipping.",
+              mcnode_name,
+              e$message
+            )
+          )
+        }
+      )
+    }
+
+    if (length(sample_design_list) == 0) {
+      stop("Failed to generate sample design from sample_space_mctable")
+    }
+
+    # Convert list to data frame
+    as.data.frame(
+      sample_design_list,
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+  }
+
+  # Helper function to run convergence check
+  check_convergence <- function(ndvar) {
+    # Create sample design matrix with given ndvar
+    sample_design <- generate_from_sample_space(
+      mctable,
+      n = ndvar
+    )
+
+    # Evaluate module
+    mcmodule <- eval_module(
+      exp = exp,
+      mctable = mctable,
+      sample_design = sample_design,
+      summary = FALSE
+    )
+
+    # Run convergence analysis (suppress print)
+    conv_result <- mcmodule_converg(
+      mcmodule = mcmodule,
+      from_quantile = 0.95,
+      to_quantile = 1,
+      mc_names = mc_names,
+      print_summary = FALSE,
+      progress = FALSE
+    )
+
+    # Check if all nodes converged at 5% threshold
+    all_converged <- all(conv_result$conv_05, na.rm = TRUE)
+
+    list(
+      all_converged = all_converged,
+      mcmodule = mcmodule,
+      conv_result = conv_result
+    )
+  }
+
+  # Initialize tracking
+  iterations_list <- list()
+
+  optimal_ndvar <- NA_integer_
+  is_converged <- FALSE
+  current_ndvar <- start_ndvar
+  iteration_count <- 0
+  last_converged_ndvar <- NA_integer_
+  last_non_converged_ndvar <- NA_integer_
+  convergence_results <- NULL
+
+  # Optimization loop
+  while (iteration_count < 100) {
+    # Safety limit on iterations
+    iteration_count <- iteration_count + 1
+
+    if (progress) {
+      cat(sprintf(
+        "\n[Iteration %d] Testing ndvar = %d...",
+        iteration_count,
+        current_ndvar
+      ))
+    }
+
+    # Check convergence at current ndvar
+    error_occurred <- FALSE
+    result <- tryCatch(
+      {
+        check_convergence(current_ndvar)
+      },
+      error = function(e) {
+        error_occurred <<- TRUE
+        warning(
+          sprintf(
+            "Error during convergence check at ndvar=%d: %s",
+            current_ndvar,
+            e$message
+          )
+        )
+        NULL
+      }
+    )
+
+    if (!error_occurred && !is.null(result)) {
+      is_converged_current <- result$all_converged
+      convergence_results <- result$conv_result
+
+      if (progress) {
+        cat(sprintf(
+          " %s\n",
+          if (is_converged_current) "CONVERGED" else "NOT CONVERGED"
+        ))
+      }
+
+      # Record iteration
+      reason <- if (iteration_count == 1) {
+        "Initial"
+      } else if (is_converged_current) {
+        if (!is.na(last_converged_ndvar)) {
+          "Converged, trying n/2"
+        } else {
+          "First convergence found"
+        }
+      } else {
+        "Not converged, trying 2n"
+      }
+
+      iterations_list[[iteration_count]] <- list(
+        iteration = iteration_count,
+        ndvar = current_ndvar,
+        converged = is_converged_current,
+        reason = reason
+      )
+
+      # Update convergence tracking
+      if (is_converged_current) {
+        last_converged_ndvar <- current_ndvar
+      } else {
+        last_non_converged_ndvar <- current_ndvar
+      }
+
+      # Determine next ndvar
+      if (is_converged_current) {
+        # Try n/2 to find minimum
+        next_ndvar <- floor(current_ndvar / 2)
+
+        # Check if we've narrowed down to minimum
+        if (
+          !is.na(last_non_converged_ndvar) &&
+            next_ndvar <= last_non_converged_ndvar
+        ) {
+          # Found optimal: current converges but next would not
+          optimal_ndvar <- current_ndvar
+          is_converged <- TRUE
+          break
+        }
+
+        # Check limits
+        if (next_ndvar < min_ndvar) {
+          optimal_ndvar <- current_ndvar
+          is_converged <- TRUE
+          break
+        }
+
+        current_ndvar <- next_ndvar
+      } else {
+        # Try 2n to find upper bound
+        next_ndvar <- current_ndvar * 2
+
+        # Check limits
+        if (next_ndvar > max_ndvar) {
+          warning(
+            sprintf(
+              "Maximum ndvar limit (%d) reached without convergence.",
+              max_ndvar
+            )
+          )
+          optimal_ndvar <- max_ndvar
+          is_converged <- FALSE
+          break
+        }
+
+        current_ndvar <- next_ndvar
+      }
+    }
+
+    # Safety check: if we're cycling, break
+    if (iteration_count > 20) {
+      optimal_ndvar <- current_ndvar
+      warning(
+        sprintf(
+          "Optimization reached iteration limit. Using ndvar = %d.",
+          current_ndvar
+        )
+      )
+      break
+    }
+  }
+
+  # Convert iterations list to data frame
+  if (length(iterations_list) > 0) {
+    iterations <- do.call(rbind, lapply(iterations_list, as.data.frame))
+  } else {
+    iterations <- data.frame(
+      iteration = integer(),
+      ndvar = integer(),
+      converged = logical(),
+      reason = character(),
+      stringsAsFactors = FALSE
+    )
+  }
+
+  # Print summary if requested
+  if (print_summary) {
+    cat("\n=== NDvar Optimization Summary ===\n")
+    cat("\nOptimization Parameters:")
+    cat("\n- Starting ndvar:", start_ndvar)
+    cat("\n- Min ndvar limit:", min_ndvar)
+    cat("\n- Max ndvar limit:", max_ndvar)
+    cat("\n- Convergence threshold: 5%")
+
+    cat("\n\nOptimization Results:")
+    cat("\n- Total iterations:", iteration_count)
+    cat("\n- Optimal ndvar found:", optimal_ndvar)
+    cat("\n- Status:", if (is_converged) "CONVERGED" else "NOT CONVERGED")
+
+    cat("\n\nIteration History:\n")
+    print(iterations)
+
+    if (is_converged) {
+      cat(
+        sprintf(
+          "\n✓ Successfully optimized ndvar to %d (all nodes converge at 5%% threshold)\n",
+          optimal_ndvar
+        )
+      )
+    } else {
+      cat(
+        "\n✗ Could not find converging ndvar within specified limits\n"
+      )
+    }
+  }
+
+  list(
+    optimal_ndvar = optimal_ndvar,
+    converged = is_converged,
+    iterations = iterations,
+    convergence_results = convergence_results
+  )
 }

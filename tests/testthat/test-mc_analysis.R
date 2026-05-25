@@ -581,9 +581,9 @@ suppressMessages({
         "conv_01",
         "conv_025",
         "conv_05",
-        "conv_01_no_tiny",
-        "conv_025_no_tiny",
-        "conv_05_no_tiny"
+        "conv_01_tiny",
+        "conv_025_tiny",
+        "conv_05_tiny"
       ) %in%
         names(result)
     ))
@@ -861,5 +861,307 @@ suppressMessages({
     expect_s3_class(result_subset, "data.frame")
     expect_true(all(unique(result_subset$mcnode) %in% subset_nodes))
     expect_true(nrow(result_subset) <= nrow(result_all))
+  })
+
+  # Tests for optim_ndvar
+  test_that("optim_ndvar returns correct structure", {
+    mctable <- imports_mctable[
+      imports_mctable$mcnode %in% c("h_prev", "w_prev"),
+      c("mcnode", "sample_space")
+    ]
+
+    result <- optim_ndvar(
+      exp = quote({
+        result <- h_prev + w_prev
+      }),
+      mctable = mctable,
+      min_ndvar = 50,
+      max_ndvar = 200,
+      start_ndvar = 100,
+      print_summary = FALSE,
+      progress = FALSE
+    )
+
+    expect_type(result, "list")
+    expect_named(
+      result,
+      c("optimal_ndvar", "converged", "iterations", "convergence_results")
+    )
+    expect_type(result$optimal_ndvar, "double")
+    expect_type(result$converged, "logical")
+    expect_s3_class(result$iterations, "data.frame")
+    expect_s3_class(result$convergence_results, "data.frame")
+  })
+
+  test_that("optim_ndvar iterations data frame has correct structure", {
+    mctable <- imports_mctable[
+      imports_mctable$mcnode %in% c("h_prev", "w_prev"),
+      c("mcnode", "sample_space")
+    ]
+
+    result <- optim_ndvar(
+      exp = quote({
+        result <- h_prev + w_prev
+      }),
+      mctable = mctable,
+      min_ndvar = 50,
+      max_ndvar = 200,
+      start_ndvar = 100,
+      print_summary = FALSE,
+      progress = FALSE
+    )
+
+    expect_true(nrow(result$iterations) > 0)
+    expect_named(
+      result$iterations,
+      c("iteration", "ndvar", "converged", "reason")
+    )
+    expect_type(result$iterations$iteration, "double")
+    expect_type(result$iterations$ndvar, "double")
+    expect_type(result$iterations$converged, "logical")
+    expect_type(result$iterations$reason, "character")
+  })
+
+  test_that("optim_ndvar respects min_ndvar and max_ndvar limits", {
+    mctable <- imports_mctable[
+      imports_mctable$mcnode %in% c("h_prev", "w_prev"),
+      c("mcnode", "sample_space")
+    ]
+
+    result <- optim_ndvar(
+      exp = quote({
+        result <- h_prev + w_prev
+      }),
+      mctable = mctable,
+      min_ndvar = 50,
+      max_ndvar = 500,
+      start_ndvar = 100,
+      print_summary = FALSE,
+      progress = FALSE
+    )
+
+    expect_true(result$optimal_ndvar >= 50)
+    expect_true(result$optimal_ndvar <= 500)
+  })
+
+  test_that("optim_ndvar print_summary parameter works", {
+    mctable <- imports_mctable[
+      c("h_prev", "w_prev") %in% imports_mctable$mcnode,
+      c("mcnode", "sample_space")
+    ]
+
+    # Test with print_summary = FALSE
+    output <- capture.output({
+      result <- optim_ndvar(
+        exp = quote({
+          result <- h_prev + w_prev
+        }),
+        mctable = mctable,
+        min_ndvar = 50,
+        max_ndvar = 200,
+        start_ndvar = 100,
+        print_summary = FALSE,
+        progress = FALSE
+      )
+    })
+    expect_equal(length(output), 0)
+    expect_type(result$optimal_ndvar, "double")
+
+    # Test with print_summary = TRUE
+    output <- capture.output({
+      result <- optim_ndvar(
+        exp = quote({
+          result <- h_prev + w_prev
+        }),
+        mctable = mctable,
+        min_ndvar = 50,
+        max_ndvar = 200,
+        start_ndvar = 100,
+        print_summary = TRUE,
+        progress = FALSE
+      )
+    })
+    expect_true(length(output) > 0)
+    expect_true(any(grepl("NDvar Optimization Summary", output)))
+    expect_true(any(grepl("Optimal ndvar found", output)))
+  })
+
+  test_that("optim_ndvar progress parameter works", {
+    mctable <- imports_mctable[
+      imports_mctable$mcnode %in% c("h_prev", "w_prev"),
+      c("mcnode", "sample_space")
+    ]
+
+    output <- capture.output({
+      result <- optim_ndvar(
+        exp = quote({
+          result <- h_prev + w_prev
+        }),
+        mctable = mctable,
+        min_ndvar = 50,
+        max_ndvar = 200,
+        start_ndvar = 100,
+        print_summary = FALSE,
+        progress = TRUE
+      )
+    })
+
+    expect_true(any(grepl("\\[Iteration", output)))
+    expect_true(any(grepl("Testing ndvar", output)))
+  })
+
+  test_that("optim_ndvar validates input parameters", {
+    mctable <- imports_mctable[
+      imports_mctable$mcnode %in% c("h_prev", "w_prev"),
+      c("mcnode", "sample_space")
+    ]
+
+    # Test invalid mctable
+    expect_error(
+      optim_ndvar(
+        exp = quote({
+          result <- h_prev + w_prev
+        }),
+        mctable = list(),
+        print_summary = FALSE
+      ),
+      "mctable must be a data frame"
+    )
+
+    # Test missing columns
+    bad_mctable <- data.frame(mcnode = c("a", "b"))
+    expect_error(
+      optim_ndvar(
+        exp = quote({
+          result <- h_prev + w_prev
+        }),
+        mctable = bad_mctable,
+        print_summary = FALSE
+      ),
+      "mctable must contain columns"
+    )
+
+    # Test invalid min_ndvar
+    expect_error(
+      optim_ndvar(
+        exp = quote({
+          result <- h_prev + w_prev
+        }),
+        mctable = mctable,
+        min_ndvar = 0,
+        print_summary = FALSE
+      ),
+      "min_ndvar must be >= 1"
+    )
+
+    # Test invalid max_ndvar
+    expect_error(
+      optim_ndvar(
+        exp = quote({
+          result <- h_prev + w_prev
+        }),
+        mctable = mctable,
+        min_ndvar = 100,
+        max_ndvar = 50,
+        print_summary = FALSE
+      ),
+      "max_ndvar must be > min_ndvar"
+    )
+  })
+
+  test_that("optim_ndvar finds optimal ndvar through binary search", {
+    mctable <- imports_mctable[
+      imports_mctable$mcnode %in% c("h_prev", "w_prev"),
+      c("mcnode", "sample_space")
+    ]
+
+    result <- optim_ndvar(
+      exp = quote({
+        result <- h_prev + w_prev
+      }),
+      mctable = mctable,
+      min_ndvar = 50,
+      max_ndvar = 500,
+      start_ndvar = 101,
+      print_summary = FALSE,
+      progress = FALSE
+    )
+
+    # Should have tracked multiple iterations
+    expect_true(nrow(result$iterations) > 0)
+
+    # Optimal should be found if converged
+    if (result$converged) {
+      expect_true(
+        result$optimal_ndvar >= result$iterations$ndvar[1] / 2 ||
+          result$optimal_ndvar <= result$iterations$ndvar[1]
+      )
+    }
+  })
+
+  test_that("optim_ndvar works with complex expressions", {
+    mctable <- imports_mctable[
+      imports_mctable$mcnode %in% c("h_prev", "w_prev", "test_sensi"),
+      c("mcnode", "sample_space")
+    ]
+
+    result <- optim_ndvar(
+      exp = quote({
+        infected <- h_prev * w_prev
+        detected <- infected * test_sensi
+        result <- detected
+      }),
+      mctable = mctable,
+      min_ndvar = 100,
+      max_ndvar = 500,
+      start_ndvar = 200,
+      print_summary = FALSE,
+      progress = FALSE
+    )
+
+    expect_type(result$optimal_ndvar, "double")
+    expect_s3_class(result$convergence_results, "data.frame")
+  })
+
+  test_that("optim_ndvar convergence_results contains expected columns", {
+    result <- optim_ndvar(
+      exp = quote({
+        result <- h_prev + w_prev
+      }),
+      mctable = imports_mctable,
+      min_ndvar = 50,
+      max_ndvar = 200,
+      start_ndvar = 100,
+      print_summary = FALSE,
+      progress = FALSE
+    )
+
+    # Check that convergence_results has expected columns
+    expected_cols <- c("mcnode", "mean_value", "max_dif_scaled", "conv_05")
+    expect_true(all(expected_cols %in% names(result$convergence_results)))
+
+    # Check that convergence columns are logical
+    expect_type(result$convergence_results$conv_05, "logical")
+  })
+  test_that("optim_ndvar works with no expressions", {
+    test_mctable <- imports_mctable[
+      imports_mctable$mcnode %in% c("h_prev", "w_prev"),
+      c("mcnode", "sample_space")
+    ]
+
+    result <- optim_ndvar(
+      mctable = test_mctable,
+      exp = NULL,
+      min_ndvar = 50,
+      max_ndvar = 500,
+      start_ndvar = 200,
+      print_summary = FALSE,
+      progress = FALSE
+    )
+
+    expect_type(result$optimal_ndvar, "double")
+    expect_true(result$converged)
+    expect_s3_class(result$iterations, "data.frame")
+    expect_s3_class(result$convergence_results, "data.frame")
   })
 })
