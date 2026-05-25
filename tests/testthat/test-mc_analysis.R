@@ -581,9 +581,9 @@ suppressMessages({
         "conv_01",
         "conv_025",
         "conv_05",
-        "conv_01_tiny",
-        "conv_025_tiny",
-        "conv_05_tiny"
+        "conv_01_no_tiny",
+        "conv_025_no_tiny",
+        "conv_05_no_tiny"
       ) %in%
         names(result)
     ))

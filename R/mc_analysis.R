@@ -845,16 +845,16 @@ mcmodule_converg <- function(
           conv_05 <- abs(max_dif_scaled) < 0.05
 
           if (!is.null(tiny_threshold)) {
-            tiny <- max_dif < tiny_threshold
-            conv_01_tiny <- conv_01 | tiny
-            conv_025_tiny <- conv_025 | tiny
-            conv_05_tiny <- conv_05 | tiny
+            tiny <- abs(max_dif) < tiny_threshold
+            conv_01_no_tiny <- conv_01 & !tiny
+            conv_025_no_tiny <- conv_025 & !tiny
+            conv_05_no_tiny <- conv_05 & !tiny
           }
 
           if (!is.null(conv_threshold)) {
             conv_manual <- abs(max_dif_scaled) < conv_threshold
             if (!is.null(tiny_threshold)) {
-              conv_manual_tiny <- conv_manual | tiny
+              conv_manual_no_tiny <- conv_manual & !tiny
             }
           }
 
@@ -885,15 +885,21 @@ mcmodule_converg <- function(
               if (!is.null(tiny_threshold)) {
                 mc_convergence_list[[
                   list_index
-                ]]$conv_manual_tiny <- conv_manual_tiny
+                ]]$conv_manual_no_tiny <- conv_manual_no_tiny
               }
             }
 
             if (!is.null(tiny_threshold)) {
               mc_convergence_list[[list_index]]$tiny <- tiny
-              mc_convergence_list[[list_index]]$conv_01_tiny <- conv_01_tiny
-              mc_convergence_list[[list_index]]$conv_025_tiny <- conv_025_tiny
-              mc_convergence_list[[list_index]]$conv_05_tiny <- conv_05_tiny
+              mc_convergence_list[[
+                list_index
+              ]]$conv_01_no_tiny <- conv_01_no_tiny
+              mc_convergence_list[[
+                list_index
+              ]]$conv_025_no_tiny <- conv_025_no_tiny
+              mc_convergence_list[[
+                list_index
+              ]]$conv_05_no_tiny <- conv_05_no_tiny
             }
 
             list_index <- list_index + 1
@@ -1002,23 +1008,25 @@ mcmodule_converg <- function(
       ))
 
       if (!is.null(tiny_threshold)) {
-        diverged_manual_tiny <- length(unique(conv_df$mcnode[
-          !conv_df$conv_manual_tiny
+        diverged_manual_no_tiny <- length(unique(conv_df$mcnode[
+          !conv_df$conv_manual_no_tiny
         ]))
 
-        diverged_manual_tiny_names <- conv_df$mcnode[!conv_df$conv_manual_tiny]
+        diverged_manual_no_tiny_names <- conv_df$mcnode[
+          !conv_df$conv_manual_no_tiny
+        ]
 
         cat(sprintf(
           "\n\n- More than %.4f divergence (over %.4f): %d (%s)",
           conv_threshold,
           tiny_threshold,
-          diverged_manual_tiny,
-          pct(diverged_manual_tiny / total_nodes * 100)
+          diverged_manual_no_tiny,
+          pct(diverged_manual_no_tiny / total_nodes * 100)
         ))
         cat(sprintf(
           "\n%s",
           conv_threshold,
-          format_non_converged(diverged_manual_tiny_names)
+          format_non_converged(diverged_manual_no_tiny_names)
         ))
       }
     }
@@ -1058,20 +1066,22 @@ mcmodule_converg <- function(
     cat(format_non_converged(diverged_names_05))
 
     if (!is.null(tiny_threshold)) {
-      diverged_05_tiny <- length(unique(conv_df$mcnode[-conv_df$conv_05_tiny]))
+      diverged_05_no_tiny <- length(unique(conv_df$mcnode[
+        -conv_df$conv_05_no_tiny
+      ]))
 
-      diverged_05_tiny_names <- conv_df$mcnode[-conv_df$conv_05_tiny]
+      diverged_05_no_tiny_names <- conv_df$mcnode[-conv_df$conv_05_no_tiny]
 
       cat(sprintf(
         "\n\n- More than 5%% divergence (over %.4f): %d (%s)",
         tiny_threshold,
-        diverged_05_tiny,
-        pct(diverged_05_tiny / total_nodes * 100)
+        diverged_05_no_tiny,
+        pct(diverged_05_no_tiny / total_nodes * 100)
       ))
       cat(sprintf(
         "\n%s",
         conv_threshold,
-        format_non_converged(diverged_05_tiny_names)
+        format_non_converged(diverged_05_no_tiny_names)
       ))
     }
 
