@@ -105,7 +105,6 @@ mc_network(example_mcmodule, legend = TRUE)
 
 ![](man/figures/mc_network_example.png)
 
-
 6.  You can also perform model diagnosis, such as checking convergence and inputs-output uncertainty correlation analysis
 
 ``` r
@@ -122,7 +121,7 @@ Further documentation and examples can be found in the [vignette](https://natali
 
 If you use `mcmodule` in your research, please cite:
 
-Ciria N, Allepuz A, Ciaravino G (2025). mcmodule: Modular Monte Carlo Risk Analysis. R package version 1.2.0, <https://nataliaciria.com/mcmodule/>.
+Ciria N, Allepuz A, Ciaravino G (2026). mcmodule: Modular Monte Carlo Risk Analysis. R package version 1.3.0, <https://nataliaciria.com/mcmodule/>.
 
 ## Acknowledgements
 
