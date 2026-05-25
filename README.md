@@ -109,10 +109,10 @@ mc_network(example_mcmodule, legend = TRUE)
 
 ``` r
 # Convergence analysis
-exmaple_converg<-mcmodule_converg(example_mcmodule)
+example_converg<-mcmodule_converg(example_mcmodule)
 
 # Correlation analysis
-exmaple_corr<-mcmodule_corr(example_mcmodule, output = "result_agg")
+example_corr<-mcmodule_corr(example_mcmodule, output = "result_agg")
 ```
 
 Further documentation and examples can be found in the [vignette](https://nataliaciria.com/mcmodule/articles/mcmodule.html).
