@@ -217,7 +217,7 @@ get_node_list <- function(
         names(in_node_list)[
           names(in_node_list) %in% param_names
         ] <- node_name_exp
-        all_nodes[all_nodes %in% param_names] <- node_name_exp
+        all_nodes[all_nodes %in% node_name] <- node_name_exp
       }
     }
   }
