@@ -91,7 +91,7 @@ mc_summary(example_mcmodule, "result")
 
 # Get 'result' aggregated by category 1
 example_mcmodule<-example_mcmodule%>%
-  agg_totals(
+  agg_variates(
     mc_name = "result",
     agg_keys = c("category_1")
   )

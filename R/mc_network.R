@@ -327,7 +327,7 @@ visNetwork_edges <- function(mcmodule, inputs = FALSE) {
 #'   \item \strong{compare} (medium purple, #D88FD5): Comparison nodes created with \code{mc_compare()}
 #'   \item \strong{trials_info} (light orange, #FAE4CB): Trial, subset, and related information nodes
 #'   \item \strong{total} (orange, #F39200): Total nodes created with \code{at_least_one()}
-#'   \item \strong{agg_total} (dark orange, #C17816): Aggregated total nodes created with \code{agg_totals()}
+#'   \item \strong{agg_total} (dark orange, #C17816): Aggregated total nodes created with \code{agg_variates()}
 #' }
 #'
 #' @param mcmodule (mcmodule object). Module containing network to visualise.

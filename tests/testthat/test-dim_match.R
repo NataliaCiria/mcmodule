@@ -445,7 +445,7 @@ suppressMessages({
     expect_equal(result$keys_xy$g_row.y, c(1, NA, NA, 2, NA, NA, 3, 4))
 
     # Aggregate imported_contaminated
-    module <- agg_totals(module, "imported_contaminated")
+    module <- agg_variates(module, "imported_contaminated")
     imported_contaminated_agg_keys <- mc_keys(
       mcmodule = module,
       mc_name = "imported_contaminated_agg"
@@ -459,7 +459,7 @@ suppressMessages({
     expect_equal(result$keys_xy$g_row.y, c(1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2))
 
     # Aggregate no_detect
-    module <- agg_totals(module, "no_detect")
+    module <- agg_variates(module, "no_detect")
     no_detect_agg_keys <- mc_keys(
       mcmodule = module,
       mc_name = "no_detect_agg"

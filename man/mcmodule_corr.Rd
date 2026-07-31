@@ -82,7 +82,7 @@ tornado analysis (from the \code{mc2d} package). Supports multiple correlation m
 and captures warnings generated during calculation.
 }
 \examples{
-mcmodule <- agg_totals(
+mcmodule <- agg_variates(
   mcmodule = imports_mcmodule,
   mc_name = "no_detect",
   agg_keys = "pathogen"

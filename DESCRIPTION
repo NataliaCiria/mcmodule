@@ -27,7 +27,8 @@ Suggests:
     igraph,
     ggplot2,
     sensitivity,
-    sensobol
+    sensobol,
+    lifecycle
 Config/testthat/edition: 3
 Imports: 
     dplyr,

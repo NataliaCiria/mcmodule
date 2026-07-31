@@ -608,7 +608,7 @@ suppressMessages({
     )
 
     # Create aggregated node by scenario_id so output has one variate per scenario
-    test_module <- agg_totals(
+    test_module <- agg_variates(
       test_module,
       mc_name = "p_test",
       agg_keys = "scenario_id"
@@ -745,12 +745,12 @@ suppressMessages({
       data_keys = example_keys
     )
 
-    module_1 <- agg_totals(
+    module_1 <- agg_variates(
       module_1,
       mc_name = "p_mod1",
       agg_keys = "scenario_id"
     )
-    module_2 <- agg_totals(
+    module_2 <- agg_variates(
       module_2,
       mc_name = "p_mod2",
       agg_keys = "scenario_id"
