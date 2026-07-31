@@ -572,10 +572,10 @@ This `trial_totals()` application is beyond the scope of this vignette, but ther
 
 ### Aggregated totals
 
-Until this point, all mcnode operations were element-wise, keeping the original dimensions, and allowing uncertainties and variates to propagate through the calculations. However, sometimes, we need to aggregate variates to calculate totals, for example, to total risk of introducing a pathogen across all regions. In this case, we want to preserve the uncertainty dimension but reduce the variates dimension. With `agg_totals()` we can calculate overall probabilities or sum quantities across groups.
+Until this point, all mcnode operations were element-wise, keeping the original dimensions, and allowing uncertainties and variates to propagate through the calculations. However, sometimes, we need to aggregate variates to calculate totals, for example, to total risk of introducing a pathogen across all regions. In this case, we want to preserve the uncertainty dimension but reduce the variates dimension. With `agg_variates()` we can calculate overall probabilities or sum quantities across groups.
 
 ```{r}
-imports <- agg_totals(
+imports <- agg_variates(
   mcmodule = imports,
   mc_name = "no_detect_set",
   agg_keys = "pathogen"
@@ -630,7 +630,7 @@ imports_wif <- imports_wif %>%
     subsets_p = "h_prev",
     mctable = imports_mctable,
   ) %>%
-  agg_totals(
+  agg_variates(
     mc_name = "no_detect_set",
     agg_keys = c("pathogen", "scenario_id")
   )
@@ -808,17 +808,17 @@ A similar function is `mcnode_null_rm()`, that allows you replace missing nodes,
 
 ## Customizing total node names
 
-Functions like `at_least_one()`, `agg_totals()`, and `trial_totals()` automatically generate new mcnodes with informative suffixes. You can customize these names for clarity or documentation purposes:
+Functions like `at_least_one()`, `agg_variates()`, and `trial_totals()` automatically generate new mcnodes with informative suffixes. You can customize these names for clarity or documentation purposes:
 
 ```{r}
 # Custom name for at_least_one()
 intro <- at_least_one(intro, c("no_detect", "dir_contact"), name = "custom_total")
 
-# Custom name for agg_totals()
-intro <- agg_totals(intro, "no_detect_set", name = "custom_agg")
+# Custom name for agg_variates()
+intro <- agg_variates(intro, "no_detect_set", name = "custom_agg")
 
-# Custom suffix for agg_totals()
-intro <- agg_totals(intro, "no_detect_set",
+# Custom suffix for agg_variates()
+intro <- agg_variates(intro, "no_detect_set",
   agg_keys = c("scenario_id", "pathogen"),
   agg_suffix = "aggregated"
 )

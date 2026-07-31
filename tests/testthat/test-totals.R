@@ -151,7 +151,7 @@ suppressMessages({
     )
   })
 
-  test_that("agg_totals works correctly", {
+  test_that("agg_variates works correctly", {
     # Create test data
     test_module <- list(
       node_list = list(
@@ -185,7 +185,7 @@ suppressMessages({
     )
 
     # Test default agg
-    result <- agg_totals(test_module, "p_1")
+    result <- agg_variates(test_module, "p_1")
 
     expect_equal(
       result$node_list[["p_1_agg"]]$description,
@@ -193,21 +193,21 @@ suppressMessages({
     )
 
     # Test aggregation methods
-    result_sum <- agg_totals(test_module, "p_1", agg_func = "sum")
+    result_sum <- agg_variates(test_module, "p_1", agg_func = "sum")
     expect_equal(
       result_sum$node_list[["p_1_agg"]]$description,
       "Sum by: scenario_id"
     )
 
-    result_avg <- agg_totals(test_module, "p_1", agg_func = "avg")
+    result_avg <- agg_variates(test_module, "p_1", agg_func = "avg")
     expect_equal(
       result_avg$node_list[["p_1_agg"]]$description,
       "Average value by: scenario_id"
     )
 
     # Test error handling
-    expect_error(agg_totals(test_module, "test_node", agg_func = "invalid"))
-    expect_error(agg_totals(test_module, "nonexistent_node"))
+    expect_error(agg_variates(test_module, "test_node", agg_func = "invalid"))
+    expect_error(agg_variates(test_module, "nonexistent_node"))
   })
 
   # Helper function to setup the test module
@@ -566,7 +566,7 @@ suppressMessages({
     )
   })
 
-  test_that("agg_totals naming options work", {
+  test_that("agg_variates naming options work", {
     module <- list(
       node_list = list(
         p_1 = list(
@@ -589,25 +589,25 @@ suppressMessages({
     )
 
     # Default agg name
-    mod1 <- agg_totals(module, "p_1")
+    mod1 <- agg_variates(module, "p_1")
     expect_true("p_1_agg" %in% names(mod1$node_list))
 
     # Custom name
-    mod2 <- agg_totals(module, "p_1", name = "custom_agg")
+    mod2 <- agg_variates(module, "p_1", name = "custom_agg")
     expect_true("custom_agg" %in% names(mod2$node_list))
 
     # Custom agg_suffix
-    mod3 <- agg_totals(module, "p_1", agg_suffix = "sum")
+    mod3 <- agg_variates(module, "p_1", agg_suffix = "sum")
     expect_true("p_1_sum" %in% names(mod3$node_list))
 
     # Error for invalid agg_func
     expect_error(
-      agg_totals(module, "p_1", agg_func = "invalid"),
+      agg_variates(module, "p_1", agg_func = "invalid"),
       "Aggregation function"
     )
 
     # Error for missing node
-    expect_error(agg_totals(module, "missing"), "not found")
+    expect_error(agg_variates(module, "missing"), "not found")
   })
 
   test_that("trial_totals naming options work", {
@@ -752,12 +752,12 @@ suppressMessages({
   test_that("at_least_one match works with agg mcnodes", {
     # Create a test module with mock data
     test_module <- setup_test_mcmodule()
-    test_module <- agg_totals(
+    test_module <- agg_variates(
       test_module,
       c("p_1_x"),
       agg_keys = c("scenario_id", "category")
     )
-    test_module <- agg_totals(
+    test_module <- agg_variates(
       test_module,
       c("p_2"),
       agg_keys = c("scenario_id", "category")
@@ -928,7 +928,7 @@ suppressMessages({
     expect_equal(result$node_list$p_all_set$data_name, c("data_a", "data_b"))
   })
 
-  test_that("agg_totals works with filtered mcnodes (mc_filter integration)", {
+  test_that("agg_variates works with filtered mcnodes (mc_filter integration)", {
     # Create test module with grouped data
     test_module <- list(
       node_list = list(
@@ -986,7 +986,7 @@ suppressMessages({
     expect_equal(dim(filtered_module$node_list$contact_veh$mcnode)[3], 3)
 
     # Now aggregate the filtered node
-    agg_module <- agg_totals(
+    agg_module <- agg_variates(
       filtered_module,
       "contact_veh",
       agg_keys = "scenario_id"
@@ -1000,7 +1000,7 @@ suppressMessages({
     expect_equal(agg_module$node_list$contact_veh_agg$type, "agg_total")
   })
 
-  test_that("agg_totals handles single-variate groups correctly (edge case)", {
+  test_that("agg_variates handles single-variate groups correctly (edge case)", {
     # Create test module where some groups will have only 1 variate
     test_module <- list(
       node_list = list(
@@ -1027,7 +1027,7 @@ suppressMessages({
     # Aggregate by scenario_id
     # Group 1 (scenario "0"): 3 variates (A, B, C)
     # Group 2 (scenario "1"): 2 variates (D, E) - different from first group size
-    result <- agg_totals(
+    result <- agg_variates(
       test_module,
       "risk",
       agg_keys = "scenario_id"
@@ -1043,7 +1043,7 @@ suppressMessages({
     # Check summary
     expect_equal(nrow(result$node_list$risk_agg$summary), 2)
   })
-  test_that("agg_totals handles from_sample_design nodes correctly", {
+  test_that("agg_variates handles from_sample_design nodes correctly", {
     # Create test module with a node from sample design
     sample_design <- data.frame(
       input_a = c(0.1, 0.2, 0.3),
@@ -1061,7 +1061,7 @@ suppressMessages({
     )
 
     # Aggregate the results
-    result <- agg_totals(
+    result <- agg_variates(
       sample_module,
       mc_name = c("result_b")
     )
@@ -1072,7 +1072,7 @@ suppressMessages({
     expect_equal(result$node_list$result_b_agg$from_sample_design, TRUE)
   })
 
-  test_that("agg_totals handles from_sample_design nodes with data and keys correctly", {
+  test_that("agg_variates handles from_sample_design nodes with data and keys correctly", {
     # Create test module with a node from sample design
     sample_design <- data.frame(
       input_a = c(0.1, 0.2, 0.3),
@@ -1098,7 +1098,7 @@ suppressMessages({
     )
 
     # Aggregate the results
-    result <- agg_totals(
+    result <- agg_variates(
       sample_module,
       mc_name = c("result_b"),
       agg_keys = c("category")
@@ -1108,4 +1108,23 @@ suppressMessages({
     expect_true(is.mcnode(result$node_list$result_b_agg$mcnode))
     expect_equal(result$node_list$result_b_agg$from_sample_design, TRUE)
   })
+  
+  test_that("agg_totals() warns and calls agg_variates()", {
+    lifecycle::expect_deprecated(
+    old <- agg_totals(
+        imports_mcmodule,
+        "no_detect",
+        agg_keys = c("scenario_id", "pathogen")
+      )
+    )
+
+    new <- agg_totals(
+        imports_mcmodule,
+        "no_detect",
+        agg_keys = c("scenario_id", "pathogen")
+      )
+
+    expect_equal(old, new)
+  })
+
 })

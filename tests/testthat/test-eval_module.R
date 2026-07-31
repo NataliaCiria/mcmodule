@@ -296,7 +296,7 @@ suppressMessages({
       sensi_variation = c(NA_character_)
     )
     # Get previous module
-    imports_mcmodule <- agg_totals(
+    imports_mcmodule <- agg_variates(
       imports_mcmodule,
       "no_detect",
       agg_keys = "pathogen"

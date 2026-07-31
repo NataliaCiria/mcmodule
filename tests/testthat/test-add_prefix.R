@@ -161,7 +161,7 @@ suppressMessages({
         trials_n = "animals_n",
         mctable = imports_mctable
       ) %>%
-      agg_totals(mc_name = "no_detect_set", agg_keys = "pathogen")
+      agg_variates(mc_name = "no_detect_set", agg_keys = "pathogen")
 
     # Apply prefix
     prefixed <- add_prefix(mcmodule_agg, prefix = "prefixed")

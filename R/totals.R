@@ -285,35 +285,38 @@ generate_all_name <- function(mc_names, all_suffix = NULL) {
 #'
 #' Aggregates node values across grouping variables using various methods
 #' (combined probability, sum, mean, or automatic selection). Returns an
-#' updated mcmodule with new aggregated node.
+#' updated mcmodule with a new aggregated node.
 #'
 #' If sample-design nodes are aggregated, the resulting node will be equal
-#' to the original node, but with the "agg_total" type and summary statistics added.
+#' to the original node, but with the `"agg_total"` type and summary statistics
+#' added.
 #'
-#' @param mcmodule (mcmodule object). Module containing node list and data.
-#' @param mc_name (character). Name of node to aggregate.
-#' @param agg_keys (character vector, optional). Column names for grouping.
-#'   If NULL, defaults to "scenario_id". Default: NULL.
-#' @param agg_suffix (character, optional). Suffix for aggregated node name.
-#'   Default: "agg".
-#' @param prefix (character, optional). Prefix for output node name. Default: NULL.
-#' @param name (character, optional). Custom name for output node. Default: NULL.
-#' @param summary (logical). If TRUE, include summary statistics. Default: TRUE.
-#' @param keep_variates (logical). If TRUE, preserve individual variate values.
-#'   Default: FALSE.
-#' @param agg_func (character, optional). Aggregation method: "prob" (combined
-#'   probability), "sum", "avg", or NULL (automatic). Default: NULL.
+#' @param mcmodule An `mcmodule` object. Module containing node list and data.
+#' @param mc_name Character. Name of node to aggregate.
+#' @param agg_keys Character vector, optional. Column names for grouping.
+#'   If `NULL`, defaults to `"scenario_id"`. Default: `NULL`.
+#' @param agg_suffix Character, optional. Suffix for aggregated node name.
+#'   Default: `NULL`.
+#' @param prefix Character, optional. Prefix for output node name. Default: `NULL`.
+#' @param name Character, optional. Custom name for output node. Default: `NULL`.
+#' @param summary Logical. If `TRUE`, include summary statistics. Default: `TRUE`.
+#' @param keep_variates Logical. If `TRUE`, preserve individual variate values.
+#'   Default: `FALSE`.
+#' @param agg_func Character, optional. Aggregation method: `"prob"` for combined
+#'   probability, `"sum"`, `"avg"`, or `NULL` for automatic selection.
+#'   Default: `NULL`.
 #'
-#' @return mcmodule with new aggregated node added
+#' @return An `mcmodule` object with a new aggregated node added.
 #'
 #' @examples
-#' imports_mcmodule <- agg_totals(
+#' imports_mcmodule <- agg_variates(
 #'   imports_mcmodule, "no_detect",
 #'   agg_keys = c("scenario_id", "pathogen")
 #' )
 #' print(imports_mcmodule$node_list$no_detect_agg$summary)
+#'
 #' @export
-agg_totals <- function(
+agg_variates <- function(
   mcmodule,
   mc_name,
   agg_keys = NULL,
@@ -519,6 +522,51 @@ agg_totals <- function(
   return(mcmodule)
 }
 
+#' Aggregate mcnode Values Across Groups
+#'
+#' @description
+#' `r lifecycle::badge("deprecated")`
+#'
+#' `agg_totals()` was renamed to [agg_variates()] because the new name better
+#' describes that the function aggregates mcnode variates across grouping
+#' variables.
+#'
+#' @inheritParams agg_variates
+#'
+#' @return An `mcmodule` object with a new aggregated node added.
+#'
+#' @seealso [agg_variates()]
+#'
+#' @export
+agg_totals <- function(
+  mcmodule,
+  mc_name,
+  agg_keys = NULL,
+  agg_suffix = NULL,
+  prefix = NULL,
+  name = NULL,
+  summary = TRUE,
+  keep_variates = FALSE,
+  agg_func = NULL
+) {
+  lifecycle::deprecate_warn(
+    when = "1.3.1",
+    what = "agg_totals()",
+    with = "agg_variates()"
+  )
+
+  agg_variates(
+    mcmodule = mcmodule,
+    mc_name = mc_name,
+    agg_keys = agg_keys,
+    agg_suffix = agg_suffix,
+    prefix = prefix,
+    name = name,
+    summary = summary,
+    keep_variates = keep_variates,
+    agg_func = agg_func
+  )
+}
 
 #' Trial Probability and Expected Counts
 #'
@@ -983,7 +1031,7 @@ trial_totals <- function(
       messages <- character(0)
       withCallingHandlers(
         expr = {
-          mcmodule <- agg_totals(
+          mcmodule <- agg_variates(
             mcmodule = mcmodule,
             mc_name = mc_name,
             agg_keys = agg_keys,
@@ -1275,7 +1323,7 @@ trial_totals <- function(
       messages <- character(0)
       withCallingHandlers(
         expr = {
-          mcmodule <- agg_totals(
+          mcmodule <- agg_variates(
             mcmodule = mcmodule,
             mc_name = mc_name,
             agg_keys = agg_keys,
