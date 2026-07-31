@@ -506,69 +506,12 @@ mc_plot <- function(
   }
 
   # Create base plot with flipped axes (variates on y-axis, values on x-axis)
-  # Start with boxplot using ALL variates
   p <- ggplot2::ggplot(
     long_df_boxplot,
     ggplot2::aes(x = .data$value, y = .data$y_label)
   )
 
-  # Add boxplot using all variates with optional color mapping
-  if (!is.null(color_by) && color_by %in% names(long_df_boxplot)) {
-    p <- p +
-      ggplot2::geom_boxplot(
-        ggplot2::aes(fill = .data[[color_by]]),
-        alpha = boxplot_alpha,
-        outlier.alpha = 0,
-        color = "gray30"
-      )
-  } else if (!is.null(long_df_boxplot$scenario_color)) {
-    # Default scenario coloring
-    p <- p +
-      ggplot2::geom_boxplot(
-        ggplot2::aes(fill = .data$scenario_color),
-        alpha = boxplot_alpha,
-        outlier.alpha = 0,
-        color = "gray30"
-      )
-  } else {
-    p <- p +
-      ggplot2::geom_boxplot(
-        alpha = boxplot_alpha,
-        outlier.alpha = 0,
-        color = "gray30",
-        fill = "gray80"
-      )
-  }
-
-  # Add min/max markers to boxplot
-  min_max_df <- stats::aggregate(
-    long_df_boxplot$value,
-    list(y_label = long_df_boxplot$y_label),
-    function(x) c(min = min(x), max = max(x))
-  )
-  min_max_df <- data.frame(
-    y_label = min_max_df$y_label,
-    min_value = min_max_df$x[, "min"],
-    max_value = min_max_df$x[, "max"]
-  )
-
-  p <- p +
-    ggplot2::geom_point(
-      data = min_max_df,
-      ggplot2::aes(x = .data$min_value, y = .data$y_label),
-      shape = "|",
-      size = 4,
-      color = "gray30"
-    ) +
-    ggplot2::geom_point(
-      data = min_max_df,
-      ggplot2::aes(x = .data$max_value, y = .data$y_label),
-      shape = "|",
-      size = 4,
-      color = "gray30"
-    )
-
-  # Add sampled points with optional color mapping (only if dots enabled)
+  # Add sampled points first (below boxplot) with optional color mapping
   if (length(simulation_indices) > 0) {
     if (!is.null(color_by) && color_by %in% names(long_df_points)) {
       p <- p +
@@ -600,6 +543,62 @@ mc_plot <- function(
         )
     }
   }
+
+  # Add boxplot on top of points using all variates with optional color mapping
+  if (!is.null(color_by) && color_by %in% names(long_df_boxplot)) {
+    p <- p +
+      ggplot2::geom_boxplot(
+        ggplot2::aes(fill = .data[[color_by]]),
+        alpha = boxplot_alpha,
+        outlier.alpha = 0,
+        color = "gray30"
+      )
+  } else if (!is.null(long_df_boxplot$scenario_color)) {
+    # Default scenario coloring
+    p <- p +
+      ggplot2::geom_boxplot(
+        ggplot2::aes(fill = .data$scenario_color),
+        alpha = boxplot_alpha,
+        outlier.alpha = 0,
+        color = "gray30"
+      )
+  } else {
+    p <- p +
+      ggplot2::geom_boxplot(
+        alpha = boxplot_alpha,
+        outlier.alpha = 0,
+        color = "gray30",
+        fill = "gray80"
+      )
+  }
+
+  # Add min/max markers on top of boxplot
+  min_max_df <- stats::aggregate(
+    long_df_boxplot$value,
+    list(y_label = long_df_boxplot$y_label),
+    function(x) c(min = min(x), max = max(x))
+  )
+  min_max_df <- data.frame(
+    y_label = min_max_df$y_label,
+    min_value = min_max_df$x[, "min"],
+    max_value = min_max_df$x[, "max"]
+  )
+
+  p <- p +
+    ggplot2::geom_point(
+      data = min_max_df,
+      ggplot2::aes(x = .data$min_value, y = .data$y_label),
+      shape = "|",
+      size = 4,
+      color = "gray30"
+    ) +
+    ggplot2::geom_point(
+      data = min_max_df,
+      ggplot2::aes(x = .data$max_value, y = .data$y_label),
+      shape = "|",
+      size = 4,
+      color = "gray30"
+    )
 
   # Apply color palette if provided or use default
   if (!is.null(color_by) && color_by %in% names(long_df_points)) {
