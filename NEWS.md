@@ -1,5 +1,25 @@
 # mcmodule (development version)
 
+## Lifecycle
+
+* `agg_totals()` has been deprecated in favour of `agg_variates()`. The old
+  name remains available for backwards compatibility but now issues a lifecycle
+  warning.
+
+## Bug fixes
+
+* Fixed a bug in `mc_plot()` where boxplots were drawn underneath scatter
+  points (#86).
+
+* Fixed a bug in `eval_module()` related to handling `param_names` (#85).
+
+## Documentation
+
+* Updated the sensitivity analysis vignette and included references.
+
+* Updated README installation instructions to use `pak::pak()` instead of
+  `devtools::install_github()`.
+
 # mcmodule 1.3.0
 
 ## New features
