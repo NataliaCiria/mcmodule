@@ -1118,7 +1118,7 @@ suppressMessages({
       )
     )
 
-    new <- agg_totals(
+    new <- agg_variates(
         imports_mcmodule,
         "no_detect",
         agg_keys = c("scenario_id", "pathogen")

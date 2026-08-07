@@ -555,17 +555,10 @@ agg_totals <- function(
     with = "agg_variates()"
   )
 
-  agg_variates(
-    mcmodule = mcmodule,
-    mc_name = mc_name,
-    agg_keys = agg_keys,
-    agg_suffix = agg_suffix,
-    prefix = prefix,
-    name = name,
-    summary = summary,
-    keep_variates = keep_variates,
-    agg_func = agg_func
-  )
+  # Preserve the original caller expression
+  call <- match.call()
+  call[[1]] <- quote(agg_variates)
+  eval(call, parent.frame())
 }
 
 #' Trial Probability and Expected Counts

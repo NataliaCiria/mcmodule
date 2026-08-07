@@ -1310,7 +1310,6 @@ optim_ndvar <- function(
     # Evaluate module
     mcmodule <- eval_module(
       exp = exp,
-      mctable = mctable,
       sample_design = sample_design,
       summary = FALSE
     )
