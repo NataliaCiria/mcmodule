@@ -740,7 +740,7 @@ mcmodule_tornado(imports)
 
 ## Sensitivity analysis
 
-Sensitivity analysis quantifies how changes in inputs affect model outputs, helping to identify which uncertainties are most important for decision-relevant results. In `mcmodule`, you can perform sensitivity analysis using sample design-based methods such as Morris or Sobol indices for global sensitivity analysis. Different methods using `sensitivity` [@sensitivity] or `sensobol` [@sensobol] R packages are described in the [Sensitivity analysis vignette](#0).
+Sensitivity analysis quantifies how changes in inputs affect model outputs, helping to identify which uncertainties are most important for decision-relevant results. In `mcmodule`, you can perform sensitivity analysis using sample design-based methods such as Morris or Sobol indices for global sensitivity analysis. Different methods using `sensitivity` [@sensitivity] or `sensobol` [@sensobol] R packages are described in the [Sensitivity analysis vignette](https://nataliaciria.com/mcmodule/articles/sensitivity_analysis.html).
 
 ### Sobol indices analysis
 
