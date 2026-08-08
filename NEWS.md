@@ -2,23 +2,29 @@
 
 ## Lifecycle
 
-* `agg_totals()` has been deprecated in favour of `agg_variates()`. The old
-  name remains available for backwards compatibility but now issues a lifecycle
-  warning.
+* `agg_totals()` is now deprecated in favour of `agg_variates()`.
+  `agg_totals()` remains available for backwards compatibility, but now
+  issues a lifecycle warning.
 
 ## Bug fixes
 
-* Fixed a bug in `mc_plot()` where boxplots were drawn underneath scatter
-  points (#86).
+* `mc_plot()` now draws boxplots above scatter points (#86).
 
-* Fixed a bug in `eval_module()` related to handling `param_names` (#85).
+* `get_node_list()` now uses `node_name` instead of `param_names` when filtering `in_nodes` (#84).
+
+* `optim_ndvar()` no longer produces warnings related to empty mctable handling
+  (#87).
+
+* `mcmodule_converg()` tests are now reproducible on CRAN. Tests for
+  non-convergence now set a random seed, because false negatives are expected
+  when using a very limited number of simulations (#87).
 
 ## Documentation
 
-* Updated the sensitivity analysis vignette and included references.
+* Updated the sensitivity analysis vignette and added references.
 
-* Updated README installation instructions to use `pak::pak()` instead of
-  `devtools::install_github()`.
+* Updated README installation instructions to recommend `pak::pak()` instead
+  of `devtools::install_github()`.
 
 # mcmodule 1.3.0
 

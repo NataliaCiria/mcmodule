@@ -545,6 +545,7 @@ suppressMessages({
 
   # Tests for mcmodule_converg
   test_that("mcmodule_converg works with tiny_threshold and returns correct structure", {
+    set.seed(111)
     test_module <- eval_module(
       exp = c(imports = imports_exp),
       data = imports_data,
@@ -602,6 +603,7 @@ suppressMessages({
   })
 
   test_that("mcmodule_converg print_summary parameter works", {
+    set.seed(111)
     test_module <- eval_module(
       exp = c(imports = imports_exp),
       data = imports_data,
@@ -634,6 +636,7 @@ suppressMessages({
   })
 
   test_that("mcmodule_converg progress parameter works", {
+    set.seed(111)
     test_module <- eval_module(
       exp = c(imports = imports_exp),
       data = imports_data,
@@ -660,6 +663,7 @@ suppressMessages({
   })
 
   test_that("mcmodule_converg works with custom convergence threshold", {
+    set.seed(111)
     test_module <- eval_module(
       exp = c(imports = imports_exp),
       data = imports_data,
@@ -680,6 +684,7 @@ suppressMessages({
   })
 
   test_that("mcmodule_converg works with different quantile ranges", {
+    set.seed(111)
     test_module <- eval_module(
       exp = c(imports = imports_exp),
       data = imports_data,
@@ -700,6 +705,7 @@ suppressMessages({
   })
 
   test_that("mcmodule_converg standardized deviations are calculated correctly", {
+    set.seed(111)
     test_module <- eval_module(
       exp = c(imports = imports_exp),
       data = imports_data,
@@ -777,6 +783,7 @@ suppressMessages({
     expect_equal(nrow(result), 53) # 6 imports_1 nodes × 6 variates + 6 imports_2 nodes × 3 variates + 1 exp_a nodes × 3 variates
   })
   test_that("mcmodule_converg works with combined modules with mcnodes that do not converge", {
+    set.seed(111)
     ndvar(10)
     # Create first module with a node that converges
     module1 <- eval_module(

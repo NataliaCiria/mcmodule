@@ -1,24 +1,18 @@
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+0 errors \| 0 warnings \| 1 note
 
 ## Submission
 
-This is a minor release (v1.3.0) that:
+This is a maintenance release (v1.3.1) that:
 
-* New sensitivity analysis workflows using sampling designs (Morris, Sobol), 
-  with new helpers `mctable_bounds()`, `mctable_sobol_matrices()`, and `set_sampling_design()`.
-  
-* Most functions have been updated to support nodes created from sampling designs (`eval_module()`, 
-  `mc_keys()`, `mc_match()`, `mc_match_data()`, `trial_totals()`).
+-   Makes `mcmodule_converg()` CRAN tests reproducible by setting a random seed.
 
-* Added tornado plot for correlation analysis (`mcmodule_tornado()`), an experimental 
-  optimiser for uncertainty convergence (`optim_ndvar()`), and `mcnode_null_rm()` for 
-  handling absent nodes.
+-   Fixes issues in `mc_plot()`, `eval_module()`, `optim_ndvar()`, and `mcmodule_converg()`
 
-* Fixes multiple bugs
+-   Deprecates `agg_totals()` in favour of `agg_variates()`. The old function remains available for backwards compatibility.
 
-* Extends documentation, adding a sensitivity analysis vignette.
+-   Makes small changes to the sensitivity analysis vignette and README.
 
 See NEWS.md for detailed changes.
 
