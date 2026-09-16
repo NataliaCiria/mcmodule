@@ -45,27 +45,27 @@ suppressMessages({
     )
 
     # Check comparison node was created
-    expect_true("p_diff_compared" %in% names(result$node_list))
+    expect_true("p_diff" %in% names(result$node_list))
 
     # Check node metadata
-    expect_equal(result$node_list$p_diff_compared$type, "compare")
-    expect_equal(result$node_list$p_diff_compared$baseline, "0")
-    expect_equal(result$node_list$p_diff_compared$compare_type, "difference")
-    expect_equal(result$node_list$p_diff_compared$param, "p_test")
+    expect_equal(result$node_list$p_diff$type, "compare")
+    expect_equal(result$node_list$p_diff$baseline, "0")
+    expect_equal(result$node_list$p_diff$compare_type, "difference")
+    expect_equal(result$node_list$p_diff$param, "p_test")
 
     # Check dimensions - should have 4 what-if variates (2 from scenario 1, 2 from scenario 2)
-    expect_equal(dim(result$node_list$p_diff_compared$mcnode)[3], 4)
+    expect_equal(dim(result$node_list$p_diff$mcnode)[3], 4)
 
     # Check summary was created
-    expect_true(!is.null(result$node_list$p_diff_compared$summary))
-    expect_equal(nrow(result$node_list$p_diff_compared$summary), 4)
+    expect_true(!is.null(result$node_list$p_diff$summary))
+    expect_equal(nrow(result$node_list$p_diff$summary), 4)
 
     # Verify scenarios in summary
     expect_true(all(
-      result$node_list$p_diff_compared$summary$scenario_id %in% c("1", "2")
+      result$node_list$p_diff$summary$scenario_id %in% c("1", "2")
     ))
     expect_false(any(
-      result$node_list$p_diff_compared$summary$scenario_id == "0"
+      result$node_list$p_diff$summary$scenario_id == "0"
     ))
   })
 
@@ -105,17 +105,17 @@ suppressMessages({
       type = "relative_difference",
       name = "rel_diff"
     )
-    expect_true("rel_diff_compared" %in% names(result_rel_diff$node_list))
+    expect_true("rel_diff" %in% names(result_rel_diff$node_list))
 
     # Test reduction
-    result_red <- mc_compare(
+    result_abs_red <- mc_compare(
       test_module,
       "p_test",
       baseline = "0",
       type = "reduction",
-      name = "reduction"
+      name = "abs_red"
     )
-    expect_true("reduction_compared" %in% names(result_red$node_list))
+    expect_true("abs_red" %in% names(result_abs_red$node_list))
 
     # Test relative_reduction
     result_rel_red <- mc_compare(
@@ -125,7 +125,7 @@ suppressMessages({
       type = "relative_reduction",
       name = "rel_red"
     )
-    expect_true("rel_red_compared" %in% names(result_rel_red$node_list))
+    expect_true("rel_red" %in% names(result_rel_red$node_list))
   })
 
   # Test 3: Missing baseline scenario (should error)
@@ -342,15 +342,15 @@ suppressMessages({
     # Compare filtered node (North baseline vs North what-if scenarios)
     result <- mc_compare(
       filtered_module,
-      "p_north_filtered",
+      "p_north",
       baseline = "0",
       type = "difference"
     )
 
-    expect_true("p_north_filtered_compared" %in% names(result$node_list))
+    expect_true("p_north_compared" %in% names(result$node_list))
 
     # Should have 3 variates (one for each North category in what-if scenario 1)
-    expect_equal(dim(result$node_list$p_north_filtered_compared$mcnode)[3], 3)
+    expect_equal(dim(result$node_list$p_north_compared$mcnode)[3], 3)
   })
 
   # Test 9: Custom naming with prefix and suffix
@@ -374,7 +374,7 @@ suppressMessages({
 
     # Test with custom name
     result1 <- mc_compare(test_module, "p_test", name = "custom")
-    expect_true("custom_compared" %in% names(result1$node_list))
+    expect_true("custom" %in% names(result1$node_list))
 
     # Test with custom suffix
     result2 <- mc_compare(test_module, "p_test", suffix = "_delta")
@@ -430,7 +430,7 @@ suppressMessages({
       summary = FALSE,
       name = "no_sum"
     )
-    expect_true(is.null(result_without$node_list$no_sum_compared$summary))
+    expect_true(is.null(result_without$node_list$no_sum$summary))
   })
 
   # Test 11: Multiple scenarios
@@ -550,7 +550,7 @@ suppressMessages({
       type = "difference",
       name = "diff"
     )
-    values_diff <- unmc(result_diff$node_list$diff_compared$mcnode)
+    values_diff <- unmc(result_diff$node_list$diff$mcnode)
     expect_equal(values_diff[1], 5)
     expect_equal(values_diff[2], 5)
 
@@ -561,7 +561,7 @@ suppressMessages({
       type = "relative_difference",
       name = "rel_diff"
     )
-    values_rel_diff <- unmc(result_rel_diff$node_list$rel_diff_compared$mcnode)
+    values_rel_diff <- unmc(result_rel_diff$node_list$rel_diff$mcnode)
     expect_equal(values_rel_diff[1], 0.5)
     expect_equal(values_rel_diff[2], 0.25)
 
@@ -572,7 +572,7 @@ suppressMessages({
       type = "reduction",
       name = "red"
     )
-    values_red <- unmc(result_red$node_list$red_compared$mcnode)
+    values_red <- unmc(result_red$node_list$red$mcnode)
     expect_equal(values_red[1], -5)
     expect_equal(values_red[2], -5)
 
@@ -583,7 +583,7 @@ suppressMessages({
       type = "relative_reduction",
       name = "rel_red"
     )
-    values_rel_red <- unmc(result_rel_red$node_list$rel_red_compared$mcnode)
+    values_rel_red <- unmc(result_rel_red$node_list$rel_red$mcnode)
     expect_equal(values_rel_red[1], -0.5)
     expect_equal(values_rel_red[2], -0.25)
   })
@@ -628,12 +628,12 @@ suppressMessages({
       name = "p_test_agg_rrr"
     )
 
-    expect_true("p_test_agg_rrr_compared" %in% names(result$node_list))
-    expect_equal(result$node_list$p_test_agg_rrr_compared$type, "compare")
-    expect_true(!is.null(result$node_list$p_test_agg_rrr_compared$summary))
-    expect_equal(nrow(result$node_list$p_test_agg_rrr_compared$summary), 1)
+    expect_true("p_test_agg_rrr" %in% names(result$node_list))
+    expect_equal(result$node_list$p_test_agg_rrr$type, "compare")
+    expect_true(!is.null(result$node_list$p_test_agg_rrr$summary))
+    expect_equal(nrow(result$node_list$p_test_agg_rrr$summary), 1)
     expect_true(all(
-      result$node_list$p_test_agg_rrr_compared$summary$scenario_id == "1"
+      result$node_list$p_test_agg_rrr$summary$scenario_id == "1"
     ))
   })
 
@@ -686,20 +686,20 @@ suppressMessages({
     )
 
     # Both should produce valid comparison nodes
-    expect_true("aligned_compared" %in% names(result_aligned$node_list))
-    expect_true("unaligned_compared" %in% names(result_unaligned$node_list))
+    expect_true("aligned" %in% names(result_aligned$node_list))
+    expect_true("unaligned" %in% names(result_unaligned$node_list))
 
     # Both should have same dimensions
     expect_equal(
-      dim(result_aligned$node_list$aligned_compared$mcnode),
-      dim(result_unaligned$node_list$unaligned_compared$mcnode)
+      dim(result_aligned$node_list$aligned$mcnode),
+      dim(result_unaligned$node_list$unaligned$mcnode)
     )
 
     # The results should be different due to alignment
     # (unless by chance they're identical, which is extremely unlikely)
-    aligned_values <- unmc(result_aligned$node_list$aligned_compared$mcnode)
+    aligned_values <- unmc(result_aligned$node_list$aligned$mcnode)
     unaligned_values <- unmc(
-      result_unaligned$node_list$unaligned_compared$mcnode
+      result_unaligned$node_list$unaligned$mcnode
     )
 
     # Check that not all values are identical

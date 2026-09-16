@@ -94,7 +94,7 @@ suppressMessages({
     )
 
     # Test summary on filtered node
-    result <- mc_summary(filtered_module, "p1_A_filtered")
+    result <- mc_summary(filtered_module, "p1_A")
     expect_true(is.data.frame(result))
     expect_true(all(c("category", "region") %in% names(result)))
     expect_equal(nrow(result), 2) # Two "A" categories
@@ -134,7 +134,7 @@ suppressMessages({
     )
 
     # Test summary on compared node
-    result <- mc_summary(compared_module, "p1_diff_compared")
+    result <- mc_summary(compared_module, "p1_diff")
     expect_true(is.data.frame(result))
     expect_true(all(c("mean", "sd") %in% names(result)))
     expect_equal(nrow(result), 2) # Two what-if variates

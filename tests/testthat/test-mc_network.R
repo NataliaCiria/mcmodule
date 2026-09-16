@@ -216,17 +216,17 @@ suppressMessages({
     # Check that both original and filtered nodes are in the network
     node_names <- network$x$nodes$id
     expect_true("p1" %in% node_names)
-    expect_true("p1_A_filtered" %in% node_names)
+    expect_true("p1_A" %in% node_names)
 
-    # Verify edge from p1 to p1_A_filtered exists
+    # Verify edge from p1 to p1_A exists
     edges <- network$x$edges
     edge_pairs <- paste0(edges$from, "->", edges$to)
-    expect_true(any(grepl("p1.*p1_A_filtered", edge_pairs)))
+    expect_true(any(grepl("p1.*p1_A", edge_pairs)))
 
     # Verify the filtered node has the correct color
     node_colors <- network$x$nodes$color
     names(node_colors) <- network$x$nodes$id
-    expect_equal(unname(node_colors["p1_A_filtered"]), "#E8A5E5")
+    expect_equal(unname(node_colors["p1_A"]), "#E8A5E5")
   })
 
   test_that("mc_network works with mc_compare nodes", {
@@ -272,20 +272,20 @@ suppressMessages({
     # Check that both original and compared nodes are in the network
     node_names <- network$x$nodes$id
     expect_true("p1" %in% node_names)
-    expect_true("p1_diff_compared" %in% node_names)
+    expect_true("p1_diff" %in% node_names)
 
     # Verify the node type for the comparison node
     node_types <- network$x$nodes$type
     names(node_types) <- network$x$nodes$id
     expect_true(
-      node_types["p1_diff_compared"] == "compare" ||
-        !is.na(node_types["p1_diff_compared"])
+      node_types["p1_diff"] == "compare" ||
+        !is.na(node_types["p1_diff"])
     )
 
     # Verify the compared node has the correct color
     node_colors <- network$x$nodes$color
     names(node_colors) <- network$x$nodes$id
-    expect_equal(unname(node_colors["p1_diff_compared"]), "#D88FD5")
+    expect_equal(unname(node_colors["p1_diff"]), "#D88FD5")
   })
 
   test_that("mc_network works with chained filter and compare nodes", {
@@ -341,7 +341,7 @@ suppressMessages({
     # Create comparison node from filtered node
     compared_module <- mc_compare(
       filtered_module,
-      "p1_north_filtered",
+      "p1_north",
       baseline = "0",
       type = "difference",
       name = "p1_north_diff"
@@ -357,15 +357,15 @@ suppressMessages({
     # Check that all three nodes are in the network
     node_names <- network$x$nodes$id
     expect_true("p1" %in% node_names)
-    expect_true("p1_north_filtered" %in% node_names)
-    expect_true("p1_north_diff_compared" %in% node_names)
+    expect_true("p1_north" %in% node_names)
+    expect_true("p1_north_diff" %in% node_names)
 
     # Verify edges show the dependency chain
     edges <- network$x$edges
     edge_pairs <- paste0(edges$from, "->", edges$to)
-    expect_true(any(grepl("p1.*p1_north_filtered", edge_pairs)))
+    expect_true(any(grepl("p1.*p1_north", edge_pairs)))
     expect_true(any(grepl(
-      "p1_north_filtered.*p1_north_diff_compared",
+      "p1_north.*p1_north_diff",
       edge_pairs
     )))
   })
