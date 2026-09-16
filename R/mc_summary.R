@@ -166,6 +166,9 @@ mc_summary <- function(
     )
   }
 
+  # Reset row number
+  rownames(summary_df) <- NULL
+
   return(summary_df)
 }
 
