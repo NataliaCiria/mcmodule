@@ -41,7 +41,7 @@ auto-generated from \code{mc_name} and \code{suffix}. Default: NULL.}
 \item{prefix}{(character, optional). Prefix for the auto-generated node name.
 Default: NULL.}
 
-\item{suffix}{(character). Suffix appended to auto-generated name.
+\item{suffix}{(character). Suffix appended to auto-generated name. Won't be used if \code{name} is provided.
 Default: "compared".}
 
 \item{summary}{(logical). If TRUE, compute summary statistics for the new node.

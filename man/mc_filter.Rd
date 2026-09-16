@@ -36,7 +36,7 @@ Default: NULL.}
 \item{prefix}{(character, optional). Prefix for the auto-generated node name.
 Default: NULL.}
 
-\item{suffix}{(character). Suffix appended to auto-generated name.
+\item{suffix}{(character). Suffix appended to auto-generated name. Won't be used if \code{name} is provided.
 Default: "filtered".}
 
 \item{summary}{(logical). If TRUE, compute summary statistics for the new node.
