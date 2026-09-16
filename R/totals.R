@@ -91,68 +91,116 @@ at_least_one <- function(
     !is.null(mcmodule$node_list[[x]][["agg_keys"]])
   })
 
-  # Key names that are common to all nodes
-  nodes_common_keys_names <- Reduce(
-    intersect,
-    lapply(mc_names, function(x) {
-      names(mc_keys(mcmodule, x))
-    })
+  # Check whether all nodes come from a sampling design
+  nodes_from_sample_design <- vapply(
+    mc_names,
+    function(x) {
+      isTRUE(mcmodule$node_list[[x]][["from_sample_design"]])
+    },
+    logical(1)
   )
 
-  # List of key values for each node, using only the common keys
-  nodes_common_keys <- lapply(mc_names, function(x) {
-    mc_keys(mcmodule, x)[nodes_common_keys_names]
-  })
-  names(nodes_common_keys) <- mc_names
+  all_from_sample_design <- all(nodes_from_sample_design)
 
-  # List of key values for each node
-  nodes_keys <- lapply(mc_names, function(x) {
-    mc_keys(mcmodule, x)
-  })
-  names(nodes_keys) <- mc_names
-
-  # Initialize combined probability and keys_names vector
+  # Initialise combined probability and metadata
   p_all <- 0
-  keys_names <- c()
+  keys_names <- character(0)
+  data <- NULL
 
-  # Check that data_name, dimensions and keys are identical for all nodes
-  if (
-    length(data_name) == 1 &&
+  if (all_from_sample_design) {
+    p_all <- tryCatch(
+      {
+        result <- 0
+
+        for (mc_name in mc_names) {
+          p_i <- mcmodule$node_list[[mc_name]][["mcnode"]]
+          result <- 1 - ((1 - result) * (1 - p_i))
+        }
+
+        result
+      },
+      error = function(e) {
+        stop(
+          sprintf(
+            "Sample-design nodes could not be combined: %s",
+            conditionMessage(e)
+          ),
+          call. = FALSE
+        )
+      }
+    )
+
+    keys_names <- character(0)
+
+    data <- data.frame(
+      row.names = seq_len(dim(p_all)[3])
+    )
+  } else {
+    # Key names that are common to all nodes
+    nodes_common_keys_names <- Reduce(
+      intersect,
+      lapply(mc_names, function(x) {
+        names(mc_keys(mcmodule, x))
+      })
+    )
+
+    # List of key values for each node, using only the common keys
+    nodes_common_keys <- lapply(mc_names, function(x) {
+      mc_keys(mcmodule, x)[nodes_common_keys_names]
+    })
+    names(nodes_common_keys) <- mc_names
+
+    # List of key values for each node
+    nodes_keys <- lapply(mc_names, function(x) {
+      mc_keys(mcmodule, x)
+    })
+    names(nodes_keys) <- mc_names
+
+    # Check that data_name, dimensions and keys are identical
+    if (
+      length(data_name) == 1 &&
       length(unique(nodes_dim)) == 1 &&
       all(!nodes_agg) &&
       length(unique(nodes_common_keys)) == 1
-  ) {
-    data <- nodes_common_keys[[1]]
-
-    # Loop to get the combined probability of all mcnodes
-    for (i in seq_along(mc_names)) {
-      mc_name <- mc_names[i]
-      p_i <- mcmodule$node_list[[mc_name]][["mcnode"]]
+    ) {
+      data <- nodes_common_keys[[1]]
       keys_names <- nodes_common_keys_names
 
-      # Update combined probability
-      p_all <- 1 - ((1 - p_all) * (1 - p_i))
+      # Loop to get the combined probability of all mcnodes
+      for (mc_name in mc_names) {
+        p_i <- mcmodule$node_list[[mc_name]][["mcnode"]]
+        p_all <- 1 - ((1 - p_all) * (1 - p_i))
+      }
+
+    } else {
+      if (length(mc_names) != 2) {
+        stop(
+          paste0(
+            "To aggregate mc_names with different data_name or keys, ",
+            "provide exactly two mc_nodes"
+          )
+        )
+      }
+
+      # Get keys for both nodes
+      mc_name_x <- mc_names[[1]]
+      mc_name_y <- mc_names[[2]]
+
+      keys_names_x <- names(nodes_keys[[mc_name_x]])
+      keys_names_y <- names(nodes_keys[[mc_name_y]])
+      keys_names <- intersect(keys_names_x, keys_names_y)
+
+      p_xy <- mc_match(
+        mcmodule,
+        mc_name_x,
+        mc_name_y,
+        keys_names
+      )
+
+      # Match and combine probabilities
+      p_all <- 1 - ((1 - p_xy[[1]]) * (1 - p_xy[[2]]))
+      data <- p_xy$keys_xy
     }
-  } else {
-    if (!length(mc_names) == 2) {
-      stop(sprintf(
-        "To aggregate mc_names with different data_name or keys, provide exactly two mc_nodes"
-      ))
-    }
-
-    # Get keys for both nodes
-    mc_name_x <- mc_names[1]
-    mc_name_y <- mc_names[2]
-
-    keys_names_x <- unique(c(keys_names, names(nodes_keys[[mc_name_x]])))
-    keys_names_y <- unique(c(keys_names, names(nodes_keys[[mc_name_y]])))
-
-    keys_names <- unique(intersect(keys_names_x, keys_names_y))
-
-    # Match and combine probabilities
-    p_xy <- mc_match(mcmodule, mc_name_x, mc_name_y, keys_names)
-    p_all <- 1 - ((1 - p_xy[[1]]) * (1 - p_xy[[2]]))
-    data <- p_xy$keys_xy
   }
 
   # Generate name for combined node
@@ -218,12 +266,7 @@ at_least_one <- function(
   }
 
   # Mark as from_sample_design if all input nodes are from_sample_design
-  if (
-    all(mc_names %in% names(mcmodule$node_list)) &&
-      all(sapply(mc_names, function(x) {
-        isTRUE(mcmodule$node_list[[x]][["from_sample_design"]])
-      }))
-  ) {
+  if (all_from_sample_design) {
     mcmodule$node_list[[p_all_mc_name]][["from_sample_design"]] <- TRUE
   }
 

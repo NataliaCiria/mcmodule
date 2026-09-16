@@ -875,6 +875,65 @@ suppressMessages({
     expect_equal(dim(test_module$node_list$p_b_set$mcnode)[3], 4)
   })
 
+  test_that("at_least_one combines compatible sample-design dimensions", {
+    # We use a new env because nodes are created in the environment when using matrix_to_mcnodes
+    node_environment <- new.env()
+
+    matrix_to_mcnodes(
+      X = data.frame(
+        p_a = c(0.10, 0.20, 0.30)
+      ),
+      envir = node_environment
+    )
+
+    # One deterministic value, compatible with all simulations of p_a
+    p_b <- mc2d::mcdata(
+      0.40,
+      type = "0",
+      nvariates = 1
+    )
+
+    module <- structure(
+      list(
+        data = list(),
+        node_list = list(
+          p_a = list(
+            mcnode = node_environment$p_a,
+            from_sample_design = TRUE
+          ),
+          p_b = list(
+            mcnode = p_b,
+            from_sample_design = TRUE
+          )
+        )
+      ),
+      class = "mcmodule"
+    )
+
+    expect_no_error(
+      result <- at_least_one(
+        mcmodule = module,
+        mc_names = c("p_a", "p_b"),
+        name = "p_any",
+        summary = FALSE
+      )
+    )
+
+    expected <- 1 - (
+      (1 - node_environment$p_a) *
+        (1 - p_b)
+    )
+
+    expect_equal(
+      result$node_list$p_any$mcnode,
+      expected
+    )
+
+    expect_true(
+      result$node_list$p_any$from_sample_design
+    )
+  })
+
   test_that("trial_totals works with explicit data_name argument", {
     # Reuse module from previous test
     test_module <- list(
