@@ -928,6 +928,50 @@ suppressMessages({
     expect_equal(result$node_list$p_all_set$data_name, c("data_a", "data_b"))
   })
 
+  test_that(
+    "trial_totals retrieves non-sampled counts from module data if sample design is provided",
+    {
+      data <- data.frame(
+        scenario_id = "0",
+        trials_n = 10
+      )
+
+      sample_design <- data.frame(
+        p_event = c(0.01, 0.02, 0.03)
+      )
+
+      module <- eval_module(
+        exp = list(
+          example = quote({
+            result <- p_event
+          })
+        ),
+        data = data,
+        sample_design = sample_design
+      )
+
+      expect_warning(
+        result <- trial_totals(
+          mcmodule = module,
+          mc_names = "result",
+          trials_n = "trials_n",
+          sample_design = sample_design
+        ),
+        "creating a deterministic node"
+      )
+
+      expect_true("trials_n" %in% names(result$node_list))
+      expect_identical(
+        result$node_list$trials_n$type,
+        "in_node"
+      )
+      expect_equal(
+        as.numeric(result$node_list$trials_n$mcnode),
+        10
+      )
+    }
+  )
+
   test_that("agg_variates works with filtered mcnodes (mc_filter integration)", {
     # Create test module with grouped data
     test_module <- list(
@@ -1108,7 +1152,7 @@ suppressMessages({
     expect_true(is.mcnode(result$node_list$result_b_agg$mcnode))
     expect_equal(result$node_list$result_b_agg$from_sample_design, TRUE)
   })
-  
+
   test_that("agg_totals() warns and calls agg_variates()", {
     lifecycle::expect_deprecated(
     old <- agg_totals(

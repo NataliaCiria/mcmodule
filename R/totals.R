@@ -942,22 +942,34 @@ trial_totals <- function(
     sample_design_data = NULL,
     agg_func = NULL
   ) {
+
     if (mc_name %in% names(mcmodule$node_list)) {
       mc_node <- mcmodule$node_list[[mc_name]][["mcnode"]]
+
     } else {
-      if (
+      from_sample_design <- (
         !is.null(sample_design_data) &&
           mc_name %in% colnames(sample_design_data)
-      ) {
+      )
+
+      mc_row <- if (mc_name %in% mctable$mcnode) {
+        mctable[mctable$mcnode == mc_name, , drop = FALSE]
+      } else {
+        NULL
+      }
+
+      # If sample_design is provided
+      if (from_sample_design) {
+        # First preference: values supplied by the sampling design
         matrix_to_mcnodes(
           X = sample_design_data[, mc_name, drop = FALSE],
           envir = environment()
         )
-      } else {
-        if (!mc_name %in% mctable$mcnode) {
-          stop(sprintf("%s not found in mctable", mc_name))
-        }
 
+        mc_node <- get(mc_name)
+
+      } else if (!is.null(mc_row) && nrow(mc_row) > 0) {
+        # mctable may map mc_name to source columns such as sites_n_min/sites_n_max
         if (is.null(data)) {
           stop(sprintf(
             "data is NULL and '%s' is not present in sample_design",
@@ -965,56 +977,111 @@ trial_totals <- function(
           ))
         }
 
-        mc_row <- mctable[mctable$mcnode %in% mc_name, ]
-        create_mcnodes(data, mctable = mc_row)
-      }
+        create_mcnodes(
+          data = data,
+          mctable = mc_row
+        )
 
-      mc_node <- get(mc_name)
+        mc_node <- get(mc_name)
 
-      if (mc_name %in% mctable$mcnode) {
-        mc_row <- mctable[mctable$mcnode %in% mc_name, ]
       } else {
-        mc_row <- NULL
+        # the node is absent from mctable but may exist directly as a column in the module data
+        input_data <- data
+        input_data_name <- ref_data_name
+
+        if (is.null(input_data) || !mc_name %in% names(input_data)) {
+          matching_data <- names(Filter(
+            function(x) {
+              is.data.frame(x) && mc_name %in% names(x)
+            },
+            mcmodule$data
+          ))
+
+          if (length(matching_data) == 0) {
+            stop(sprintf(
+              "%s not found in mctable or mcmodule$data",
+              mc_name
+            ))
+          }
+
+          if (length(matching_data) > 1) {
+            if (
+              !is.null(ref_data_name) &&
+              length(ref_data_name) == 1 &&
+              ref_data_name %in% matching_data
+            ) {
+              matching_data <- ref_data_name
+            } else {
+              stop(sprintf(
+                paste0(
+                  "'%s' occurs in multiple module data frames: %s. ",
+                  "Please provide data_name."
+                ),
+                mc_name,
+                paste(matching_data, collapse = ", ")
+              ))
+            }
+          }
+
+          input_data_name <- matching_data[[1]]
+          input_data <- mcmodule$data[[input_data_name]]
+        }
+
+        warning(sprintf(
+          paste0(
+            "'%s' was not found in mctable; ",
+            "creating a deterministic node from mcmodule$data[['%s']]"
+          ),
+          mc_name,
+          input_data_name
+        ))
+
+        mc_node <- mc2d::mcdata(
+          input_data[[mc_name]],
+          type = "0",
+          nvariates = nrow(input_data)
+        )
+
+        # Ensure the metadata below refers to the actual source
+        data <- input_data
+        ref_data_name <- input_data_name
       }
 
       # Add metadata
       pattern <- paste0("\\<", mc_name, "(\\>|[^>]*\\>)")
+
       inputs_col <- if (!is.null(data)) {
         names(data[grepl(pattern, names(data))])
       } else {
         character(0)
       }
+
       mcmodule$node_list[[mc_name]][["inputs_col"]] <- inputs_col
 
-      if (!is.null(mc_row) && !is.na(mc_row$mc_func)) {
-        mcmodule$node_list[[mc_name]][["mc_func"]] <- as.character(
-          mc_row$mc_func
-        )
-      }
+      mcmodule$node_list[[mc_name]][["description"]] <-
+        if (!is.null(mc_row) && nrow(mc_row) > 0) {
+          as.character(mc_row$description[[1]])
+        } else {
+          NA_character_
+        }
 
-      mcmodule$node_list[[mc_name]][["description"]] <- if (!is.null(mc_row)) {
-        as.character(mc_row$description)
-      } else {
-        NA_character_
-      }
       mcmodule$node_list[[mc_name]][["type"]] <- "in_node"
       mcmodule$node_list[[mc_name]][["module"]] <- module_name
       mcmodule$node_list[[mc_name]][["data_name"]] <- ref_data_name
       mcmodule$node_list[[mc_name]][["mcnode"]] <- mc_node
-      mcmodule$node_list[[mc_name]][["mc_func"]] <- if (!is.null(mc_row)) {
-        mc_row$mc_func
-      } else {
-        NA
-      }
+
+      mcmodule$node_list[[mc_name]][["mc_func"]] <-
+        if (!is.null(mc_row) && nrow(mc_row) > 0) {
+          mc_row$mc_func[[1]]
+        } else {
+          NA
+        }
 
       if (!is.null(data) && "scenario_id" %in% names(data)) {
         mcmodule$node_list[[mc_name]][["scenario"]] <- data$scenario_id
       }
 
-      if (
-        !is.null(sample_design_data) &&
-          mc_name %in% colnames(sample_design_data)
-      ) {
+      if (from_sample_design) {
         mcmodule$node_list[[mc_name]][["from_sample_design"]] <- TRUE
       }
     }
