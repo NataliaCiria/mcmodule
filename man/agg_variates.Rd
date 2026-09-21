@@ -36,8 +36,10 @@ Default: \code{NULL}.}
 \item{keep_variates}{Logical. If \code{TRUE}, preserve individual variate values.
 Default: \code{FALSE}.}
 
-\item{agg_func}{Character, optional. Aggregation method: \code{"prob"} for combined
-probability, \code{"sum"}, \code{"avg"}, or \code{NULL} for automatic selection.
+\item{agg_func}{Character or function, optional. Aggregation method:
+\code{"prob"} for combined probability, \code{"sum"} for the sum, or \code{"avg"} for
+the mean. A custom function must accept a list of \code{mcnode} objects and
+return one aggregated \code{mcnode}. If \code{NULL}, \code{"prob"} is used.
 Default: \code{NULL}.}
 }
 \value{
@@ -45,7 +47,7 @@ An \code{mcmodule} object with a new aggregated node added.
 }
 \description{
 Aggregates node values across grouping variables using various methods
-(combined probability, sum, mean, or automatic selection). Returns an
+(combined probability, sum, mean, or a custom function). Returns an
 updated mcmodule with a new aggregated node.
 }
 \details{
@@ -60,4 +62,13 @@ imports_mcmodule <- agg_variates(
 )
 print(imports_mcmodule$node_list$no_detect_agg$summary)
 
+}
+\references{
+Ross SM (2014). \emph{Introduction to Probability Models}, 11th ed. Elsevier.
+}
+\seealso{
+\code{\link[=at_least_one]{at_least_one()}} for combining probability nodes,
+\code{\link[=trial_totals]{trial_totals()}} for repeated or hierarchical Bernoulli trials,
+\code{\link[=mc_filter]{mc_filter()}} for selecting variates, and \code{\link[=mc_summary]{mc_summary()}} for node
+summaries.
 }

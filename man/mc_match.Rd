@@ -41,7 +41,7 @@ Matching proceeds in order:
 \item Null matching — add missing groups across different scenarios
 }
 
-Sample-design nodes behave as 1-variate that can be matched directly.
+Sample-design nodes are recycled across variates when required for matching.
 }
 \examples{
 test_module <- list(
@@ -78,4 +78,9 @@ test_module <- list(
 )
 
 result <- mc_match(test_module, "node_x", "node_y")
+}
+\seealso{
+\code{\link[=mc_keys]{mc_keys()}} for extracting node keys, \code{\link[=mc_match_data]{mc_match_data()}} for
+matching a node to a data frame, and \code{\link[=wif_match]{wif_match()}} for matching two data
+frames with different scenarios.
 }

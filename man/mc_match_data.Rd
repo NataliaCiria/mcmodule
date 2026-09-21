@@ -42,11 +42,16 @@ Matching proceeds in order:
 \item Null matching — add missing groups across different scenarios
 }
 
-Sample-design nodes behave as 1-variate that can be matched directly.
+Sample-design nodes are recycled across variates when required for matching.
 }
 \examples{
 test_data  <- data.frame(pathogen=c("a","b"),
                          inf_dc_min=c(0.05,0.3),
                          inf_dc_max=c(0.08,0.4))
 result<-mc_match_data(imports_mcmodule,"no_detect", test_data)
+}
+\seealso{
+\code{\link[=mc_keys]{mc_keys()}} for extracting node keys, \code{\link[=mc_match]{mc_match()}} for matching
+two nodes, and \code{\link[=wif_match]{wif_match()}} for matching two data frames with different
+scenarios.
 }

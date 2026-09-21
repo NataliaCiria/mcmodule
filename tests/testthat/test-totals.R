@@ -38,6 +38,10 @@ suppressMessages({
     # Check node attributes
     expect_equal(result$node_list$p_combined$type, "total")
     expect_equal(result$node_list$p_combined$param, c("p_1", "p_2"))
+    expect_identical(
+      result$node_list$p_combined$description,
+      "Probability at least one of p_1, p_2 (assuming independence)"
+    )
 
     # Test error on missing nodes
     expect_error(at_least_one(test_module, c("p_1", "missing")), "not found")
@@ -148,6 +152,10 @@ suppressMessages({
     expect_error(
       generate_all_name(c("test_a", "test_all")),
       "One of the mc_names already contains '_all' suffix"
+    )
+    expect_error(
+      generate_all_name(character(0)),
+      "mc_names must contain at least one node name"
     )
   })
 
@@ -397,6 +405,7 @@ suppressMessages({
     expect_true("p_1_all_hag_set" %in% names(result$node_list))
     expect_equal(dim(result$node_list$p_1_all$mcnode), c(1001, 1, 4))
     expect_equal(dim(result$node_list$p_1_all_hag_set$mcnode), c(1001, 1, 2))
+    expect_equal(as.numeric(result$node_list$times_n_hag$mcnode), c(7, 11))
 
     reset_mctable()
   })
@@ -549,8 +558,12 @@ suppressMessages({
     mod4 <- at_least_one(module, c("p_1", "p_2"), prefix = "pre")
     expect_equal(mod4$node_list[["pre_p_all"]]$prefix, "pre")
 
-    # Error on missing node
+    # Error on missing or empty node input
     expect_error(at_least_one(module, c("p_1", "missing")), "not found")
+    expect_error(
+      at_least_one(module, character(0)),
+      "mc_names must contain at least one node name"
+    )
   })
 
   test_that("generate_all_name works with suffix and errors", {
@@ -600,10 +613,16 @@ suppressMessages({
     mod3 <- agg_variates(module, "p_1", agg_suffix = "sum")
     expect_true("p_1_sum" %in% names(mod3$node_list))
 
+    # Custom prefix
+    mod4 <- agg_variates(module, "p_1", prefix = "pre")
+    expect_true("pre_p_1_agg" %in% names(mod4$node_list))
+    expect_false("pre__p_1_agg" %in% names(mod4$node_list))
+    expect_equal(mod4$node_list[["pre_p_1_agg"]]$prefix, "pre")
+
     # Error for invalid agg_func
     expect_error(
       agg_variates(module, "p_1", agg_func = "invalid"),
-      "Aggregation function"
+      "`agg_func` must be NULL, a function"
     )
 
     # Error for missing node
@@ -742,10 +761,14 @@ suppressMessages({
 
     expect_true("custom_trial_set" %in% names(mod9$node_list))
 
-    # Error for missing node
+    # Error for missing or empty node input
     expect_error(
       trial_totals(module, mc_names = "missing", trials_n = "times_n"),
       "not found"
+    )
+    expect_error(
+      trial_totals(module, mc_names = character(0), trials_n = "times_n"),
+      "mc_names must contain at least one node name"
     )
   })
 
@@ -1155,8 +1178,8 @@ suppressMessages({
     sample_module <- eval_module(
       exp = list(
         sample_exp = quote({
-          result_a <- input_a + 2
-          result_b <- input_b + result_a
+          result_a <- input_a * 2
+          result_b <- input_b * result_a
         })
       ),
       data = NULL,
@@ -1327,6 +1350,25 @@ suppressMessages({
       "Custom aggregation of p_1 by: scenario_id"
     )
 
+    expect_error(
+      agg_variates(
+        test_module,
+        "p_1",
+        agg_func = function(x) 1,
+        summary = FALSE
+      ),
+      "Custom aggregation function must return one mcnode"
+    )
+    expect_error(
+      agg_variates(
+        test_module,
+        "p_1",
+        agg_func = function(x) mc2d::addvar(x[[1]], x[[1]]),
+        summary = FALSE
+      ),
+      "Custom aggregation function must return one mcnode"
+    )
+
     # Error handling
     expect_error(
       agg_variates(test_module, "p_1", agg_func = "invalid"),
@@ -1355,7 +1397,16 @@ suppressMessages({
       "`p_1` contains values greater than 1"
     )
 
-    # Other aggregation methods accept values greater than 1
+    # Explicit methods do not trigger the default-aggregation warning
+    expect_no_warning(
+      agg_variates(
+        suspicious_module,
+        "p_1",
+        agg_func = "prob",
+        summary = FALSE
+      )
+    )
+
     expect_no_warning(
       agg_variates(
         suspicious_module,

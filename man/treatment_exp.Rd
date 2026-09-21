@@ -7,7 +7,7 @@
 \format{
 A quoted R expression that creates the following model nodes:
 \describe{
-\item{treated_conc}{Cryptosporidium concentration remaining after
+\item{treated_conc}{\emph{Cryptosporidium} concentration remaining after
 treatment.}
 \item{treatment_dose}{Daily ingested dose from treated water.}
 \item{p_inf_treatment}{Individual daily probability of infection through
@@ -25,7 +25,7 @@ treatment_exp
 \description{
 A quoted R expression representing the routine water-treatment pathway in
 the illustrative water-supply risk assessment. It calculates the treated
-Cryptosporidium concentration, ingested dose, individual infection
+\emph{Cryptosporidium} concentration, ingested dose, individual infection
 probability, and number of person-day exposure trials.
 }
 \examples{

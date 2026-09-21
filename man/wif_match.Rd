@@ -39,3 +39,7 @@ y <- data.frame(
 result <- wif_match(x, y)
 
 }
+\seealso{
+\code{\link[=mc_match]{mc_match()}} for matching two Monte Carlo nodes and
+\code{\link[=mc_match_data]{mc_match_data()}} for matching a node to a data frame.
+}

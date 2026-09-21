@@ -12,6 +12,8 @@
 #'
 #' @return A data frame with `scenario_id` and requested key columns.
 #'
+#' @seealso [mc_match()] and [mc_match_data()] for aligning nodes using keys.
+#'
 #' @examples
 #' keys_df <- mc_keys(imports_mcmodule, "w_prev")
 #'
@@ -35,7 +37,7 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
   node <- mcmodule$node_list[[mc_name]]
 
   # Sample-design nodes do not carry data_name/keys, but they always have a
-  # single variate and can be matched directly by row count.
+  # variate structure derived from their mcnode dimensions.
   if (isTRUE(node[["from_sample_design"]])) {
     data <- sample_design_node_data(node)
     keys_names <- character(0)
@@ -103,10 +105,11 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
 
       # Verify data consistency
       if (
-        all(
-          mcmodule$data[[ref_data_name]][common_keys] ==
-            node[["summary"]][common_keys]
-        )
+        isTRUE(all.equal(
+          mcmodule$data[[ref_data_name]][common_keys],
+          node[["summary"]][common_keys],
+          check.attributes = FALSE
+        ))
       ) {
         message(sprintf(
           "%s has multiple data_name (%s), using '%s' for mc_keys",
@@ -153,7 +156,11 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
   }
 
   # Check for duplicates in baseline scenario
-  scenario_0 <- if (any(data$scenario_id == "0")) "0" else data$scenario_id[1]
+  scenario_0 <- if (any(data$scenario_id == "0", na.rm = TRUE)) {
+    "0"
+  } else {
+    data$scenario_id[1]
+  }
   if (any(duplicated(data[data$scenario_id == scenario_0, keys_names]))) {
     data_0 <- data[data$scenario_id == scenario_0, keys_names]
     # Remove key columns that are all NA
@@ -194,7 +201,7 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
 #' 2. Scenario matching — align nodes with same groups but different scenarios
 #' 3. Null matching — add missing groups across different scenarios
 #'
-#' Sample-design nodes behave as 1-variate that can be matched directly.
+#' Sample-design nodes are recycled across variates when required for matching.
 #'
 #' @param mcmodule (mcmodule object). Module containing nodes.
 #' @param mc_name_x (character). First mcnode name.
@@ -206,6 +213,11 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
 #'   enabling cross-scenario matching. Default: TRUE.
 #'
 #' @return A list containing matched nodes and combined keys (`keys_xy`).
+#'
+#' @seealso [mc_keys()] for extracting node keys, [mc_match_data()] for
+#'   matching a node to a data frame, and [wif_match()] for matching two data
+#'   frames with different scenarios.
+#'
 #' @examples
 #' test_module <- list(
 #'   node_list = list(
@@ -243,11 +255,11 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
 #' result <- mc_match(test_module, "node_x", "node_y")
 #' @export
 mc_match <- function(
-  mcmodule,
-  mc_name_x,
-  mc_name_y,
-  keys_names = NULL,
-  match_scenario = TRUE
+    mcmodule,
+    mc_name_x,
+    mc_name_y,
+    keys_names = NULL,
+    match_scenario = TRUE
 ) {
   # Check if mcnodes are in mcmodule
   missing_nodes <- c(mc_name_x, mc_name_y)[
@@ -329,11 +341,11 @@ mc_match <- function(
   # If nodes do not have the same keys but both nodes come from the same data, keys are inferred from data
   if (
     nrow(keys_x) == nrow(keys_y) &&
-      all(
-        keys_x[intersect(names(keys_x), names(keys_y))] ==
-          keys_y[intersect(names(keys_x), names(keys_y))],
-        na.rm = TRUE
-      )
+    all(
+      keys_x[intersect(names(keys_x), names(keys_y))] ==
+      keys_y[intersect(names(keys_x), names(keys_y))],
+      na.rm = TRUE
+    )
   ) {
     nvariates_x <- if (!is.null(dim(mcnode_x)) && length(dim(mcnode_x)) >= 3) {
       dim(mcnode_x)[[3]]
@@ -346,7 +358,7 @@ mc_match <- function(
       NA_integer_
     }
 
-    # Find keys that are only pressent in one of the mcnodes
+    # Find keys that are only present in one of the mcnodes
     keys_x_only <- setdiff(names(keys_x), names(keys_y))
     keys_y_only <- setdiff(names(keys_y), names(keys_x))
 
@@ -407,7 +419,7 @@ mc_match <- function(
   keys_xy_match <- keys_list$xy
 
   # Update keys (add x and y unique keys to all matched outputs)
-  new_keys <- unique(names(keys_x), names(keys_y))
+  new_keys <- unique(c(names(keys_x), names(keys_y)))
   new_keys <- new_keys[!new_keys %in% c("g_id", "g_row", "scenario_id")]
 
   keys_x <- cbind(
@@ -428,7 +440,6 @@ mc_match <- function(
     keys_y[!names(keys_y) %in% names(keys_xy_match)],
     by = c("g_row.y" = "g_row")
   )
-  keys_xy_match
   keys_xy <- dplyr::relocate(
     keys_xy_match,
     c("g_id", "g_row.x", "g_row.y", "scenario_id")
@@ -439,7 +450,7 @@ mc_match <- function(
   null_y <- 0
 
   # Process X node
-  for (i in 1:nrow(keys_xy)) {
+  for (i in seq_len(nrow(keys_xy))) {
     g_row_x_i <- keys_xy$g_row.x[i]
 
     if (keys_xy$g_id[i] %in% keys_x$g_id) {
@@ -457,7 +468,7 @@ mc_match <- function(
   }
 
   # Process Y node
-  for (i in 1:nrow(keys_xy)) {
+  for (i in seq_len(nrow(keys_xy))) {
     g_row_y_i <- keys_xy$g_row.y[i]
 
     if (keys_xy$g_id[i] %in% keys_y$g_id) {
@@ -512,7 +523,7 @@ mc_match <- function(
 #' 2. Scenario matching — same groups but different scenarios
 #' 3. Null matching — add missing groups across different scenarios
 #'
-#' Sample-design nodes behave as 1-variate that can be matched directly.
+#' Sample-design nodes are recycled across variates when required for matching.
 #'
 #'
 #' @param mcmodule (mcmodule object). Module containing node.
@@ -526,6 +537,11 @@ mc_match <- function(
 #'
 #' @return A list containing matched mcnode, matched data, and combined keys
 #'   (`keys_xy`).
+#'
+#' @seealso [mc_keys()] for extracting node keys, [mc_match()] for matching
+#'   two nodes, and [wif_match()] for matching two data frames with different
+#'   scenarios.
+#'
 #' @examples
 #' test_data  <- data.frame(pathogen=c("a","b"),
 #'                          inf_dc_min=c(0.05,0.3),
@@ -533,11 +549,11 @@ mc_match <- function(
 #' result<-mc_match_data(imports_mcmodule,"no_detect", test_data)
 #' @export
 mc_match_data <- function(
-  mcmodule,
-  mc_name,
-  data,
-  keys_names = NULL,
-  match_scenario = TRUE
+    mcmodule,
+    mc_name,
+    data,
+    keys_names = NULL,
+    match_scenario = TRUE
 ) {
   # Check if mcnodes are in mcmodule
   if (!mc_name %in% names(mcmodule$node_list)) {
@@ -575,11 +591,11 @@ mc_match_data <- function(
   # If nodes do not have the same keys but both nodes come from the same data, keys are inferred from data
   if (
     nrow(keys_x) == nrow(keys_y) &&
-      all(
-        keys_x[intersect(names(keys_x), names(keys_y))] ==
-          keys_y[intersect(names(keys_x), names(keys_y))],
-        na.rm = TRUE
-      )
+    all(
+      keys_x[intersect(names(keys_x), names(keys_y))] ==
+      keys_y[intersect(names(keys_x), names(keys_y))],
+      na.rm = TRUE
+    )
   ) {
     # Return nodes as they are if they already match
     message(
@@ -605,7 +621,7 @@ mc_match_data <- function(
   keys_xy_match <- keys_list$xy
 
   # Update keys (add x and y unique keys to all matched outputs)
-  new_keys <- unique(names(keys_x), names(keys_y))
+  new_keys <- unique(c(names(keys_x), names(keys_y)))
   new_keys <- new_keys[!new_keys %in% c("g_id", "g_row", "scenario_id")]
 
   keys_x <- cbind(
@@ -626,7 +642,6 @@ mc_match_data <- function(
     keys_y[!names(keys_y) %in% names(keys_xy_match)],
     by = c("g_row.y" = "g_row")
   )
-  keys_xy_match
   keys_xy <- dplyr::relocate(
     keys_xy_match,
     c("g_id", "g_row.x", "g_row.y", "scenario_id")
@@ -637,7 +652,7 @@ mc_match_data <- function(
   null_y <- 0
 
   # Process X node
-  for (i in 1:nrow(keys_xy)) {
+  for (i in seq_len(nrow(keys_xy))) {
     g_row_x_i <- keys_xy$g_row.x[i]
 
     if (keys_xy$g_id[i] %in% keys_x$g_id) {
@@ -654,17 +669,12 @@ mc_match_data <- function(
     }
   }
 
-  # To avoid coherce to vector when data has only one column, add dummy column with NA values
-  if (ncol(data) == 1) {
-    data$dummy.temp <- NA
-  }
-
   # Process data
-  for (i in 1:nrow(keys_xy)) {
+  for (i in seq_len(nrow(keys_xy))) {
     g_row_y_i <- keys_xy$g_row.y[i]
 
     if (keys_xy$g_id[i] %in% keys_y$g_id) {
-      row_i <- data[g_row_y_i, ]
+      row_i <- data[g_row_y_i, , drop = FALSE]
       row_i <- cbind(keys_xy[i, new_keys], row_i[!names(row_i) %in% new_keys])
     } else {
       row_i <- keys_xy[i, keys_data]
@@ -676,11 +686,6 @@ mc_match_data <- function(
     } else {
       data_match <- dplyr::bind_rows(data_match, row_i)
     }
-  }
-
-  # Remove dummy column if it was added
-  if ("dummy.temp" %in% names(data)) {
-    data$dummy.temp <- NULL
   }
 
   # Log results
@@ -723,6 +728,10 @@ mc_match_data <- function(
 #'
 #' @return A list containing matched datasets with aligned scenario IDs.
 #'   Element 1: matched version of x. Element 2: matched version of y.
+#'
+#' @seealso [mc_match()] for matching two Monte Carlo nodes and
+#'   [mc_match_data()] for matching a node to a data frame.
+#'
 #' @examples
 #' x <- data.frame(
 #'   category = c("a", "b", "a", "b"),
@@ -761,8 +770,12 @@ wif_match <- function(x, y, by = NULL) {
     by <- by[!by %in% c("g_id", "g_row", "scenario_id")]
   }
 
-  null_x <- unique(list_xy$xy[is.na(list_xy$xy$g_row.x), by])
-  null_y <- unique(list_xy$xy[is.na(list_xy$xy$g_row.y), by])
+  null_x <- unique(
+    list_xy$xy[is.na(list_xy$xy$g_row.x), by, drop = FALSE]
+  )
+  null_y <- unique(
+    list_xy$xy[is.na(list_xy$xy$g_row.y), by, drop = FALSE]
+  )
 
   # Format error messages for unmatched groups
   w_null_x <- paste(names(null_x), null_x, sep = " ", collapse = ", ")
@@ -823,9 +836,9 @@ wif_match <- function(x, y, by = NULL) {
 
 # Helper: check baseline scenario contains all key combinations required for matching
 check_baseline_keys <- function(
-  data,
-  keys_names = NULL,
-  dataset_name = "<data>"
+    data,
+    keys_names = NULL,
+    dataset_name = "<data>"
 ) {
   # Exclude reserved columns from keys (scenario_id must never be a key)
   reserved <- c("scenario_id", "g_id", "g_row")
@@ -890,7 +903,7 @@ sample_design_node_data <- function(node) {
   mcnode <- node[["mcnode"]]
   mc_dim <- dim(mcnode)
 
-  n_rows <- if (!is.null(mc_dim) && length(mc_dim) >= 1) {
+  n_rows <- if (!is.null(mc_dim) && length(mc_dim) >= 3) {
     mc_dim[[3]]
   } else if (is.atomic(mcnode)) {
     length(mcnode)
@@ -927,7 +940,8 @@ recycle_mcnode_variates <- function(mcnode, target_nvariates) {
 
   recycled <- mcnode
   for (ii in seq_len(target_nvariates - current_nvariates)) {
-    recycled <- addvar(recycled, mcnode)
+    source_variate <- ((ii - 1L) %% current_nvariates) + 1L
+    recycled <- addvar(recycled, extractvar(mcnode, source_variate))
   }
 
   recycled

@@ -8,14 +8,14 @@
 A data frame with 4 rows and 15 columns:
 \describe{
 \item{zone}{Distribution-zone identifier.}
-\item{scenario_id}{Management-scenario identifier. \code{"0"} denotes the
+\item{scenario_id}{Management-scenario identifier. \code{"0"} indicates the
 baseline scenario.}
 \item{population}{Number of people exposed in the distribution zone.}
-\item{source_conc_min}{Minimum Cryptosporidium concentration in source
+\item{source_conc_min}{Minimum \emph{Cryptosporidium} concentration in source
 water, in oocysts per litre.}
-\item{source_conc_mode}{Most likely Cryptosporidium concentration in
+\item{source_conc_mode}{Most likely \emph{Cryptosporidium} concentration in
 source water, in oocysts per litre.}
-\item{source_conc_max}{Maximum Cryptosporidium concentration in source
+\item{source_conc_max}{Maximum \emph{Cryptosporidium} concentration in source
 water, in oocysts per litre.}
 \item{treatment_lrv_min}{Minimum treatment performance, expressed as a
 log10 reduction value.}
@@ -27,11 +27,11 @@ log10 reduction value.}
 person per day.}
 \item{intrusion_prob}{Daily probability that an intrusion affects the
 distribution zone.}
-\item{intrusion_conc_min}{Minimum Cryptosporidium concentration at the tap
+\item{intrusion_conc_min}{Minimum \emph{Cryptosporidium} concentration at the tap
 conditional on an intrusion, in oocysts per litre.}
-\item{intrusion_conc_max}{Maximum Cryptosporidium concentration at the tap
+\item{intrusion_conc_max}{Maximum \emph{Cryptosporidium} concentration at the tap
 conditional on an intrusion, in oocysts per litre.}
-\item{dose_response_r}{Parameter of the exponential Cryptosporidium
+\item{dose_response_r}{Parameter of the exponential \emph{Cryptosporidium}
 dose-response model.}
 \item{exposure_days}{Number of daily exposure events in the assessment
 period.}
@@ -45,15 +45,13 @@ water_data
 }
 \description{
 Simulated data for an illustrative quantitative microbial risk assessment
-of Cryptosporidium infection in a water distribution system. Each row
+of \emph{Cryptosporidium} infection in a water distribution system. Each row
 represents one distribution zone under one management scenario.
 }
 \details{
 The example includes a baseline scenario, identified by \code{"0"}, and a
 hypothetical network-maintenance scenario that reduces the daily intrusion
-probability by 80 percent. The values are intended for teaching and software
-demonstration. They do not describe a real water supply and should not be
-used for operational or regulatory decisions.
+probability by 80 percent.
 }
 \examples{
 water_data
@@ -64,7 +62,7 @@ application for water safety management.
 \url{https://www.who.int/publications/i/item/9789241565370}
 
 Messner MJ, Chappell CL, and Okhuysen PC (2001). Risk assessment for
-Cryptosporidium: a hierarchical Bayesian analysis of human dose-response
+\emph{Cryptosporidium}: a hierarchical Bayesian analysis of human dose-response
 data. Water Research, 35, 3934-3940.
 \doi{10.1016/S0043-1354(01)00119-1}
 

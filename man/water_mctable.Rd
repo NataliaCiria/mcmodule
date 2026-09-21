@@ -22,9 +22,8 @@ sample-design sensitivity analysis.}
 }
 }
 \source{
-Parameter ranges are illustrative and were created for teaching and
-software demonstration. They do not represent a fitted model for a specific
-water system.
+Parameter ranges are illustrative. They do not represent a fitted model
+for a specific water system.
 }
 \usage{
 water_mctable

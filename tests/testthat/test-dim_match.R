@@ -109,6 +109,35 @@ suppressMessages({
       "3 variates per group"
     )
   })
+  test_that("mc_keys handles NA values with multiple data names", {
+    test_module <- list(
+      node_list = list(
+        test_node = list(
+          data_name = c("data_a", "data_b"),
+          keys = c("category", "detail"),
+          summary = data.frame(
+            category = c(NA_character_, "B"),
+            stringsAsFactors = FALSE
+          )
+        )
+      ),
+      data = list(
+        data_a = data.frame(category = c(NA_character_, "B")),
+        data_b = data.frame(
+          category = c(NA_character_, "B"),
+          detail = c("x", "y"),
+          stringsAsFactors = FALSE
+        )
+      )
+    )
+
+    expect_message(
+      result <- mc_keys(test_module, "test_node"),
+      "has multiple data_name"
+    )
+    expect_equal(result$detail, c("x", "y"))
+  })
+
   test_that("mc_keys works for sample design nodes with no keys", {
     # Create mock module with sample design node
     sample_module <- list(
@@ -367,8 +396,11 @@ suppressMessages({
       scenario_id = c(0, 0, 2, 2),
       value = 5:8
     )
-    expect_error(wif_match(x, y_bad), "Groups not found")
-    expect_error(wif_match(x, y_bad, "category"), "Groups not found")
+    expect_error(wif_match(x, y_bad), "Groups not found.*category c")
+    expect_error(
+      wif_match(x, y_bad, "category"),
+      "Groups not found.*category c"
+    )
   })
 
   test_that("mc_match of agg_nodes works", {
@@ -476,6 +508,39 @@ suppressMessages({
 
     result <- mc_match(module, "no_detect", "test_sensi")
     expect_equal(result$keys_xy$g_row.y, c(1, 2, 3, 4, 5, 6))
+  })
+
+  test_that("mc_match preserves keys unique to the second node", {
+    module <- list(
+      node_list = list(
+        node_x = list(
+          mcnode = mcdata(c(0.1, 0.2), type = "0", nvariates = 2),
+          data_name = "data_x",
+          keys = "category"
+        ),
+        node_y = list(
+          mcnode = mcdata(c(0.3, 0.4), type = "0", nvariates = 2),
+          data_name = "data_y",
+          keys = c("category", "region")
+        )
+      ),
+      data = list(
+        data_x = data.frame(
+          category = c("A", "B"),
+          stringsAsFactors = FALSE
+        ),
+        data_y = data.frame(
+          category = c("A", "C"),
+          region = c("north", "south"),
+          stringsAsFactors = FALSE
+        )
+      )
+    )
+
+    result <- mc_match(module, "node_x", "node_y")
+
+    expect_true("region" %in% names(result$keys_xy))
+    expect_true(all(c("north", "south") %in% result$keys_xy$region))
   })
 
   test_that("mc_match_data works", {
@@ -685,6 +750,8 @@ suppressMessages({
     expect_length(result, 3)
     expect_equal(dim(result[[1]])[3], 3)
     expect_equal(nrow(result[[2]]), 3)
+    expect_s3_class(result[[2]], "data.frame")
+    expect_identical(names(result[[2]]), "count")
   })
 
   test_that("mc_match errors when baseline scenario '0' is missing key combinations", {
@@ -1034,4 +1101,14 @@ suppressMessages({
     expect_true("scenario_id" %in% names(result$keys_xy))
     expect_true(all(c("1", "2") %in% result$keys_xy$scenario_id))
   })
+
+  test_that("recycle_mcnode_variates reaches the exact target", {
+    node <- mcdata(c(1, 2), type = "0", nvariates = 2)
+
+    result <- recycle_mcnode_variates(node, 3)
+
+    expect_equal(dim(result)[3], 3)
+    expect_equal(as.numeric(result), c(1, 2, 1))
+  })
+
 })

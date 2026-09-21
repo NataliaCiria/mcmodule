@@ -14,11 +14,11 @@ A data frame with 12 rows and 16 columns:
 baseline scenario.}
 \item{population}{Number of people in the consumption group. Group
 populations sum to the corresponding population in \link{water_data}.}
-\item{source_conc_min}{Minimum Cryptosporidium concentration in source
+\item{source_conc_min}{Minimum \emph{Cryptosporidium} concentration in source
 water, in oocysts per litre.}
-\item{source_conc_mode}{Most likely Cryptosporidium concentration in
+\item{source_conc_mode}{Most likely \emph{Cryptosporidium} concentration in
 source water, in oocysts per litre.}
-\item{source_conc_max}{Maximum Cryptosporidium concentration in source
+\item{source_conc_max}{Maximum \emph{Cryptosporidium} concentration in source
 water, in oocysts per litre.}
 \item{treatment_lrv_min}{Minimum treatment performance, expressed as a
 log10 reduction value.}
@@ -30,11 +30,11 @@ log10 reduction value.}
 consumption group, in litres per person per day.}
 \item{intrusion_prob}{Daily probability that an intrusion affects the
 distribution zone.}
-\item{intrusion_conc_min}{Minimum Cryptosporidium concentration at the tap
+\item{intrusion_conc_min}{Minimum \emph{Cryptosporidium} concentration at the tap
 conditional on an intrusion, in oocysts per litre.}
-\item{intrusion_conc_max}{Maximum Cryptosporidium concentration at the tap
+\item{intrusion_conc_max}{Maximum \emph{Cryptosporidium} concentration at the tap
 conditional on an intrusion, in oocysts per litre.}
-\item{dose_response_r}{Parameter of the exponential Cryptosporidium
+\item{dose_response_r}{Parameter of the exponential \emph{Cryptosporidium}
 dose-response model.}
 \item{exposure_days}{Number of daily exposure events in the assessment
 period.}
@@ -55,8 +55,7 @@ divided into groups with low, medium, and high daily water consumption.
 \details{
 The consumption groups contain 25, 50, and 25 percent of the corresponding
 zone population and consume 1.0, 1.5, and 2.0 litres of unboiled tap water
-per person per day, respectively. These group definitions are hypothetical
-and are intended only for teaching and software demonstration.
+per person per day, respectively.
 
 The consumption groups in the same distribution zone share the occurrence
 or absence of a daily intrusion event. Their conditional infection

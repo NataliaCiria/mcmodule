@@ -28,3 +28,6 @@ name or key columns, and key extraction returns only \code{scenario_id}.
 keys_df <- mc_keys(imports_mcmodule, "w_prev")
 
 }
+\seealso{
+\code{\link[=mc_match]{mc_match()}} and \code{\link[=mc_match_data]{mc_match_data()}} for aligning nodes using keys.
+}
