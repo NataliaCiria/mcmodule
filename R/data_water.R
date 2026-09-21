@@ -57,13 +57,84 @@
 #' 961-979. \doi{10.1016/j.watres.2010.10.035}
 #'
 #' @source Simulated data for demonstration purposes.
-#' @seealso [water_data_keys], [water_mctable], [treatment_exp],
-#'   [intrusion_exp]
+#' @seealso [water_group_data], [water_data_keys], [water_group_data_keys],
+#'   [water_mctable], [treatment_exp], [intrusion_exp]
 #' @examples
 #' water_data
 #' @docType data
 #' @keywords datasets
 "water_data"
+
+
+#' Water Supply Example Data by Consumption Group
+#'
+#' An expanded version of [water_data] for demonstrating multiple-group
+#' multilevel trials. Each distribution-zone and scenario combination is
+#' divided into groups with low, medium, and high daily water consumption.
+#'
+#' The consumption groups contain 25, 50, and 25 percent of the corresponding
+#' zone population and consume 1.0, 1.5, and 2.0 litres of unboiled tap water
+#' per person per day, respectively. These group definitions are hypothetical
+#' and are intended only for teaching and software demonstration.
+#'
+#' @format A data frame with 12 rows and 16 columns:
+#' \describe{
+#'   \item{zone}{Distribution-zone identifier.}
+#'   \item{consumption_group}{Water-consumption group: `"Low"`, `"Medium"`, or
+#'   `"High"`.}
+#'   \item{scenario_id}{Management-scenario identifier. `"0"` denotes the
+#'   baseline scenario.}
+#'   \item{population}{Number of people in the consumption group. Group
+#'   populations sum to the corresponding population in [water_data].}
+#'   \item{source_conc_min}{Minimum Cryptosporidium concentration in source
+#'   water, in oocysts per litre.}
+#'   \item{source_conc_mode}{Most likely Cryptosporidium concentration in
+#'   source water, in oocysts per litre.}
+#'   \item{source_conc_max}{Maximum Cryptosporidium concentration in source
+#'   water, in oocysts per litre.}
+#'   \item{treatment_lrv_min}{Minimum treatment performance, expressed as a
+#'   log10 reduction value.}
+#'   \item{treatment_lrv_mode}{Most likely treatment performance, expressed as
+#'   a log10 reduction value.}
+#'   \item{treatment_lrv_max}{Maximum treatment performance, expressed as a
+#'   log10 reduction value.}
+#'   \item{water_volume}{Daily consumption of unboiled tap water for the
+#'   consumption group, in litres per person per day.}
+#'   \item{intrusion_prob}{Daily probability that an intrusion affects the
+#'   distribution zone.}
+#'   \item{intrusion_conc_min}{Minimum Cryptosporidium concentration at the tap
+#'   conditional on an intrusion, in oocysts per litre.}
+#'   \item{intrusion_conc_max}{Maximum Cryptosporidium concentration at the tap
+#'   conditional on an intrusion, in oocysts per litre.}
+#'   \item{dose_response_r}{Parameter of the exponential Cryptosporidium
+#'   dose-response model.}
+#'   \item{exposure_days}{Number of daily exposure events in the assessment
+#'   period.}
+#' }
+#'
+#' @details
+#' The consumption groups in the same distribution zone share the occurrence
+#' or absence of a daily intrusion event. Their conditional infection
+#' probabilities differ because `water_volume` differs between groups. This
+#' structure can be evaluated with [trial_totals()] by using `population` as
+#' the number of trials and aggregating by `zone` and `scenario_id`.
+#'
+#' @source Derived from [water_data] using hypothetical population shares and
+#' water-consumption values.
+#' @seealso [water_data], [water_group_data_keys], [water_mctable],
+#'   [intrusion_exp], [trial_totals()]
+#' @examples
+#' water_group_data
+#'
+#' # Population is preserved within each zone and scenario.
+#' aggregate(
+#'   population ~ zone + scenario_id,
+#'   data = water_group_data,
+#'   FUN = sum
+#' )
+#' @docType data
+#' @keywords datasets
+"water_group_data"
 
 
 #' Data Keys for the Water Supply Example
@@ -80,13 +151,38 @@
 #' }
 #'
 #' @source Created for the illustrative water-supply example.
-#' @seealso [water_data], [water_mctable], [eval_module()]
+#' @seealso [water_data], [water_group_data_keys], [water_mctable],
+#'   [eval_module()]
 #' @examples
 #' water_data_keys
 #' water_data_keys$water_data$keys
 #' @docType data
 #' @keywords datasets
 "water_data_keys"
+
+
+#' Data Keys for the Consumption-Group Water Example
+#'
+#' A data-key specification describing the columns and identifying variables
+#' in [water_group_data]. The combination of `zone`, `consumption_group`, and
+#' `scenario_id` uniquely identifies each model variate.
+#'
+#' @format A named list with one component:
+#' \describe{
+#'   \item{water_group_data}{A list containing `cols`, the column names
+#'   available in [water_group_data], and `keys`, the columns `zone`,
+#'   `consumption_group`, and `scenario_id` that jointly identify its rows.}
+#' }
+#'
+#' @source Created for the illustrative water-supply example.
+#' @seealso [water_group_data], [water_data_keys], [water_mctable],
+#'   [eval_module()], [trial_totals()]
+#' @examples
+#' water_group_data_keys
+#' water_group_data_keys$water_group_data$keys
+#' @docType data
+#' @keywords datasets
+"water_group_data_keys"
 
 
 #' Monte Carlo Node Specifications for the Water Supply Example
@@ -120,8 +216,8 @@
 #' @source Parameter ranges are illustrative and were created for teaching and
 #' software demonstration. They do not represent a fitted model for a specific
 #' water system.
-#' @seealso [water_data], [water_data_keys], [treatment_exp],
-#'   [intrusion_exp], [eval_module()]
+#' @seealso [water_data], [water_group_data], [water_data_keys],
+#'   [water_group_data_keys], [treatment_exp], [intrusion_exp], [eval_module()]
 #' @examples
 #' water_mctable
 #' @docType data
@@ -148,8 +244,8 @@
 #' }
 #'
 #' @source Created for the illustrative water-supply example.
-#' @seealso [water_data], [water_data_keys], [water_mctable],
-#'   [intrusion_exp], [eval_module()]
+#' @seealso [water_data], [water_group_data], [water_data_keys],
+#'   [water_group_data_keys], [water_mctable], [intrusion_exp], [eval_module()]
 #' @examples
 #' treatment_exp
 #'
@@ -173,7 +269,7 @@
 #' The probability and frequency of intrusion events are not applied inside
 #' this expression. They can subsequently be incorporated with
 #' [trial_totals()] using `intrusion_prob` and `exposure_days` from
-#' [water_data].
+#' [water_data] or [water_group_data].
 #'
 #' @format A quoted R expression that creates the following model nodes:
 #' \describe{
@@ -183,8 +279,9 @@
 #' }
 #'
 #' @source Created for the illustrative water-supply example.
-#' @seealso [water_data], [water_data_keys], [water_mctable],
-#'   [treatment_exp], [eval_module()], [trial_totals()]
+#' @seealso [water_data], [water_group_data], [water_data_keys],
+#'   [water_group_data_keys], [water_mctable], [treatment_exp], [eval_module()],
+#'   [trial_totals()]
 #' @examples
 #' intrusion_exp
 #'
@@ -193,6 +290,13 @@
 #'   data = water_data,
 #'   mctable = water_mctable,
 #'   data_keys = water_data_keys
+#' )
+#'
+#' intrusion_group_module <- eval_module(
+#'   exp = list(intrusion = intrusion_exp),
+#'   data = water_group_data,
+#'   mctable = water_mctable,
+#'   data_keys = water_group_data_keys
 #' )
 #' @docType data
 #' @keywords datasets

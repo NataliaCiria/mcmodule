@@ -39,7 +39,7 @@ treatment_module <- eval_module(
 )
 }
 \seealso{
-\link{water_data}, \link{water_data_keys}, \link{water_mctable},
-\link{intrusion_exp}, \code{\link[=eval_module]{eval_module()}}
+\link{water_data}, \link{water_group_data}, \link{water_data_keys},
+\link{water_group_data_keys}, \link{water_mctable}, \link{intrusion_exp}, \code{\link[=eval_module]{eval_module()}}
 }
 \keyword{datasets}

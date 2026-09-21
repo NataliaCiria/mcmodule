@@ -73,7 +73,7 @@ of microbial intrusion events in distribution systems. Water Research, 45,
 961-979. \doi{10.1016/j.watres.2010.10.035}
 }
 \seealso{
-\link{water_data_keys}, \link{water_mctable}, \link{treatment_exp},
-\link{intrusion_exp}
+\link{water_group_data}, \link{water_data_keys}, \link{water_group_data_keys},
+\link{water_mctable}, \link{treatment_exp}, \link{intrusion_exp}
 }
 \keyword{datasets}

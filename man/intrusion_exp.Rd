@@ -27,7 +27,7 @@ dose and individual infection probability conditional on an intrusion.
 The probability and frequency of intrusion events are not applied inside
 this expression. They can subsequently be incorporated with
 \code{\link[=trial_totals]{trial_totals()}} using \code{intrusion_prob} and \code{exposure_days} from
-\link{water_data}.
+\link{water_data} or \link{water_group_data}.
 }
 \examples{
 intrusion_exp
@@ -38,9 +38,17 @@ intrusion_module <- eval_module(
   mctable = water_mctable,
   data_keys = water_data_keys
 )
+
+intrusion_group_module <- eval_module(
+  exp = list(intrusion = intrusion_exp),
+  data = water_group_data,
+  mctable = water_mctable,
+  data_keys = water_group_data_keys
+)
 }
 \seealso{
-\link{water_data}, \link{water_data_keys}, \link{water_mctable},
-\link{treatment_exp}, \code{\link[=eval_module]{eval_module()}}, \code{\link[=trial_totals]{trial_totals()}}
+\link{water_data}, \link{water_group_data}, \link{water_data_keys},
+\link{water_group_data_keys}, \link{water_mctable}, \link{treatment_exp}, \code{\link[=eval_module]{eval_module()}},
+\code{\link[=trial_totals]{trial_totals()}}
 }
 \keyword{datasets}
