@@ -3,6 +3,9 @@
 #' Creates mcnodes based on mctable specifications and input data.
 #' Applies transformations and generates mcnodes in the calling environment.
 #'
+#' Distribution functions may be supplied as bare (`function`) or namespace-qualified names (`package::function`, and `package:::function`).
+#' Configured transformation expressions are evaluated as R code.
+#'
 #' @param data (data frame). Input data containing variables for mcnode creation.
 #' @param mctable (data frame). Configuration table with columns:
 #'   mcnode, mc_func, transformation, from_variable.
@@ -115,34 +118,77 @@ create_mcnodes <- function(
         }
 
         #### CREATE MONTE CARLO DATA OBJECTS ####
-        mcdata_exp <- paste0(
-          "mcdata(data = data$",
-          mc_inputs[j],
-          ", type = '0', nvariates = ",
-          nrow(data),
-          ")"
+        input_mcnode <- mcdata(
+          data = data[[mc_inputs[j]]],
+          type = "0",
+          nvariates = nrow(data)
         )
 
         # Handle NA values based on whether it's a distribution
         if (is.na(mcrow$mc_func)) {
           assign(
             mc_inputs[j],
-            mcnode_na_rm(eval(parse(text = mcdata_exp))),
+            mcnode_na_rm(input_mcnode),
             envir = envir
           )
         } else {
-          assign(mc_inputs[j], eval(parse(text = mcdata_exp)), envir = envir)
+          assign(mc_inputs[j], input_mcnode, envir = envir)
         }
       }
 
       #### CREATE DISTRIBUTION-BASED MONTE CARLO NODES ####
       if (!is.na(mcrow$mc_func)) {
         # Extract distribution function parameters
-        mc_func <- mcrow$mc_func
-        func_args <- deparse(args(as.character(mc_func)))
-        func_args <- unlist(strsplit(func_args, ", "))
-        func_args <- func_args[grepl(" .*=.*", func_args)]
-        func_args <- gsub(" =.*", "", func_args)
+        mc_func <- as.character(mcrow$mc_func)
+        mc_function <- tryCatch(
+          {
+            if (
+              identical(mc_func, "rpert") &&
+              "package:freedom" %in% search()
+            ) {
+              warning(
+                paste0(
+                  "`freedom::rpert()` is masking `mc2d::rpert()`. ",
+                  "`create_mcnodes()` will use `mc2d::rpert()`. ",
+                  "Use `mc2d::rpert` in `mctable$mc_func` to be explicit."
+                ),
+                call. = FALSE
+              )
+              mc2d::rpert
+            } else if (identical(mc_func, "rpert")) {
+              mc2d::rpert
+            } else if (grepl(":::", mc_func, fixed = TRUE)) {
+              function_parts <- strsplit(mc_func, ":::", fixed = TRUE)[[1]]
+              getFromNamespace(function_parts[[2]], function_parts[[1]])
+            } else if (grepl("::", mc_func, fixed = TRUE)) {
+              function_parts <- strsplit(mc_func, "::", fixed = TRUE)[[1]]
+              getExportedValue(function_parts[[1]], function_parts[[2]])
+            } else {
+              get(mc_func, mode = "function", inherits = TRUE)
+            }
+          },
+          error = function(e) {
+            temporary_inputs <- intersect(
+              setdiff(mc_inputs, as.character(mc_name)),
+              ls(envir = envir, all.names = TRUE)
+            )
+            if (length(temporary_inputs) > 0) {
+              remove(list = temporary_inputs, envir = envir)
+            }
+            stop(
+              sprintf(
+                "Distribution function '%s' for %s could not be resolved",
+                mc_func,
+                mc_name
+              ),
+              call. = FALSE
+            )
+          }
+        )
+        func_args <- setdiff(
+          names(formals(mc_function)),
+          c("n", "nsv", "nsu", "nvariates", "...")
+        )
 
         # Map parameters to input data
         mc_parameters <- paste(mc_name, func_args, sep = "_")
@@ -161,10 +207,16 @@ create_mcnodes <- function(
             mc_name,
             " mcdata node created \n"
           ))
+          temporary_inputs <- intersect(
+            setdiff(mc_inputs, as.character(mc_name)),
+            ls(envir = envir, all.names = TRUE)
+          )
+          if (length(temporary_inputs) > 0) {
+            remove(list = temporary_inputs, envir = envir)
+          }
           next
         }
 
-        # Prepare expressions for Monte Carlo node creation
         # Match each parameter to its corresponding column name
         matched_inputs <- sapply(parameters_available, function(param) {
           param_name <- paste(mc_name, param, sep = "_")
@@ -190,46 +242,31 @@ create_mcnodes <- function(
           }
           matched
         })
-        mc_parameters_exp <- paste(
-          paste0(parameters_available, " = envir$", matched_inputs),
-          collapse = ", "
-        )
-        mc_na_rm_parameters_exp <- paste(
-          paste0(
-            parameters_available,
-            " = ",
-            "mcnode_na_rm(envir$",
-            matched_inputs,
-            ")"
-          ),
-          collapse = ", "
-        )
 
-        mc_func_exp <- paste0("func = ", mc_func)
-        mcstoc_exp <- paste0(
-          "mcstoc(",
-          mc_func_exp,
-          ", type = 'V', ",
-          mc_parameters_exp,
-          ", nvariates = ",
-          nrow(data),
-          ")"
-        )
-        mcstoc_na_rm_exp <- paste0(
-          "mcstoc(",
-          mc_func_exp,
-          ", type = 'V', ",
-          mc_na_rm_parameters_exp,
-          ", nvariates = ",
-          nrow(data),
-          ")"
-        )
+        create_stochastic_node <- function(remove_na = FALSE) {
+          parameter_nodes <- lapply(matched_inputs, function(input_name) {
+            get(input_name, envir = envir, inherits = FALSE)
+          })
+          if (remove_na) {
+            parameter_nodes <- lapply(parameter_nodes, mcnode_na_rm)
+          }
+          names(parameter_nodes) <- parameters_available
+
+          do.call(
+            mcstoc,
+            c(
+              list(func = mc_function, type = "V"),
+              parameter_nodes,
+              list(nvariates = nrow(data))
+            )
+          )
+        }
 
         #### ATTEMPT NODE CREATION WITH ERROR HANDLING ####
         tryCatch(
           assign(
             as.character(mc_name),
-            eval(parse(text = mcstoc_exp)),
+            create_stochastic_node(),
             envir = envir
           ),
           error = function(e) {
@@ -247,7 +284,7 @@ create_mcnodes <- function(
             tryCatch(
               assign(
                 as.character(mc_name),
-                suppressWarnings(eval(parse(text = mcstoc_na_rm_exp))),
+                suppressWarnings(create_stochastic_node(remove_na = TRUE)),
                 envir = envir
               ),
               error = function(e) {
@@ -276,7 +313,7 @@ create_mcnodes <- function(
           finally = {
             # Cleanup temporary input objects
             temporary_inputs <- intersect(
-              mc_inputs,
+              setdiff(mc_inputs, as.character(mc_name)),
               ls(envir = envir, all.names = TRUE)
             )
             if (length(temporary_inputs) > 0) {

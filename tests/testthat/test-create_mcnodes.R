@@ -146,4 +146,149 @@ suppressMessages({
     )
     expect_null(result)
   })
+
+  test_that("create_mcnodes resolves namespaced distribution functions", {
+    test_data <- data.frame(
+      probability_min = c(0.1, 0.2),
+      probability_max = c(0.3, 0.4)
+    )
+    test_mctable <- data.frame(
+      mcnode = "probability",
+      mc_func = "stats::runif",
+      description = "Probability",
+      from_variable = NA,
+      transformation = NA,
+      stringsAsFactors = FALSE
+    )
+    test_env <- new.env()
+
+    expect_no_error(
+      create_mcnodes(
+        data = test_data,
+        mctable = test_mctable,
+        envir = test_env
+      )
+    )
+    expect_true(exists("probability", envir = test_env))
+    expect_equal(
+      dim(test_env$probability),
+      c(ndvar(), 1, nrow(test_data))
+    )
+  })
+
+  test_that("create_mcnodes uses mc2d rpert when freedom masks rpert", {
+    if ("package:freedom" %in% search()) {
+      skip("freedom is already attached")
+    }
+
+    masking_environment <- list2env(list(
+      rpert = function(...) {
+        stop("The masked function was called")
+      }
+    ))
+    attach(masking_environment, name = "package:freedom")
+    on.exit(detach("package:freedom"), add = TRUE)
+
+    test_data <- data.frame(
+      probability_min = c(0.1, 0.2),
+      probability_mode = c(0.2, 0.3),
+      probability_max = c(0.3, 0.4)
+    )
+    test_mctable <- data.frame(
+      mcnode = "probability",
+      mc_func = "rpert",
+      description = "Probability",
+      from_variable = NA,
+      transformation = NA,
+      stringsAsFactors = FALSE
+    )
+    test_env <- new.env()
+
+    expect_warning(
+      create_mcnodes(
+        data = test_data,
+        mctable = test_mctable,
+        envir = test_env
+      ),
+      "will use `mc2d::rpert\\(\\)`"
+    )
+    expect_true(exists("probability", envir = test_env))
+  })
+
+  test_that("create_mcnodes supports required distribution parameters", {
+    test_data <- data.frame(chi_df = c(2, 4))
+    test_mctable <- data.frame(
+      mcnode = "chi",
+      mc_func = "stats::rchisq",
+      description = "Chi-squared value",
+      from_variable = NA,
+      transformation = NA,
+      stringsAsFactors = FALSE
+    )
+    test_env <- new.env()
+
+    expect_no_error(
+      create_mcnodes(
+        data = test_data,
+        mctable = test_mctable,
+        envir = test_env
+      )
+    )
+    expect_true(exists("chi", envir = test_env))
+  })
+
+  test_that("create_mcnodes reports unresolved distribution functions", {
+    test_data <- data.frame(
+      probability_min = c(0.1, 0.2),
+      probability_max = c(0.3, 0.4)
+    )
+    test_mctable <- data.frame(
+      mcnode = "probability",
+      mc_func = "not_a_distribution",
+      description = "Probability",
+      from_variable = NA,
+      transformation = NA,
+      stringsAsFactors = FALSE
+    )
+    test_env <- new.env()
+
+    expect_error(
+      create_mcnodes(
+        data = test_data,
+        mctable = test_mctable,
+        envir = test_env
+      ),
+      "Distribution function 'not_a_distribution'.*could not be resolved"
+    )
+    expect_false(any(c(
+      "probability_min",
+      "probability_max"
+    ) %in% ls(test_env)))
+  })
+
+  test_that("create_mcnodes retries stochastic nodes after NA removal", {
+    test_data <- data.frame(
+      probability_min = c(0.1, NA),
+      probability_max = c(0.3, 0.4)
+    )
+    test_mctable <- data.frame(
+      mcnode = "probability",
+      mc_func = "runif",
+      description = "Probability",
+      from_variable = NA,
+      transformation = NA,
+      stringsAsFactors = FALSE
+    )
+    test_env <- new.env()
+
+    expect_no_error(
+      create_mcnodes(
+        data = test_data,
+        mctable = test_mctable,
+        envir = test_env
+      )
+    )
+    expect_true(exists("probability", envir = test_env))
+    expect_false(any(is.na(test_env$probability)))
+  })
 })

@@ -22,6 +22,10 @@ Default: parent.frame().}
 Creates mcnodes based on mctable specifications and input data.
 Applies transformations and generates mcnodes in the calling environment.
 }
+\details{
+Distribution functions may be supplied as bare (\code{function}) or namespace-qualified names (\verb{package::function}, and \verb{package:::function}).
+Configured transformation expressions are evaluated as R code.
+}
 \examples{
 create_mcnodes(
   data = imports_data,
