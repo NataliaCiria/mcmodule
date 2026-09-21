@@ -35,6 +35,9 @@
 #'     \item Quantile columns (2.5%, 25%, 50%, 75%, 97.5%).
 #'   }
 #'
+#' @seealso [mc_keys()] for retrieving the keys associated with a node and
+#'   [mc_plot()] for visualising node distributions.
+#'
 #' @examples
 #' # Use with mcmodule
 #' summary_basic <- mc_summary(imports_mcmodule, "w_prev")
@@ -54,17 +57,31 @@
 #' )
 #' @export
 mc_summary <- function(
-  mcmodule = NULL,
-  mc_name = NULL,
-  keys_names = NULL,
-  data = NULL,
-  mcnode = NULL,
-  sep_keys = TRUE,
-  digits = NULL
+    mcmodule = NULL,
+    mc_name = NULL,
+    keys_names = NULL,
+    data = NULL,
+    mcnode = NULL,
+    sep_keys = TRUE,
+    digits = NULL
 ) {
   # Input validation
-  if (!is.null(mcnode) & is.null(mc_name)) {
+  if (!is.null(mcnode) && is.null(mc_name)) {
     mc_name <- deparse(substitute(mcnode))
+  }
+
+  if (!is.null(sep_keys) && (length(sep_keys) != 1 || is.na(sep_keys))) {
+    stop("sep_keys must be TRUE or FALSE")
+  }
+  if (!is.logical(sep_keys)) {
+    stop("sep_keys must be TRUE or FALSE")
+  }
+  if (
+    !is.null(digits) &&
+    (!is.numeric(digits) || length(digits) != 1 || is.na(digits) ||
+     digits < 1 || digits %% 1 != 0)
+  ) {
+    stop("digits must be a positive integer or NULL")
   }
 
   if (!is.null(mcmodule)) {
@@ -78,16 +95,12 @@ mc_summary <- function(
       stop(sprintf("%s must be a mcnode present in %s", mc_name, module_name))
     }
 
-    if (is.null(mcnode)) {
-      mcnode <- mcmodule$node_list[[mc_name]]$mcnode
-    }
-
     # Check if node has a pre-calculated summary (for filtered, compared, or aggregated nodes)
     node_type <- mcmodule$node_list[[mc_name]]$type
     if (
       !is.null(node_type) &&
-        node_type %in% c("filter", "compare", "agg_total") &&
-        !is.null(mcmodule$node_list[[mc_name]]$summary)
+      node_type %in% c("filter", "compare", "agg_total") &&
+      !is.null(mcmodule$node_list[[mc_name]]$summary)
     ) {
       return(mcmodule$node_list[[mc_name]]$summary)
     }
@@ -99,13 +112,22 @@ mc_summary <- function(
     }
 
     if (
-      length(data_name) > 1 & !is.null(mcmodule$node_list[[mc_name]]$summary)
+      length(data_name) > 1 && !is.null(mcmodule$node_list[[mc_name]]$summary)
     ) {
       message("Too many data names. Using existing summary.")
       return(mcmodule$node_list[[mc_name]]$summary)
     }
   } else {
-    if (is.null(data)) stop("mcmodule or data must be provided")
+    if (is.null(data)) {
+      stop("mcmodule or data must be provided")
+    }
+    if (!is.mcnode(mcnode)) {
+      stop("mcnode must be provided and inherit from class 'mcnode'")
+    }
+  }
+
+  if (!is.data.frame(data)) {
+    stop("data must be a data frame")
   }
 
   # Validate provided keys
@@ -121,14 +143,15 @@ mc_summary <- function(
   }
 
   # Process keys
-  keys_names <- if (is.null(keys_names) & !is.null(mcmodule)) {
+  keys_names <- if (is.null(keys_names) && !is.null(mcmodule)) {
     names(mc_keys(mcmodule, mc_name))
   } else {
     keys_names
   }
 
-  keys <- if (length(keys_names) > 0 && any(keys_names %in% names(data))) {
-    data[names(data) %in% keys_names]
+  available_keys <- keys_names[keys_names %in% names(data)]
+  keys <- if (length(available_keys) > 0) {
+    data[available_keys]
   } else {
     data.frame(variate = seq_len(nrow(data)))
   }
@@ -136,9 +159,6 @@ mc_summary <- function(
   if (!sep_keys) {
     keys$keys <- do.call(paste, c(keys, list(sep = ", ")))
     keys <- keys["keys"]
-    keys_groups <- c("mc_name", "keys")
-  } else {
-    keys_groups <- c("mc_name", names(keys))
   }
 
   # Calculate summary statistics
@@ -155,6 +175,15 @@ mc_summary <- function(
     byrow = TRUE
   ))
   names(summary_df) <- summary_names
+
+  if (nrow(keys) != nrow(summary_df)) {
+    stop(sprintf(
+      "data has %s rows but mcnode has %s variates",
+      nrow(keys),
+      nrow(summary_df)
+    ))
+  }
+
   summary_df <- cbind(mc_name, keys, summary_df)
 
   # Round if digits specified
@@ -174,7 +203,7 @@ mc_summary <- function(
 
 signif_round <- function(x, digits = 2) {
   ifelse(
-    x < (10^-(digits)),
+    abs(x) < (10^-(digits)),
     signif(x, digits = digits),
     round(x, digits = digits)
   )

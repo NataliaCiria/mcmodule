@@ -79,3 +79,7 @@ summary_direct <- mc_summary(
   sep_keys = FALSE
 )
 }
+\seealso{
+\code{\link[=mc_keys]{mc_keys()}} for retrieving the keys associated with a node and
+\code{\link[=mc_plot]{mc_plot()}} for visualising node distributions.
+}

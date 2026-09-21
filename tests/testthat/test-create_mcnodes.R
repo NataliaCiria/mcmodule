@@ -55,8 +55,13 @@ suppressMessages({
 
     # Create the mcnode - should not error
     expect_no_error(
-      create_mcnodes(data = test_data, mctable = test_mctable, envir = test_env)
+      result <- create_mcnodes(
+        data = test_data,
+        mctable = test_mctable,
+        envir = test_env
+      )
     )
+    expect_null(result)
 
     # Verify the node was created
     expect_true(exists("n_animals", envir = test_env))
@@ -90,6 +95,11 @@ suppressMessages({
     expect_equal(dim(test_env$b), c(nrow(X), 1, 1))
     expect_equal(as.numeric(test_env$a[, 1, 1]), as.numeric(X[, "a"]))
     expect_equal(as.numeric(test_env$b[, 1, 1]), as.numeric(X[, "b"]))
+
+    unnamed_X <- matrix(1:4, ncol = 2)
+    unnamed_env <- new.env()
+    matrix_to_mcnodes(unnamed_X, envir = unnamed_env)
+    expect_true(all(c("x1", "x2") %in% ls(unnamed_env)))
   })
 
   test_that("matrix_to_mcnodes validates input types", {
@@ -100,5 +110,40 @@ suppressMessages({
       stringsAsFactors = FALSE
     )
     expect_error(matrix_to_mcnodes(X_bad), "must be numeric or logical")
+
+    X_duplicate <- matrix(1:4, ncol = 2)
+    colnames(X_duplicate) <- c("a", "a")
+    expect_error(matrix_to_mcnodes(X_duplicate), "must be unique")
+
+    X_empty_name <- matrix(1:4, ncol = 2)
+    colnames(X_empty_name) <- c("a", "")
+    expect_error(matrix_to_mcnodes(X_empty_name), "missing or empty")
+  })
+
+  test_that("create_mcnodes safely cleans up skipped inputs", {
+    test_data <- data.frame(
+      probability_min = c("low", "high"),
+      probability_max = c(0.2, 0.3),
+      stringsAsFactors = FALSE
+    )
+    test_mctable <- data.frame(
+      mcnode = "probability",
+      mc_func = "runif",
+      description = "Probability",
+      from_variable = NA,
+      transformation = NA,
+      stringsAsFactors = FALSE
+    )
+
+    test_env <- new.env()
+    expect_warning(
+      result <- create_mcnodes(
+        data = test_data,
+        mctable = test_mctable,
+        envir = test_env
+      ),
+      "should be numeric or logical"
+    )
+    expect_null(result)
   })
 })

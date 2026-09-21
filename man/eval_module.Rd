@@ -59,8 +59,8 @@ mcnodes with current data. Default: NULL.}
 
 \item{sample_design}{(matrix, data frame, or list, optional). Sampling
 design used to create input nodes via \code{\link[=matrix_to_mcnodes]{matrix_to_mcnodes()}}. Accepts a
-matrix/data frame or a list with element \code{X} (typically output of
-\link[sensitivity:sensitivity]{sensitivity::sensitivity} functions). Columns matching expression input nodes are created
+matrix/data frame or a list with element \code{X} (for example, output from
+\code{\link[sensitivity:morris]{sensitivity::morris()}}). Columns matching expression input nodes are created
 from this matrix. Defaults to \code{\link[=set_sample_design]{set_sample_design()}}.}
 
 \item{if_not_sampled}{(character). How to fill input nodes that are required
@@ -139,4 +139,9 @@ eval_module(
   mctable = imports_mctable,
   data_keys = imports_data_keys
 )
+}
+\seealso{
+\code{\link[=get_node_list]{get_node_list()}} for inspecting expression dependencies,
+\code{\link[=create_mcnodes]{create_mcnodes()}} and \code{\link[=matrix_to_mcnodes]{matrix_to_mcnodes()}} for input-node creation, and
+\code{\link[=mc_summary]{mc_summary()}} for summarising evaluated nodes.
 }

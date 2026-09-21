@@ -10,13 +10,16 @@ mc_network(
   color_pal = NULL,
   color_by = NULL,
   legend = FALSE,
-  inputs = FALSE
+  inputs = FALSE,
+  percentages = TRUE
 )
 }
 \arguments{
 \item{mcmodule}{(mcmodule object). Module containing network to visualise.}
 
-\item{variate}{(integer). Which variate to visualise. Default: 1.}
+\item{variate}{(positive integer). Variate (row) to visualise. The same row
+number is used across the module; this argument does not filter variates
+by key values. See \code{\link[=get_node_table]{get_node_table()}}. Default: 1.}
 
 \item{color_pal}{(character vector, optional). Custom colour palette for nodes.
 Default: NULL.}
@@ -27,6 +30,10 @@ Default: NULL.}
 \item{legend}{(logical). If TRUE, show colours legend. Default: FALSE.}
 
 \item{inputs}{(logical). If TRUE, show non-node inputs. Default: FALSE.}
+
+\item{percentages}{(logical). If TRUE, eligible stochastic nodes whose
+values do not exceed 1 are displayed as percentages. If FALSE, all
+stochastic nodes are displayed as numbers. Default: TRUE.}
 }
 \value{
 An interactive visNetwork object with highlighting of connected nodes,
@@ -54,6 +61,22 @@ By default, nodes are colored as:
 }
 \examples{
 \donttest{
-network <- mc_network(mcmodule=imports_mcmodule)
+network <- mc_network(mcmodule = imports_mcmodule)
+
+# Select a variate by its key values rather than its original row number.
+# The filtered node's first retained variate is displayed with variate = 1.
+selected_module <- mc_filter(
+  imports_mcmodule,
+  "w_prev",
+  pathogen == "b",
+  origin == "south",
+  name = "w_prev_selected"
+)
+selected_network <- mc_network(selected_module, variate = 1)
 }
+}
+\seealso{
+\code{\link[=get_node_table]{get_node_table()}} and \code{\link[=get_edge_table]{get_edge_table()}} for the underlying tables,
+\code{\link[=mc_filter]{mc_filter()}} for selecting variates by conditions, and
+\code{\link[visNetwork:visNetwork]{visNetwork::visNetwork()}} for the underlying visualisation.
 }

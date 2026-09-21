@@ -9,17 +9,23 @@
 #' @param data_keys Data structure and keys, defaults to set_data_keys()
 #' @param keys Optional explicit keys for the input data (character vector)
 #'
-#' @return A list of class "mcnode_list" containing node information
+#' @return A list of class `mcnode_list` containing node information.
+#'
+#' @seealso [eval_module()] for evaluating the expression and
+#'   [create_mcnodes()] for constructing input nodes.
 get_node_list <- function(
-  exp,
-  param_names = NULL,
-  mctable = set_mctable(),
-  data_keys = set_data_keys(),
-  keys = NULL
+    exp,
+    param_names = NULL,
+    mctable = set_mctable(),
+    data_keys = set_data_keys(),
+    keys = NULL
 ) {
-  # Validate that exp is a quoted expression (use quote({ ... }))
-  if (!(is.call(exp) || is.expression(exp) || is.language(exp))) {
-    stop("exp must be a quoted expression, use quote({ ... })")
+  # Validate that exp is a quoted expression block (use quote({ ... }))
+  if (is.expression(exp) && length(exp) == 1) {
+    exp <- exp[[1]]
+  }
+  if (!is.call(exp) || !identical(exp[[1]], as.name("{"))) {
+    stop("exp must be a quoted expression block, use quote({ ... })")
   }
 
   exp_name <- gsub("_exp", "", deparse(substitute(exp)))
@@ -29,7 +35,7 @@ get_node_list <- function(
   all_nodes <- c()
 
   # Process output nodes from model exp
-  for (i in 2:length(exp)) {
+  for (i in seq_along(exp)[-1]) {
     node_name <- deparse(exp[[i]][[2]])
     node_exp <- paste0(deparse(exp[[i]][[3]]), collapse = "")
 
@@ -90,7 +96,7 @@ get_node_list <- function(
   }
 
   # Rename parameters
-  for (i in 1:length(all_nodes)) {
+  for (i in seq_along(all_nodes)) {
     all_nodes[i] <- if (all_nodes[i] %in% names(param_names)) {
       param_names[all_nodes[i]]
     } else {
@@ -122,7 +128,7 @@ get_node_list <- function(
   })))
 
   if (length(input_nodes) > 0) {
-    for (i in 1:length(input_nodes)) {
+    for (i in seq_along(input_nodes)) {
       node_name <- input_nodes[[i]]
       mc_row <- mctable[mctable$mcnode == node_name, ]
 
@@ -172,8 +178,8 @@ get_node_list <- function(
           base_keys <- NULL
           if (
             !is.null(data_keys) &&
-              dataset_name %in% names(data_keys) &&
-              !is.null(data_keys[[dataset_name]][["keys"]])
+            dataset_name %in% names(data_keys) &&
+            !is.null(data_keys[[dataset_name]][["keys"]])
           ) {
             base_keys <- data_keys[[dataset_name]][["keys"]]
           }
@@ -230,7 +236,7 @@ get_node_list <- function(
   ]
 
   if (length(prev_nodes) > 0) {
-    for (i in 1:length(prev_nodes)) {
+    for (i in seq_along(prev_nodes)) {
       node_name <- prev_nodes[i]
       is_fun <- if (exists(node_name)) is.function(get(node_name)) else FALSE
       if (!is_fun) {
@@ -279,8 +285,9 @@ get_node_list <- function(
 #'   - created_in_exp: logical; TRUE if mcstoc or mcdata was used in the expression
 #'   - mc_func: character or NULL; sampling function name detected for mcstoc/mcdata
 #'   - nvariates: logical; TRUE if a `nvariates` argument was present
-#'   - na_rm_inputs: character vector of symbol names passed to `mcnode_na_rm`
-#'   - null_rm: logical; TRUE if `mcnode_null_rm` was used
+#'   - na_rm: logical; `TRUE` if `mcnode_na_rm()` was used
+#'   - null_rm_inputs: character vector of symbol names passed to
+#'     `mcnode_null_rm()`
 #'   - function_call: logical; TRUE if any function calls were present
 #' @keywords internal
 #' @noRd

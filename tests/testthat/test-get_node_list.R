@@ -396,6 +396,14 @@ suppressMessages({
       get_node_list(123),
       "exp must be a quoted expression"
     )
+    expect_error(
+      get_node_list(quote(input_a + input_b)),
+      "quoted expression block"
+    )
+
+    empty_result <- get_node_list(quote({}))
+    expect_s3_class(empty_result, "mcnode_list")
+    expect_length(empty_result, 0)
   })
 
   test_that("get_node_list warns for unsupported mcnode types (U, VU)", {

@@ -4,15 +4,24 @@
 \alias{get_node_table}
 \title{Generate Node Table for Network Visualisation}
 \usage{
-get_node_table(mcmodule, variate = 1, inputs = FALSE)
+get_node_table(mcmodule, variate = 1, inputs = FALSE, percentages = TRUE)
 }
 \arguments{
 \item{mcmodule}{(mcmodule object). Module containing node information.}
 
-\item{variate}{(integer). Which variate to extract. Default: 1.}
+\item{variate}{(positive integer). Variate (row) to extract from every
+stochastic node and input data frame. The default uses the first variate.
+Use another row number when the same row has the intended meaning across
+the module's data frames. This argument does not filter by key values;
+filter the module before plotting when row positions are not comparable.}
 
 \item{inputs}{(logical). If TRUE, include non-node inputs (datasets,
 dataframes, and columns). Default: FALSE.}
+
+\item{percentages}{(logical). If TRUE, eligible stochastic nodes whose
+values do not exceed 1 are displayed as percentages. Count and time nodes
+identified from their names are always displayed as numbers. If FALSE,
+all stochastic nodes are displayed as numbers. Default: TRUE.}
 }
 \value{
 A data frame containing node information and attributes.
@@ -23,4 +32,8 @@ network. Includes node attributes, values, and relationships.
 }
 \examples{
 node_table <- get_node_table(imports_mcmodule)
+}
+\seealso{
+\code{\link[=get_edge_table]{get_edge_table()}} for network edges, \code{\link[=mc_filter]{mc_filter()}} for selecting
+variates by conditions, and \code{\link[=mc_network]{mc_network()}} for interactive visualisation.
 }

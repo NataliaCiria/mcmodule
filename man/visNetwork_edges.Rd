@@ -18,3 +18,6 @@ from, to, and id.
 \description{
 Creates a formatted edge table suitable for visualisation with visNetwork.
 }
+\seealso{
+\code{\link[=get_edge_table]{get_edge_table()}} and \code{\link[=mc_network]{mc_network()}}.
+}

@@ -22,7 +22,7 @@ suppressMessages({
     ))
     expect_true(all(c("from", "to", "id") %in% colnames(edges)))
 
-    # With mcnode inptus
+    # With mcnode inputs
     imports_network_1 <- mc_network(imports_mcmodule)
     expect_true(all(
       c("visNetwork", "htmlwidget") %in% class(imports_network_1)
@@ -30,9 +30,9 @@ suppressMessages({
     expect_equal(imports_network_1$x$nodes[names(nodes)], nodes)
     expect_equal(imports_network_1$x$edges[names(edges)], edges)
 
-    # Without mcnode inptus
+    # Without mcnode inputs
     imports_network_2 <- mc_network(imports_mcmodule)
-    expect_true(all(imports_network_2$x$nodes$module %in% "imports"))
+    expect_true(all(imports_network_2$x$nodes$grouping %in% "imports"))
 
     # With legend + with mcnode inputs
     imports_network_3 <- mc_network(
@@ -42,14 +42,14 @@ suppressMessages({
     )
     expect_equal(
       imports_network_3$x$legend$nodes$label,
-      c("inputs", "in_node", "out_node")
+      c("Data inputs", "Input / parameter nodes", "Calculated nodes")
     )
 
     # With legend + without mcnode inputs
     imports_network_4 <- mc_network(imports_mcmodule, legend = TRUE)
     expect_equal(
       imports_network_4$x$legend$nodes$label,
-      c("in_node", "out_node")
+      c("Input / parameter nodes", "Calculated nodes")
     )
 
     # With custom colour_by + legend + without mcnode inputs
@@ -79,7 +79,7 @@ suppressMessages({
     )
     expect_equal(
       imports_network_7$x$legend$nodes$label,
-      c("in_node", "out_node")
+      c("Input / parameter nodes", "Calculated nodes")
     )
 
     # With custom palette + with mcnode inputs
@@ -110,7 +110,13 @@ suppressMessages({
     )
     expect_equal(
       imports_network_9$x$legend$nodes$label,
-      c("in_node", "input_data", "input_dataset", "inputs_col", "out_node")
+      c(
+        "Input / parameter nodes",
+        "Input data frame",
+        "Input dataset",
+        "Input column",
+        "Calculated nodes"
+      )
     )
   })
 
@@ -369,4 +375,40 @@ suppressMessages({
       edge_pairs
     )))
   })
+
+  test_that("percentage formatting is conservative and optional", {
+    expect_true(should_format_percentage("probability", c(0.1, 1), TRUE))
+    expect_false(should_format_percentage("probability", c(0.1, 1.01), TRUE))
+    expect_false(should_format_percentage("n_animals", c(0.1, 0.2), TRUE))
+    expect_false(should_format_percentage("probability", c(0.1, 0.2), FALSE))
+
+    percentage_nodes <- get_node_table(imports_mcmodule)
+    numeric_nodes <- get_node_table(imports_mcmodule, percentages = FALSE)
+
+    expect_true(any(grepl("%", percentage_nodes$value, fixed = TRUE)))
+    expect_false(any(grepl("%", numeric_nodes$value, fixed = TRUE)))
+    expect_error(
+      get_node_table(imports_mcmodule, variate = 0),
+      "`variate` must be a single positive integer.",
+      fixed = TRUE
+    )
+  })
+
+  test_that("node titles remove repeated dependencies", {
+    title <- generate_node_title(
+      "node <1>",
+      "module",
+      "50% (10%-90%)",
+      "x * y",
+      "x, y",
+      "x, y, z"
+    )
+
+    expect_match(title, "Parameters", fixed = TRUE)
+    expect_match(title, "Other dependencies", fixed = TRUE)
+    expect_match(title, ">z<", fixed = TRUE)
+    expect_false(grepl(">x<br>y<br>z<", title, fixed = TRUE))
+    expect_match(title, "node &lt;1&gt;", fixed = TRUE)
+  })
+
 })

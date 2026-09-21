@@ -1096,4 +1096,102 @@ suppressMessages({
     safe_mcnode <- result_module$node_list$safe_node$mcnode
     expect_equal(safe_mcnode, existing_mcnode)
   })
+  test_that("eval_module validates data and expression inputs", {
+    expect_error(
+      eval_module(
+        exp = list(),
+        data = data.frame(value = 1),
+        mctable = NULL,
+        sample_design = NULL
+      ),
+      "at least one expression"
+    )
+    expect_error(
+      eval_module(exp = quote({ result <- value }), data = list(value = 1)),
+      "data must be a data frame"
+    )
+  })
+
+  test_that("eval_module names unnamed expression lists", {
+    expressions <- list(
+      quote({ first <- mcdata(1, type = "0") }),
+      quote({ second <- first + 1 })
+    )
+
+    result <- eval_module(
+      exp = expressions,
+      data = data.frame(row_id = 1),
+      keys = "row_id",
+      mctable = NULL,
+      data_keys = NULL,
+      sample_design = NULL
+    )
+
+    expect_equal(names(result$exp), c("exp_1", "exp_2"))
+    expect_true(all(c("first", "second") %in% names(result$node_list)))
+  })
+
+  test_that("eval_module matches a previous module supplied in a list", {
+    previous_data <- data.frame(
+      category = c("A", "B"),
+      base_value = c(1, 2),
+      stringsAsFactors = FALSE
+    )
+    previous_keys <- list(
+      previous_data = list(
+        cols = names(previous_data),
+        keys = "category"
+      )
+    )
+    previous_mctable <- data.frame(
+      mcnode = "base_value",
+      mc_func = NA,
+      description = "Base value",
+      from_variable = NA,
+      transformation = NA,
+      stringsAsFactors = FALSE
+    )
+    previous_module <- eval_module(
+      exp = list(previous = quote({ previous_result <- base_value })),
+      data = previous_data,
+      mctable = previous_mctable,
+      data_keys = previous_keys,
+      sample_design = NULL
+    )
+
+    current_data <- data.frame(
+      category = c("B", "A"),
+      multiplier = c(10, 10),
+      stringsAsFactors = FALSE
+    )
+    current_keys <- list(
+      current_data = list(
+        cols = names(current_data),
+        keys = "category"
+      )
+    )
+
+    current_mctable <- data.frame(
+      mcnode = "multiplier",
+      mc_func = NA,
+      description = "Multiplier",
+      from_variable = NA,
+      transformation = NA,
+      stringsAsFactors = FALSE
+    )
+    result <- eval_module(
+      exp = list(current = quote({
+        result <- previous_result * multiplier
+      })),
+      data = current_data,
+      mctable = current_mctable,
+      data_keys = current_keys,
+      prev_mcmodule = list(previous_module),
+      sample_design = NULL
+    )
+
+    expect_true("result" %in% names(result$node_list))
+    expect_equal(dim(result$node_list$result$mcnode)[3], 2)
+  })
+
 })

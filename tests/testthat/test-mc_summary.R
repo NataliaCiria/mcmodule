@@ -51,6 +51,14 @@ suppressMessages({
     )
     expect_true("category" %in% names(result_data_keys))
 
+    # Requested key order is preserved
+    ordered_keys <- mc_summary(
+      test_module,
+      "p1",
+      keys_names = c("scenario_id", "category")
+    )
+    expect_equal(names(ordered_keys)[2:3], c("scenario_id", "category"))
+
     # Test errors
     expect_error(mc_summary(test_module, "nonexistent_node"))
     expect_error(mc_summary(test_module$data, "p1"))
@@ -59,6 +67,19 @@ suppressMessages({
       "p1",
       keys_names = c("nonexistent_key")
     ))
+    expect_error(
+      mc_summary(data = test_module$data$test_data),
+      "mcnode must be provided"
+    )
+    expect_error(mc_summary(test_module, "p1", digits = 0), "positive integer")
+    expect_error(mc_summary(test_module, "p1", sep_keys = NA), "TRUE or FALSE")
+    expect_error(
+      mc_summary(
+        data = test_module$data$test_data[1:2, ],
+        mcnode = test_module$node_list$p1$mcnode
+      ),
+      "data has 2 rows but mcnode has 3 variates"
+    )
   })
 
   test_that("mc_summary works with mc_filter nodes", {
@@ -143,4 +164,12 @@ suppressMessages({
       expect_false(any(result$scenario_id == "0"))
     }
   })
+
+  test_that("signif_round handles negative values by magnitude", {
+    expect_equal(
+      signif_round(c(-0.001234, -1.234), digits = 2),
+      c(-0.0012, -1.23)
+    )
+  })
+
 })

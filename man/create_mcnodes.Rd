@@ -16,7 +16,7 @@ mcnode, mc_func, transformation, from_variable.}
 Default: parent.frame().}
 }
 \value{
-NULL (invisibly). mcnodes created in \code{envir}.
+\code{NULL}, invisibly. mcnodes are created in \code{envir}.
 }
 \description{
 Creates mcnodes based on mctable specifications and input data.
@@ -28,4 +28,8 @@ create_mcnodes(
   mctable = imports_mctable
 )
 
+}
+\seealso{
+\code{\link[=eval_module]{eval_module()}} for creating and evaluating a complete module and
+\code{\link[=matrix_to_mcnodes]{matrix_to_mcnodes()}} for creating nodes from a sampling matrix.
 }
