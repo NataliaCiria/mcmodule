@@ -9,17 +9,23 @@
 #' @param data_keys Data structure and keys, defaults to set_data_keys()
 #' @param keys Optional explicit keys for the input data (character vector)
 #'
-#' @return A list of class "mcnode_list" containing node information
+#' @return A list of class `mcnode_list` containing node information.
+#'
+#' @seealso [eval_module()] for evaluating the expression and
+#'   [create_mcnodes()] for constructing input nodes.
 get_node_list <- function(
-  exp,
-  param_names = NULL,
-  mctable = set_mctable(),
-  data_keys = set_data_keys(),
-  keys = NULL
+    exp,
+    param_names = NULL,
+    mctable = set_mctable(),
+    data_keys = set_data_keys(),
+    keys = NULL
 ) {
-  # Validate that exp is a quoted expression (use quote({ ... }))
-  if (!(is.call(exp) || is.expression(exp) || is.language(exp))) {
-    stop("exp must be a quoted expression, use quote({ ... })")
+  # Validate that exp is a quoted expression block (use quote({ ... }))
+  if (is.expression(exp) && length(exp) == 1) {
+    exp <- exp[[1]]
+  }
+  if (!is.call(exp) || !identical(exp[[1]], as.name("{"))) {
+    stop("exp must be a quoted expression block, use quote({ ... })")
   }
 
   exp_name <- gsub("_exp", "", deparse(substitute(exp)))
@@ -29,9 +35,36 @@ get_node_list <- function(
   all_nodes <- c()
 
   # Process output nodes from model exp
-  for (i in 2:length(exp)) {
-    node_name <- deparse(exp[[i]][[2]])
-    node_exp <- paste0(deparse(exp[[i]][[3]]), collapse = "")
+  for (i in seq_along(exp)[-1]) {
+    statement <- exp[[i]]
+    statement_text <- paste(deparse(statement), collapse = " ")
+
+    assignment_op <- if (is.call(statement) && is.symbol(statement[[1]])) {
+      as.character(statement[[1]])
+    } else {
+      ""
+    }
+    if (!assignment_op %in% c("<-", "=")) {
+      stop(sprintf(
+        paste0(
+          "All top-level model statements must be assignments. ",
+          "Unsupported statement: %s"
+        ),
+        statement_text
+      ))
+    }
+    if (!is.symbol(statement[[2]])) {
+      stop(sprintf(
+        paste0(
+          "The left-hand side of a model assignment must be a simple name. ",
+          "Unsupported statement: %s"
+        ),
+        statement_text
+      ))
+    }
+
+    node_name <- as.character(statement[[2]])
+    node_exp <- paste0(deparse(statement[[3]]), collapse = "")
 
     # Use AST parser
     parse_res <- ast_traverse(node_exp)
@@ -90,7 +123,7 @@ get_node_list <- function(
   }
 
   # Rename parameters
-  for (i in 1:length(all_nodes)) {
+  for (i in seq_along(all_nodes)) {
     all_nodes[i] <- if (all_nodes[i] %in% names(param_names)) {
       param_names[all_nodes[i]]
     } else {
@@ -122,7 +155,7 @@ get_node_list <- function(
   })))
 
   if (length(input_nodes) > 0) {
-    for (i in 1:length(input_nodes)) {
+    for (i in seq_along(input_nodes)) {
       node_name <- input_nodes[[i]]
       mc_row <- mctable[mctable$mcnode == node_name, ]
 
@@ -136,7 +169,7 @@ get_node_list <- function(
         mc_row$description
       )
 
-      matched_dataset <- NULL
+      matched_datasets <- character()
 
       # Process input columns and datasets
       for (dataset_name in names(all_inputs)) {
@@ -164,7 +197,7 @@ get_node_list <- function(
 
         # Update node list if matching inputs found
         if (length(inputs_col) > 0) {
-          matched_dataset <- dataset_name
+          matched_datasets <- c(matched_datasets, dataset_name)
           in_node_list[[node_name]][["inputs_col"]] <- inputs_col
           in_node_list[[node_name]][["input_dataset"]] <- dataset_name
 
@@ -172,8 +205,8 @@ get_node_list <- function(
           base_keys <- NULL
           if (
             !is.null(data_keys) &&
-              dataset_name %in% names(data_keys) &&
-              !is.null(data_keys[[dataset_name]][["keys"]])
+            dataset_name %in% names(data_keys) &&
+            !is.null(data_keys[[dataset_name]][["keys"]])
           ) {
             base_keys <- data_keys[[dataset_name]][["keys"]]
           }
@@ -194,6 +227,14 @@ get_node_list <- function(
 
           in_node_list[[node_name]][["keys"]] <- final_keys
         }
+      }
+
+      if (length(matched_datasets) > 1) {
+        stop(sprintf(
+          "Input node '%s' matches multiple datasets: %s",
+          node_name,
+          paste(matched_datasets, collapse = ", ")
+        ))
       }
 
       in_node_list[[node_name]][["exp_name"]] <- exp_name
@@ -230,7 +271,7 @@ get_node_list <- function(
   ]
 
   if (length(prev_nodes) > 0) {
-    for (i in 1:length(prev_nodes)) {
+    for (i in seq_along(prev_nodes)) {
       node_name <- prev_nodes[i]
       is_fun <- if (exists(node_name)) is.function(get(node_name)) else FALSE
       if (!is_fun) {
@@ -279,8 +320,9 @@ get_node_list <- function(
 #'   - created_in_exp: logical; TRUE if mcstoc or mcdata was used in the expression
 #'   - mc_func: character or NULL; sampling function name detected for mcstoc/mcdata
 #'   - nvariates: logical; TRUE if a `nvariates` argument was present
-#'   - na_rm_inputs: character vector of symbol names passed to `mcnode_na_rm`
-#'   - null_rm: logical; TRUE if `mcnode_null_rm` was used
+#'   - na_rm: logical; `TRUE` if `mcnode_na_rm()` was used
+#'   - null_rm_inputs: character vector of symbol names passed to
+#'     `mcnode_null_rm()`
 #'   - function_call: logical; TRUE if any function calls were present
 #' @keywords internal
 #' @noRd

@@ -23,7 +23,8 @@
 #' For filtered nodes (type = "filter"), compared nodes (type = "compare"), and
 #' aggregated nodes (type = "agg_total"), this function returns the pre-calculated
 #' summary statistics that were computed when the node was created, rather than
-#' recalculating from the original data.
+#' recalculating from the original data. The `digits` and `sep_keys` options are
+#' applied to a copy of the stored summary before it is returned.
 #'
 #' @return A data frame with summary statistics for each mcnode variate.
 #'   Columns include:
@@ -34,6 +35,9 @@
 #'     \item sd: Standard deviation.
 #'     \item Quantile columns (2.5%, 25%, 50%, 75%, 97.5%).
 #'   }
+#'
+#' @seealso [mc_keys()] for retrieving the keys associated with a node and
+#'   [mc_plot()] for visualising node distributions.
 #'
 #' @examples
 #' # Use with mcmodule
@@ -54,17 +58,64 @@
 #' )
 #' @export
 mc_summary <- function(
-  mcmodule = NULL,
-  mc_name = NULL,
-  keys_names = NULL,
-  data = NULL,
-  mcnode = NULL,
-  sep_keys = TRUE,
-  digits = NULL
+    mcmodule = NULL,
+    mc_name = NULL,
+    keys_names = NULL,
+    data = NULL,
+    mcnode = NULL,
+    sep_keys = TRUE,
+    digits = NULL
 ) {
   # Input validation
-  if (!is.null(mcnode) & is.null(mc_name)) {
+  if (!is.null(mcnode) && is.null(mc_name)) {
     mc_name <- deparse(substitute(mcnode))
+  }
+
+  if (!is.null(sep_keys) && (length(sep_keys) != 1 || is.na(sep_keys))) {
+    stop("sep_keys must be TRUE or FALSE")
+  }
+  if (!is.logical(sep_keys)) {
+    stop("sep_keys must be TRUE or FALSE")
+  }
+  if (
+    !is.null(digits) &&
+    (!is.numeric(digits) || length(digits) != 1 || is.na(digits) ||
+     digits < 1 || digits %% 1 != 0)
+  ) {
+    stop("digits must be a positive integer or NULL")
+  }
+
+  format_stored_summary <- function(summary_df, node) {
+    result <- summary_df
+    key_names <- unique(c("scenario_id", node[["keys"]], node[["agg_keys"]]))
+    key_cols <- intersect(key_names, names(result))
+
+    if (!is.null(digits)) {
+      numeric_cols <- names(result)[vapply(result, is.numeric, logical(1))]
+      statistic_cols <- setdiff(numeric_cols, key_cols)
+      result[statistic_cols] <- lapply(
+        result[statistic_cols],
+        function(x) signif_round(x, digits = digits)
+      )
+    }
+
+    if (!sep_keys && length(key_cols) > 0) {
+      result$keys <- do.call(
+        paste,
+        c(result[key_cols], list(sep = ", "))
+      )
+      remaining_cols <- setdiff(
+        names(result),
+        c("mc_name", key_cols, "keys")
+      )
+      result <- result[c(
+        intersect("mc_name", names(result)),
+        "keys",
+        remaining_cols
+      )]
+    }
+
+    result
   }
 
   if (!is.null(mcmodule)) {
@@ -78,18 +129,17 @@ mc_summary <- function(
       stop(sprintf("%s must be a mcnode present in %s", mc_name, module_name))
     }
 
-    if (is.null(mcnode)) {
-      mcnode <- mcmodule$node_list[[mc_name]]$mcnode
-    }
-
     # Check if node has a pre-calculated summary (for filtered, compared, or aggregated nodes)
     node_type <- mcmodule$node_list[[mc_name]]$type
     if (
       !is.null(node_type) &&
-        node_type %in% c("filter", "compare", "agg_total") &&
-        !is.null(mcmodule$node_list[[mc_name]]$summary)
+      node_type %in% c("filter", "compare", "agg_total") &&
+      !is.null(mcmodule$node_list[[mc_name]]$summary)
     ) {
-      return(mcmodule$node_list[[mc_name]]$summary)
+      return(format_stored_summary(
+        mcmodule$node_list[[mc_name]]$summary,
+        mcmodule$node_list[[mc_name]]
+      ))
     }
 
     data_name <- mcmodule$node_list[[mc_name]]$data_name
@@ -99,13 +149,25 @@ mc_summary <- function(
     }
 
     if (
-      length(data_name) > 1 & !is.null(mcmodule$node_list[[mc_name]]$summary)
+      length(data_name) > 1 && !is.null(mcmodule$node_list[[mc_name]]$summary)
     ) {
       message("Too many data names. Using existing summary.")
-      return(mcmodule$node_list[[mc_name]]$summary)
+      return(format_stored_summary(
+        mcmodule$node_list[[mc_name]]$summary,
+        mcmodule$node_list[[mc_name]]
+      ))
     }
   } else {
-    if (is.null(data)) stop("mcmodule or data must be provided")
+    if (is.null(data)) {
+      stop("mcmodule or data must be provided")
+    }
+    if (!is.mcnode(mcnode)) {
+      stop("mcnode must be provided and inherit from class 'mcnode'")
+    }
+  }
+
+  if (!is.data.frame(data)) {
+    stop("data must be a data frame")
   }
 
   # Validate provided keys
@@ -121,14 +183,15 @@ mc_summary <- function(
   }
 
   # Process keys
-  keys_names <- if (is.null(keys_names) & !is.null(mcmodule)) {
+  keys_names <- if (is.null(keys_names) && !is.null(mcmodule)) {
     names(mc_keys(mcmodule, mc_name))
   } else {
     keys_names
   }
 
-  keys <- if (length(keys_names) > 0 && any(keys_names %in% names(data))) {
-    data[names(data) %in% keys_names]
+  available_keys <- keys_names[keys_names %in% names(data)]
+  keys <- if (length(available_keys) > 0) {
+    data[available_keys]
   } else {
     data.frame(variate = seq_len(nrow(data)))
   }
@@ -136,9 +199,6 @@ mc_summary <- function(
   if (!sep_keys) {
     keys$keys <- do.call(paste, c(keys, list(sep = ", ")))
     keys <- keys["keys"]
-    keys_groups <- c("mc_name", "keys")
-  } else {
-    keys_groups <- c("mc_name", names(keys))
   }
 
   # Calculate summary statistics
@@ -155,6 +215,15 @@ mc_summary <- function(
     byrow = TRUE
   ))
   names(summary_df) <- summary_names
+
+  if (nrow(keys) != nrow(summary_df)) {
+    stop(sprintf(
+      "data has %s rows but mcnode has %s variates",
+      nrow(keys),
+      nrow(summary_df)
+    ))
+  }
+
   summary_df <- cbind(mc_name, keys, summary_df)
 
   # Round if digits specified
@@ -166,12 +235,15 @@ mc_summary <- function(
     )
   }
 
+  # Reset row number
+  rownames(summary_df) <- NULL
+
   return(summary_df)
 }
 
 signif_round <- function(x, digits = 2) {
   ifelse(
-    x < (10^-(digits)),
+    abs(x) < (10^-(digits)),
     signif(x, digits = digits),
     round(x, digits = digits)
   )

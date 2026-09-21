@@ -186,20 +186,20 @@ suppressMessages({
     )
 
     # Test basic plot with filtered node
-    p <- mc_plot(filtered_module, "p1_A_filtered")
+    p <- mc_plot(filtered_module, "p1_A")
     expect_s3_class(p, "gg")
     expect_s3_class(p, "ggplot")
 
     # Test plot with color_by on filtered node
-    p_color <- mc_plot(filtered_module, "p1_A_filtered", color_by = "region")
+    p_color <- mc_plot(filtered_module, "p1_A", color_by = "region")
     expect_s3_class(p_color, "gg")
 
     # Test plot with order_by on filtered node
-    p_order <- mc_plot(filtered_module, "p1_A_filtered", order_by = "median")
+    p_order <- mc_plot(filtered_module, "p1_A", order_by = "median")
     expect_s3_class(p_order, "gg")
 
     # Verify that filtered plot only shows filtered variates
-    tidy_data <- tidy_mcnode(filtered_module, "p1_A_filtered")
+    tidy_data <- tidy_mcnode(filtered_module, "p1_A")
     expect_true(all(tidy_data$category == "A"))
   })
 
@@ -238,24 +238,24 @@ suppressMessages({
     )
 
     # Test basic plot with compared node
-    p <- mc_plot(compared_module, "p1_diff_compared")
+    p <- mc_plot(compared_module, "p1_diff")
     expect_s3_class(p, "gg")
     expect_s3_class(p, "ggplot")
 
     # Test plot with color_by on compared node
     p_color <- mc_plot(
       compared_module,
-      "p1_diff_compared",
+      "p1_diff",
       color_by = "category"
     )
     expect_s3_class(p_color, "gg")
 
     # Test plot with threshold (useful for comparing against zero)
-    p_threshold <- mc_plot(compared_module, "p1_diff_compared", threshold = 0)
+    p_threshold <- mc_plot(compared_module, "p1_diff", threshold = 0)
     expect_s3_class(p_threshold, "gg")
 
     # Verify tidy data only shows what-if scenarios (not baseline)
-    tidy_data <- tidy_mcnode(compared_module, "p1_diff_compared")
+    tidy_data <- tidy_mcnode(compared_module, "p1_diff")
     expect_true(is.data.frame(tidy_data))
     expect_true("value" %in% names(tidy_data))
   })

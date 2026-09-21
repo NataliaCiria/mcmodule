@@ -1,5 +1,39 @@
 # mcmodule (development version)
 
+## New features
+
+* `agg_variates()` now accepts custom aggregation functions through `agg_func`. It also warns when automatic probability aggregation is applied to values greater than one (#98).
+
+* `eval_module()` now accepts a list of previous `mcmodule` objects, allowing an expression to use nodes from multiple modules. Conflicting node names must be resolved beforehand, for example with `add_prefix()`.
+
+* `create_mcnodes()` now supports namespace-qualified distribution functions and functions with required arguments. Bare `rpert` now resolves explicitly to `mc2d::rpert()`, with a warning when it is masked by the freedom package (#45).
+
+* `mc_network()`, `visNetwork_nodes()`, and `get_node_table()` gain a `percentages` argument. Count and time nodes, and stochastic nodes with values exceeding one, are displayed numerically, percentage formatting can also be disabled entirely (#41).
+
+* Added `data-raw/water_example.R`, which generates the water-supply quantitative microbial risk assessment example data, node specifications, data keys, and pathway expressions.
+
+## Bug fixes and improvements
+
+* `at_least_one()` now combines nodes directly when every input comes from `sample_design`, avoiding unnecessary key matching (#96).
+
+* `create_mcnodes()` now constructs `mcdata` and `mcstoc` nodes directly instead of generating and parsing R code. Configured transformation expressions continue to be evaluated as R code.
+
+* `eval_module()` now reports clearer errors for unnamed or duplicated expression blocks and unsupported expression statements.
+
+* Input nodes that match columns in multiple datasets now produce an informative error instead of being assigned to a dataset implicitly.
+
+* `mc_filter()` and `mc_compare()` now use `name` exactly as supplied. `suffix` is appended only when a name is generated automatically from `mc_name` (#93).
+
+* `mc_network()` now provides clearer legend labels and node tooltips and omits duplicated parameter and dependency information (#41).
+
+* `mc_summary()` now applies `digits` and `sep_keys` consistently when returning stored summaries.
+
+* `mc_summary()` now returns summaries with sequential row names (#94).
+
+* `trial_totals()` now creates non-sampled input nodes from `mctable` or module data when `sample_design` is supplied (#95).
+
+* Added `data-raw/imports_example.R` to document and standardise generation of the existing imports example datasets and related package objects.
+
 # mcmodule 1.3.1
 
 ## Lifecycle

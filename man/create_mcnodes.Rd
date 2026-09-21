@@ -16,11 +16,15 @@ mcnode, mc_func, transformation, from_variable.}
 Default: parent.frame().}
 }
 \value{
-NULL (invisibly). mcnodes created in \code{envir}.
+\code{NULL}, invisibly. mcnodes are created in \code{envir}.
 }
 \description{
 Creates mcnodes based on mctable specifications and input data.
 Applies transformations and generates mcnodes in the calling environment.
+}
+\details{
+Distribution functions may be supplied as bare (\code{function}) or namespace-qualified names (\verb{package::function}, and \verb{package:::function}).
+Configured transformation expressions are evaluated as R code.
 }
 \examples{
 create_mcnodes(
@@ -28,4 +32,8 @@ create_mcnodes(
   mctable = imports_mctable
 )
 
+}
+\seealso{
+\code{\link[=eval_module]{eval_module()}} for creating and evaluating a complete module and
+\code{\link[=matrix_to_mcnodes]{matrix_to_mcnodes()}} for creating nodes from a sampling matrix.
 }

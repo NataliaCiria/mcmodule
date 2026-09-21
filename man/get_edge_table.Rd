@@ -24,3 +24,7 @@ node to another.
 \examples{
 edge_table <- get_edge_table(imports_mcmodule)
 }
+\seealso{
+\code{\link[=get_node_table]{get_node_table()}} and \code{\link[=mc_network]{mc_network()}} for the corresponding node
+metadata and interactive visualisation.
+}

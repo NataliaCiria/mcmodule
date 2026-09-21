@@ -2,7 +2,7 @@
 % Please edit documentation in R/totals.R
 \name{agg_totals}
 \alias{agg_totals}
-\title{Aggregate mcnode Values Across Groups}
+\title{Aggregate mcnode Values Across Groups (Deprecated)}
 \usage{
 agg_totals(
   mcmodule,
@@ -36,8 +36,10 @@ Default: \code{NULL}.}
 \item{keep_variates}{Logical. If \code{TRUE}, preserve individual variate values.
 Default: \code{FALSE}.}
 
-\item{agg_func}{Character, optional. Aggregation method: \code{"prob"} for combined
-probability, \code{"sum"}, \code{"avg"}, or \code{NULL} for automatic selection.
+\item{agg_func}{Character or function, optional. Aggregation method:
+\code{"prob"} for combined probability, \code{"sum"} for the sum, or \code{"avg"} for
+the mean. A custom function must accept a list of \code{mcnode} objects and
+return one aggregated \code{mcnode}. If \code{NULL}, \code{"prob"} is used.
 Default: \code{NULL}.}
 }
 \value{

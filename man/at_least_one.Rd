@@ -73,3 +73,12 @@ module <- list(
 module <- at_least_one(module, c("p1", "p2"), name = "p_combined")
 print(module$node_list$p_combined$summary)
 }
+\references{
+Ross SM (2014). \emph{Introduction to Probability Models}, 11th ed. Elsevier.
+}
+\seealso{
+\code{\link[=agg_variates]{agg_variates()}} for aggregation across groups of variates,
+\code{\link[=trial_totals]{trial_totals()}} for repeated or hierarchical Bernoulli trials,
+\code{\link[=mc_match]{mc_match()}} for aligning nodes by keys, and \code{\link[=mc_summary]{mc_summary()}} for node
+summaries.
+}

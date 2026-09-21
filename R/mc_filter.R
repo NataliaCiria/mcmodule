@@ -16,7 +16,7 @@
 #'   Default: NULL.
 #' @param prefix (character, optional). Prefix for the auto-generated node name.
 #'   Default: NULL.
-#' @param suffix (character). Suffix appended to auto-generated name.
+#' @param suffix (character). Suffix appended to auto-generated name. Won't be used if `name` is provided.
 #'   Default: "filtered".
 #' @param summary (logical). If TRUE, compute summary statistics for the new node.
 #'   Default: TRUE.
@@ -214,17 +214,12 @@ mc_filter <- function(
 
   # Generate name for filtered node
   filtered_mc_name <- if (!is.null(name)) {
-    if (!is.null(suffix) && suffix != "") {
-      paste0(name, "_", suffix)
-    } else {
-      name
-    }
+    # An explicitly supplied name is used exactly
+    name
+  } else if (!is.null(suffix) && suffix != "") {
+    paste0(mc_name, "_", suffix)
   } else {
-    if (!is.null(suffix) && suffix != "") {
-      paste0(mc_name, "_", suffix)
-    } else {
-      paste0(mc_name, "_flt")
-    }
+    paste0(mc_name, "_filtered")
   }
 
   # Add prefix if provided

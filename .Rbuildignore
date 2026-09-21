@@ -7,3 +7,4 @@
 ^\.github$
 ^pkgdown/
 ^CRAN-SUBMISSION$
+^data-raw/

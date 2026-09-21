@@ -59,7 +59,8 @@ This function can be called in two ways:
 For filtered nodes (type = "filter"), compared nodes (type = "compare"), and
 aggregated nodes (type = "agg_total"), this function returns the pre-calculated
 summary statistics that were computed when the node was created, rather than
-recalculating from the original data.
+recalculating from the original data. The \code{digits} and \code{sep_keys} options are
+applied to a copy of the stored summary before it is returned.
 }
 \examples{
 # Use with mcmodule
@@ -78,4 +79,8 @@ summary_direct <- mc_summary(
   mcnode = w_prev,
   sep_keys = FALSE
 )
+}
+\seealso{
+\code{\link[=mc_keys]{mc_keys()}} for retrieving the keys associated with a node and
+\code{\link[=mc_plot]{mc_plot()}} for visualising node distributions.
 }

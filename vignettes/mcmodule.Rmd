@@ -651,7 +651,7 @@ imports_wif <- mc_compare(
 )
 
 # Relative risk reduction by pathogen and scenario
-imports_wif$node_list$no_detect_set_rrr_compared$summary
+imports_wif$node_list$no_detect_set_rrr$summary
 ```
 
 # Working with multiple mcmodules

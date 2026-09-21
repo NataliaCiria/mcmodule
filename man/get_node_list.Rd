@@ -24,9 +24,13 @@ get_node_list(
 \item{keys}{Optional explicit keys for the input data (character vector)}
 }
 \value{
-A list of class "mcnode_list" containing node information
+A list of class \code{mcnode_list} containing node information.
 }
 \description{
 Creates a list of nodes based on a given model expression, handling input,
 output, and previous nodes with their properties and relationships.
+}
+\seealso{
+\code{\link[=eval_module]{eval_module()}} for evaluating the expression and
+\code{\link[=create_mcnodes]{create_mcnodes()}} for constructing input nodes.
 }

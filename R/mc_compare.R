@@ -19,7 +19,7 @@
 #'   auto-generated from `mc_name` and `suffix`. Default: NULL.
 #' @param prefix (character, optional). Prefix for the auto-generated node name.
 #'   Default: NULL.
-#' @param suffix (character). Suffix appended to auto-generated name.
+#' @param suffix (character). Suffix appended to auto-generated name. Won't be used if `name` is provided.
 #'   Default: "compared".
 #' @param summary (logical). If TRUE, compute summary statistics for the new node.
 #'   Default: TRUE.
@@ -414,17 +414,12 @@ mc_compare <- function(
   }
 
   compare_mc_name <- if (!is.null(name)) {
-    if (normalized_suffix != "") {
-      paste0(name, "_", normalized_suffix)
-    } else {
-      name
-    }
+    # An explicitly supplied name is used exactly
+    name
+  } else if (normalized_suffix != "") {
+    paste0(mc_name, "_", normalized_suffix)
   } else {
-    if (normalized_suffix != "") {
-      paste0(mc_name, "_", normalized_suffix)
-    } else {
-      paste0(mc_name, "_cmp")
-    }
+    paste0(mc_name, "_compared")
   }
 
   # Add prefix if provided

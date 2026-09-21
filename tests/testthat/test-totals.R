@@ -38,6 +38,10 @@ suppressMessages({
     # Check node attributes
     expect_equal(result$node_list$p_combined$type, "total")
     expect_equal(result$node_list$p_combined$param, c("p_1", "p_2"))
+    expect_identical(
+      result$node_list$p_combined$description,
+      "Probability at least one of p_1, p_2 (assuming independence)"
+    )
 
     # Test error on missing nodes
     expect_error(at_least_one(test_module, c("p_1", "missing")), "not found")
@@ -148,6 +152,10 @@ suppressMessages({
     expect_error(
       generate_all_name(c("test_a", "test_all")),
       "One of the mc_names already contains '_all' suffix"
+    )
+    expect_error(
+      generate_all_name(character(0)),
+      "mc_names must contain at least one node name"
     )
   })
 
@@ -397,6 +405,7 @@ suppressMessages({
     expect_true("p_1_all_hag_set" %in% names(result$node_list))
     expect_equal(dim(result$node_list$p_1_all$mcnode), c(1001, 1, 4))
     expect_equal(dim(result$node_list$p_1_all_hag_set$mcnode), c(1001, 1, 2))
+    expect_equal(as.numeric(result$node_list$times_n_hag$mcnode), c(7, 11))
 
     reset_mctable()
   })
@@ -549,8 +558,12 @@ suppressMessages({
     mod4 <- at_least_one(module, c("p_1", "p_2"), prefix = "pre")
     expect_equal(mod4$node_list[["pre_p_all"]]$prefix, "pre")
 
-    # Error on missing node
+    # Error on missing or empty node input
     expect_error(at_least_one(module, c("p_1", "missing")), "not found")
+    expect_error(
+      at_least_one(module, character(0)),
+      "mc_names must contain at least one node name"
+    )
   })
 
   test_that("generate_all_name works with suffix and errors", {
@@ -600,10 +613,16 @@ suppressMessages({
     mod3 <- agg_variates(module, "p_1", agg_suffix = "sum")
     expect_true("p_1_sum" %in% names(mod3$node_list))
 
+    # Custom prefix
+    mod4 <- agg_variates(module, "p_1", prefix = "pre")
+    expect_true("pre_p_1_agg" %in% names(mod4$node_list))
+    expect_false("pre__p_1_agg" %in% names(mod4$node_list))
+    expect_equal(mod4$node_list[["pre_p_1_agg"]]$prefix, "pre")
+
     # Error for invalid agg_func
     expect_error(
       agg_variates(module, "p_1", agg_func = "invalid"),
-      "Aggregation function"
+      "`agg_func` must be NULL, a function"
     )
 
     # Error for missing node
@@ -742,10 +761,14 @@ suppressMessages({
 
     expect_true("custom_trial_set" %in% names(mod9$node_list))
 
-    # Error for missing node
+    # Error for missing or empty node input
     expect_error(
       trial_totals(module, mc_names = "missing", trials_n = "times_n"),
       "not found"
+    )
+    expect_error(
+      trial_totals(module, mc_names = character(0), trials_n = "times_n"),
+      "mc_names must contain at least one node name"
     )
   })
 
@@ -875,6 +898,65 @@ suppressMessages({
     expect_equal(dim(test_module$node_list$p_b_set$mcnode)[3], 4)
   })
 
+  test_that("at_least_one combines compatible sample-design dimensions", {
+    # We use a new env because nodes are created in the environment when using matrix_to_mcnodes
+    node_environment <- new.env()
+
+    matrix_to_mcnodes(
+      X = data.frame(
+        p_a = c(0.10, 0.20, 0.30)
+      ),
+      envir = node_environment
+    )
+
+    # One deterministic value, compatible with all simulations of p_a
+    p_b <- mc2d::mcdata(
+      0.40,
+      type = "0",
+      nvariates = 1
+    )
+
+    module <- structure(
+      list(
+        data = list(),
+        node_list = list(
+          p_a = list(
+            mcnode = node_environment$p_a,
+            from_sample_design = TRUE
+          ),
+          p_b = list(
+            mcnode = p_b,
+            from_sample_design = TRUE
+          )
+        )
+      ),
+      class = "mcmodule"
+    )
+
+    expect_no_error(
+      result <- at_least_one(
+        mcmodule = module,
+        mc_names = c("p_a", "p_b"),
+        name = "p_any",
+        summary = FALSE
+      )
+    )
+
+    expected <- 1 - (
+      (1 - node_environment$p_a) *
+        (1 - p_b)
+    )
+
+    expect_equal(
+      result$node_list$p_any$mcnode,
+      expected
+    )
+
+    expect_true(
+      result$node_list$p_any$from_sample_design
+    )
+  })
+
   test_that("trial_totals works with explicit data_name argument", {
     # Reuse module from previous test
     test_module <- list(
@@ -927,6 +1009,50 @@ suppressMessages({
 
     expect_equal(result$node_list$p_all_set$data_name, c("data_a", "data_b"))
   })
+
+  test_that(
+    "trial_totals retrieves non-sampled counts from module data if sample design is provided",
+    {
+      data <- data.frame(
+        scenario_id = "0",
+        trials_n = 10
+      )
+
+      sample_design <- data.frame(
+        p_event = c(0.01, 0.02, 0.03)
+      )
+
+      module <- eval_module(
+        exp = list(
+          example = quote({
+            result <- p_event
+          })
+        ),
+        data = data,
+        sample_design = sample_design
+      )
+
+      expect_warning(
+        result <- trial_totals(
+          mcmodule = module,
+          mc_names = "result",
+          trials_n = "trials_n",
+          sample_design = sample_design
+        ),
+        "creating a deterministic node"
+      )
+
+      expect_true("trials_n" %in% names(result$node_list))
+      expect_identical(
+        result$node_list$trials_n$type,
+        "in_node"
+      )
+      expect_equal(
+        as.numeric(result$node_list$trials_n$mcnode),
+        10
+      )
+    }
+  )
 
   test_that("agg_variates works with filtered mcnodes (mc_filter integration)", {
     # Create test module with grouped data
@@ -1052,8 +1178,8 @@ suppressMessages({
     sample_module <- eval_module(
       exp = list(
         sample_exp = quote({
-          result_a <- input_a + 2
-          result_b <- input_b + result_a
+          result_a <- input_a * 2
+          result_b <- input_b * result_a
         })
       ),
       data = NULL,
@@ -1089,8 +1215,8 @@ suppressMessages({
     sample_module <- eval_module(
       exp = list(
         sample_exp = quote({
-          result_a <- input_a + 2
-          result_b <- input_b + result_a
+          result_a <- input_a * 2
+          result_b <- input_b * result_a
         })
       ),
       data = sample_data,
@@ -1108,23 +1234,196 @@ suppressMessages({
     expect_true(is.mcnode(result$node_list$result_b_agg$mcnode))
     expect_equal(result$node_list$result_b_agg$from_sample_design, TRUE)
   })
-  
-  test_that("agg_totals() warns and calls agg_variates()", {
-    lifecycle::expect_deprecated(
-    old <- agg_totals(
-        imports_mcmodule,
-        "no_detect",
-        agg_keys = c("scenario_id", "pathogen")
+
+  test_that("agg_variates works correctly with custom agg_func", {
+    # Create test data
+    test_module <- list(
+      node_list = list(
+        p_1 = list(
+          mcnode = mcstoc(
+            runif,
+            min = mcdata(c(0.1, 0.2, 0.3), type = "0", nvariates = 3),
+            max = mcdata(c(0.2, 0.3, 0.4), type = "0", nvariates = 3),
+            nvariates = 3
+          ),
+          data_name = "test_data",
+          keys = c("category")
+        ),
+        p_2 = list(
+          mcnode = mcstoc(
+            runif,
+            min = mcdata(c(0.5, 0.6, 0.7), type = "0", nvariates = 3),
+            max = mcdata(c(0.6, 0.7, 0.8), type = "0", nvariates = 3),
+            nvariates = 3
+          ),
+          data_name = "test_data",
+          keys = c("category")
+        )
+      ),
+      data = list(
+        test_data = data.frame(
+          category = c("A", "B", "C"),
+          scenario_id = c("0", "0", "0")
+        )
       )
     )
 
-    new <- agg_variates(
-        imports_mcmodule,
-        "no_detect",
-        agg_keys = c("scenario_id", "pathogen")
-      )
+    # NULL defaults to probability aggregation
+    result_default <- agg_variates(
+      test_module,
+      "p_1",
+      summary = FALSE
+    )
 
-    expect_equal(old, new)
+    result_prob <- agg_variates(
+      test_module,
+      "p_1",
+      agg_func = "prob",
+      summary = FALSE
+    )
+
+    expect_equal(
+      result_default$node_list[["p_1_agg"]]$mcnode,
+      result_prob$node_list[["p_1_agg"]]$mcnode
+    )
+    expect_equal(
+      result_default$node_list[["p_1_agg"]]$description,
+      "Combined probability assuming independence by: scenario_id"
+    )
+
+    # Sum aggregation
+    result_sum <- agg_variates(
+      test_module,
+      "p_1",
+      agg_func = "sum",
+      summary = FALSE
+    )
+
+    expect_equal(
+      result_sum$node_list[["p_1_agg"]]$description,
+      "Sum by: scenario_id"
+    )
+
+    # Average aggregation
+    result_avg <- agg_variates(
+      test_module,
+      "p_1",
+      agg_func = "avg",
+      summary = FALSE
+    )
+
+    expect_equal(
+      result_avg$node_list[["p_1_agg"]]$description,
+      "Average value by: scenario_id"
+    )
+
+    # Custom aggregation function
+    custom_product <- function(x) {
+      Reduce("*", x)
+    }
+
+    result_custom <- agg_variates(
+      test_module,
+      "p_1",
+      agg_func = custom_product,
+      summary = FALSE
+    )
+
+    variates <- lapply(
+      seq_len(dim(test_module$node_list$p_1$mcnode)[3]),
+      function(i) {
+        mc2d::extractvar(test_module$node_list$p_1$mcnode, i)
+      }
+    )
+    expected_custom <- Reduce("*", variates)
+
+    expect_equal(
+      result_custom$node_list[["p_1_agg"]]$mcnode,
+      expected_custom
+    )
+    expect_equal(
+      result_custom$node_list[["p_1_agg"]]$description,
+      "Custom aggregation by: scenario_id"
+    )
+    expect_equal(
+      result_custom$node_list[["p_1_agg"]]$node_expression,
+      "Custom aggregation of p_1 by: scenario_id"
+    )
+
+    expect_error(
+      agg_variates(
+        test_module,
+        "p_1",
+        agg_func = function(x) 1,
+        summary = FALSE
+      ),
+      "Custom aggregation function must return one mcnode"
+    )
+    expect_error(
+      agg_variates(
+        test_module,
+        "p_1",
+        agg_func = function(x) mc2d::addvar(x[[1]], x[[1]]),
+        summary = FALSE
+      ),
+      "Custom aggregation function must return one mcnode"
+    )
+
+    # Error handling
+    expect_error(
+      agg_variates(test_module, "p_1", agg_func = "invalid"),
+      "`agg_func` must be NULL, a function"
+    )
+    expect_error(
+      agg_variates(test_module, "p_1", agg_func = 1),
+      "`agg_func` must be NULL, a function"
+    )
+    expect_error(
+      agg_variates(test_module, "nonexistent_node"),
+      "not found"
+    )
+
+    # Warn when default probability aggregation is used with values greater than 1
+    suspicious_module <- test_module
+    suspicious_module$node_list$p_1$mcnode <-
+      suspicious_module$node_list$p_1$mcnode + 1
+
+    expect_warning(
+      agg_variates(
+        suspicious_module,
+        "p_1",
+        summary = FALSE
+      ),
+      "`p_1` contains values greater than 1"
+    )
+
+    # Explicit methods do not trigger the default-aggregation warning
+    expect_no_warning(
+      agg_variates(
+        suspicious_module,
+        "p_1",
+        agg_func = "prob",
+        summary = FALSE
+      )
+    )
+
+    expect_no_warning(
+      agg_variates(
+        suspicious_module,
+        "p_1",
+        agg_func = "sum",
+        summary = FALSE
+      )
+    )
+
+    expect_no_warning(
+      agg_variates(
+        suspicious_module,
+        "p_1",
+        agg_func = function(x) Reduce("+", x),
+        summary = FALSE
+      )
+    )
   })
 
 })

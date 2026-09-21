@@ -15,6 +15,14 @@
 #'
 #' @return Updated mcmodule with new combined probability node.
 #'
+#' @references
+#' Ross SM (2014). *Introduction to Probability Models*, 11th ed. Elsevier.
+#'
+#' @seealso [agg_variates()] for aggregation across groups of variates,
+#'   [trial_totals()] for repeated or hierarchical Bernoulli trials,
+#'   [mc_match()] for aligning nodes by keys, and [mc_summary()] for node
+#'   summaries.
+#'
 #' @examples
 #' module <- list(
 #'   node_list = list(
@@ -53,14 +61,18 @@
 #' print(module$node_list$p_combined$summary)
 #' @export
 at_least_one <- function(
-  mcmodule,
-  mc_names,
-  name = NULL,
-  all_suffix = NULL,
-  prefix = NULL,
-  summary = TRUE
+    mcmodule,
+    mc_names,
+    name = NULL,
+    all_suffix = NULL,
+    prefix = NULL,
+    summary = TRUE
 ) {
   module_name <- deparse(substitute(mcmodule))
+
+  if (length(mc_names) == 0) {
+    stop("mc_names must contain at least one node name")
+  }
 
   # Check if mcnodes are in mcmodule
   missing_nodes <- mc_names[!mc_names %in% names(mcmodule$node_list)]
@@ -91,68 +103,116 @@ at_least_one <- function(
     !is.null(mcmodule$node_list[[x]][["agg_keys"]])
   })
 
-  # Key names that are common to all nodes
-  nodes_common_keys_names <- Reduce(
-    intersect,
-    lapply(mc_names, function(x) {
-      names(mc_keys(mcmodule, x))
-    })
+  # Check whether all nodes come from a sampling design
+  nodes_from_sample_design <- vapply(
+    mc_names,
+    function(x) {
+      isTRUE(mcmodule$node_list[[x]][["from_sample_design"]])
+    },
+    logical(1)
   )
 
-  # List of key values for each node, using only the common keys
-  nodes_common_keys <- lapply(mc_names, function(x) {
-    mc_keys(mcmodule, x)[nodes_common_keys_names]
-  })
-  names(nodes_common_keys) <- mc_names
+  all_from_sample_design <- all(nodes_from_sample_design)
 
-  # List of key values for each node
-  nodes_keys <- lapply(mc_names, function(x) {
-    mc_keys(mcmodule, x)
-  })
-  names(nodes_keys) <- mc_names
-
-  # Initialize combined probability and keys_names vector
+  # Initialise combined probability and metadata
   p_all <- 0
-  keys_names <- c()
+  keys_names <- character(0)
+  data <- NULL
 
-  # Check that data_name, dimensions and keys are identical for all nodes
-  if (
-    length(data_name) == 1 &&
+  if (all_from_sample_design) {
+    p_all <- tryCatch(
+      {
+        result <- 0
+
+        for (mc_name in mc_names) {
+          p_i <- mcmodule$node_list[[mc_name]][["mcnode"]]
+          result <- 1 - ((1 - result) * (1 - p_i))
+        }
+
+        result
+      },
+      error = function(e) {
+        stop(
+          sprintf(
+            "Sample-design nodes could not be combined: %s",
+            conditionMessage(e)
+          ),
+          call. = FALSE
+        )
+      }
+    )
+
+    keys_names <- character(0)
+
+    data <- data.frame(
+      row.names = seq_len(dim(p_all)[3])
+    )
+  } else {
+    # Key names that are common to all nodes
+    nodes_common_keys_names <- Reduce(
+      intersect,
+      lapply(mc_names, function(x) {
+        names(mc_keys(mcmodule, x))
+      })
+    )
+
+    # List of key values for each node, using only the common keys
+    nodes_common_keys <- lapply(mc_names, function(x) {
+      mc_keys(mcmodule, x)[nodes_common_keys_names]
+    })
+    names(nodes_common_keys) <- mc_names
+
+    # List of key values for each node
+    nodes_keys <- lapply(mc_names, function(x) {
+      mc_keys(mcmodule, x)
+    })
+    names(nodes_keys) <- mc_names
+
+    # Check that data_name, dimensions and keys are identical
+    if (
+      length(data_name) == 1 &&
       length(unique(nodes_dim)) == 1 &&
       all(!nodes_agg) &&
       length(unique(nodes_common_keys)) == 1
-  ) {
-    data <- nodes_common_keys[[1]]
-
-    # Loop to get the combined probability of all mcnodes
-    for (i in seq_along(mc_names)) {
-      mc_name <- mc_names[i]
-      p_i <- mcmodule$node_list[[mc_name]][["mcnode"]]
+    ) {
+      data <- nodes_common_keys[[1]]
       keys_names <- nodes_common_keys_names
 
-      # Update combined probability
-      p_all <- 1 - ((1 - p_all) * (1 - p_i))
+      # Loop to get the combined probability of all mcnodes
+      for (mc_name in mc_names) {
+        p_i <- mcmodule$node_list[[mc_name]][["mcnode"]]
+        p_all <- 1 - ((1 - p_all) * (1 - p_i))
+      }
+
+    } else {
+      if (length(mc_names) != 2) {
+        stop(
+          paste0(
+            "To aggregate mc_names with different data_name or keys, ",
+            "provide exactly two mc_nodes"
+          )
+        )
+      }
+
+      # Get keys for both nodes
+      mc_name_x <- mc_names[[1]]
+      mc_name_y <- mc_names[[2]]
+
+      keys_names_x <- names(nodes_keys[[mc_name_x]])
+      keys_names_y <- names(nodes_keys[[mc_name_y]])
+      keys_names <- intersect(keys_names_x, keys_names_y)
+
+      p_xy <- mc_match(
+        mcmodule,
+        mc_name_x,
+        mc_name_y,
+        keys_names
+      )
+
+      # Match and combine probabilities
+      p_all <- 1 - ((1 - p_xy[[1]]) * (1 - p_xy[[2]]))
+      data <- p_xy$keys_xy
     }
-  } else {
-    if (!length(mc_names) == 2) {
-      stop(sprintf(
-        "To aggregate mc_names with different data_name or keys, provide exactly two mc_nodes"
-      ))
-    }
-
-    # Get keys for both nodes
-    mc_name_x <- mc_names[1]
-    mc_name_y <- mc_names[2]
-
-    keys_names_x <- unique(c(keys_names, names(nodes_keys[[mc_name_x]])))
-    keys_names_y <- unique(c(keys_names, names(nodes_keys[[mc_name_y]])))
-
-    keys_names <- unique(intersect(keys_names_x, keys_names_y))
-
-    # Match and combine probabilities
-    p_xy <- mc_match(mcmodule, mc_name_x, mc_name_y, keys_names)
-    p_all <- 1 - ((1 - p_xy[[1]]) * (1 - p_xy[[2]]))
-    data <- p_xy$keys_xy
   }
 
   # Generate name for combined node
@@ -183,7 +243,7 @@ at_least_one <- function(
     inputs = mc_names,
     description = paste(
       "Probability at least one of",
-      mc_names,
+      paste(mc_names, collapse = ", "),
       "(assuming independence)"
     ),
     module = module_name,
@@ -218,12 +278,7 @@ at_least_one <- function(
   }
 
   # Mark as from_sample_design if all input nodes are from_sample_design
-  if (
-    all(mc_names %in% names(mcmodule$node_list)) &&
-      all(sapply(mc_names, function(x) {
-        isTRUE(mcmodule$node_list[[x]][["from_sample_design"]])
-      }))
-  ) {
+  if (all_from_sample_design) {
     mcmodule$node_list[[p_all_mc_name]][["from_sample_design"]] <- TRUE
   }
 
@@ -243,6 +298,10 @@ at_least_one <- function(
 
 # Function to generate a consistent name with all_suffix, adds "all" by default
 generate_all_name <- function(mc_names, all_suffix = NULL) {
+  if (length(mc_names) == 0) {
+    stop("mc_names must contain at least one node name")
+  }
+
   if (is.null(all_suffix)) {
     all_suffix <- "all"
   }
@@ -284,7 +343,7 @@ generate_all_name <- function(mc_names, all_suffix = NULL) {
 #' Aggregate mcnode Values Across Groups
 #'
 #' Aggregates node values across grouping variables using various methods
-#' (combined probability, sum, mean, or automatic selection). Returns an
+#' (combined probability, sum, mean, or a custom function). Returns an
 #' updated mcmodule with a new aggregated node.
 #'
 #' If sample-design nodes are aggregated, the resulting node will be equal
@@ -302,11 +361,21 @@ generate_all_name <- function(mc_names, all_suffix = NULL) {
 #' @param summary Logical. If `TRUE`, include summary statistics. Default: `TRUE`.
 #' @param keep_variates Logical. If `TRUE`, preserve individual variate values.
 #'   Default: `FALSE`.
-#' @param agg_func Character, optional. Aggregation method: `"prob"` for combined
-#'   probability, `"sum"`, `"avg"`, or `NULL` for automatic selection.
+#' @param agg_func Character or function, optional. Aggregation method:
+#'   `"prob"` for combined probability, `"sum"` for the sum, or `"avg"` for
+#'   the mean. A custom function must accept a list of `mcnode` objects and
+#'   return one aggregated `mcnode`. If `NULL`, `"prob"` is used.
 #'   Default: `NULL`.
 #'
 #' @return An `mcmodule` object with a new aggregated node added.
+#'
+#' @references
+#' Ross SM (2014). *Introduction to Probability Models*, 11th ed. Elsevier.
+#'
+#' @seealso [at_least_one()] for combining probability nodes,
+#'   [trial_totals()] for repeated or hierarchical Bernoulli trials,
+#'   [mc_filter()] for selecting variates, and [mc_summary()] for node
+#'   summaries.
 #'
 #' @examples
 #' imports_mcmodule <- agg_variates(
@@ -317,15 +386,15 @@ generate_all_name <- function(mc_names, all_suffix = NULL) {
 #'
 #' @export
 agg_variates <- function(
-  mcmodule,
-  mc_name,
-  agg_keys = NULL,
-  agg_suffix = NULL,
-  prefix = NULL,
-  name = NULL,
-  summary = TRUE,
-  keep_variates = FALSE,
-  agg_func = NULL
+    mcmodule,
+    mc_name,
+    agg_keys = NULL,
+    agg_suffix = NULL,
+    prefix = NULL,
+    name = NULL,
+    summary = TRUE,
+    keep_variates = FALSE,
+    agg_func = NULL
 ) {
   module_name <- deparse(substitute(mcmodule))
 
@@ -334,12 +403,25 @@ agg_variates <- function(
     stop(sprintf("%s not found in %s", mc_name, module_name))
   }
 
-  if (
-    !(is.null(agg_func) ||
-      agg_func %in% c("prob", "avg", "sum"))
-  ) {
-    stop("Aggregation function must be prob, avg, sum or NULL")
+  # Validate aggregation function
+  valid_agg_func <- is.null(agg_func) ||
+    is.function(agg_func) ||
+    (
+      is.character(agg_func) &&
+        length(agg_func) == 1L &&
+        !is.na(agg_func) &&
+        agg_func %in% c("prob", "avg", "sum")
+    )
+
+  if (!valid_agg_func) {
+    stop(
+      paste(
+        "`agg_func` must be NULL, a function, or one of:",
+        "'prob', 'avg', or 'sum'."
+      )
+    )
   }
+
   if (is.null(agg_keys)) {
     agg_keys <- "scenario_id"
     message(sprintf(
@@ -347,10 +429,28 @@ agg_variates <- function(
     ))
   }
 
-  # Extract module name and node data
+  # Extract node data
   mcnode <- mcmodule$node_list[[mc_name]][["mcnode"]]
   key_col <- mc_keys(mcmodule, mc_name, agg_keys)
   data_name <- mcmodule$node_list[[mc_name]][["data_name"]]
+
+  # Warn about values that may not represent probabilities
+  if (
+    is.null(agg_func) &&
+    any(mcnode > 1, na.rm = TRUE)
+  ) {
+    warning(
+      sprintf(
+        paste0(
+          "`%s` contains values greater than 1. ",
+          "Default aggregation assumes values are independent probabilities ",
+          "between 0 and 1. Use agg_func argument to specify aggregation function."
+        ),
+        mc_name
+      ),
+      call. = FALSE
+    )
+  }
 
   # Generate name for aggregated node
   agg_mc_name <- if (is.null(name)) {
@@ -366,13 +466,12 @@ agg_variates <- function(
 
   # Add prefix if provided
   if (!is.null(prefix) && prefix != "") {
-    prefix <- paste0(sub("_$", "", prefix), "_")
+    prefix <- sub("_$", "", prefix)
     agg_mc_name <- paste0(
       prefix,
       "_",
-      sub(paste0("^", prefix), "", agg_mc_name)
+      sub(paste0("^", prefix, "_"), "", agg_mc_name)
     )
-    prefix <- sub("_$", "", prefix)
   }
 
   if (!is.null(prefix) && prefix == "") {
@@ -383,7 +482,7 @@ agg_variates <- function(
   key_col$key <- do.call(paste, c(key_col, sep = ", "))
   key_levels <- unique(key_col$key)
 
-  #If sample-design nodes are aggregated
+  # If sample-design nodes are aggregated
   if (isTRUE(mcmodule$node_list[[mc_name]][["from_sample_design"]])) {
     # Return original node with new type and summary
     total_agg <- mcnode
@@ -400,26 +499,37 @@ agg_variates <- function(
     # Process each group
     for (i in seq_along(key_levels)) {
       index <- key_col$key %in% key_levels[i]
+      group_variates <- variates_list[index]
 
-      if (!is.null(agg_func) && agg_func == "avg") {
-        # Calculate average value
-        total_lev <- Reduce("+", variates_list[index]) / sum(index)
-      } else if (
-        (is.null(agg_func) &&
-          grepl("_n$", mc_name)) ||
-          (!is.null(agg_func) && agg_func == "sum")
-      ) {
-        # Sum for counts
-        total_lev <- Reduce("+", variates_list[index])
+      if (is.function(agg_func)) {
+        total_lev <- agg_func(group_variates)
+        if (
+          !inherits(total_lev, "mcnode") ||
+          !identical(dim(total_lev), dim(group_variates[[1]]))
+        ) {
+          stop(
+            paste0(
+              "Custom aggregation function must return one mcnode ",
+              "with the same dimensions as the input variates"
+            )
+          )
+        }
+      } else if (identical(agg_func, "avg")) {
+        total_lev <- Reduce("+", group_variates) / length(group_variates)
+      } else if (identical(agg_func, "sum")) {
+        total_lev <- Reduce("+", group_variates)
       } else {
-        # Combine probabilities
+        # NULL and "prob"
         total_lev <- 1 - Reduce("*", inv_variates_list[index])
       }
 
       # Aggregate results
       if (keep_variates) {
-        # One row per original variate
-        agg_index <- mc2d::mcdata(index, type = "0", nvariates = length(index))
+        agg_index <- mc2d::mcdata(
+          index,
+          type = "0",
+          nvariates = length(index)
+        )
 
         if (i != 1) {
           total_agg <- total_agg + agg_index * total_lev
@@ -427,7 +537,6 @@ agg_variates <- function(
           total_agg <- agg_index * total_lev
         }
       } else {
-        # One row per result
         if (i != 1) {
           total_agg <- mc2d::addvar(total_agg, total_lev)
         } else {
@@ -449,20 +558,30 @@ agg_variates <- function(
   }
 
   # Add description and node_expression
-  if (!is.null(agg_func) && agg_func == "avg") {
-    # Calculate average value
+  if (is.function(agg_func)) {
+    mcmodule$node_list[[agg_mc_name]][["description"]] <-
+      paste0(
+        "Custom aggregation by: ",
+        paste0(agg_keys, collapse = ", ")
+      )
+
+    mcmodule$node_list[[agg_mc_name]][["node_expression"]] <-
+      paste0(
+        "Custom aggregation of ",
+        mc_name,
+        " by: ",
+        paste0(agg_keys, collapse = ", ")
+      )
+  } else if (identical(agg_func, "avg")) {
     mcmodule$node_list[[agg_mc_name]][["description"]] <-
       paste0("Average value by: ", paste0(agg_keys, collapse = ", "))
+
     mcmodule$node_list[[agg_mc_name]][["node_expression"]] <-
       paste0("Average ", mc_name, " by: ", paste0(agg_keys, collapse = ", "))
-  } else if (
-    (is.null(agg_func) &&
-      grepl("_n$", mc_name)) ||
-      (!is.null(agg_func) && agg_func == "sum")
-  ) {
-    # Sum for counts
+  } else if (identical(agg_func, "sum")) {
     mcmodule$node_list[[agg_mc_name]][["description"]] <-
       paste0("Sum by: ", paste0(agg_keys, collapse = ", "))
+
     mcmodule$node_list[[agg_mc_name]][["node_expression"]] <-
       paste0(
         mc_name,
@@ -472,12 +591,12 @@ agg_variates <- function(
         paste0(agg_keys, collapse = ", ")
       )
   } else {
-    # Combine probabilities
     mcmodule$node_list[[agg_mc_name]][["description"]] <-
       paste0(
         "Combined probability assuming independence by: ",
         paste0(agg_keys, collapse = ", ")
       )
+
     mcmodule$node_list[[agg_mc_name]][["node_expression"]] <-
       paste0(
         "1-((1-",
@@ -522,7 +641,7 @@ agg_variates <- function(
   return(mcmodule)
 }
 
-#' Aggregate mcnode Values Across Groups
+#' Aggregate mcnode Values Across Groups (Deprecated)
 #'
 #' @description
 #' `r lifecycle::badge("deprecated")`
@@ -539,15 +658,15 @@ agg_variates <- function(
 #'
 #' @export
 agg_totals <- function(
-  mcmodule,
-  mc_name,
-  agg_keys = NULL,
-  agg_suffix = NULL,
-  prefix = NULL,
-  name = NULL,
-  summary = TRUE,
-  keep_variates = FALSE,
-  agg_func = NULL
+    mcmodule,
+    mc_name,
+    agg_keys = NULL,
+    agg_suffix = NULL,
+    prefix = NULL,
+    name = NULL,
+    summary = TRUE,
+    keep_variates = FALSE,
+    agg_func = NULL
 ) {
   lifecycle::deprecate_warn(
     when = "1.3.1",
@@ -577,14 +696,15 @@ agg_totals <- function(
 #' @param combine_prob (logical). If TRUE, combine probability of all nodes assuming
 #'   independence. Default: TRUE.
 #' @param all_suffix (character). Suffix for combined node name. Default: "all".
-#' @param level_suffix (list, optional). Suffixes for each hierarchical level.
+#' @param level_suffix (named character vector, optional). Suffixes for each hierarchical level.
 #'   Default: c(trial="trial", subset="subset", set="set").
-#' @param mctable (data frame, optional). Monte Carlo nodes definitions.
+#' @param mctable (data frame, optional). Monte Carlo node definitions.
 #'   Default: set_mctable().
 #' @param sample_design (matrix, data frame, or list, optional). Sampling
 #'   design used to create missing input nodes via [matrix_to_mcnodes()].
-#'   Accepts a matrix/data frame (for example from [sensobol::sobol_matrices()]) or a list with element `X` (typically output
-#'   of [sensitivity::sensitivity] functions such as [sensitivity::morris()]). Defaults to [set_sample_design()].
+#'   Accepts a matrix/data frame (for example from
+#'   [sensobol::sobol_matrices()]) or a list with element `X` (for example,
+#'   output from [sensitivity::morris()]). Defaults to [set_sample_design()].
 #' @param agg_keys (character vector, optional). Column names for aggregation.
 #'   Default: NULL.
 #' @param agg_suffix (character). Suffix for aggregated node names. Default: "hag".
@@ -596,6 +716,17 @@ agg_totals <- function(
 #'
 #' @return Updated mcmodule object containing combined node probabilities and
 #'   probabilities/counts at trial, subset, and set levels.
+#'
+#' @references
+#' Murray N (2004). *Handbook on Import Risk Analysis for Animals and Animal
+#' Products, Volume 2: Quantitative Risk Assessment*. OIE.
+#' \url{https://rr-africa.woah.org/app/uploads/2018/03/handbook_on_import_risk_analysis_-_oie_-_vol_ii.pdf}
+#'
+#' Ross SM (2014). *Introduction to Probability Models*, 11th ed. Elsevier.
+#'
+#' @seealso [at_least_one()] for combining independent probability nodes,
+#'   [agg_variates()] for aggregation across grouping keys, [mc_match()] for aligning
+#'   nodes by keys, and [mc_summary()] for node summaries.
 #'
 #' @examples
 #' imports_mcmodule <- trial_totals(
@@ -609,25 +740,29 @@ agg_totals <- function(
 #' print(imports_mcmodule$node_list$no_detect_set$summary)
 #' @export
 trial_totals <- function(
-  mcmodule,
-  mc_names,
-  trials_n,
-  subsets_n = NULL,
-  subsets_p = NULL,
-  name = NULL,
-  prefix = NULL,
-  combine_prob = TRUE,
-  all_suffix = NULL,
-  level_suffix = c(trial = "trial", subset = "subset", set = "set"),
-  mctable = set_mctable(),
-  sample_design = set_sample_design(),
-  agg_keys = NULL,
-  agg_suffix = NULL,
-  keep_variates = FALSE,
-  summary = TRUE,
-  data_name = NULL
+    mcmodule,
+    mc_names,
+    trials_n,
+    subsets_n = NULL,
+    subsets_p = NULL,
+    name = NULL,
+    prefix = NULL,
+    combine_prob = TRUE,
+    all_suffix = NULL,
+    level_suffix = c(trial = "trial", subset = "subset", set = "set"),
+    mctable = set_mctable(),
+    sample_design = set_sample_design(),
+    agg_keys = NULL,
+    agg_suffix = NULL,
+    keep_variates = FALSE,
+    summary = TRUE,
+    data_name = NULL
 ) {
   module_name <- deparse(substitute(mcmodule))
+
+  if (length(mc_names) == 0) {
+    stop("mc_names must contain at least one node name")
+  }
 
   # Check if mcnodes are in mcmodule
   missing_nodes <- mc_names[!mc_names %in% names(mcmodule$node_list)]
@@ -641,7 +776,7 @@ trial_totals <- function(
   }
 
   # Get data_name for all mc_nodes
-  names(mc_names) <- c(paste0("mc_name_", 1:length(mc_names)))
+  names(mc_names) <- paste0("mc_name_", seq_along(mc_names))
   mc_trial_names <- c(
     trials_n = trials_n,
     subsets_n = subsets_n,
@@ -649,9 +784,7 @@ trial_totals <- function(
   )
   mc_inputs_names <- c(mc_names, mc_trial_names)
 
-  mc_inputs_names <- mc_inputs_names[
-    !is.null(mc_inputs_names) & mc_inputs_names != "1"
-  ]
+  mc_inputs_names <- mc_inputs_names[mc_inputs_names != "1"]
   nodes_data_name <- lapply(mc_inputs_names, function(x) {
     mcmodule$node_list[[x]][["data_name"]]
   })
@@ -688,8 +821,8 @@ trial_totals <- function(
     sample_design_input <- sample_design
     if (
       is.list(sample_design_input) &&
-        !is.data.frame(sample_design_input) &&
-        !is.matrix(sample_design_input)
+      !is.data.frame(sample_design_input) &&
+      !is.matrix(sample_design_input)
     ) {
       if (!"X" %in% names(sample_design_input)) {
         stop("sample_design list must contain element 'X'")
@@ -729,7 +862,7 @@ trial_totals <- function(
       name = name,
       all_suffix = all_suffix,
       prefix = prefix,
-      summary
+      summary = summary
     )
 
     # Generate name for combined node
@@ -887,8 +1020,8 @@ trial_totals <- function(
 
   if (
     !is.null(name) &&
-      length(mc_names) > 1 &&
-      !combine_prob
+    length(mc_names) > 1 &&
+    !combine_prob
   ) {
     stop(sprintf(
       "name argument can only be used when mc_names length is 1 or when combine_prob is TRUE"
@@ -942,22 +1075,34 @@ trial_totals <- function(
     sample_design_data = NULL,
     agg_func = NULL
   ) {
+
     if (mc_name %in% names(mcmodule$node_list)) {
       mc_node <- mcmodule$node_list[[mc_name]][["mcnode"]]
+
     } else {
-      if (
+      from_sample_design <- (
         !is.null(sample_design_data) &&
           mc_name %in% colnames(sample_design_data)
-      ) {
+      )
+
+      mc_row <- if (mc_name %in% mctable$mcnode) {
+        mctable[mctable$mcnode == mc_name, , drop = FALSE]
+      } else {
+        NULL
+      }
+
+      # If sample_design is provided
+      if (from_sample_design) {
+        # First preference: values supplied by the sampling design
         matrix_to_mcnodes(
           X = sample_design_data[, mc_name, drop = FALSE],
           envir = environment()
         )
-      } else {
-        if (!mc_name %in% mctable$mcnode) {
-          stop(sprintf("%s not found in mctable", mc_name))
-        }
 
+        mc_node <- get(mc_name)
+
+      } else if (!is.null(mc_row) && nrow(mc_row) > 0) {
+        # mctable may map mc_name to source columns such as sites_n_min/sites_n_max
         if (is.null(data)) {
           stop(sprintf(
             "data is NULL and '%s' is not present in sample_design",
@@ -965,56 +1110,111 @@ trial_totals <- function(
           ))
         }
 
-        mc_row <- mctable[mctable$mcnode %in% mc_name, ]
-        create_mcnodes(data, mctable = mc_row)
-      }
+        create_mcnodes(
+          data = data,
+          mctable = mc_row
+        )
 
-      mc_node <- get(mc_name)
+        mc_node <- get(mc_name)
 
-      if (mc_name %in% mctable$mcnode) {
-        mc_row <- mctable[mctable$mcnode %in% mc_name, ]
       } else {
-        mc_row <- NULL
+        # the node is absent from mctable but may exist directly as a column in the module data
+        input_data <- data
+        input_data_name <- ref_data_name
+
+        if (is.null(input_data) || !mc_name %in% names(input_data)) {
+          matching_data <- names(Filter(
+            function(x) {
+              is.data.frame(x) && mc_name %in% names(x)
+            },
+            mcmodule$data
+          ))
+
+          if (length(matching_data) == 0) {
+            stop(sprintf(
+              "%s not found in mctable or mcmodule$data",
+              mc_name
+            ))
+          }
+
+          if (length(matching_data) > 1) {
+            if (
+              !is.null(ref_data_name) &&
+              length(ref_data_name) == 1 &&
+              ref_data_name %in% matching_data
+            ) {
+              matching_data <- ref_data_name
+            } else {
+              stop(sprintf(
+                paste0(
+                  "'%s' occurs in multiple module data frames: %s. ",
+                  "Please provide data_name."
+                ),
+                mc_name,
+                paste(matching_data, collapse = ", ")
+              ))
+            }
+          }
+
+          input_data_name <- matching_data[[1]]
+          input_data <- mcmodule$data[[input_data_name]]
+        }
+
+        warning(sprintf(
+          paste0(
+            "'%s' was not found in mctable; ",
+            "creating a deterministic node from mcmodule$data[['%s']]"
+          ),
+          mc_name,
+          input_data_name
+        ))
+
+        mc_node <- mc2d::mcdata(
+          input_data[[mc_name]],
+          type = "0",
+          nvariates = nrow(input_data)
+        )
+
+        # Ensure the metadata below refers to the actual source
+        data <- input_data
+        ref_data_name <- input_data_name
       }
 
       # Add metadata
       pattern <- paste0("\\<", mc_name, "(\\>|[^>]*\\>)")
+
       inputs_col <- if (!is.null(data)) {
         names(data[grepl(pattern, names(data))])
       } else {
         character(0)
       }
+
       mcmodule$node_list[[mc_name]][["inputs_col"]] <- inputs_col
 
-      if (!is.null(mc_row) && !is.na(mc_row$mc_func)) {
-        mcmodule$node_list[[mc_name]][["mc_func"]] <- as.character(
-          mc_row$mc_func
-        )
-      }
+      mcmodule$node_list[[mc_name]][["description"]] <-
+        if (!is.null(mc_row) && nrow(mc_row) > 0) {
+          as.character(mc_row$description[[1]])
+        } else {
+          NA_character_
+        }
 
-      mcmodule$node_list[[mc_name]][["description"]] <- if (!is.null(mc_row)) {
-        as.character(mc_row$description)
-      } else {
-        NA_character_
-      }
       mcmodule$node_list[[mc_name]][["type"]] <- "in_node"
       mcmodule$node_list[[mc_name]][["module"]] <- module_name
       mcmodule$node_list[[mc_name]][["data_name"]] <- ref_data_name
       mcmodule$node_list[[mc_name]][["mcnode"]] <- mc_node
-      mcmodule$node_list[[mc_name]][["mc_func"]] <- if (!is.null(mc_row)) {
-        mc_row$mc_func
-      } else {
-        NA
-      }
+
+      mcmodule$node_list[[mc_name]][["mc_func"]] <-
+        if (!is.null(mc_row) && nrow(mc_row) > 0) {
+          mc_row$mc_func[[1]]
+        } else {
+          NA
+        }
 
       if (!is.null(data) && "scenario_id" %in% names(data)) {
         mcmodule$node_list[[mc_name]][["scenario"]] <- data$scenario_id
       }
 
-      if (
-        !is.null(sample_design_data) &&
-          mc_name %in% colnames(sample_design_data)
-      ) {
+      if (from_sample_design) {
         mcmodule$node_list[[mc_name]][["from_sample_design"]] <- TRUE
       }
     }
@@ -1054,7 +1254,7 @@ trial_totals <- function(
 
     return(mcmodule)
   }
-  # Iniciate keys_names vector to keep track of all keys used in nodes
+  # Initialise keys_names vector to keep track of all keys used in nodes
   keys_names <- c()
 
   # Process all nodes
@@ -1068,7 +1268,8 @@ trial_totals <- function(
     mctable,
     keep_variates,
     ref_data_name,
-    sample_design_data
+    sample_design_data,
+    agg_func = "sum"
   )
 
   # mc_match if several data names are provided
@@ -1191,12 +1392,12 @@ trial_totals <- function(
 
     if (
       all(params %in% names(node_list)) &&
-        !is.null(sample_design) &&
-        all(sapply(params, function(x) {
-          isTRUE(node_list[[x]][["from_sample_design"]]) ||
-            isTRUE(node_list[[x]][["type"]] == "scalar") ||
-            isTRUE(node_list[[x]][["created_in_exp"]])
-        }))
+      !is.null(sample_design) &&
+      all(sapply(params, function(x) {
+        isTRUE(node_list[[x]][["from_sample_design"]]) ||
+          isTRUE(node_list[[x]][["type"]] == "scalar") ||
+          isTRUE(node_list[[x]][["created_in_exp"]])
+      }))
     ) {
       node_list[[name]][["from_sample_design"]] <- TRUE
     }
@@ -1230,7 +1431,7 @@ trial_totals <- function(
         formula = function(p_a, trials_n_mc, subsets_n_mc, subsets_p_mc) {
           mcnode_na_rm(p_a / p_a, 1)
         },
-        description = paste0("One %s trials (", level_suffix[["trial"]], ")"),
+        description = paste0("One %s trial (", level_suffix[["trial"]], ")"),
         suffix = paste0("_", level_suffix[["trial"]], "_n"),
         expression = function(mc_name) {
           paste0("mcnode_na_rm(", mc_name, "/", mc_name, ", 1)")
@@ -1382,10 +1583,12 @@ trial_totals <- function(
     # If no combined (all) probabilities use new name,
     # else, it was already generated in at_least_one
     # Remove prefix (to avoid prefix duplication)
-    prefix <- paste0(sub("_$", "", prefix), "_")
+    if (!is.null(prefix) && prefix != "") {
+      prefix <- paste0(sub("_$", "", prefix), "_")
+    }
     mc_name_no_prefix <- if (
       length(mc_names) == 1 &&
-        !is.null(name)
+      !is.null(name)
     ) {
       if (!is.null(agg_keys)) {
         sub(paste0("^", prefix), "", agg_mc_name)
@@ -1395,7 +1598,9 @@ trial_totals <- function(
     } else {
       sub(paste0("^", prefix), "", mc_name)
     }
-    prefix <- sub("_$", "", prefix)
+    if (!is.null(prefix) && prefix != "") {
+      prefix <- sub("_$", "", prefix)
+    }
 
     # Remove hag_suffix if agg_suffix==""
     if (!is.null(agg_suffix) && agg_suffix == "") {

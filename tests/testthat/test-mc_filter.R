@@ -33,23 +33,23 @@ suppressMessages({
     )
 
     # Check that new filtered node exists
-    expect_true("p_1_A_filtered" %in% names(result$node_list))
+    expect_true("p_1_A" %in% names(result$node_list))
 
     # Check dimensions - should have 2 variates (2 "A" categories)
-    expect_equal(dim(result$node_list$p_1_A_filtered$mcnode)[3], 2)
+    expect_equal(dim(result$node_list$p_1_A$mcnode)[3], 2)
 
     # Check node attributes
-    expect_equal(result$node_list$p_1_A_filtered$type, "filter")
-    expect_equal(result$node_list$p_1_A_filtered$param, "p_1")
-    expect_equal(result$node_list$p_1_A_filtered$inputs, "p_1")
+    expect_equal(result$node_list$p_1_A$type, "filter")
+    expect_equal(result$node_list$p_1_A$param, "p_1")
+    expect_equal(result$node_list$p_1_A$inputs, "p_1")
     expect_true(grepl(
       "category == \"A\"",
-      result$node_list$p_1_A_filtered$description
+      result$node_list$p_1_A$description
     ))
 
     # Check summary exists and has correct rows
-    expect_equal(nrow(result$node_list$p_1_A_filtered$summary), 2)
-    expect_true(all(result$node_list$p_1_A_filtered$summary$category == "A"))
+    expect_equal(nrow(result$node_list$p_1_A$summary), 2)
+    expect_true(all(result$node_list$p_1_A$summary$category == "A"))
   })
 
   test_that("mc_filter works with multiple conditions", {
@@ -85,16 +85,16 @@ suppressMessages({
     )
 
     # Should have only 1 variate
-    expect_equal(dim(result$node_list$p_1_A_North_filtered$mcnode)[3], 1)
+    expect_equal(dim(result$node_list$p_1_A_North$mcnode)[3], 1)
 
     # Check description contains both conditions
     expect_true(grepl(
       "category == \"A\"",
-      result$node_list$p_1_A_North_filtered$filter
+      result$node_list$p_1_A_North$filter
     ))
     expect_true(grepl(
       "region == \"North\"",
-      result$node_list$p_1_A_North_filtered$filter
+      result$node_list$p_1_A_North$filter
     ))
   })
 
@@ -129,26 +129,26 @@ suppressMessages({
       scenario_id == "0",
       name = "p_1_A_North_0"
     )
-    expect_equal(dim(result$node_list$p_1_A_North_0_filtered$mcnode)[3], 2)
+    expect_equal(dim(result$node_list$p_1_A_North_0$mcnode)[3], 2)
     expect_true(grepl(
       "category == \"A\"",
-      result$node_list$p_1_A_North_0_filtered$filter
+      result$node_list$p_1_A_North_0$filter
     ))
     expect_true(grepl(
       "region %in%",
-      result$node_list$p_1_A_North_0_filtered$filter
+      result$node_list$p_1_A_North_0$filter
     ))
     expect_true(grepl(
       "North",
-      result$node_list$p_1_A_North_0_filtered$filter
+      result$node_list$p_1_A_North_0$filter
     ))
     expect_true(grepl(
       "East",
-      result$node_list$p_1_A_North_0_filtered$filter
+      result$node_list$p_1_A_North_0$filter
     ))
     expect_true(grepl(
       "scenario_id == \"0\"",
-      result$node_list$p_1_A_North_0_filtered$filter
+      result$node_list$p_1_A_North_0$filter
     ))
   })
 
@@ -205,7 +205,7 @@ suppressMessages({
 
     # Test with custom name only
     result1 <- mc_filter(test_module, "p_1", category == "A", name = "custom")
-    expect_true("custom_filtered" %in% names(result1$node_list))
+    expect_true("custom" %in% names(result1$node_list))
 
     # Test with custom suffix
     result2 <- mc_filter(
@@ -396,7 +396,7 @@ suppressMessages({
     result <- mc_filter(test_module, "p_1", value > 15, name = "high_value")
 
     # Should keep 3 rows (20, 30, 40)
-    expect_equal(dim(result$node_list$high_value_filtered$mcnode)[3], 3)
+    expect_equal(dim(result$node_list$high_value$mcnode)[3], 3)
 
     # Filter with multiple numeric conditions
     result2 <- mc_filter(test_module, "p_1", value >= 20, value <= 30)
@@ -495,18 +495,18 @@ suppressMessages({
     )
 
     # Check all metadata fields
-    expect_equal(result$node_list$filtered_A_filtered$type, "filter")
-    expect_equal(result$node_list$filtered_A_filtered$param, "p_1")
-    expect_equal(result$node_list$filtered_A_filtered$inputs, "p_1")
-    expect_true(!is.null(result$node_list$filtered_A_filtered$description))
-    expect_true(!is.null(result$node_list$filtered_A_filtered$node_expression))
+    expect_equal(result$node_list$filtered_A$type, "filter")
+    expect_equal(result$node_list$filtered_A$param, "p_1")
+    expect_equal(result$node_list$filtered_A$inputs, "p_1")
+    expect_true(!is.null(result$node_list$filtered_A$description))
+    expect_true(!is.null(result$node_list$filtered_A$node_expression))
     expect_true(
-      !is.null(result$node_list$filtered_A_filtered$filter)
+      !is.null(result$node_list$filtered_A$filter)
     )
-    expect_equal(result$node_list$filtered_A_filtered$data_name, "test_data")
+    expect_equal(result$node_list$filtered_A$data_name, "test_data")
 
     # Check that module name is correctly stored
-    expect_equal(result$node_list$filtered_A_filtered$module, "test_module")
+    expect_equal(result$node_list$filtered_A$module, "test_module")
   })
 
   test_that("mc_filter works with complex dplyr expressions", {

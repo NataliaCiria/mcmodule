@@ -9,13 +9,16 @@ visNetwork_nodes(
   variate = 1,
   color_pal = NULL,
   color_by = NULL,
-  inputs = FALSE
+  inputs = FALSE,
+  percentages = TRUE
 )
 }
 \arguments{
 \item{mcmodule}{(mcmodule object). Module containing network structure.}
 
-\item{variate}{(integer). Which variate to extract. Default: 1.}
+\item{variate}{(positive integer). Variate (row) to extract. See
+\code{\link[=get_node_table]{get_node_table()}} for how this applies to modules with multiple data
+frames. Default: 1.}
 
 \item{color_pal}{(character vector, optional). Custom colour palette for nodes.
 Default: NULL.}
@@ -24,6 +27,9 @@ Default: NULL.}
 Default: NULL.}
 
 \item{inputs}{(logical). If TRUE, include non-node inputs. Default: FALSE.}
+
+\item{percentages}{(logical). If TRUE, eligible nodes are displayed as
+percentages; if FALSE, all nodes are displayed as numbers. Default: TRUE.}
 }
 \value{
 A data frame formatted for visNetwork with columns: id, label, color,
@@ -32,4 +38,7 @@ grouping, expression, and title (hover text).
 \description{
 Creates a formatted node table for visualisation with visNetwork.
 Includes styling and formatting for interactive network display.
+}
+\seealso{
+\code{\link[=get_node_table]{get_node_table()}} and \code{\link[=mc_network]{mc_network()}}.
 }

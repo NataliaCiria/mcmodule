@@ -27,7 +27,8 @@
 #' - Within expressions reference input mcnodes by their bare names (e.g.
 #'   column1). Do not use `data$column1` or `data["column1"]`.
 #'
-#' @param exp (language or list). Model expression or list of expressions to evaluate.
+#' @param exp (language or named list). Model expression or named list of
+#'   expressions to evaluate.
 #' @param data (data frame). Input data; number of rows determines nvariates for
 #'   [mc2d::mcstoc()]/[mc2d::mcdata()] in expressions when `sample_design` is not
 #'   provided. With `sample_design`, inline `nvariates` is removed and defaults to
@@ -35,8 +36,9 @@
 #'   if `sample_design` with all inputs is provided).
 #' @param param_names (named character vector, optional). Names to rename parameters.
 #'   Default: NULL.
-#' @param prev_mcmodule (mcmodule or list, optional). Previous module(s) for
-#'   dependent calculations. Default: NULL.
+#' @param prev_mcmodule (mcmodule or list, optional). A previous module or a
+#'   list of previous modules for dependent calculations. Multiple modules are
+#'   combined internally and must have unique node names. Default: NULL.
 #' @param summary (logical). If TRUE, calculate summary statistics for output nodes.
 #'   Default: FALSE.
 #' @param mctable (data frame). Reference table for mcnodes with `mcnode` and
@@ -53,8 +55,8 @@
 #'   `data_keys` is NULL or empty; otherwise FALSE.
 #' @param sample_design (matrix, data frame, or list, optional). Sampling
 #'   design used to create input nodes via [matrix_to_mcnodes()]. Accepts a
-#'   matrix/data frame or a list with element `X` (typically output of
-#'   [sensitivity::sensitivity] functions). Columns matching expression input nodes are created
+#'   matrix/data frame or a list with element `X` (for example, output from
+#'   [sensitivity::morris()]). Columns matching expression input nodes are created
 #'   from this matrix. Defaults to [set_sample_design()].
 #' @param if_not_sampled (character). How to fill input nodes that are required
 #'   by the expression but do not appear as columns in `sample_design`. A fixed
@@ -69,6 +71,12 @@
 #'     \item exp: List of evaluated expressions.
 #'     \item node_list: Named list of mcnode objects with metadata.
 #'   }
+#'
+#' @seealso [get_node_list()] for inspecting expression dependencies,
+#'   [create_mcnodes()] and [matrix_to_mcnodes()] for input-node creation, and
+#'   [mc_summary()] for summarising evaluated nodes. See [combine_modules()] and
+#'   [add_prefix()] when preparing multiple previous modules.
+#'
 #' @export
 #'
 #' @examples
@@ -102,33 +110,82 @@
 #'   data_keys = imports_data_keys
 #' )
 eval_module <- function(
-  exp,
-  data = NULL,
-  param_names = NULL,
-  prev_mcmodule = NULL,
-  summary = FALSE,
-  mctable = set_mctable(),
-  data_keys = set_data_keys(),
-  match_keys = NULL,
-  keys = NULL,
-  overwrite_keys = NULL,
-  sample_design = set_sample_design(),
-  if_not_sampled = c("median", "mean", "max", "min"),
-  use_variation = NULL
+    exp,
+    data = NULL,
+    param_names = NULL,
+    prev_mcmodule = NULL,
+    summary = FALSE,
+    mctable = set_mctable(),
+    data_keys = set_data_keys(),
+    match_keys = NULL,
+    keys = NULL,
+    overwrite_keys = NULL,
+    sample_design = set_sample_design(),
+    if_not_sampled = c("median", "mean", "max", "min"),
+    use_variation = NULL
 ) {
   if (is.null(data)) {
     data <- data.frame()
   }
+  if (!is.data.frame(data)) {
+    stop("data must be a data frame or NULL")
+  }
 
   data_name <- deparse(substitute(data))
+
+  if (!is.null(prev_mcmodule)) {
+    prev_mcmodule_list <- if (inherits(prev_mcmodule, "mcmodule")) {
+      list(prev_mcmodule)
+    } else {
+      prev_mcmodule
+    }
+
+    if (
+      !is.list(prev_mcmodule_list) ||
+      length(prev_mcmodule_list) < 1 ||
+      !all(vapply(
+        prev_mcmodule_list,
+        inherits,
+        logical(1),
+        what = "mcmodule"
+      ))
+    ) {
+      stop(
+        "prev_mcmodule must be an mcmodule or a non-empty list of mcmodule objects"
+      )
+    }
+
+    previous_node_names <- unlist(
+      lapply(prev_mcmodule_list, function(x) names(x$node_list)),
+      use.names = FALSE
+    )
+    duplicated_node_names <- unique(
+      previous_node_names[duplicated(previous_node_names)]
+    )
+    if (length(duplicated_node_names) > 0) {
+      stop(sprintf(
+        paste0(
+          "Previous modules contain duplicated node names: %s. ",
+          "Rename or prefix conflicting nodes before calling eval_module()."
+        ),
+        paste(duplicated_node_names, collapse = ", ")
+      ))
+    }
+
+    prev_mcmodule <- if (length(prev_mcmodule_list) == 1) {
+      prev_mcmodule_list[[1]]
+    } else {
+      Reduce(combine_modules, prev_mcmodule_list)
+    }
+  }
 
   sample_design_data <- NULL
   if (!is.null(sample_design)) {
     sample_design_input <- sample_design
     if (
       is.list(sample_design_input) &&
-        !is.data.frame(sample_design_input) &&
-        !is.matrix(sample_design_input)
+      !is.data.frame(sample_design_input) &&
+      !is.matrix(sample_design_input)
     ) {
       if (!"X" %in% names(sample_design_input)) {
         stop("sample_design list must contain element 'X'")
@@ -159,6 +216,18 @@ eval_module <- function(
 
   if_not_sampled <- match.arg(if_not_sampled)
 
+  if (is.null(mctable)) {
+    mctable <- data.frame(
+      mcnode = character(),
+      description = character(),
+      mc_func = character(),
+      from_variable = character(),
+      transformation = character(),
+      sensi_variation = character(),
+      sample_space = character(),
+      stringsAsFactors = FALSE
+    )
+  }
   mctable <- check_mctable(mctable)
 
   # Validate that data is not empty
@@ -316,7 +385,21 @@ eval_module <- function(
 
   # Convert single expression to list format
   if (is.list(exp)) {
+    if (length(exp) == 0) {
+      stop("exp must contain at least one expression")
+    }
     exp_list <- exp
+    exp_names <- names(exp_list)
+    if (
+      is.null(exp_names) ||
+      anyNA(exp_names) ||
+      any(!nzchar(exp_names))
+    ) {
+      stop("Expression lists supplied to exp must be fully named")
+    }
+    if (anyDuplicated(exp_names)) {
+      stop("Expression names supplied to exp must be unique")
+    }
   } else {
     # Determine a sensible name for the expression.
     # - If the caller passed a variable (e.g. `exp = test_exp`) use that symbol name.
@@ -345,7 +428,7 @@ eval_module <- function(
   }
 
   # Process each expression in the list
-  for (i in 1:length(exp_list)) {
+  for (i in seq_along(exp_list)) {
     exp_i <- exp_list[[i]]
     exp_name_i <- names(exp_list)[[i]]
 
@@ -538,7 +621,7 @@ eval_module <- function(
         }
 
         # Previous modules
-        for (j in 1:length(prev_mcmodule_list)) {
+        for (j in seq_along(prev_mcmodule_list)) {
           prev_mcmodule_i <- prev_mcmodule_list[[j]]
 
           # Prefix matching for node names
@@ -603,7 +686,7 @@ eval_module <- function(
 
           # Process each previous node
           if (length(prev_nodes) > 0) {
-            for (k in 1:length(prev_nodes)) {
+            for (k in seq_along(prev_nodes)) {
               mc_name <- prev_nodes[k]
               node_list_i[[mc_name]] <- prev_node_list_i[[mc_name]]
               # Check if previous node is an aggregated node,
@@ -611,7 +694,7 @@ eval_module <- function(
               # - if it is an aggregated node it will be matched by its summary
               if (
                 is.null(prev_node_list_i[[mc_name]][["agg_keys"]]) ||
-                  prev_node_list_i[[mc_name]][["keep_variates"]]
+                prev_node_list_i[[mc_name]][["keep_variates"]]
               ) {
                 data_name_k <- prev_node_list_i[[mc_name]]$data_name
 
@@ -630,15 +713,15 @@ eval_module <- function(
                 # IF IT PASSES ALL THE CHECKS IT ALREADY MATCHES AND NO MATCH IS NEEDED
                 if (
                   is.null(prev_data) ||
-                    !(nrow(prev_data) == nrow(data) &&
-                      ncol(prev_data) == ncol(data) &&
-                      nrow(prev_data) ==
-                        dim(prev_mcmodule$node_list[[mc_name]]$mcnode)[[3]] &&
-                      all(names(prev_data) == names(data)) &&
-                      all(prev_data == data, na.rm = TRUE))
+                  !(nrow(prev_data) == nrow(data) &&
+                    ncol(prev_data) == ncol(data) &&
+                    nrow(prev_data) ==
+                    dim(prev_mcmodule_i$node_list[[mc_name]]$mcnode)[[3]] &&
+                    all(names(prev_data) == names(data)) &&
+                    all(prev_data == data, na.rm = TRUE))
                 ) {
                   match_prev <- mc_match_data(
-                    prev_mcmodule,
+                    prev_mcmodule_i,
                     mc_name,
                     data,
                     keys_names = match_keys
@@ -669,7 +752,7 @@ eval_module <- function(
                 ))
 
                 match_agg_prev <- mc_match_data(
-                  mcmodule = prev_mcmodule,
+                  mcmodule = prev_mcmodule_i,
                   mc_name = mc_name,
                   data = data,
                   keys_names = agg_keys
@@ -734,7 +817,7 @@ eval_module <- function(
 
     # Handle parameter renaming
     if (!is.null(new_param_names)) {
-      for (j in 1:length(new_param_names)) {
+      for (j in seq_along(new_param_names)) {
         exp_name <- names(new_param_names)[j]
         param_name <- new_param_names[j]
 
@@ -750,7 +833,7 @@ eval_module <- function(
     }
 
     # Create mcnodes for the current expression
-    mctable_i = mctable[
+    mctable_i <- mctable[
       mctable$mcnode %in% in_nodes_i & !(mctable$mcnode %in% sampled_nodes_i),
     ]
 
@@ -783,9 +866,9 @@ eval_module <- function(
     # Only run if at least one node was created inside the expression
     if (any(sapply(node_list_i, function(x) isTRUE(x$created_in_exp)))) {
       add_nvariates_ast <- function(
-        expr,
-        data_name = "data",
-        use_sample_design = FALSE
+    expr,
+    data_name = "data",
+    use_sample_design = FALSE
       ) {
         # Recursively walk and modify calls
         if (is.call(expr)) {
@@ -864,7 +947,7 @@ eval_module <- function(
     message(sprintf("%s evaluated", exp_name_i))
 
     # Update node metadata
-    for (j in 1:length(node_list)) {
+    for (j in seq_along(node_list)) {
       mc_name <- names(node_list)[j]
 
       # Skip processing for prev_nodes that are NOT in data
@@ -883,8 +966,8 @@ eval_module <- function(
 
       # Update keys and add exp name for output nodes
       if (
-        ((!is.null(prev_mcmodule)) | (length(exp) > 1)) &
-          node_list[[mc_name]][["type"]] == "out_node"
+        (!is.null(prev_mcmodule) || length(exp) > 1) &&
+        identical(node_list[[mc_name]][["type"]], "out_node")
       ) {
         keys_names <- unique(unlist(lapply(inputs, function(x) {
           if (is.null(node_list[[x]][["agg_keys"]])) {
@@ -925,13 +1008,13 @@ eval_module <- function(
       # If all mcnode inputs are from sample_design, mark this node as from_sample_design
       if (
         length(inputs) > 0 &&
-          all(inputs %in% names(node_list)) &&
-          !is.null(sample_design) &&
-          all(sapply(inputs, function(x) {
-            isTRUE(node_list[[x]][["from_sample_design"]]) ||
-              isTRUE(node_list[[x]][["type"]] == "scalar") ||
-              isTRUE(node_list[[x]][["created_in_exp"]])
-          }))
+        all(inputs %in% names(node_list)) &&
+        !is.null(sample_design) &&
+        all(sapply(inputs, function(x) {
+          isTRUE(node_list[[x]][["from_sample_design"]]) ||
+            isTRUE(node_list[[x]][["type"]] == "scalar") ||
+            isTRUE(node_list[[x]][["created_in_exp"]])
+        }))
       ) {
         node_list[[mc_name]][["from_sample_design"]] <- TRUE
       }
@@ -941,7 +1024,7 @@ eval_module <- function(
       # Set module name
       if (
         length(node_list[[mc_name]][["exp_name"]]) == 0 ||
-          node_list[[mc_name]][["exp_name"]] %in% "exp_i"
+        node_list[[mc_name]][["exp_name"]] %in% "exp_i"
       ) {
         node_list[[mc_name]][["exp_name"]] <- exp_name_i
       }
@@ -998,11 +1081,13 @@ eval_module <- function(
 #' @param mc_names Optional vector of node names to retrieve
 #' @param envir Environment where MC nodes will be created (default: parent.frame())
 #'
-#' @return A subset of the node list containing requested nodes
+#' @return A subset of the node list containing requested nodes.
+#'
+#' @seealso [eval_module()] for creating an `mcmodule`.
 get_mcmodule_nodes <- function(
-  mcmodule,
-  mc_names = NULL,
-  envir = parent.frame()
+    mcmodule,
+    mc_names = NULL,
+    envir = parent.frame()
 ) {
   if (inherits(mcmodule, "mcmodule")) {
     node_list <- mcmodule$node_list
@@ -1016,7 +1101,7 @@ get_mcmodule_nodes <- function(
   mc_names <- all_mc_names[all_mc_names %in% mc_names]
 
   if (length(mc_names) > 0) {
-    for (i in 1:length(mc_names)) {
+    for (i in seq_along(mc_names)) {
       mc_name <- mc_names[i]
       assign(mc_name, node_list[[mc_name]][["mcnode"]], envir = envir)
     }

@@ -44,16 +44,17 @@ independence. Default: TRUE.}
 
 \item{all_suffix}{(character). Suffix for combined node name. Default: "all".}
 
-\item{level_suffix}{(list, optional). Suffixes for each hierarchical level.
+\item{level_suffix}{(named character vector, optional). Suffixes for each hierarchical level.
 Default: c(trial="trial", subset="subset", set="set").}
 
-\item{mctable}{(data frame, optional). Monte Carlo nodes definitions.
+\item{mctable}{(data frame, optional). Monte Carlo node definitions.
 Default: set_mctable().}
 
 \item{sample_design}{(matrix, data frame, or list, optional). Sampling
 design used to create missing input nodes via \code{\link[=matrix_to_mcnodes]{matrix_to_mcnodes()}}.
-Accepts a matrix/data frame (for example from \code{\link[sensobol:sobol_matrices]{sensobol::sobol_matrices()}}) or a list with element \code{X} (typically output
-of \link[sensitivity:sensitivity-package]{sensitivity::sensitivity} functions such as \code{\link[sensitivity:morris]{sensitivity::morris()}}). Defaults to \code{\link[=set_sample_design]{set_sample_design()}}.}
+Accepts a matrix/data frame (for example from
+\code{\link[sensobol:sobol_matrices]{sensobol::sobol_matrices()}}) or a list with element \code{X} (for example,
+output from \code{\link[sensitivity:morris]{sensitivity::morris()}}). Defaults to \code{\link[=set_sample_design]{set_sample_design()}}.}
 
 \item{agg_keys}{(character vector, optional). Column names for aggregation.
 Default: NULL.}
@@ -87,4 +88,16 @@ imports_mcmodule <- trial_totals(
   mctable = imports_mctable
 )
 print(imports_mcmodule$node_list$no_detect_set$summary)
+}
+\references{
+Murray N (2004). \emph{Handbook on Import Risk Analysis for Animals and Animal
+Products, Volume 2: Quantitative Risk Assessment}. OIE.
+\url{https://rr-africa.woah.org/app/uploads/2018/03/handbook_on_import_risk_analysis_-_oie_-_vol_ii.pdf}
+
+Ross SM (2014). \emph{Introduction to Probability Models}, 11th ed. Elsevier.
+}
+\seealso{
+\code{\link[=at_least_one]{at_least_one()}} for combining independent probability nodes,
+\code{\link[=agg_variates]{agg_variates()}} for aggregation across grouping keys, \code{\link[=mc_match]{mc_match()}} for aligning
+nodes by keys, and \code{\link[=mc_summary]{mc_summary()}} for node summaries.
 }

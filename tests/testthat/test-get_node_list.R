@@ -396,6 +396,61 @@ suppressMessages({
       get_node_list(123),
       "exp must be a quoted expression"
     )
+    expect_error(
+      get_node_list(quote(input_a + input_b)),
+      "quoted expression block"
+    )
+
+    empty_result <- get_node_list(quote({}))
+    expect_s3_class(empty_result, "mcnode_list")
+    expect_length(empty_result, 0)
+  })
+
+  test_that("get_node_list validates top-level model statements", {
+    expect_error(
+      get_node_list(quote({
+        print(input_a)
+      })),
+      "top-level model statements must be assignments.*print\\(input_a\\)"
+    )
+    expect_error(
+      get_node_list(quote({
+        output[1] <- input_a
+      })),
+      "left-hand side.*simple name"
+    )
+
+    result <- get_node_list(quote({
+      output = input_a * 2
+    }))
+    expect_true("output" %in% names(result))
+  })
+
+  test_that("get_node_list errors when an input matches multiple datasets", {
+    test_exp <- quote({
+      result <- input_a * 2
+    })
+    test_mctable <- data.frame(
+      mcnode = "input_a",
+      mc_func = NA,
+      description = "Input A",
+      from_variable = NA,
+      transformation = NA,
+      stringsAsFactors = FALSE
+    )
+    test_data_keys <- list(
+      data_a = list(cols = c("id", "input_a"), keys = "id"),
+      data_b = list(cols = c("id", "input_a"), keys = "id")
+    )
+
+    expect_error(
+      get_node_list(
+        exp = test_exp,
+        mctable = test_mctable,
+        data_keys = test_data_keys
+      ),
+      "Input node 'input_a' matches multiple datasets: data_a, data_b"
+    )
   })
 
   test_that("get_node_list warns for unsupported mcnode types (U, VU)", {

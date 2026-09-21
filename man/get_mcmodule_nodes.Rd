@@ -14,8 +14,11 @@ get_mcmodule_nodes(mcmodule, mc_names = NULL, envir = parent.frame())
 \item{envir}{Environment where MC nodes will be created (default: parent.frame())}
 }
 \value{
-A subset of the node list containing requested nodes
+A subset of the node list containing requested nodes.
 }
 \description{
 Retrieves nodes from a Monte Carlo module and assigns them to the parent environment
+}
+\seealso{
+\code{\link[=eval_module]{eval_module()}} for creating an \code{mcmodule}.
 }
