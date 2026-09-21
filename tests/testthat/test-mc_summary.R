@@ -165,6 +165,44 @@ suppressMessages({
     }
   })
 
+  test_that("mc_summary applies options to pre-calculated summaries", {
+    stored_summary <- data.frame(
+      mc_name = c("risk_agg", "risk_agg"),
+      scenario_id = c("0", "1"),
+      category_code = c(101, 102),
+      mean = c(0.12345, 0.98765),
+      sd = c(0.01234, 0.04321),
+      stringsAsFactors = FALSE
+    )
+    test_module <- list(
+      node_list = list(
+        risk_agg = list(
+          mcnode = mcdata(c(0.1, 0.9), type = "0", nvariates = 2),
+          type = "agg_total",
+          keys = c("category_code"),
+          agg_keys = c("scenario_id", "category_code"),
+          summary = stored_summary
+        )
+      ),
+      data = list()
+    )
+
+    result <- mc_summary(
+      test_module,
+      "risk_agg",
+      sep_keys = FALSE,
+      digits = 2
+    )
+
+    expect_equal(result$keys, c("0, 101", "1, 102"))
+    expect_equal(result$mean, c(0.12, 0.99))
+    expect_equal(result$sd, c(0.01, 0.04))
+    expect_false(any(c("scenario_id", "category_code") %in% names(result)))
+
+    # Formatting must not modify the summary stored in the module.
+    expect_equal(test_module$node_list$risk_agg$summary, stored_summary)
+  })
+
   test_that("signif_round handles negative values by magnitude", {
     expect_equal(
       signif_round(c(-0.001234, -1.234), digits = 2),

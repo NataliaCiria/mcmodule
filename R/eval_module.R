@@ -27,7 +27,8 @@
 #' - Within expressions reference input mcnodes by their bare names (e.g.
 #'   column1). Do not use `data$column1` or `data["column1"]`.
 #'
-#' @param exp (language or list). Model expression or list of expressions to evaluate.
+#' @param exp (language or named list). Model expression or named list of
+#'   expressions to evaluate.
 #' @param data (data frame). Input data; number of rows determines nvariates for
 #'   [mc2d::mcstoc()]/[mc2d::mcdata()] in expressions when `sample_design` is not
 #'   provided. With `sample_design`, inline `nvariates` is removed and defaults to
@@ -341,12 +342,16 @@ eval_module <- function(
     }
     exp_list <- exp
     exp_names <- names(exp_list)
-    if (is.null(exp_names)) {
-      exp_names <- rep("", length(exp_list))
+    if (
+      is.null(exp_names) ||
+      anyNA(exp_names) ||
+      any(!nzchar(exp_names))
+    ) {
+      stop("Expression lists supplied to exp must be named")
     }
-    missing_names <- is.na(exp_names) | !nzchar(exp_names)
-    exp_names[missing_names] <- paste0("exp_", which(missing_names))
-    names(exp_list) <- make.unique(exp_names)
+    if (anyDuplicated(exp_names)) {
+      stop("Expression names supplied to exp must be unique")
+    }
   } else {
     # Determine a sensible name for the expression.
     # - If the caller passed a variable (e.g. `exp = test_exp`) use that symbol name.

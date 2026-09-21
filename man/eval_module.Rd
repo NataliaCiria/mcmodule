@@ -21,7 +21,8 @@ eval_module(
 )
 }
 \arguments{
-\item{exp}{(language or list). Model expression or list of expressions to evaluate.}
+\item{exp}{(language or named list). Model expression or named list of
+expressions to evaluate.}
 
 \item{data}{(data frame). Input data; number of rows determines nvariates for
 \code{\link[mc2d:mcstoc]{mc2d::mcstoc()}}/\code{\link[mc2d:mcdata]{mc2d::mcdata()}} in expressions when \code{sample_design} is not

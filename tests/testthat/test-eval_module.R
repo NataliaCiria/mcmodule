@@ -1112,23 +1112,37 @@ suppressMessages({
     )
   })
 
-  test_that("eval_module names unnamed expression lists", {
+  test_that("eval_module requires named expression lists", {
     expressions <- list(
       quote({ first <- mcdata(1, type = "0") }),
       quote({ second <- first + 1 })
     )
 
-    result <- eval_module(
-      exp = expressions,
-      data = data.frame(row_id = 1),
-      keys = "row_id",
-      mctable = NULL,
-      data_keys = NULL,
-      sample_design = NULL
+    expect_error(
+      eval_module(
+        exp = expressions,
+        data = data.frame(row_id = 1),
+        keys = "row_id",
+        mctable = NULL,
+        data_keys = NULL,
+        sample_design = NULL
+      ),
+      "Expression lists supplied to exp must be named"
     )
 
-    expect_equal(names(result$exp), c("exp_1", "exp_2"))
-    expect_true(all(c("first", "second") %in% names(result$node_list)))
+    expect_error(
+      eval_module(
+        exp = list(
+          duplicated = quote({ first <- mcdata(1, type = "0") }),
+          duplicated = quote({ second <- first + 1 })
+        ),
+        data = data.frame(row_id = 1),
+        mctable = NULL,
+        data_keys = NULL,
+        sample_design = NULL
+      ),
+      "Expression names supplied to exp must be unique"
+    )
   })
 
   test_that("eval_module matches a previous module supplied in a list", {

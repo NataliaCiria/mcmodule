@@ -23,7 +23,8 @@
 #' For filtered nodes (type = "filter"), compared nodes (type = "compare"), and
 #' aggregated nodes (type = "agg_total"), this function returns the pre-calculated
 #' summary statistics that were computed when the node was created, rather than
-#' recalculating from the original data.
+#' recalculating from the original data. The `digits` and `sep_keys` options are
+#' applied to a copy of the stored summary before it is returned.
 #'
 #' @return A data frame with summary statistics for each mcnode variate.
 #'   Columns include:
@@ -84,6 +85,39 @@ mc_summary <- function(
     stop("digits must be a positive integer or NULL")
   }
 
+  format_stored_summary <- function(summary_df, node) {
+    result <- summary_df
+    key_names <- unique(c("scenario_id", node[["keys"]], node[["agg_keys"]]))
+    key_cols <- intersect(key_names, names(result))
+
+    if (!is.null(digits)) {
+      numeric_cols <- names(result)[vapply(result, is.numeric, logical(1))]
+      statistic_cols <- setdiff(numeric_cols, key_cols)
+      result[statistic_cols] <- lapply(
+        result[statistic_cols],
+        function(x) signif_round(x, digits = digits)
+      )
+    }
+
+    if (!sep_keys && length(key_cols) > 0) {
+      result$keys <- do.call(
+        paste,
+        c(result[key_cols], list(sep = ", "))
+      )
+      remaining_cols <- setdiff(
+        names(result),
+        c("mc_name", key_cols, "keys")
+      )
+      result <- result[c(
+        intersect("mc_name", names(result)),
+        "keys",
+        remaining_cols
+      )]
+    }
+
+    result
+  }
+
   if (!is.null(mcmodule)) {
     module_name <- deparse(substitute(mcmodule))
 
@@ -102,7 +136,10 @@ mc_summary <- function(
       node_type %in% c("filter", "compare", "agg_total") &&
       !is.null(mcmodule$node_list[[mc_name]]$summary)
     ) {
-      return(mcmodule$node_list[[mc_name]]$summary)
+      return(format_stored_summary(
+        mcmodule$node_list[[mc_name]]$summary,
+        mcmodule$node_list[[mc_name]]
+      ))
     }
 
     data_name <- mcmodule$node_list[[mc_name]]$data_name
@@ -115,7 +152,10 @@ mc_summary <- function(
       length(data_name) > 1 && !is.null(mcmodule$node_list[[mc_name]]$summary)
     ) {
       message("Too many data names. Using existing summary.")
-      return(mcmodule$node_list[[mc_name]]$summary)
+      return(format_stored_summary(
+        mcmodule$node_list[[mc_name]]$summary,
+        mcmodule$node_list[[mc_name]]
+      ))
     }
   } else {
     if (is.null(data)) {

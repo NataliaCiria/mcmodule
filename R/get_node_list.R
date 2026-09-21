@@ -36,8 +36,35 @@ get_node_list <- function(
 
   # Process output nodes from model exp
   for (i in seq_along(exp)[-1]) {
-    node_name <- deparse(exp[[i]][[2]])
-    node_exp <- paste0(deparse(exp[[i]][[3]]), collapse = "")
+    statement <- exp[[i]]
+    statement_text <- paste(deparse(statement), collapse = " ")
+
+    assignment_op <- if (is.call(statement) && is.symbol(statement[[1]])) {
+      as.character(statement[[1]])
+    } else {
+      ""
+    }
+    if (!assignment_op %in% c("<-", "=")) {
+      stop(sprintf(
+        paste0(
+          "All top-level model statements must be assignments. ",
+          "Unsupported statement: %s"
+        ),
+        statement_text
+      ))
+    }
+    if (!is.symbol(statement[[2]])) {
+      stop(sprintf(
+        paste0(
+          "The left-hand side of a model assignment must be a simple name. ",
+          "Unsupported statement: %s"
+        ),
+        statement_text
+      ))
+    }
+
+    node_name <- as.character(statement[[2]])
+    node_exp <- paste0(deparse(statement[[3]]), collapse = "")
 
     # Use AST parser
     parse_res <- ast_traverse(node_exp)
@@ -142,7 +169,7 @@ get_node_list <- function(
         mc_row$description
       )
 
-      matched_dataset <- NULL
+      matched_datasets <- character()
 
       # Process input columns and datasets
       for (dataset_name in names(all_inputs)) {
@@ -170,7 +197,7 @@ get_node_list <- function(
 
         # Update node list if matching inputs found
         if (length(inputs_col) > 0) {
-          matched_dataset <- dataset_name
+          matched_datasets <- c(matched_datasets, dataset_name)
           in_node_list[[node_name]][["inputs_col"]] <- inputs_col
           in_node_list[[node_name]][["input_dataset"]] <- dataset_name
 
@@ -200,6 +227,14 @@ get_node_list <- function(
 
           in_node_list[[node_name]][["keys"]] <- final_keys
         }
+      }
+
+      if (length(matched_datasets) > 1) {
+        stop(sprintf(
+          "Input node '%s' matches multiple datasets: %s",
+          node_name,
+          paste(matched_datasets, collapse = ", ")
+        ))
       }
 
       in_node_list[[node_name]][["exp_name"]] <- exp_name

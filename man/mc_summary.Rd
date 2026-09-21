@@ -59,7 +59,8 @@ This function can be called in two ways:
 For filtered nodes (type = "filter"), compared nodes (type = "compare"), and
 aggregated nodes (type = "agg_total"), this function returns the pre-calculated
 summary statistics that were computed when the node was created, rather than
-recalculating from the original data.
+recalculating from the original data. The \code{digits} and \code{sep_keys} options are
+applied to a copy of the stored summary before it is returned.
 }
 \examples{
 # Use with mcmodule
