@@ -35,8 +35,9 @@ if \code{sample_design} with all inputs is provided).
 \item{param_names}{(named character vector, optional). Names to rename parameters.
 Default: NULL.}
 
-\item{prev_mcmodule}{(mcmodule or list, optional). Previous module(s) for
-dependent calculations. Default: NULL.}
+\item{prev_mcmodule}{(mcmodule or list, optional). A previous module or a
+list of previous modules for dependent calculations. Multiple modules are
+combined internally and must have unique node names. Default: NULL.}
 
 \item{summary}{(logical). If TRUE, calculate summary statistics for output nodes.
 Default: FALSE.}
@@ -144,5 +145,6 @@ eval_module(
 \seealso{
 \code{\link[=get_node_list]{get_node_list()}} for inspecting expression dependencies,
 \code{\link[=create_mcnodes]{create_mcnodes()}} and \code{\link[=matrix_to_mcnodes]{matrix_to_mcnodes()}} for input-node creation, and
-\code{\link[=mc_summary]{mc_summary()}} for summarising evaluated nodes.
+\code{\link[=mc_summary]{mc_summary()}} for summarising evaluated nodes. See \code{\link[=combine_modules]{combine_modules()}} and
+\code{\link[=add_prefix]{add_prefix()}} when preparing multiple previous modules.
 }

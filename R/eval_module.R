@@ -36,8 +36,9 @@
 #'   if `sample_design` with all inputs is provided).
 #' @param param_names (named character vector, optional). Names to rename parameters.
 #'   Default: NULL.
-#' @param prev_mcmodule (mcmodule or list, optional). Previous module(s) for
-#'   dependent calculations. Default: NULL.
+#' @param prev_mcmodule (mcmodule or list, optional). A previous module or a
+#'   list of previous modules for dependent calculations. Multiple modules are
+#'   combined internally and must have unique node names. Default: NULL.
 #' @param summary (logical). If TRUE, calculate summary statistics for output nodes.
 #'   Default: FALSE.
 #' @param mctable (data frame). Reference table for mcnodes with `mcnode` and
@@ -73,7 +74,8 @@
 #'
 #' @seealso [get_node_list()] for inspecting expression dependencies,
 #'   [create_mcnodes()] and [matrix_to_mcnodes()] for input-node creation, and
-#'   [mc_summary()] for summarising evaluated nodes.
+#'   [mc_summary()] for summarising evaluated nodes. See [combine_modules()] and
+#'   [add_prefix()] when preparing multiple previous modules.
 #'
 #' @export
 #'
@@ -130,6 +132,52 @@ eval_module <- function(
   }
 
   data_name <- deparse(substitute(data))
+
+  if (!is.null(prev_mcmodule)) {
+    prev_mcmodule_list <- if (inherits(prev_mcmodule, "mcmodule")) {
+      list(prev_mcmodule)
+    } else {
+      prev_mcmodule
+    }
+
+    if (
+      !is.list(prev_mcmodule_list) ||
+      length(prev_mcmodule_list) < 1 ||
+      !all(vapply(
+        prev_mcmodule_list,
+        inherits,
+        logical(1),
+        what = "mcmodule"
+      ))
+    ) {
+      stop(
+        "prev_mcmodule must be an mcmodule or a non-empty list of mcmodule objects"
+      )
+    }
+
+    previous_node_names <- unlist(
+      lapply(prev_mcmodule_list, function(x) names(x$node_list)),
+      use.names = FALSE
+    )
+    duplicated_node_names <- unique(
+      previous_node_names[duplicated(previous_node_names)]
+    )
+    if (length(duplicated_node_names) > 0) {
+      stop(sprintf(
+        paste0(
+          "Previous modules contain duplicated node names: %s. ",
+          "Rename or prefix conflicting nodes before calling eval_module()."
+        ),
+        paste(duplicated_node_names, collapse = ", ")
+      ))
+    }
+
+    prev_mcmodule <- if (length(prev_mcmodule_list) == 1) {
+      prev_mcmodule_list[[1]]
+    } else {
+      Reduce(combine_modules, prev_mcmodule_list)
+    }
+  }
 
   sample_design_data <- NULL
   if (!is.null(sample_design)) {
@@ -347,7 +395,7 @@ eval_module <- function(
       anyNA(exp_names) ||
       any(!nzchar(exp_names))
     ) {
-      stop("Expression lists supplied to exp must be named")
+      stop("Expression lists supplied to exp must be fully named")
     }
     if (anyDuplicated(exp_names)) {
       stop("Expression names supplied to exp must be unique")

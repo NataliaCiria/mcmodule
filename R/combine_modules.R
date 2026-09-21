@@ -8,6 +8,9 @@
 #'
 #' @return An mcmodule object with combined data and node lists.
 #'
+#' @seealso [eval_module()] for using one or more previous modules and
+#'   [add_prefix()] for distinguishing node names when needed.
+#'
 #' @examples
 #' module_x <- list(
 #'   data = list(data_x = data.frame(x = 1:3)),

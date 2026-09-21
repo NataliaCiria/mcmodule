@@ -27,7 +27,6 @@ test_that("combine_modules works", {
   expect_equal(names(result$node_list), c("node1", "node2", "node3"))
 })
 
-
 test_that("mcmodule_info handles combined modules", {
   data_ab = data.frame(key1 = c("x", "y"))
   module_a <- list(

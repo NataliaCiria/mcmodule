@@ -1127,7 +1127,7 @@ suppressMessages({
         data_keys = NULL,
         sample_design = NULL
       ),
-      "Expression lists supplied to exp must be named"
+      "Expression lists supplied to exp must be fully named"
     )
 
     expect_error(
@@ -1206,6 +1206,103 @@ suppressMessages({
 
     expect_true("result" %in% names(result$node_list))
     expect_equal(dim(result$node_list$result$mcnode)[3], 2)
+  })
+
+  test_that("eval_module uses nodes from multiple previous modules", {
+    previous_data_a <- data.frame(
+      category = c("A", "B"),
+      value_a = c(1, 2),
+      stringsAsFactors = FALSE
+    )
+    previous_data_b <- data.frame(
+      category = c("A", "B"),
+      value_b = c(10, 20),
+      stringsAsFactors = FALSE
+    )
+    current_data <- data.frame(
+      category = c("B", "A"),
+      current_value = c(1, 1),
+      stringsAsFactors = FALSE
+    )
+
+    previous_module_a <- eval_module(
+      exp = list(module_a = quote({ result_a <- value_a })),
+      data = previous_data_a,
+      mctable = data.frame(mcnode = "value_a", mc_func = NA),
+      data_keys = list(
+        previous_data_a = list(
+          cols = names(previous_data_a),
+          keys = "category"
+        )
+      ),
+      sample_design = NULL
+    )
+    previous_module_b <- eval_module(
+      exp = list(module_b = quote({ result_b <- value_b })),
+      data = previous_data_b,
+      mctable = data.frame(mcnode = "value_b", mc_func = NA),
+      data_keys = list(
+        previous_data_b = list(
+          cols = names(previous_data_b),
+          keys = "category"
+        )
+      ),
+      sample_design = NULL
+    )
+
+    result <- eval_module(
+      exp = list(current = quote({
+        combined_result <- result_a + result_b + current_value
+      })),
+      data = current_data,
+      mctable = data.frame(mcnode = "current_value", mc_func = NA),
+      data_keys = list(
+        current_data = list(
+          cols = names(current_data),
+          keys = "category"
+        )
+      ),
+      prev_mcmodule = list(previous_module_a, previous_module_b),
+      sample_design = NULL
+    )
+
+    expect_true("combined_result" %in% names(result$node_list))
+    expect_equal(
+      as.numeric(result$node_list$combined_result$mcnode),
+      c(12, 23)
+    )
+  })
+
+  test_that("eval_module rejects conflicting previous-module nodes", {
+    previous_module_a <- structure(
+      list(
+        data = list(data_a = data.frame(id = 1)),
+        exp = list(),
+        node_list = list(shared_node = list(type = "out_node"))
+      ),
+      class = "mcmodule"
+    )
+    previous_module_b <- structure(
+      list(
+        data = list(data_b = data.frame(id = 1)),
+        exp = list(),
+        node_list = list(shared_node = list(type = "out_node"))
+      ),
+      class = "mcmodule"
+    )
+
+    expect_error(
+      eval_module(
+        exp = list(current = quote({ result <- shared_node })),
+        data = data.frame(id = 1),
+        keys = "id",
+        mctable = NULL,
+        data_keys = NULL,
+        prev_mcmodule = list(previous_module_a, previous_module_b),
+        sample_design = NULL
+      ),
+      "Previous modules contain duplicated node names: shared_node"
+    )
   })
 
 })

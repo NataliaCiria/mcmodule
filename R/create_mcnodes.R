@@ -159,7 +159,7 @@ create_mcnodes <- function(
               mc2d::rpert
             } else if (grepl(":::", mc_func, fixed = TRUE)) {
               function_parts <- strsplit(mc_func, ":::", fixed = TRUE)[[1]]
-              getFromNamespace(function_parts[[2]], function_parts[[1]])
+              utils::getFromNamespace(function_parts[[2]], function_parts[[1]])
             } else if (grepl("::", mc_func, fixed = TRUE)) {
               function_parts <- strsplit(mc_func, "::", fixed = TRUE)[[1]]
               getExportedValue(function_parts[[1]], function_parts[[2]])

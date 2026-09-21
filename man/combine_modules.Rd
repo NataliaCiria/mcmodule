@@ -39,3 +39,7 @@ module_y <- list(
 module_xy <- combine_modules(module_x, module_y)
 
 }
+\seealso{
+\code{\link[=eval_module]{eval_module()}} for using one or more previous modules and
+\code{\link[=add_prefix]{add_prefix()}} for distinguishing node names when needed.
+}
