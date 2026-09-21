@@ -1,26 +1,24 @@
 #' Water Supply Example Data
 #'
 #' Simulated data for an illustrative quantitative microbial risk assessment
-#' of Cryptosporidium infection in a water distribution system. Each row
+#' of \emph{Cryptosporidium} infection in a water distribution system. Each row
 #' represents one distribution zone under one management scenario.
 #'
 #' The example includes a baseline scenario, identified by `"0"`, and a
 #' hypothetical network-maintenance scenario that reduces the daily intrusion
-#' probability by 80 percent. The values are intended for teaching and software
-#' demonstration. They do not describe a real water supply and should not be
-#' used for operational or regulatory decisions.
+#' probability by 80 percent.
 #'
 #' @format A data frame with 4 rows and 15 columns:
 #' \describe{
 #'   \item{zone}{Distribution-zone identifier.}
-#'   \item{scenario_id}{Management-scenario identifier. `"0"` denotes the
+#'   \item{scenario_id}{Management-scenario identifier. `"0"` indicates the
 #'   baseline scenario.}
 #'   \item{population}{Number of people exposed in the distribution zone.}
-#'   \item{source_conc_min}{Minimum Cryptosporidium concentration in source
+#'   \item{source_conc_min}{Minimum \emph{Cryptosporidium} concentration in source
 #'   water, in oocysts per litre.}
-#'   \item{source_conc_mode}{Most likely Cryptosporidium concentration in
+#'   \item{source_conc_mode}{Most likely \emph{Cryptosporidium} concentration in
 #'   source water, in oocysts per litre.}
-#'   \item{source_conc_max}{Maximum Cryptosporidium concentration in source
+#'   \item{source_conc_max}{Maximum \emph{Cryptosporidium} concentration in source
 #'   water, in oocysts per litre.}
 #'   \item{treatment_lrv_min}{Minimum treatment performance, expressed as a
 #'   log10 reduction value.}
@@ -32,11 +30,11 @@
 #'   person per day.}
 #'   \item{intrusion_prob}{Daily probability that an intrusion affects the
 #'   distribution zone.}
-#'   \item{intrusion_conc_min}{Minimum Cryptosporidium concentration at the tap
+#'   \item{intrusion_conc_min}{Minimum \emph{Cryptosporidium} concentration at the tap
 #'   conditional on an intrusion, in oocysts per litre.}
-#'   \item{intrusion_conc_max}{Maximum Cryptosporidium concentration at the tap
+#'   \item{intrusion_conc_max}{Maximum \emph{Cryptosporidium} concentration at the tap
 #'   conditional on an intrusion, in oocysts per litre.}
-#'   \item{dose_response_r}{Parameter of the exponential Cryptosporidium
+#'   \item{dose_response_r}{Parameter of the exponential \emph{Cryptosporidium}
 #'   dose-response model.}
 #'   \item{exposure_days}{Number of daily exposure events in the assessment
 #'   period.}
@@ -48,7 +46,7 @@
 #' \url{https://www.who.int/publications/i/item/9789241565370}
 #'
 #' Messner MJ, Chappell CL, and Okhuysen PC (2001). Risk assessment for
-#' Cryptosporidium: a hierarchical Bayesian analysis of human dose-response
+#' \emph{Cryptosporidium}: a hierarchical Bayesian analysis of human dose-response
 #' data. Water Research, 35, 3934-3940.
 #' \doi{10.1016/S0043-1354(01)00119-1}
 #'
@@ -74,8 +72,7 @@
 #'
 #' The consumption groups contain 25, 50, and 25 percent of the corresponding
 #' zone population and consume 1.0, 1.5, and 2.0 litres of unboiled tap water
-#' per person per day, respectively. These group definitions are hypothetical
-#' and are intended only for teaching and software demonstration.
+#' per person per day, respectively.
 #'
 #' @format A data frame with 12 rows and 16 columns:
 #' \describe{
@@ -86,11 +83,11 @@
 #'   baseline scenario.}
 #'   \item{population}{Number of people in the consumption group. Group
 #'   populations sum to the corresponding population in [water_data].}
-#'   \item{source_conc_min}{Minimum Cryptosporidium concentration in source
+#'   \item{source_conc_min}{Minimum \emph{Cryptosporidium} concentration in source
 #'   water, in oocysts per litre.}
-#'   \item{source_conc_mode}{Most likely Cryptosporidium concentration in
+#'   \item{source_conc_mode}{Most likely \emph{Cryptosporidium} concentration in
 #'   source water, in oocysts per litre.}
-#'   \item{source_conc_max}{Maximum Cryptosporidium concentration in source
+#'   \item{source_conc_max}{Maximum \emph{Cryptosporidium} concentration in source
 #'   water, in oocysts per litre.}
 #'   \item{treatment_lrv_min}{Minimum treatment performance, expressed as a
 #'   log10 reduction value.}
@@ -102,11 +99,11 @@
 #'   consumption group, in litres per person per day.}
 #'   \item{intrusion_prob}{Daily probability that an intrusion affects the
 #'   distribution zone.}
-#'   \item{intrusion_conc_min}{Minimum Cryptosporidium concentration at the tap
+#'   \item{intrusion_conc_min}{Minimum \emph{Cryptosporidium} concentration at the tap
 #'   conditional on an intrusion, in oocysts per litre.}
-#'   \item{intrusion_conc_max}{Maximum Cryptosporidium concentration at the tap
+#'   \item{intrusion_conc_max}{Maximum \emph{Cryptosporidium} concentration at the tap
 #'   conditional on an intrusion, in oocysts per litre.}
-#'   \item{dose_response_r}{Parameter of the exponential Cryptosporidium
+#'   \item{dose_response_r}{Parameter of the exponential \emph{Cryptosporidium}
 #'   dose-response model.}
 #'   \item{exposure_days}{Number of daily exposure events in the assessment
 #'   period.}
@@ -213,9 +210,8 @@
 #'   sample-design sensitivity analysis.}
 #' }
 #'
-#' @source Parameter ranges are illustrative and were created for teaching and
-#' software demonstration. They do not represent a fitted model for a specific
-#' water system.
+#' @source Parameter ranges are illustrative. They do not represent a fitted model
+#' for a specific water system.
 #' @seealso [water_data], [water_group_data], [water_data_keys],
 #'   [water_group_data_keys], [treatment_exp], [intrusion_exp], [eval_module()]
 #' @examples
@@ -229,12 +225,12 @@
 #'
 #' A quoted R expression representing the routine water-treatment pathway in
 #' the illustrative water-supply risk assessment. It calculates the treated
-#' Cryptosporidium concentration, ingested dose, individual infection
+#' \emph{Cryptosporidium} concentration, ingested dose, individual infection
 #' probability, and number of person-day exposure trials.
 #'
 #' @format A quoted R expression that creates the following model nodes:
 #' \describe{
-#'   \item{treated_conc}{Cryptosporidium concentration remaining after
+#'   \item{treated_conc}{\emph{Cryptosporidium} concentration remaining after
 #'   treatment.}
 #'   \item{treatment_dose}{Daily ingested dose from treated water.}
 #'   \item{p_inf_treatment}{Individual daily probability of infection through

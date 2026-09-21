@@ -345,8 +345,10 @@ generate_all_name <- function(mc_names, all_suffix = NULL) {
 #' @param summary Logical. If `TRUE`, include summary statistics. Default: `TRUE`.
 #' @param keep_variates Logical. If `TRUE`, preserve individual variate values.
 #'   Default: `FALSE`.
-#' @param agg_func Character, optional. Aggregation method: `"prob"` for combined
-#'   probability, `"sum"`, `"avg"`, or `NULL` for automatic selection.
+#' @param agg_func Character or function, optional. Aggregation method:
+#'   `"prob"` for combined probability, `"sum"` for the sum, or `"avg"` for
+#'   the mean. A custom function must accept a list of `mcnode` objects and
+#'   return one aggregated `mcnode`. If `NULL`, `"prob"` is used.
 #'   Default: `NULL`.
 #'
 #' @return An `mcmodule` object with a new aggregated node added.
@@ -377,12 +379,25 @@ agg_variates <- function(
     stop(sprintf("%s not found in %s", mc_name, module_name))
   }
 
-  if (
-    !(is.null(agg_func) ||
-      agg_func %in% c("prob", "avg", "sum"))
-  ) {
-    stop("Aggregation function must be prob, avg, sum or NULL")
+  # Validate aggregation function
+  valid_agg_func <- is.null(agg_func) ||
+    is.function(agg_func) ||
+    (
+      is.character(agg_func) &&
+        length(agg_func) == 1L &&
+        !is.na(agg_func) &&
+        agg_func %in% c("prob", "avg", "sum")
+    )
+
+  if (!valid_agg_func) {
+    stop(
+      paste(
+        "`agg_func` must be NULL, a function, or one of:",
+        "'prob', 'avg', or 'sum'."
+      )
+    )
   }
+
   if (is.null(agg_keys)) {
     agg_keys <- "scenario_id"
     message(sprintf(
@@ -390,10 +405,28 @@ agg_variates <- function(
     ))
   }
 
-  # Extract module name and node data
+  # Extract node data
   mcnode <- mcmodule$node_list[[mc_name]][["mcnode"]]
   key_col <- mc_keys(mcmodule, mc_name, agg_keys)
   data_name <- mcmodule$node_list[[mc_name]][["data_name"]]
+
+  # Warn about values that may not represent probabilities
+  if (
+    is.null(agg_func) &&
+    any(mcnode > 1, na.rm = TRUE)
+  ) {
+    warning(
+      sprintf(
+        paste0(
+          "`%s` contains values greater than 1. ",
+          "Default aggregation assumes values are independent probabilities ",
+          "between 0 and 1. Use agg_func argument to specify aggregation function."
+        ),
+        mc_name
+      ),
+      call. = FALSE
+    )
+  }
 
   # Generate name for aggregated node
   agg_mc_name <- if (is.null(name)) {
@@ -443,26 +476,26 @@ agg_variates <- function(
     # Process each group
     for (i in seq_along(key_levels)) {
       index <- key_col$key %in% key_levels[i]
+      group_variates <- variates_list[index]
 
-      if (!is.null(agg_func) && agg_func == "avg") {
-        # Calculate average value
-        total_lev <- Reduce("+", variates_list[index]) / sum(index)
-      } else if (
-        (is.null(agg_func) &&
-          grepl("_n$", mc_name)) ||
-          (!is.null(agg_func) && agg_func == "sum")
-      ) {
-        # Sum for counts
-        total_lev <- Reduce("+", variates_list[index])
+      if (is.function(agg_func)) {
+        total_lev <- agg_func(group_variates)
+      } else if (identical(agg_func, "avg")) {
+        total_lev <- Reduce("+", group_variates) / length(group_variates)
+      } else if (identical(agg_func, "sum")) {
+        total_lev <- Reduce("+", group_variates)
       } else {
-        # Combine probabilities
+        # NULL and "prob"
         total_lev <- 1 - Reduce("*", inv_variates_list[index])
       }
 
       # Aggregate results
       if (keep_variates) {
-        # One row per original variate
-        agg_index <- mc2d::mcdata(index, type = "0", nvariates = length(index))
+        agg_index <- mc2d::mcdata(
+          index,
+          type = "0",
+          nvariates = length(index)
+        )
 
         if (i != 1) {
           total_agg <- total_agg + agg_index * total_lev
@@ -470,7 +503,6 @@ agg_variates <- function(
           total_agg <- agg_index * total_lev
         }
       } else {
-        # One row per result
         if (i != 1) {
           total_agg <- mc2d::addvar(total_agg, total_lev)
         } else {
@@ -492,20 +524,30 @@ agg_variates <- function(
   }
 
   # Add description and node_expression
-  if (!is.null(agg_func) && agg_func == "avg") {
-    # Calculate average value
+  if (is.function(agg_func)) {
+    mcmodule$node_list[[agg_mc_name]][["description"]] <-
+      paste0(
+        "Custom aggregation by: ",
+        paste0(agg_keys, collapse = ", ")
+      )
+
+    mcmodule$node_list[[agg_mc_name]][["node_expression"]] <-
+      paste0(
+        "Custom aggregation of ",
+        mc_name,
+        " by: ",
+        paste0(agg_keys, collapse = ", ")
+      )
+  } else if (identical(agg_func, "avg")) {
     mcmodule$node_list[[agg_mc_name]][["description"]] <-
       paste0("Average value by: ", paste0(agg_keys, collapse = ", "))
+
     mcmodule$node_list[[agg_mc_name]][["node_expression"]] <-
       paste0("Average ", mc_name, " by: ", paste0(agg_keys, collapse = ", "))
-  } else if (
-    (is.null(agg_func) &&
-      grepl("_n$", mc_name)) ||
-      (!is.null(agg_func) && agg_func == "sum")
-  ) {
-    # Sum for counts
+  } else if (identical(agg_func, "sum")) {
     mcmodule$node_list[[agg_mc_name]][["description"]] <-
       paste0("Sum by: ", paste0(agg_keys, collapse = ", "))
+
     mcmodule$node_list[[agg_mc_name]][["node_expression"]] <-
       paste0(
         mc_name,
@@ -515,12 +557,12 @@ agg_variates <- function(
         paste0(agg_keys, collapse = ", ")
       )
   } else {
-    # Combine probabilities
     mcmodule$node_list[[agg_mc_name]][["description"]] <-
       paste0(
         "Combined probability assuming independence by: ",
         paste0(agg_keys, collapse = ", ")
       )
+
     mcmodule$node_list[[agg_mc_name]][["node_expression"]] <-
       paste0(
         "1-((1-",
