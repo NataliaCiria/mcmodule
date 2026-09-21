@@ -11,10 +11,10 @@
 #    system.
 #
 # The parameter values are intended for teaching and software demonstration.
-# They do not describe a particular water supply. Some values are broadly informed
-# by published drinking-water QMRA guidance. The populations, intrusion
-# probabilities, intrusion concentrations, and maintenance effect are
-# hypothetical.
+# They do not describe a particular water supply. Some values are broadly
+# informed by published drinking-water QMRA guidance. The populations,
+# intrusion probabilities, intrusion concentrations, and maintenance effect
+# are hypothetical.
 #
 # References:
 #
@@ -79,13 +79,74 @@ water_data <- data.frame(
 )
 
 
+# Consumption-group data
+#
+# This expanded dataset illustrates multiple-group multilevel trials. Each
+# zone-scenario row is divided into low-, medium-, and high-consumption groups.
+# Group populations sum to the original zone population. The population shares
+# and water-consumption values are hypothetical.
+consumption_groups <- data.frame(
+  consumption_group = c("Low", "Medium", "High"),
+  population_share = c(0.25, 0.50, 0.25),
+  water_volume = c(1.0, 1.5, 2.0),
+  stringsAsFactors = FALSE
+)
+
+water_row <- rep(
+  seq_len(nrow(water_data)),
+  each = nrow(consumption_groups)
+)
+
+group_row <- rep(
+  seq_len(nrow(consumption_groups)),
+  times = nrow(water_data)
+)
+
+water_group_data <- water_data[water_row, , drop = FALSE]
+
+water_group_data$consumption_group <-
+  consumption_groups$consumption_group[group_row]
+
+water_group_data$population <- as.integer(
+  water_group_data$population *
+    consumption_groups$population_share[group_row]
+)
+
+water_group_data$water_volume <-
+  consumption_groups$water_volume[group_row]
+
+# Place the consumption-group identifier beside the other variate keys
+water_group_data <- water_group_data[
+  c(
+    "zone",
+    "consumption_group",
+    "scenario_id",
+    setdiff(
+      names(water_group_data),
+      c("zone", "consumption_group", "scenario_id")
+    )
+  )
+]
+
+rownames(water_group_data) <- NULL
+
+
 # Data keys
 
-# zone and scenario_id jointly identify the four model variates.
+# zone and scenario_id jointly identify the four main model variates.
 water_data_keys <- list(
   water_data = list(
     cols = names(water_data),
     keys = c("zone", "scenario_id")
+  )
+)
+
+# zone, consumption_group, and scenario_id jointly identify the twelve
+# consumption-group variates.
+water_group_data_keys <- list(
+  water_group_data = list(
+    cols = names(water_group_data),
+    keys = c("zone", "consumption_group", "scenario_id")
   )
 )
 
@@ -166,13 +227,16 @@ treatment_exp <- quote({
 intrusion_exp <- quote({
   intrusion_dose <- intrusion_conc * water_volume
 
-  p_inf_given_intrusion <- 1 - exp(-dose_response_r * intrusion_dose)
+  p_inf_given_intrusion <-
+    1 - exp(-dose_response_r * intrusion_dose)
 })
 
 
 # Save package data
 usethis::use_data(water_data, overwrite = TRUE)
+usethis::use_data(water_group_data, overwrite = TRUE)
 usethis::use_data(water_data_keys, overwrite = TRUE)
+usethis::use_data(water_group_data_keys, overwrite = TRUE)
 usethis::use_data(water_mctable, overwrite = TRUE)
 usethis::use_data(treatment_exp, overwrite = TRUE)
 usethis::use_data(intrusion_exp, overwrite = TRUE)
