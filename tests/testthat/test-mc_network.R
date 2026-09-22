@@ -232,7 +232,7 @@ suppressMessages({
     # Verify the filtered node has the correct color
     node_colors <- network$x$nodes$color
     names(node_colors) <- network$x$nodes$id
-    expect_equal(unname(node_colors["p1_A"]), "#E8A5E5")
+    expect_equal(unname(node_colors["p1_A"]), "#D3D3D3")
   })
 
   test_that("mc_network works with mc_compare nodes", {
@@ -291,7 +291,7 @@ suppressMessages({
     # Verify the compared node has the correct color
     node_colors <- network$x$nodes$color
     names(node_colors) <- network$x$nodes$id
-    expect_equal(unname(node_colors["p1_diff"]), "#D88FD5")
+    expect_equal(unname(node_colors["p1_diff"]), "#707070")
   })
 
   test_that("mc_network works with chained filter and compare nodes", {

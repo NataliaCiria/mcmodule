@@ -370,16 +370,15 @@ visNetwork_edges <- function(mcmodule, inputs = FALSE) {
 #' The visualisation includes interactive features for exploring model structure
 #' and relationships.
 #'
-#' By default, nodes are colored as:
+#' By default, nodes are coloured as:
 #' \itemize{
-#'   \item \strong{inputs} (light blue, #B0DFF9): Input datasets, data frames, files, and columns
-#'   \item \strong{in_node} (blue, #6ABDEB): Input nodes and scalar values
-#'   \item \strong{out_node} (green, #A4CF96): Output nodes
-#'   \item \strong{filter} (light purple, #E8A5E5): Filtered nodes created with \code{mc_filter()}
-#'   \item \strong{compare} (medium purple, #D88FD5): Comparison nodes created with \code{mc_compare()}
-#'   \item \strong{trials_info} (light orange, #FAE4CB): Trial, subset, and related information nodes
-#'   \item \strong{total} (orange, #F39200): Total nodes created with \code{at_least_one()}
-#'   \item \strong{agg_total} (dark orange, #C17816): Aggregated total nodes created with \code{agg_variates()}
+#'   \item \strong{inputs} (light blue, #B0DFF9): Input datasets, data frames, files, and columns.
+#'   \item \strong{in_node} (blue, #6ABDEB): Input nodes and scalar values.
+#'   \item \strong{out_node} (green, #A4CF96): Output nodes.
+#'   \item \strong{filter} (light grey, #D3D3D3): Filtered nodes created with \code{mc_filter()}.
+#'   \item \strong{compare} (dark grey, #707070): Comparison nodes created with \code{mc_compare()}.
+#'   \item \strong{trials_info} (light orange, #FAE4CB): Trial, subset, and related information nodes used by \code{trial_totals()}, unless already classified as input or output nodes.#'   \item \strong{total} (orange, #F39200): Total nodes created with \code{at_least_one()} or \code{trial_totals()}.
+#'   \item \strong{agg_total} (dark orange, #C17816): Aggregated total nodes created with \code{agg_variates()}.
 #' }
 #'
 #' @param mcmodule (mcmodule object). Module containing network to visualise.
@@ -645,8 +644,8 @@ default_color_pal <- c(
   scalar = "#6ABDEB",
   in_node = "#6ABDEB",
   out_node = "#A4CF96",
-  filter = "#E8A5E5",
-  compare = "#D88FD5",
+  filter = "#D3D3D3",
+  compare = "#707070",
   trials_n = "#FAE4CB",
   subsets_n = "#FAE4CB",
   subsets_p = "#FAE4CB",
@@ -658,8 +657,8 @@ default_color_legend <- c(
   inputs = "#B0DFF9",
   in_node = "#6ABDEB",
   out_node = "#A4CF96",
-  filter = "#E8A5E5",
-  compare = "#D88FD5",
+  filter = "#D3D3D3",
+  compare = "#707070",
   trials_info = "#FAE4CB",
   total = "#F39200",
   agg_total = "#C17816"
