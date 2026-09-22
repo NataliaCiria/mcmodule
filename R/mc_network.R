@@ -670,14 +670,14 @@ default_legend_labels <- c(
   input_data = "Input data frame",
   input_file = "Input file",
   inputs_col = "Input column",
-  scalar = "Scalar input",
-  in_node = "Input / parameter nodes",
-  out_node = "Calculated nodes",
-  filter = "Filtered nodes",
-  compare = "Comparison nodes",
-  trials_info = "Trial / subset information",
-  total = "Total nodes",
-  agg_total = "Aggregated total nodes"
+  scalar = "Scalar",
+  in_node = "Input",
+  out_node = "Calculated",
+  filter = "Filtered",
+  compare = "Comparison",
+  trials_info = "Trials info",
+  total = "Total",
+  agg_total = "Aggregated"
 )
 
 default_legend_descriptions <- c(

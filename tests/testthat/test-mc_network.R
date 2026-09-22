@@ -42,14 +42,14 @@ suppressMessages({
     )
     expect_equal(
       imports_network_3$x$legend$nodes$label,
-      c("Data inputs", "Input / parameter nodes", "Calculated nodes")
+      c("Data inputs", "Input", "Calculated")
     )
 
     # With legend + without mcnode inputs
     imports_network_4 <- mc_network(imports_mcmodule, legend = TRUE)
     expect_equal(
       imports_network_4$x$legend$nodes$label,
-      c("Input / parameter nodes", "Calculated nodes")
+      c("Input", "Calculated")
     )
 
     # With custom colour_by + legend + without mcnode inputs
@@ -79,7 +79,7 @@ suppressMessages({
     )
     expect_equal(
       imports_network_7$x$legend$nodes$label,
-      c("Input / parameter nodes", "Calculated nodes")
+      c("Input", "Calculated")
     )
 
     # With custom palette + with mcnode inputs
@@ -111,11 +111,11 @@ suppressMessages({
     expect_equal(
       imports_network_9$x$legend$nodes$label,
       c(
-        "Input / parameter nodes",
+        "Input",
         "Input data frame",
         "Input dataset",
         "Input column",
-        "Calculated nodes"
+        "Calculated"
       )
     )
   })
