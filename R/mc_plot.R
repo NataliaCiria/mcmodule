@@ -983,6 +983,10 @@ mcmodule_tornado <- function(
       panel.grid.minor = ggplot2::element_blank(),
       axis.text.y = ggplot2::element_text(size = 10),
       legend.position = if (use_strength_colour) "right" else "none"
+    )+
+    ggplot2::scale_x_continuous(
+      limits = c(-1, 1),
+      breaks = seq(-1, 1, by = 0.25)
     )
 
   p
