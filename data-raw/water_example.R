@@ -200,7 +200,7 @@ water_mctable <- data.frame(
     "min = 0.0002, max = 0.005",
     "min = 0.01, max = 0.05",
     "c(0.018, 0.018)",
-    NA,
+    "c(500, 1500)",
     "c(30, 30)"
   ),
   stringsAsFactors = FALSE

@@ -509,6 +509,68 @@ suppressMessages({
     expect_true(result$node_list$no_detect_subset_n$from_sample_design)
   })
 
+  test_that(
+    "trial_totals flags set totals from the global sample design when subsets_p is NULL",
+    {
+      X <- data.frame(
+        p_input = c(0.1, 0.2, 0.3),
+        n_input = c(1, 2, 3),
+        p_other_input = c(0.2, 0.3, 0.4)
+      )
+
+      run_test <- function() {
+        previous_design <- set_sample_design()
+        on.exit({
+          if (is.null(previous_design)) {
+            reset_sample_design()
+          } else {
+            set_sample_design(previous_design)
+          }
+        }, add = TRUE)
+
+        set_sample_design(X)
+
+        module <- eval_module(
+          exp = list(
+            example = quote({
+              p_event <- p_input
+              n_trials <- n_input
+              p_other <- p_other_input
+            })
+          ),
+          data = NULL,
+          mctable = NULL
+        )
+
+        totals <- trial_totals(
+          mcmodule = module,
+          mc_names = "p_event",
+          trials_n = "n_trials",
+          subsets_p = NULL,
+          mctable = NULL,
+          summary = FALSE
+        )
+
+        expect_true(
+          isTRUE(totals$node_list$p_event_set$from_sample_design)
+        )
+
+        combined <- NULL
+        expect_no_error({
+          combined <- at_least_one(
+            mcmodule = totals,
+            mc_names = c("p_event_set", "p_other"),
+            name = "p_any",
+            summary = FALSE
+          )
+        })
+        expect_true(isTRUE(combined$node_list$p_any$from_sample_design))
+      }
+
+      run_test()
+    }
+  )
+
   test_that("at_least_one naming options work", {
     # Setup module
     module <- list(

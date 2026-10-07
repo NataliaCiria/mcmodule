@@ -1390,21 +1390,23 @@ trial_totals <- function(
       total_type = total_type
     )
 
+    params_for_flag <- setdiff(params, "1")
+
     if (
-      all(params %in% names(node_list)) &&
+      length(params_for_flag) > 0 &&
+      all(params_for_flag %in% names(node_list)) &&
       !is.null(sample_design) &&
-      all(sapply(params, function(x) {
-        isTRUE(node_list[[x]][["from_sample_design"]]) ||
-          isTRUE(node_list[[x]][["type"]] == "scalar") ||
-          isTRUE(node_list[[x]][["created_in_exp"]])
-      }))
+      all(vapply(
+        params_for_flag,
+        function(x) {
+          isTRUE(node_list[[x]][["from_sample_design"]]) ||
+            isTRUE(node_list[[x]][["type"]] == "scalar") ||
+            isTRUE(node_list[[x]][["created_in_exp"]])
+        },
+        logical(1)
+      ))
     ) {
       node_list[[name]][["from_sample_design"]] <- TRUE
-    }
-
-    if (!is.null(agg_keys)) {
-      node_list[[name]]$agg_keys <- agg_keys
-      node_list[[name]]$keep_variates <- keep_variates
     }
 
     node_list
