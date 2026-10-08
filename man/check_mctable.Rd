@@ -23,6 +23,7 @@ with \code{NA}.
 \details{
 If \code{mc_func} is missing, all nodes are treated as deterministic (no uncertainty).
 Optional columns are auto-filled with \code{NA} if absent. When \code{sample_space}
-values are provided, they must use supported formats (\code{c(...)} or named
-assignments such as \verb{min = X, max = Y}).
+values are provided, they must use supported formats (\code{c(...)}, named
+assignments such as \verb{min = X, max = Y}, or a single numeric value such as
+\code{1}).
 }

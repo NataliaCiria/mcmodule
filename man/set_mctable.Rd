@@ -32,7 +32,8 @@ mctable columns are interpreted as follows:
 \code{mcnode}.
 \item \code{sample_space}: Sampling definition used by \code{\link[=mctable_bounds]{mctable_bounds()}} and \code{\link[=mctable_sobol_matrices]{mctable_sobol_matrices()}}.
 Supported formats include \code{c(...)} and named bounds such as
-\verb{min = X, max = Y}.
+\verb{min = X, max = Y}. A single numeric value (e.g. \code{1}, \code{c(1)} or
+\code{value = 1}) defines a constant input (\code{min = max}).
 \item \code{transformation}: R expression applied using \code{value} as placeholder
 before node creation.
 \item \code{sensi_variation}: OAT variation expression using \code{value} placeholder

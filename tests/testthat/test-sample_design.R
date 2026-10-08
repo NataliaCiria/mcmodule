@@ -500,6 +500,7 @@ suppressMessages({
     )
   })
 
+  # ---- normalise_mc_func() / qsample_space() ----
 
   test_that("normalise_mc_func strips namespaces and handles missing values", {
     expect_equal(normalise_mc_func("rpert"), "rpert")
@@ -576,6 +577,7 @@ suppressMessages({
     )
   })
 
+  # ---- Probing (sample_from_space) ----
 
   test_that("sample_from_space is deterministic and does not consume the random stream", {
     set.seed(1)
@@ -672,6 +674,7 @@ suppressMessages({
     expect_equal(transform_sample_values(c(1, 2), "value * 10"), c(10, 20))
   })
 
+  # ---- fixed_value_for_node() ----
 
   test_that("fixed_value_for_node computes fixed values from bounds and transformation", {
     mctable <- data.frame(
@@ -697,6 +700,7 @@ suppressMessages({
     )
   })
 
+  # ---- mctable_sobol_matrices(): transformation, drop_constant, mc_func ----
 
   test_that("mctable_sobol_matrices applies transformations by default", {
     skip_if_not_installed("sensobol")
@@ -812,6 +816,7 @@ suppressMessages({
     expect_true(all(X[, "test_origin"] >= 0 & X[, "test_origin"] <= 1))
   })
 
+  # ---- eval_module(): fixed values on the transformed scale ----
 
   test_that("eval_module applies mctable transformation to fixed values of non-sampled inputs", {
     sample_design <- data.frame(a = c(0, 1), stringsAsFactors = FALSE)
@@ -867,6 +872,97 @@ suppressMessages({
     expect_equal(
       as.numeric(m$node_list$out$mcnode),
       as.numeric(X[, "a"]) + 5
+    )
+  })
+
+  test_that("parse_sample_space_bounds treats a single numeric value as min = max", {
+    for (ss in c("1", "c(1)", "c('1')", 'c("1")', "value = 1")) {
+      expect_equal(parse_sample_space_bounds(ss), c(min = 1, max = 1), info = ss)
+    }
+    expect_equal(parse_sample_space_bounds("0.25"), c(min = 0.25, max = 0.25))
+    expect_equal(parse_sample_space_bounds("-1e-3"), c(min = -1e-3, max = -1e-3))
+
+    # Non-numeric single values stay categorical (no bounds)
+    expect_null(parse_sample_space_bounds("c('always')"))
+    expect_null(parse_sample_space_bounds("value = always"))
+
+    # Single distribution parameters are not constants (only "value = X")
+    expect_null(parse_sample_space_bounds("mean = 0"))
+
+    # Existing formats are unchanged
+    expect_equal(parse_sample_space_bounds("c(0, 1)"), c(min = 0, max = 1))
+    expect_equal(
+      parse_sample_space_bounds("min = 0, max = 1"),
+      c(min = 0, max = 1)
+    )
+    expect_error(parse_sample_space("always"), "Unsupported sample_space format")
+  })
+
+  test_that("mctable_bounds handles single-value sample_space as constant inputs", {
+    mctable <- data.frame(
+      mcnode = c("a", "k1", "k2", "k3", "k4"),
+      mc_func = c(NA, NA, "runif", NA, NA),
+      sample_space = c("min = 0, max = 1", "1", "c(1)", "c('1')", "value = 1"),
+      stringsAsFactors = FALSE
+    )
+
+    b <- mctable_bounds(mctable, drop_constant = FALSE)
+    expect_equal(b$factors, mctable$mcnode)
+    expect_equal(b$binf, c(0, 1, 1, 1, 1))
+    expect_equal(b$bsup, c(1, 1, 1, 1, 1))
+
+    expect_message(
+      b2 <- mctable_bounds(mctable, if_not_sampled = "median"),
+      "Dropped 4 input\\(s\\) with no variation"
+    )
+    expect_equal(b2$factors, "a")
+    expect_equal(b2$dropped, c("k1", "k2", "k3", "k4"))
+    expect_equal(unname(b2$fixed[c("k1", "k2", "k3", "k4")]), rep(1, 4))
+  })
+
+  test_that("mctable_sobol_matrices drops single-value inputs and eval_module recreates them", {
+    skip_if_not_installed("sensobol")
+
+    mctable <- data.frame(
+      mcnode = c("a", "k1", "k2", "k3", "k4"),
+      mc_func = c(NA, NA, "runif", NA, NA),
+      sample_space = c("min = 0, max = 1", "1", "c(1)", "c('1')", "value = 1"),
+      stringsAsFactors = FALSE
+    )
+
+    X <- suppressMessages(mctable_sobol_matrices(mctable, N = 8))
+    expect_equal(colnames(X), "a")
+    expect_equal(attr(X, "dropped"), c("k1", "k2", "k3", "k4"))
+
+    m <- eval_module(
+      exp = list(single_exp = quote({
+        out <- a + k1 + k2 + k3 + k4
+      })),
+      data = NULL,
+      mctable = mctable,
+      sample_design = X
+    )
+
+    for (k in c("k1", "k2", "k3", "k4")) {
+      expect_true(isTRUE(m$node_list[[k]]$from_sample_design_fixed), info = k)
+      expect_equal(as.numeric(m$node_list[[k]]$mcnode), rep(1, nrow(X)), info = k)
+    }
+    expect_equal(as.numeric(m$node_list$out$mcnode), as.numeric(X[, "a"]) + 4)
+  })
+
+  test_that("check_mctable accepts a single numeric sample_space value", {
+    mctable <- data.frame(
+      mcnode = c("k1", "k2"),
+      mc_func = NA,
+      sample_space = c("1", " 0.5 "),
+      stringsAsFactors = FALSE
+    )
+    expect_no_error(suppressWarnings(check_mctable(mctable)))
+
+    mctable$sample_space[2] <- "always"
+    expect_error(
+      suppressWarnings(check_mctable(mctable)),
+      "Invalid sample_space format at row\\(s\\): 2"
     )
   })
 })

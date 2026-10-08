@@ -11,12 +11,14 @@ mctable_sobol_matrices(
   order = c("first", "second", "third", "fourth"),
   type = c("QRN", "LHS", "R"),
   mc_names = NULL,
+  transformation = TRUE,
+  drop_constant = TRUE,
   ...
 )
 }
 \arguments{
 \item{mctable}{(data frame). Table containing at least \code{mcnode} and
-\code{sample_space}; may also contain \code{mc_func} / \code{func}.}
+\code{sample_space}; may also contain \code{mc_func} / \code{func} and \code{transformation}.}
 
 \item{N}{(integer). Base sample size (see \code{\link[sensobol:sobol_matrices]{sensobol::sobol_matrices()}}).}
 
@@ -32,14 +34,24 @@ In sensobol 1.1.6, options include \code{"QRN"} (default), \code{"LHS"}, and \co
 \item{mc_names}{(character vector, optional). Node names to include. If
 \code{NULL}, all nodes in \code{mctable$mcnode} are used.}
 
+\item{transformation}{(logical). Whether to apply \code{mctable$transformation}
+rules after mapping, so values are on the same scale as the bounds
+returned by \code{\link[=mctable_bounds]{mctable_bounds()}}. Required for categorical \code{sample_space}.
+Default: \code{TRUE}.}
+
+\item{drop_constant}{(logical). If \code{TRUE}, exclude nodes that take a single
+value before building the matrices. Dropped node names are stored in
+\code{attr(X, "dropped")}. Default: \code{TRUE}.}
+
 \item{...}{Additional arguments passed to \code{\link[sensobol:sobol_matrices]{sensobol::sobol_matrices()}} (and
 potentially to \code{randtoolbox::sobol()} when \code{type = "QRN"}).}
 }
 \value{
-A numeric matrix where each column is a model input distributed in
-(0, 1) \strong{after mapping to the distributions defined in the \code{mctable}},
-and each row is a sampling point. The matrix has the same layout/row
-binding as \code{\link[sensobol:sobol_matrices]{sensobol::sobol_matrices()}}.
+A numeric matrix where each column is a model input \strong{after mapping
+to the distributions defined in the \code{mctable}} (and transformation, if
+applied), and each row is a sampling point. The matrix has the same
+layout/row binding as \code{\link[sensobol:sobol_matrices]{sensobol::sobol_matrices()}}. Attribute \code{"dropped"}
+contains the names of nodes removed by \code{drop_constant}.
 }
 \description{
 Create Sobol sampling matrices using \code{\link[sensobol:sobol_matrices]{sensobol::sobol_matrices()}} and an
@@ -50,5 +62,11 @@ and then maps them to the target distributions defined in \code{mctable$mc_func}
 \details{
 If the distribution function is missing but numeric bounds are available in
 \code{sample_space} (e.g. \verb{min = 0, max = 1} or \code{c(0, 1)}), the function assumes a
-uniform distribution (\code{stats::runif}).
+uniform distribution (\code{stats::runif}). Supported distribution functions are
+\code{runif}, \code{rnorm} (\code{mean}, \code{sd}) and \code{rpert} (\code{min}, \code{mode}, \code{max}, optional
+\code{shape}), also when namespace-qualified (e.g. \code{mc2d::rpert}). Categorical
+\code{sample_space} vectors (e.g. \code{c('always', 'sometimes', 'never')}) are
+supported when a numeric \code{transformation} is provided. A single numeric
+value (e.g. \code{1}, \code{c(1)}, \code{c('1')} or \code{value = 1}) defines a constant input
+(\code{min = max}), which is dropped when \code{drop_constant = TRUE}.
 }

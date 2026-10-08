@@ -53,6 +53,8 @@
 
 * `agg_variates()` now keeps `from_sample_design_fixed` when aggregating sample-design nodes, and `trial_totals()` sets it to `FALSE` for inputs taken from `sample_design`, consistent with `eval_module()`.
 
+* `sample_space` now accepts a single numeric value (e.g. `"1"`, `"c(1)"`, `"c('1')"` or `"value = 1"`) as a constant input, equivalent to `"min = 1, max = 1"`, and `check_mctable()` accepts bare numeric values.
+
 * `eval_module()` no longer fails when a multi-line quoted expression is passed directly to `exp`. The expression is named `"exp"` and the existing warning recommends naming it explicitly.
 
 

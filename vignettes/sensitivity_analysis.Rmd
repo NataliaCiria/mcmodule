@@ -154,6 +154,7 @@ imports_mctable[,c("mcnode","mc_func", "transformation", "sample_space")]
 -   Bounds, such as `"min = 0.02, max = 0.7"` or `"c(0.02, 0.7)"`, are sampled uniformly. This is also used for `rnorm` or `rpert` inputs whose `sample_space` only gives `min` and `max` (for example `animals_n`).
 -   `rnorm` inputs can use `"mean = 100, sd = 10"`, and `rpert` inputs can use `"min = 0.8, mode = 0.875, max = 0.91"` (with an optional `shape`). Namespaced functions, such as `mc2d::rpert`, are also recognised.
 -   Categorical values, such as `"c('always', 'sometimes', 'never')"`, are sampled by index and must be mapped to numbers with `transformation`.
+-   A single numeric value, such as `"1"`, `"c(1)"` or `"value = 1"`, defines a constant input (equivalent to `"min = 1, max = 1"`).
 
 By default (`transformation = TRUE`), bounds and Sobol matrices are computed on the model scale, after applying `transformation`. If a transformation returns only `NA` for the sample space values, it is skipped with a message and `sample_space` is assumed to be on the model scale already. This is the case for `test_origin`, whose transformation maps categorical values but whose `sample_space` is numeric (`"min = 0, max = 1"`). Transformed ranges are probed on an evenly spaced grid (`n_probe` points), so results are reproducible and do not use the random number stream.
 

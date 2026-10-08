@@ -77,6 +77,7 @@ reset_sample_design <- function() {
 # Supported formats:
 # - "c(...)"            (vector; numeric length-2 is treated as bounds)
 # - "key = val, ..."    (named list; numeric values parsed where possible)
+# - "1"                 (bare single numeric value; returned as a vector)
 #
 # Returns a list with:
 # - kind: "vector" | "named"
@@ -110,6 +111,12 @@ parse_sample_space <- function(ss) {
     return(list(kind = "named", values = vals))
   }
 
+  # Bare single numeric value, e.g. "1" or "0.5"
+  num <- suppressWarnings(as.numeric(ss))
+  if (!is.na(num)) {
+    return(list(kind = "vector", values = num))
+  }
+
   stop("Unsupported sample_space format")
 }
 
@@ -122,16 +129,34 @@ parse_sample_space_bounds <- function(ss) {
   }
 
   parsed <- parse_sample_space(ss)
+  vals <- parsed$values
 
   if (identical(parsed$kind, "vector")) {
-    vals <- parsed$values
+    # Single value, e.g. "1", "c(1)" or "c('1')": constant (min = max)
+    if (length(vals) == 1) {
+      num <- suppressWarnings(as.numeric(vals))
+      if (!is.na(num)) {
+        return(c(min = num, max = num))
+      }
+    }
     if (is.numeric(vals) && length(vals) == 2) {
       return(c(min = vals[1], max = vals[2]))
     }
     return(NULL)
   }
 
-  vals <- parsed$values
+  # Single named numeric value, e.g. "value = 1": constant (min = max).
+  # Only the key "value", so incomplete distribution parameters such as
+  # "mean = 0" are not read as constants.
+  if (
+    length(vals) == 1 &&
+      identical(names(vals), "value") &&
+      is.numeric(vals[[1]])
+  ) {
+    v <- as.numeric(vals[[1]])
+    return(c(min = v, max = v))
+  }
+
   if (
     all(c("min", "max") %in% names(vals)) &&
       all(vapply(vals[c("min", "max")], is.numeric, logical(1)))
@@ -184,7 +209,8 @@ normalise_mc_func <- function(mc_func) {
 # - mc_func "rpert" with "min = X, mode = Y, max = Z" (optional shape)
 # - numeric bounds ("min = X, max = Y" or "c(min, max)"): uniform. Also used
 #   as fallback when rnorm/rpert parameters are incomplete.
-# - a single numeric value (e.g. "value = 5"): constant
+# - a single numeric value (e.g. "5", "c(5)" or "value = 5"): constant,
+#   handled as bounds with min = max
 # - categorical values (no mc_func): u is mapped to an index
 qsample_space <- function(u, ss, mc_func = NA, node_name = "") {
   func <- normalise_mc_func(mc_func)
@@ -443,7 +469,9 @@ split_mctable_for_sampling <- function(mctable, mc_names = NULL) {
 #'
 #' @param mctable (data frame). Table containing at least `mcnode` and
 #' `sample_space`; may also contain `transformation` and `mc_func` (used to
-#' probe transformations). Default: [set_mctable()].
+#' probe transformations). `sample_space` bounds can be given as
+#' `min = X, max = Y` or `c(X, Y)`; a single numeric value (e.g. `1`, `c(1)`
+#' or `value = 1`) is treated as `min = max`. Default: [set_mctable()].
 #' @param mc_names (character vector, optional). Node names to include. If
 #' `NULL`, all nodes in `mctable$mcnode` are used.
 #' @param if_not_sampled (character). How to handle nodes not listed in
@@ -618,7 +646,9 @@ mctable_bounds <- function(
 #' `runif`, `rnorm` (`mean`, `sd`) and `rpert` (`min`, `mode`, `max`, optional
 #' `shape`), also when namespace-qualified (e.g. `mc2d::rpert`). Categorical
 #' `sample_space` vectors (e.g. `c('always', 'sometimes', 'never')`) are
-#' supported when a numeric `transformation` is provided.
+#' supported when a numeric `transformation` is provided. A single numeric
+#' value (e.g. `1`, `c(1)`, `c('1')` or `value = 1`) defines a constant input
+#' (`min = max`), which is dropped when `drop_constant = TRUE`.
 #'
 #' @param mctable (data frame). Table containing at least `mcnode` and
 #'   `sample_space`; may also contain `mc_func` / `func` and `transformation`.
