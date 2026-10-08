@@ -678,11 +678,11 @@ suppressMessages({
         sample_design = sample_design,
         summary = FALSE
       ),
-      "sample_space has no numeric bounds"
+      "has no numeric bounds"
     )
   })
 
-  test_that("trial_totals works end-to-end with inputs dropped by mctable_bounds(drop_constant = TRUE)", {
+  test_that("trial_totals works end-to-end with inputs dropped by mctable_bounds() (drop_constant = TRUE by default)", {
     mctable <- data.frame(
       mcnode = c("p_input", "n_trials"),
       mc_func = NA,
@@ -690,7 +690,7 @@ suppressMessages({
       stringsAsFactors = FALSE
     )
 
-    b <- suppressMessages(mctable_bounds(mctable, drop_constant = TRUE))
+    b <- suppressMessages(mctable_bounds(mctable))
     expect_equal(b$factors, "p_input")
     expect_equal(b$dropped, "n_trials")
 
@@ -1645,4 +1645,129 @@ suppressMessages({
     )
   })
 
+
+  test_that("trial_totals if_not_sampled controls fixed fallback values", {
+    sample_design <- data.frame(p_input = c(0.1, 0.2, 0.3))
+    mctable <- data.frame(
+      mcnode = c("p_input", "n_trials"),
+      mc_func = NA,
+      sample_space = c("min = 0, max = 1", "min = 10, max = 20"),
+      stringsAsFactors = FALSE
+    )
+
+    module <- eval_module(
+      exp = list(example = quote({
+        p_event <- p_input
+      })),
+      data = NULL,
+      mctable = mctable,
+      sample_design = sample_design
+    )
+
+    expect_message(
+      totals <- trial_totals(
+        mcmodule = module,
+        mc_names = "p_event",
+        trials_n = "n_trials",
+        mctable = mctable,
+        sample_design = sample_design,
+        summary = FALSE,
+        if_not_sampled = "max"
+      ),
+      "using fixed value 20 \\(max of sample_space\\)"
+    )
+
+    expect_equal(as.numeric(totals$node_list$n_trials$mcnode), rep(20, 3))
+
+    expect_error(
+      trial_totals(
+        mcmodule = module,
+        mc_names = "p_event",
+        trials_n = "n_trials",
+        mctable = mctable,
+        sample_design = sample_design,
+        summary = FALSE,
+        if_not_sampled = "exclude"
+      ),
+      "should be one of"
+    )
+  })
+
+  test_that("trial_totals sets from_sample_design_fixed = FALSE for sampled inputs", {
+    sample_design <- data.frame(
+      p_input = c(0.1, 0.2, 0.3),
+      n_trials = c(10, 20, 30)
+    )
+    mctable <- data.frame(
+      mcnode = c("p_input", "n_trials"),
+      mc_func = NA,
+      sample_space = c("min = 0, max = 1", "min = 10, max = 30"),
+      stringsAsFactors = FALSE
+    )
+
+    module <- eval_module(
+      exp = list(example = quote({
+        p_event <- p_input
+      })),
+      data = NULL,
+      mctable = mctable,
+      sample_design = sample_design
+    )
+
+    totals <- trial_totals(
+      mcmodule = module,
+      mc_names = "p_event",
+      trials_n = "n_trials",
+      mctable = mctable,
+      sample_design = sample_design,
+      summary = FALSE
+    )
+
+    n_node <- totals$node_list$n_trials
+    expect_true(isTRUE(n_node$from_sample_design))
+    expect_identical(n_node$from_sample_design_fixed, FALSE)
+    expect_equal(as.numeric(n_node$mcnode), c(10, 20, 30))
+  })
+
+  test_that("agg_variates keeps from_sample_design_fixed for sample-design nodes", {
+    sample_design <- data.frame(input_a = c(0.1, 0.2, 0.3))
+    sample_data <- data.frame(
+      category = c("A", "B"),
+      input_a = c(0.1, 0.2)
+    )
+    mctable <- data.frame(
+      mcnode = c("input_a", "input_b"),
+      mc_func = NA,
+      sample_space = c("min = 0, max = 1", "min = 0.4, max = 0.6"),
+      stringsAsFactors = FALSE
+    )
+
+    sample_module <- eval_module(
+      exp = list(
+        sample_exp = quote({
+          result_a <- input_a * input_b
+        })
+      ),
+      data = sample_data,
+      mctable = mctable,
+      sample_design = sample_design
+    )
+
+    expect_true(isTRUE(sample_module$node_list$input_b$from_sample_design_fixed))
+
+    result <- agg_variates(
+      sample_module,
+      mc_name = "input_b",
+      agg_keys = "category"
+    )
+    expect_true(isTRUE(result$node_list$input_b_agg$from_sample_design))
+    expect_true(isTRUE(result$node_list$input_b_agg$from_sample_design_fixed))
+
+    result_a <- agg_variates(
+      sample_module,
+      mc_name = "input_a",
+      agg_keys = "category"
+    )
+    expect_identical(result_a$node_list$input_a_agg$from_sample_design_fixed, FALSE)
+  })
 })

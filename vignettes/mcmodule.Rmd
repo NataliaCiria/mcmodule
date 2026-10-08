@@ -304,7 +304,7 @@ With values and keys established, we still need some information to build our st
 
 -   from_variable: Column name, if it comes from a column with a name different to the mcnode
 
--   sample_space: Sampling domain used by `sample_design()` (for example `c(0, 1)` or `min = 0, max = 1`)
+-   sample_space: Sample space used for sample design-based sensitivity analysis. It can be bounds (for example `c(0, 1)` or `min = 0, max = 1`), distribution parameters matching `mc_func` (`mean = 100, sd = 10` for `rnorm`, `min = 0.8, mode = 0.875, max = 0.91` for `rpert`) or categorical values mapped with `transformation` (for example `c('always', 'never')`).
 
 -   transformation: Transformation to be applied to the original column values
 
@@ -782,6 +782,8 @@ sobol_sa <- sensobol::sobol_indices(Y = y, N = N, params = colnames(X))
 print(sobol_sa)
 plot(sobol_sa)
 ```
+
+`mctable_sobol_matrices()` maps each input through the distribution defined by `sample_space` and `mc_func`. Inputs with no variation are dropped (listed in `attr(X, "dropped")`) and created as fixed nodes by `eval_module()` and `trial_totals()`.
 
 The first-order index (`Si`) quantifies each input's direct contribution to output variance, while the total-order index (`Ti`) captures total contribution including interactions. Inputs with large `Si` values are important drivers of output uncertainty and should be prioritized for data collection and uncertainty reduction.
 

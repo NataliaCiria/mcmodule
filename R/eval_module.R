@@ -408,6 +408,11 @@ eval_module <- function(
     #   explicitly naming expressions in that case.
     expr_sub <- substitute(exp)
     exp_name <- deparse(expr_sub)
+    # Multi-line inline expressions deparse to several strings; use a
+    # generic name so names(exp_list) has length one.
+    if (length(exp_name) != 1) {
+      exp_name <- "exp"
+    }
     if (is.call(expr_sub) || is.expression(expr_sub)) {
       warning(
         "You passed a quoted expression directly to `exp`. Consider naming expressions explicitly, e.g. eval_module(exp = list(my_name = quote({...})))."
@@ -516,25 +521,13 @@ eval_module <- function(
       not_sampled_nodes_i <- setdiff(in_nodes_i, colnames(sample_design_data))
       if (length(not_sampled_nodes_i) > 0) {
         for (mc_name_fix in not_sampled_nodes_i) {
-          row_idx_fix <- which(mctable$mcnode == mc_name_fix)
-          if (length(row_idx_fix) == 0) {
-            stop(sprintf(
-              "Input '%s' is missing from sample_design and not found in mctable",
-              mc_name_fix
-            ))
-          }
-          row_idx_fix <- row_idx_fix[[1]]
-
-          ss_fix <- as.character(mctable$sample_space[row_idx_fix])
-          bounds_fix <- parse_sample_space_bounds(ss_fix)
-          if (is.null(bounds_fix)) {
-            stop(sprintf(
-              "Input '%s' is missing from sample_design and has no numeric bounds in mctable$sample_space",
-              mc_name_fix
-            ))
-          }
-
-          fixed_val <- fixed_from_bounds(bounds_fix, if_not_sampled)
+          # Fixed value from mctable sample_space bounds, on the transformed
+          # scale (consistent with mctable_bounds() and trial_totals())
+          fixed_val <- fixed_value_for_node(
+            mctable,
+            mc_name_fix,
+            if_not_sampled = if_not_sampled
+          )
           sample_design_data[[mc_name_fix]] <- rep(
             fixed_val,
             nrow(sample_design_data)
@@ -571,25 +564,13 @@ eval_module <- function(
 
       if (length(missing_prev) > 0) {
         for (mc_name_fix in missing_prev) {
-          row_idx_fix <- which(mctable$mcnode == mc_name_fix)
-          if (length(row_idx_fix) == 0) {
-            stop(sprintf(
-              "Input '%s' is missing from sample_design and not found in mctable",
-              mc_name_fix
-            ))
-          }
-          row_idx_fix <- row_idx_fix[[1]]
-
-          ss_fix <- as.character(mctable$sample_space[row_idx_fix])
-          bounds_fix <- parse_sample_space_bounds(ss_fix)
-          if (is.null(bounds_fix)) {
-            stop(sprintf(
-              "Input '%s' is missing from sample_design and has no numeric bounds in mctable$sample_space",
-              mc_name_fix
-            ))
-          }
-
-          fixed_val <- fixed_from_bounds(bounds_fix, if_not_sampled)
+          # Fixed value from mctable sample_space bounds, on the transformed
+          # scale (consistent with mctable_bounds() and trial_totals())
+          fixed_val <- fixed_value_for_node(
+            mctable,
+            mc_name_fix,
+            if_not_sampled = if_not_sampled
+          )
           sample_design_data[[mc_name_fix]] <- rep(
             fixed_val,
             nrow(sample_design_data)

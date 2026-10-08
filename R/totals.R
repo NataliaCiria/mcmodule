@@ -487,6 +487,8 @@ agg_variates <- function(
     # Return original node with new type and summary
     total_agg <- mcnode
     mcmodule$node_list[[agg_mc_name]][["from_sample_design"]] <- TRUE
+    mcmodule$node_list[[agg_mc_name]][["from_sample_design_fixed"]] <-
+      isTRUE(mcmodule$node_list[[mc_name]][["from_sample_design_fixed"]])
   } else {
     # Extract variates
     variates_list <- list()
@@ -715,6 +717,11 @@ agg_totals <- function(
 #' @param summary (logical). If TRUE, include summary statistics. Default: TRUE.
 #' @param data_name (character, optional). Data name used to create trials_n,
 #'   subsets_n and subsets_p nodes if they don't exist in mcmodule. Default: NULL.
+#' @param if_not_sampled (character). How to compute the fixed value of
+#'   trials_n, subsets_n or subsets_p nodes that are defined in `mctable` but
+#'   missing from both `sample_design` and module data: `"median"` (default),
+#'   `"mean"`, `"max"`, or `"min"` of their `sample_space` bounds (as in
+#'   [eval_module()]).
 #'
 #' @return Updated mcmodule object containing combined node probabilities and
 #'   probabilities/counts at trial, subset, and set levels.
@@ -758,9 +765,11 @@ trial_totals <- function(
     agg_suffix = NULL,
     keep_variates = FALSE,
     summary = TRUE,
-    data_name = NULL
+    data_name = NULL,
+    if_not_sampled = c("median", "mean", "max", "min")
 ) {
   module_name <- deparse(substitute(mcmodule))
+  if_not_sampled <- match.arg(if_not_sampled)
 
   if (length(mc_names) == 0) {
     stop("mc_names must contain at least one node name")
@@ -1116,33 +1125,12 @@ trial_totals <- function(
 
         } else {
           # No module data and node not in sample_design (e.g. dropped as
-          # constant): fix it at the median of its sample_space bounds and
-          # replicate across the design rows.
-          ss_i <- if ("sample_space" %in% names(mc_row)) {
-            mc_row$sample_space[[1]]
-          } else {
-            NA
-          }
-          bounds_i <- parse_sample_space_bounds(ss_i)
-
-          if (is.null(bounds_i)) {
-            stop(sprintf(
-              paste0(
-                "data is NULL, '%s' is not present in sample_design, ",
-                "and its sample_space has no numeric bounds"
-              ),
-              mc_name
-            ))
-          }
-
-          transform_i <- if ("transformation" %in% names(mc_row)) {
-            mc_row$transformation[[1]]
-          } else {
-            NA
-          }
-          fixed_val <- apply_value_transformation(
-            fixed_from_bounds(bounds_i, "median"),
-            transform_i
+          # constant): fix it from its sample_space bounds (on the transformed
+          # scale) and replicate across the design rows.
+          fixed_val <- fixed_value_for_node(
+            mc_row,
+            mc_name,
+            if_not_sampled = if_not_sampled
           )
 
           fixed_X <- stats::setNames(
@@ -1158,10 +1146,11 @@ trial_totals <- function(
           message(sprintf(
             paste0(
               "'%s' not found in sample_design; using fixed value %g ",
-              "(median of sample_space) for all %d design rows"
+              "(%s of sample_space) for all %d design rows"
             ),
             mc_name,
             fixed_val,
+            if_not_sampled,
             nrow(sample_design_data)
           ))
         }
@@ -1265,10 +1254,8 @@ trial_totals <- function(
 
       if (from_sample_design) {
         mcmodule$node_list[[mc_name]][["from_sample_design"]] <- TRUE
-      }
-
-      if (from_sample_design_fixed) {
-        mcmodule$node_list[[mc_name]][["from_sample_design_fixed"]] <- TRUE
+        mcmodule$node_list[[mc_name]][["from_sample_design_fixed"]] <-
+          from_sample_design_fixed
       }
 
     }

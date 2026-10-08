@@ -163,37 +163,140 @@ extract_numeric_bounds <- function(ss, node_name) {
   ))
 }
 
-# Sample values from a sample_space definition (used for probing transforms).
-sample_from_space <- function(ss, n) {
-  parsed <- parse_sample_space(ss)
+# Normalise mc_func names: "mc2d::rpert" / "mc2d:::rpert" -> "rpert".
+# Returns NA_character_ for missing or empty values.
+normalise_mc_func <- function(mc_func) {
+  f <- trimws(as.character(mc_func))
+  if (length(f) == 0 || is.na(f[[1]]) || !nzchar(f[[1]])) {
+    return(NA_character_)
+  }
+  sub("^.*::", "", f[[1]])
+}
 
-  if (identical(parsed$kind, "vector")) {
-    vals <- parsed$values
-    if (length(vals) == 0) {
+# Quantile mapping: map probabilities `u` in [0, 1] to values of a
+# sample_space definition, using the distribution in `mc_func` when available.
+#
+# Shared by mctable_sobol_matrices() (mapping), sample_from_space() (probing
+# transformations) and is_constant_space() (constant detection).
+#
+# Supported:
+# - mc_func "rnorm" with "mean = X, sd = Y" (u clamped to avoid +/-Inf)
+# - mc_func "rpert" with "min = X, mode = Y, max = Z" (optional shape)
+# - numeric bounds ("min = X, max = Y" or "c(min, max)"): uniform. Also used
+#   as fallback when rnorm/rpert parameters are incomplete.
+# - a single numeric value (e.g. "value = 5"): constant
+# - categorical values (no mc_func): u is mapped to an index
+qsample_space <- function(u, ss, mc_func = NA, node_name = "") {
+  func <- normalise_mc_func(mc_func)
+  if (!is.na(func) && !func %in% c("runif", "rnorm", "rpert")) {
+    stop(sprintf("Unsupported mc_func '%s' for '%s'", func, node_name))
+  }
+
+  parsed <- parse_sample_space(ss)
+  vals <- parsed$values
+  bounds <- parse_sample_space_bounds(ss)
+
+  has_params <- function(keys) {
+    identical(parsed$kind, "named") &&
+      all(keys %in% names(vals)) &&
+      all(vapply(vals[keys], is.numeric, logical(1)))
+  }
+
+  if (identical(func, "rnorm") && has_params(c("mean", "sd"))) {
+    u <- pmin(1 - 1e-12, pmax(1e-12, u))
+    return(stats::qnorm(u, mean = vals$mean, sd = vals$sd))
+  }
+
+  if (identical(func, "rpert") && has_params(c("min", "mode", "max"))) {
+    shape <- if (has_params("shape")) vals$shape else 4
+    return(mc2d::qpert(
+      u,
+      min = vals$min,
+      mode = vals$mode,
+      max = vals$max,
+      shape = shape
+    ))
+  }
+
+  # Uniform (also fallback when rnorm/rpert parameters are incomplete)
+  if (!is.null(bounds)) {
+    return(bounds[["min"]] + (bounds[["max"]] - bounds[["min"]]) * u)
+  }
+
+  if (identical(func, "runif")) {
+    stop(sprintf(
+      "Missing numeric bounds for '%s' (runif requires min/max)",
+      node_name
+    ))
+  }
+  if (identical(func, "rnorm")) {
+    stop(sprintf(
+      "sample_space for '%s' must provide mean and sd for rnorm",
+      node_name
+    ))
+  }
+  if (identical(func, "rpert")) {
+    stop(sprintf(
+      "sample_space for '%s' must provide min, mode, and max for rpert",
+      node_name
+    ))
+  }
+
+  # Single numeric value, e.g. "value = 5"
+  if (
+    identical(parsed$kind, "named") &&
+      length(vals) == 1 &&
+      is.numeric(vals[[1]])
+  ) {
+    return(rep(as.numeric(vals[[1]]), length(u)))
+  }
+
+  # Categorical values: map u to an index
+  cat_vals <- unlist(vals, use.names = FALSE)
+  is_categorical <- identical(parsed$kind, "vector") ||
+    !all(vapply(vals, is.numeric, logical(1)))
+  if (is_categorical) {
+    if (length(cat_vals) == 0) {
       stop("sample_space vector cannot be empty")
     }
-    if (is.numeric(vals) && length(vals) == 2) {
-      return(stats::runif(n, min = vals[1], max = vals[2]))
-    }
-    return(sample(vals, size = n, replace = TRUE))
+    idx <- pmin(length(cat_vals), pmax(1L, ceiling(u * length(cat_vals))))
+    return(cat_vals[idx])
   }
 
-  vals <- parsed$values
-  vals_un <- unlist(vals, use.names = FALSE)
+  stop(sprintf(
+    paste0(
+      "Cannot map sample_space for '%s': provide min/max bounds, ",
+      "or set mc_func to 'rnorm' (mean, sd) or 'rpert' (min, mode, max)"
+    ),
+    node_name
+  ))
+}
 
-  if (
-    all(vapply(vals, is.numeric, logical(1))) &&
-      all(c("min", "max") %in% names(vals))
-  ) {
-    return(stats::runif(n, min = vals$min, max = vals$max))
-  }
+# Probe values from a sample_space definition (used for probing transformations
+# and detecting constant inputs).
+#
+# Uses a deterministic, evenly spaced grid of probabilities mapped through
+# qsample_space(), so results are reproducible, include the exact endpoints of
+# bounded distributions, and do not consume the random number stream.
+sample_from_space <- function(ss, n, mc_func = NA, node_name = "") {
+  u <- seq(0, 1, length.out = max(2L, as.integer(n)))
+  qsample_space(u, ss, mc_func = mc_func, node_name = node_name)
+}
 
-  if (all(vapply(vals, is.numeric, logical(1))) && length(vals_un) == 1) {
-    return(rep(as.numeric(vals_un), n))
-  }
-
-  # Fallback: categorical sampling (useful only for probing transformations)
-  sample(vals_un, size = n, replace = TRUE)
+# TRUE if a node takes a single value (after transformation).
+is_constant_space <- function(
+  ss,
+  mc_func = NA,
+  transform = NA,
+  node_name = "",
+  n_probe = 101
+) {
+  x <- transform_sample_values(
+    sample_from_space(ss, n_probe, mc_func = mc_func, node_name = node_name),
+    transform,
+    node_name = node_name
+  )
+  length(unique(x[!is.na(x)])) <= 1
 }
 
 # Compute a fixed value from numeric bounds.
@@ -226,6 +329,76 @@ apply_value_transformation <- function(value, transform) {
     envir = list2env(list(value = value), parent = baseenv())
   )
   as.numeric(out)
+}
+
+# Apply an mctable transformation to values drawn from a sample_space.
+# If the transformation returns only NA for non-NA inputs (e.g. a categorical
+# mapping such as ifelse(value == 'always', 1, ...) applied to a numeric
+# sample_space like "min = 0, max = 1"), the sample_space is assumed to be
+# already on the model scale and the values are returned unchanged.
+transform_sample_values <- function(values, transform, node_name = "") {
+  out <- suppressWarnings(apply_value_transformation(values, transform))
+  if (length(out) > 0 && all(is.na(out)) && !all(is.na(values))) {
+    message(sprintf(
+      paste0(
+        "Transformation for '%s' returns NA for all sample_space values; ",
+        "assuming sample_space is already on the model scale and skipping it"
+      ),
+      node_name
+    ))
+    return(values)
+  }
+  out
+}
+
+# Fixed value for a non-sampled node, computed from its mctable sample_space
+# bounds (if_not_sampled statistic) and, optionally, its transformation.
+# Used by eval_module() and trial_totals() when a required input is missing
+# from the sample design.
+fixed_value_for_node <- function(
+  mctable,
+  mc_name,
+  if_not_sampled = "median",
+  transformation = TRUE
+) {
+  row <- if (!is.null(mctable) && "mcnode" %in% names(mctable)) {
+    mctable[mctable$mcnode %in% mc_name, , drop = FALSE]
+  } else {
+    NULL
+  }
+
+  if (is.null(row) || nrow(row) == 0) {
+    stop(sprintf(
+      "Input '%s' is missing from sample_design and not found in mctable",
+      mc_name
+    ))
+  }
+  row <- row[1, , drop = FALSE]
+
+  ss <- if ("sample_space" %in% names(row)) {
+    as.character(row$sample_space)
+  } else {
+    NA_character_
+  }
+  bounds <- parse_sample_space_bounds(ss)
+  if (is.null(bounds)) {
+    stop(sprintf(
+      "Input '%s' is missing from sample_design and has no numeric bounds in mctable$sample_space",
+      mc_name
+    ))
+  }
+
+  val <- fixed_from_bounds(bounds, if_not_sampled)
+
+  if (isTRUE(transformation) && "transformation" %in% names(row)) {
+    val <- transform_sample_values(
+      val,
+      row$transformation,
+      node_name = mc_name
+    )
+  }
+
+  val
 }
 
 # Filter an mctable by mc_names, and move missing/empty sample_space to "out".
@@ -269,7 +442,8 @@ split_mctable_for_sampling <- function(mctable, mc_names = NULL) {
 #' computes bounds on the transformed values.
 #'
 #' @param mctable (data frame). Table containing at least `mcnode` and
-#' `sample_space`; may also contain `transformation`. Default: [set_mctable()].
+#' `sample_space`; may also contain `transformation` and `mc_func` (used to
+#' probe transformations). Default: [set_mctable()].
 #' @param mc_names (character vector, optional). Node names to include. If
 #' `NULL`, all nodes in `mctable$mcnode` are used.
 #' @param if_not_sampled (character). How to handle nodes not listed in
@@ -278,12 +452,17 @@ split_mctable_for_sampling <- function(mctable, mc_names = NULL) {
 #' Default: `"exclude"`.
 #' @param transformation (logical). Whether to apply `transformation` rules.
 #' Default: `TRUE`.
-#' @param n_probe (integer). Number of probe draws used to approximate bounds
-#' when `transformation = TRUE`. Default: 1000.
+#' @param n_probe (integer). Number of grid points used to probe the
+#' transformed range when `transformation = TRUE`. Probes are an evenly spaced
+#' grid of probabilities in \[0, 1\] mapped through the distribution defined by
+#' `sample_space` and `mc_func` (uniform, `rnorm`, `rpert` or categorical), so
+#' results are reproducible and do not affect the random number stream.
+#' Default: 1000.
 #' @param drop_constant (logical). If `TRUE`, drop factors whose lower and
-#' upper bounds are equal. Dropped factors are listed in `dropped` and, when
+#' upper bounds are equal (after any transformation). Dropped factors are listed in `dropped` and, when
 #' `if_not_sampled != "exclude"`, added to `fixed` with their constant value.
-#' Default: `FALSE`.
+#' Dropped inputs are created as fixed nodes by [eval_module()] and
+#' [trial_totals()] when missing from `sample_design`. Default: `TRUE`.
 #'
 #' @return A list `bounds` with:
 #' \itemize{
@@ -302,7 +481,7 @@ mctable_bounds <- function(
     if_not_sampled = c("exclude", "median", "mean", "max", "min"),
     transformation = TRUE,
     n_probe = 1000,
-    drop_constant = FALSE
+    drop_constant = TRUE
 ) {
   if_not_sampled <- match.arg(if_not_sampled)
 
@@ -320,6 +499,15 @@ mctable_bounds <- function(
   use_transformation <- isTRUE(transformation) &&
     "transformation" %in% names(mctable)
 
+  if (!"mc_func" %in% names(mctable_in) && "func" %in% names(mctable_in)) {
+    mctable_in$mc_func <- mctable_in$func
+  }
+  mc_func_in <- if ("mc_func" %in% names(mctable_in)) {
+    as.character(mctable_in$mc_func)
+  } else {
+    rep(NA_character_, length(factors))
+  }
+
   # Apply transformations by probing and updating bounds on the transformed scale.
   if (use_transformation) {
     transformations <- as.character(mctable_in$transformation)
@@ -327,8 +515,17 @@ mctable_bounds <- function(
     for (i in seq_along(factors)) {
       transform_i <- transformations[i]
       if (!is.na(transform_i) && nzchar(trimws(transform_i))) {
-        probe_vals <- sample_from_space(sample_space[i], n_probe)
-        transformed_vals <- apply_value_transformation(probe_vals, transform_i)
+        probe_vals <- sample_from_space(
+          sample_space[i],
+          n_probe,
+          mc_func = mc_func_in[i],
+          node_name = factors[i]
+        )
+        transformed_vals <- transform_sample_values(
+          probe_vals,
+          transform_i,
+          node_name = factors[i]
+        )
 
         # %.15g (not %g) to avoid rounding distinct bounds to the same value
         sample_space[i] <- sprintf(
@@ -383,9 +580,10 @@ mctable_bounds <- function(
       fixed_val <- fixed_from_bounds(bounds_i, if_not_sampled)
 
       if (use_transformation) {
-        fixed_val <- apply_value_transformation(
+        fixed_val <- transform_sample_values(
           fixed_val,
-          mctable_out$transformation[i]
+          mctable_out$transformation[i],
+          node_name = node_name
         )
       }
 
@@ -416,10 +614,14 @@ mctable_bounds <- function(
 #'
 #' If the distribution function is missing but numeric bounds are available in
 #' `sample_space` (e.g. `min = 0, max = 1` or `c(0, 1)`), the function assumes a
-#' uniform distribution (`stats::runif`).
+#' uniform distribution (`stats::runif`). Supported distribution functions are
+#' `runif`, `rnorm` (`mean`, `sd`) and `rpert` (`min`, `mode`, `max`, optional
+#' `shape`), also when namespace-qualified (e.g. `mc2d::rpert`). Categorical
+#' `sample_space` vectors (e.g. `c('always', 'sometimes', 'never')`) are
+#' supported when a numeric `transformation` is provided.
 #'
 #' @param mctable (data frame). Table containing at least `mcnode` and
-#'   `sample_space`; may also contain `mc_func` / `func`.
+#'   `sample_space`; may also contain `mc_func` / `func` and `transformation`.
 #' @param N (integer). Base sample size (see [sensobol::sobol_matrices()]).
 #' @param matrices (character). Which Sobol matrices to create (see
 #'   [sensobol::sobol_matrices()]). Default: `c("A", "B", "AB")`.
@@ -429,13 +631,21 @@ mctable_bounds <- function(
 #'   In sensobol 1.1.6, options include `"QRN"` (default), `"LHS"`, and `"R"`.
 #' @param mc_names (character vector, optional). Node names to include. If
 #'   `NULL`, all nodes in `mctable$mcnode` are used.
+#' @param transformation (logical). Whether to apply `mctable$transformation`
+#'   rules after mapping, so values are on the same scale as the bounds
+#'   returned by [mctable_bounds()]. Required for categorical `sample_space`.
+#'   Default: `TRUE`.
+#' @param drop_constant (logical). If `TRUE`, exclude nodes that take a single
+#'   value before building the matrices. Dropped node names are stored in
+#'   `attr(X, "dropped")`. Default: `TRUE`.
 #' @param ... Additional arguments passed to [sensobol::sobol_matrices()] (and
 #'   potentially to `randtoolbox::sobol()` when `type = "QRN"`).
 #'
-#' @return A numeric matrix where each column is a model input distributed in
-#'   (0, 1) **after mapping to the distributions defined in the `mctable`**,
-#'   and each row is a sampling point. The matrix has the same layout/row
-#'   binding as [sensobol::sobol_matrices()].
+#' @return A numeric matrix where each column is a model input **after mapping
+#'   to the distributions defined in the `mctable`** (and transformation, if
+#'   applied), and each row is a sampling point. The matrix has the same
+#'   layout/row binding as [sensobol::sobol_matrices()]. Attribute `"dropped"`
+#'   contains the names of nodes removed by `drop_constant`.
 #'
 #' @export
 mctable_sobol_matrices <- function(
@@ -445,6 +655,8 @@ mctable_sobol_matrices <- function(
   order = c("first", "second", "third", "fourth"),
   type = c("QRN", "LHS", "R"),
   mc_names = NULL,
+  transformation = TRUE,
+  drop_constant = TRUE,
   ...
 ) {
   if (!requireNamespace("sensobol", quietly = TRUE)) {
@@ -467,13 +679,61 @@ mctable_sobol_matrices <- function(
 
   spl <- split_mctable_for_sampling(mctable, mc_names = mc_names)
   mctable_in <- spl$mctable_in
-  mctable_out <- spl$mctable_out
 
   factors <- as.character(mctable_in$mcnode)
+  sample_space <- as.character(mctable_in$sample_space)
+
+  mc_func <- if ("mc_func" %in% names(mctable_in)) {
+    as.character(mctable_in$mc_func)
+  } else {
+    rep(NA_character_, length(factors))
+  }
+
+  transforms <- if (
+    isTRUE(transformation) && "transformation" %in% names(mctable_in)
+  ) {
+    as.character(mctable_in$transformation)
+  } else {
+    rep(NA_character_, length(factors))
+  }
+
+  # Drop constant nodes BEFORE generating matrices (each factor adds N rows
+  # to the AB matrix).
+  dropped <- character(0)
+  if (isTRUE(drop_constant) && length(factors) > 0) {
+    is_constant <- vapply(
+      seq_along(factors),
+      function(j) {
+        is_constant_space(
+          sample_space[j],
+          mc_func = mc_func[j],
+          transform = transforms[j],
+          node_name = factors[j]
+        )
+      },
+      logical(1)
+    )
+
+    if (any(is_constant)) {
+      dropped <- factors[is_constant]
+      keep <- !is_constant
+      factors <- factors[keep]
+      sample_space <- sample_space[keep]
+      mc_func <- mc_func[keep]
+      transforms <- transforms[keep]
+
+      message(sprintf(
+        "Dropped %d input(s) with no variation: %s",
+        length(dropped),
+        paste(dropped, collapse = ", ")
+      ))
+    }
+  }
+
   p <- length(factors)
   if (p == 0) {
     stop(
-      "No sampled factors: all nodes were excluded or have missing sample_space"
+      "No sampled factors: all nodes were excluded, constant, or have missing sample_space"
     )
   }
 
@@ -496,116 +756,27 @@ mctable_sobol_matrices <- function(
   Uc <- pmin(1 - eps, pmax(eps, U))
   Uc <- matrix(Uc, nrow = nrow(U), ncol = ncol(U), dimnames = dimnames(U))
 
-  mc_func <- if ("mc_func" %in% names(mctable_in)) {
-    as.character(mctable_in$mc_func)
-  } else {
-    rep(NA_character_, p)
-  }
-  sample_space <- as.character(mctable_in$sample_space)
-
   X <- Uc
 
   for (j in seq_len(p)) {
-    func_j <- mc_func[j]
-    bounds_j <- parse_sample_space_bounds(sample_space[j])
+    x_j <- qsample_space(
+      Uc[, j],
+      sample_space[j],
+      mc_func = mc_func[j],
+      node_name = factors[j]
+    )
+    x_j <- transform_sample_values(x_j, transforms[j], node_name = factors[j])
 
-    # If func missing but bounds exist, assume uniform.
-    if (is.na(func_j) || !nzchar(trimws(func_j))) {
-      if (!is.null(bounds_j)) {
-        func_j <- "runif"
-      }
-    }
-
-    if (identical(func_j, "runif")) {
-      if (is.null(bounds_j)) {
-        stop(sprintf(
-          "Missing numeric bounds for '%s' (runif requires min/max)",
-          factors[j]
-        ))
-      }
-      X[, j] <- bounds_j[["min"]] +
-        (bounds_j[["max"]] - bounds_j[["min"]]) * Uc[, j]
-      next
-    }
-
-    if (identical(func_j, "rnorm")) {
-      parsed_ss <- parse_sample_space(sample_space[j])
-      if (identical(parsed_ss$kind, "named")) {
-        vals <- parsed_ss$values
-        if (
-          all(c("mean", "sd") %in% names(vals)) &&
-            all(vapply(vals[c("mean", "sd")], is.numeric, logical(1)))
-        ) {
-          X[, j] <- stats::qnorm(
-            Uc[, j],
-            mean = as.numeric(vals$mean),
-            sd = as.numeric(vals$sd)
-          )
-          next
-        }
-      }
-
-      # Fallback: if rnorm parameters are not available but numeric bounds are,
-      # treat as uniform instead of erroring.
-      if (!is.null(bounds_j)) {
-        X[, j] <- bounds_j[["min"]] +
-          (bounds_j[["max"]] - bounds_j[["min"]]) * Uc[, j]
-        next
-      }
-
+    if (!is.numeric(x_j) && !is.logical(x_j)) {
       stop(sprintf(
-        "sample_space for '%s' must provide mean and sd for rnorm",
+        "'%s' has a categorical sample_space; provide a numeric transformation",
         factors[j]
       ))
     }
 
-    if (identical(func_j, "rpert")) {
-      if (!requireNamespace("mc2d", quietly = TRUE)) {
-        stop(
-          "mc_func 'rpert' requires the 'mc2d' package for qpert().\n\nInstall it using:\ninstall.packages('mc2d')"
-        )
-      }
-
-      parsed_ss <- parse_sample_space(sample_space[j])
-      if (identical(parsed_ss$kind, "named")) {
-        vals <- parsed_ss$values
-        if (
-          all(c("min", "mode", "max") %in% names(vals)) &&
-            all(vapply(vals[c("min", "mode", "max")], is.numeric, logical(1)))
-        ) {
-          shape <- if ("shape" %in% names(vals) && is.numeric(vals$shape)) {
-            as.numeric(vals$shape)
-          } else {
-            4
-          }
-
-          X[, j] <- mc2d::qpert(
-            p = Uc[, j],
-            min = as.numeric(vals$min),
-            mode = as.numeric(vals$mode),
-            max = as.numeric(vals$max),
-            shape = shape
-          )
-          next
-        }
-      }
-
-      # Fallback: if PERT parameters are incomplete (e.g. mode missing) but
-      # numeric bounds are available, treat as uniform instead of erroring.
-      if (!is.null(bounds_j)) {
-        X[, j] <- bounds_j[["min"]] +
-          (bounds_j[["max"]] - bounds_j[["min"]]) * Uc[, j]
-        next
-      }
-
-      stop(sprintf(
-        "sample_space for '%s' must provide min, mode, and max for rpert",
-        factors[j]
-      ))
-    }
-
-    stop(sprintf("Unsupported mc_func '%s' for '%s'", func_j, factors[j]))
+    X[, j] <- as.numeric(x_j)
   }
 
+  attr(X, "dropped") <- dropped
   X
 }

@@ -95,6 +95,8 @@ A `sample_design` in `mcmodule` can be either:
 
 The **sampling matrix** must have **one column per input node and one row per sample**. Each row is one scenario in the mcnode uncertainty dimension. When you provide a sample_design, that uncertainty dimension is no longer sampled from the original model inputs; it is mapped to the values in your design. Currently, sample_design supports one variate.
 
+Inputs used by the model but missing from the sample design are created as fixed nodes, with the same value for every row of the design. The value is taken from `mctable$sample_space` according to `if_not_sampled` in `eval_module()` and `trial_totals()` (`"median"` by default, or `"mean"`, `"max"` and `"min"`), after applying any `transformation`. Fixed nodes are flagged with `from_sample_design_fixed = TRUE` in the `node_list`.
+
 You can pass the sampling matrix (or sensitivity object) directly to `eval_module()`, or set it as a global default with `set_sample_design()`. Using a global design ensures the same sampling matrix is available across all model steps, which is convenient when you run sensitivity analysis after building a complex model. You can also pass the design to each function call, but that is more verbose, and you must remove it later to run the model with the original data inputs.
 
 ```{r}
@@ -103,8 +105,8 @@ X <- data.frame(
   w_prev = runif(10000, 0.15, 0.6),
   h_prev = runif(10000, 0.02, 0.7),
   test_sensi = runif(10000, 0.8, 0.91),
-  animals_n = sample(5:10, 10000, replace = TRUE),
-  farms_n = sample(82:176, 10000, replace = TRUE),
+  animals_n = sample(82:176, 10000, replace = TRUE),
+  farms_n = sample(5:10, 10000, replace = TRUE),
   test_origin = runif(10000, 0, 1)
 )
 
@@ -144,15 +146,26 @@ This sample design produces a different ranking from the first tornado analysis,
 For methods that use a sample design, `mctable` can be used to define how inputs are sampled. In particular, `mctable$sample_space` stores the bounds or distribution parameters used to generate sensitivity samples. To read more about `mctable` see the [package vignette](https://nataliaciria.com/mcmodule/articles/mcmodule.html#mcnodes-table).
 
 ```{r}
-imports_mctable[,c("mcnode","mc_func", "sample_space")]
+imports_mctable[,c("mcnode","mc_func", "transformation", "sample_space")]
 ```
+
+`sample_space` is interpreted together with `mc_func`:
+
+-   Bounds, such as `"min = 0.02, max = 0.7"` or `"c(0.02, 0.7)"`, are sampled uniformly. This is also used for `rnorm` or `rpert` inputs whose `sample_space` only gives `min` and `max` (for example `animals_n`).
+-   `rnorm` inputs can use `"mean = 100, sd = 10"`, and `rpert` inputs can use `"min = 0.8, mode = 0.875, max = 0.91"` (with an optional `shape`). Namespaced functions, such as `mc2d::rpert`, are also recognised.
+-   Categorical values, such as `"c('always', 'sometimes', 'never')"`, are sampled by index and must be mapped to numbers with `transformation`.
+
+By default (`transformation = TRUE`), bounds and Sobol matrices are computed on the model scale, after applying `transformation`. If a transformation returns only `NA` for the sample space values, it is skipped with a message and `sample_space` is assumed to be on the model scale already. This is the case for `test_origin`, whose transformation maps categorical values but whose `sample_space` is numeric (`"min = 0, max = 1"`). Transformed ranges are probed on an evenly spaced grid (`n_probe` points), so results are reproducible and do not use the random number stream.
 
 Two helper functions support common sampling designs from `mctable`:
 
 -   `mctable_bounds()` for bound (*min* and *max*) extraction, for Morris and related approaches.
 -   `mctable_sobol_matrices()` for Sobol design matrices.
 
-Currently, `mcmodule` only provides direct conversion from `mctable` to Sobol sampling designs. However, you can use `mctable_bounds()` to create many other sample designs using different approaches. The only requirement is that your sample design matrix contains columns for all the input nodes in your `mcmodule` model.
+Currently, `mcmodule` only provides direct conversion from `mctable` to Sobol sampling designs. However, you can use `mctable_bounds()` to create many other sample designs using different approaches. Your sample design matrix should contain columns for the input nodes you want to vary; any other input node in your `mcmodule` model needs a `sample_space` in `mctable` so it can be created as a fixed node.
+
+Inputs whose sample space has no variation (lower bound equal to upper bound, after any transformation) do not need to be sampled. By default (`drop_constant = TRUE`), `mctable_bounds()` and `mctable_sobol_matrices()` drop them with a message. Dropped inputs are listed in `$dropped` and `attr(X, "dropped")`, respectively, and are created as fixed nodes when the model is evaluated.
+
 
 ## Morris elementary effects
 
@@ -162,8 +175,10 @@ Start by getting parameter bounds from `mctable`.
 
 ```{r}
 # Get bounds for Morris sampling design
-b <- mctable_bounds(imports_mctable, transformation = FALSE)
+b <- mctable_bounds(imports_mctable)
 ```
+
+`test_origin_unk` has no `sample_space`, so it is excluded, and the `test_origin` transformation is skipped with a message, as explained above. Bounds are returned on the model scale.
 
 Build the Morris design with `sensitivity::morris()`. The resulting object can be passed directly as `sample_design`. The arguments `factors`, `r`, and `design` control the the factors (inputs) sampled, the number of repetitions of the design, and the step size between sampled values, respectively. The arguments `binf` and `bsup` provide the bounds for each input, and `scale = TRUE` scales the inputs to [0,1] for better comparability of Morris indices across inputs with different ranges.
 
@@ -218,7 +233,7 @@ morris_sa
 plot(morris_sa)
 ```
 
-In the Morris method, `mu` ( $\mu$ ) is the mean of the elementary effects across trajectories and `mu.star` ( $\mu^*$ ) is the absolute value of `mu`, which summarises each input’s overall importance (larger values indicate a stronger average influence on the output, regardless of direction). `h_prev` has the largest `mu.star`, making it the most influential input overall, followed by `test_origin`. `w_prev` is the next most important, while `farms_n` and `animals_n` have more moderate effects, and `test_sensi` is negligible within the explored bounds (note that the uncertainty is small, 0.875-0.91). `sigma` ( $\sigma$ ) is the standard deviation of the elementary effects. Large `sigma` values indicate that the effect of an input varies substantially across the sampled space, which typically reflects nonlinearity and/or interactions with other inputs.
+In the Morris method, `mu` ( $\mu$ ) is the mean of the elementary effects across trajectories and `mu.star` ( $\mu^*$ ) is the absolute value of `mu`, which summarises each input’s overall importance (larger values indicate a stronger average influence on the output, regardless of direction). `h_prev` has the largest `mu.star`, making it the most influential input overall, followed by `test_origin`. `w_prev` is the next most important, while `farms_n` and `animals_n` have more moderate effects, and `test_sensi` is negligible within the explored bounds (note that its sample space is narrow, 0.8 to 0.91). `sigma` ( $\sigma$ ) is the standard deviation of the elementary effects. Large `sigma` values indicate that the effect of an input varies substantially across the sampled space, which typically reflects nonlinearity and/or interactions with other inputs.
 
 ## Sobol indices
 
@@ -226,7 +241,7 @@ Sobol analysis [@sobol1993, @saltelli2002] decomposes output variance into first
 
 First, generate Sobol sampling matrices from `mctable`.
 
-`mctable_sobol_matrices()` creates Sobol design matrices from your `mctable` definitions.
+`mctable_sobol_matrices()` creates Sobol design matrices from your `mctable` definitions. Each column is mapped through the distribution defined by `sample_space` and `mc_func` (for example, `test_sensi` follows its PERT distribution) and, by default, through `transformation`. Inputs with no variation are dropped, so `colnames(X)` only contains the sampled inputs, which is what `sensobol::sobol_indices()` expects in `params`.
 
 ```{r}
 library(sensobol)

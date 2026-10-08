@@ -1305,4 +1305,28 @@ suppressMessages({
     )
   })
 
+  test_that("eval_module accepts multi-line quoted expressions passed directly to exp", {
+    X <- data.frame(
+      input_a = c(0.1, 0.2),
+      input_b = c(1, 2)
+    )
+
+    expect_warning(
+      result_mcmodule <- eval_module(
+        exp = quote({
+          result <- input_a + input_b
+        }),
+        data = data.frame(),
+        sample_design = X,
+        mctable = NULL
+      ),
+      "quoted expression directly"
+    )
+
+    expect_equal(names(result_mcmodule$exp), "exp")
+    expect_equal(
+      as.numeric(result_mcmodule$node_list$result$mcnode),
+      c(1.1, 2.2)
+    )
+  })
 })
