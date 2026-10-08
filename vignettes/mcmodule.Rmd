@@ -783,8 +783,6 @@ print(sobol_sa)
 plot(sobol_sa)
 ```
 
-`mctable_sobol_matrices()` maps each input through the distribution defined by `sample_space` and `mc_func`. Inputs with no variation are dropped (listed in `attr(X, "dropped")`) and created as fixed nodes by `eval_module()` and `trial_totals()`.
-
 The first-order index (`Si`) quantifies each input's direct contribution to output variance, while the total-order index (`Ti`) captures total contribution including interactions. Inputs with large `Si` values are important drivers of output uncertainty and should be prioritized for data collection and uncertainty reduction.
 
 # Tricks and tweaks
