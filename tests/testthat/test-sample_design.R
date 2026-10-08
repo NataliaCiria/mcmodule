@@ -30,6 +30,19 @@ suppressMessages({
     reset_sample_design()
   })
 
+  test_that("apply_value_transformation returns value unchanged for missing or empty transformations", {
+    expect_equal(apply_value_transformation(c(1, 2), NA), c(1, 2))
+    expect_equal(apply_value_transformation(c(1, 2), ""), c(1, 2))
+    expect_equal(apply_value_transformation(c(1, 2), "   "), c(1, 2))
+    expect_equal(apply_value_transformation(c(1, 2), NULL), c(1, 2))
+  })
+
+  test_that("apply_value_transformation evaluates expressions and coerces logicals to numeric", {
+    expect_equal(apply_value_transformation(c(1, 2), "value * 10"), c(10, 20))
+    expect_equal(apply_value_transformation(c(1, 2), "  value + 1  "), c(2, 3))
+    expect_identical(apply_value_transformation(c(0, 2), "value > 1"), c(0, 1))
+  })
+
   test_that("mctable_bounds errors when required columns are missing", {
     mctable <- data.frame(
       mcnode = "x",
@@ -196,6 +209,143 @@ suppressMessages({
       mctable_bounds(mctable),
       "Cannot extract numeric bounds"
     )
+  })
+
+
+  test_that("mctable_bounds keeps constant factors by default (drop_constant = FALSE)", {
+    mctable <- data.frame(
+      mcnode = c("x", "k"),
+      sample_space = c("min = 0, max = 1", "min = 5, max = 5"),
+      stringsAsFactors = FALSE
+    )
+
+    b <- mctable_bounds(mctable)
+    expect_true("dropped" %in% names(b))
+    expect_equal(b$factors, c("x", "k"))
+    expect_equal(b$binf, c(0, 5))
+    expect_equal(b$bsup, c(1, 5))
+    expect_equal(b$dropped, character(0))
+  })
+
+  test_that("mctable_bounds drops constant factors when drop_constant = TRUE", {
+    mctable <- data.frame(
+      mcnode = c("x", "k", "j"),
+      sample_space = c("min = 0, max = 1", "min = 5, max = 5", "c(2, 2)"),
+      stringsAsFactors = FALSE
+    )
+
+    expect_message(
+      b <- mctable_bounds(mctable, drop_constant = TRUE),
+      "Dropped 2 input\\(s\\) with no variation"
+    )
+    expect_equal(b$factors, "x")
+    expect_equal(b$binf, 0)
+    expect_equal(b$bsup, 1)
+    expect_equal(b$dropped, c("k", "j"))
+    # if_not_sampled = "exclude" (default): constants are not added to fixed
+    expect_equal(length(b$fixed), 0)
+  })
+
+  test_that("mctable_bounds adds dropped constants to fixed when if_not_sampled != 'exclude'", {
+    mctable <- data.frame(
+      mcnode = c("x", "k", "y"),
+      sample_space = c("min = 0, max = 1", "min = 5, max = 5", "min = 10, max = 20"),
+      stringsAsFactors = FALSE
+    )
+
+    b <- mctable_bounds(
+      mctable,
+      mc_names = c("x", "k"),
+      if_not_sampled = "median",
+      transformation = FALSE,
+      drop_constant = TRUE
+    )
+
+    expect_equal(b$factors, "x")
+    expect_equal(b$dropped, "k")
+    expect_true(all(c("y", "k") %in% names(b$fixed)))
+    expect_equal(unname(b$fixed[["y"]]), 15)
+    expect_equal(unname(b$fixed[["k"]]), 5)
+  })
+
+  test_that("mctable_bounds drops factors made constant by a transformation", {
+    set.seed(10)
+    mctable <- data.frame(
+      mcnode = c("x", "flag"),
+      sample_space = c("min = 0, max = 1", "min = 1, max = 5"),
+      # value > 0 is always TRUE on [1, 5], so the transformed range collapses to 1
+      transformation = c(NA, "value > 0"),
+      stringsAsFactors = FALSE
+    )
+
+    b <- mctable_bounds(
+      mctable,
+      if_not_sampled = "median",
+      transformation = TRUE,
+      drop_constant = TRUE,
+      n_probe = 500
+    )
+
+    expect_equal(b$factors, "x")
+    expect_equal(b$dropped, "flag")
+    expect_equal(unname(b$fixed[["flag"]]), 1)
+  })
+
+  test_that("mctable_bounds warns when drop_constant removes all factors", {
+    mctable <- data.frame(
+      mcnode = "k",
+      sample_space = "min = 5, max = 5",
+      stringsAsFactors = FALSE
+    )
+
+    expect_warning(
+      b <- mctable_bounds(mctable, drop_constant = TRUE),
+      "no factors remain"
+    )
+    expect_equal(b$factors, character(0))
+    expect_equal(b$binf, numeric(0))
+    expect_equal(b$bsup, numeric(0))
+    expect_equal(b$dropped, "k")
+  })
+
+  test_that("mctable_bounds keeps precision of transformed bounds (no false constants)", {
+    set.seed(42)
+    mctable <- data.frame(
+      mcnode = c("x", "big"),
+      sample_space = c("min = 0.1000001, max = 0.1000002", "min = 1000000, max = 1000001"),
+      transformation = c("value", "value"),
+      stringsAsFactors = FALSE
+    )
+
+    # With sprintf("%g") both bounds would round to the same value and be dropped
+    b <- mctable_bounds(
+      mctable,
+      transformation = TRUE,
+      drop_constant = TRUE,
+      n_probe = 200
+    )
+
+    expect_equal(b$factors, c("x", "big"))
+    expect_equal(b$dropped, character(0))
+    expect_true(all(b$bsup > b$binf))
+  })
+
+  test_that("mctable_bounds applies transformation to fixed values of non-sampled nodes", {
+    mctable <- data.frame(
+      mcnode = c("x", "y"),
+      sample_space = c("min = 0, max = 1", "min = 10, max = 20"),
+      transformation = c(NA, "value / 10"),
+      stringsAsFactors = FALSE
+    )
+
+    b <- mctable_bounds(
+      mctable,
+      mc_names = "x",
+      if_not_sampled = "median",
+      transformation = TRUE
+    )
+
+    expect_equal(unname(b$fixed[["y"]]), 1.5)
   })
 
   test_that("mctable_sobol_matrices returns mapped draws for runif bounds", {

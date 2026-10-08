@@ -210,6 +210,24 @@ fixed_from_bounds <- function(bounds, if_not_sampled) {
   )
 }
 
+# Apply an mctable transformation expression to `value`.
+# Returns `value` unchanged if the transformation is missing or empty.
+apply_value_transformation <- function(value, transform) {
+  transform <- as.character(transform)
+  if (
+    length(transform) == 0 ||
+    is.na(transform[[1]]) ||
+    !nzchar(trimws(transform[[1]]))
+  ) {
+    return(value)
+  }
+  out <- eval(
+    parse(text = trimws(transform[[1]])),
+    envir = list2env(list(value = value), parent = baseenv())
+  )
+  as.numeric(out)
+}
+
 # Filter an mctable by mc_names, and move missing/empty sample_space to "out".
 split_mctable_for_sampling <- function(mctable, mc_names = NULL) {
   all_names <- as.character(mctable$mcnode)
@@ -240,9 +258,10 @@ split_mctable_for_sampling <- function(mctable, mc_names = NULL) {
   list(mctable_in = mctable_in, mctable_out = mctable_out)
 }
 
-#' Extract Morris Bounds From mctable
+#' Extract Sample Space Bounds From mctable
 #'
-#' Extract the bounds required by [sensitivity::morris()] from an `mctable`.
+#' Extract the bounds required by [sensitivity::morris()] and other sampling
+#' design functions from an `mctable`.
 #'
 #' Supports sampling only a subset of nodes via `mc_names` and controls how
 #' non-sampled nodes are handled via `if_not_sampled`. If `transformation` is
@@ -250,34 +269,40 @@ split_mctable_for_sampling <- function(mctable, mc_names = NULL) {
 #' computes bounds on the transformed values.
 #'
 #' @param mctable (data frame). Table containing at least `mcnode` and
-#'   `sample_space`; may also contain `transformation`. Default: [set_mctable()].
+#' `sample_space`; may also contain `transformation`. Default: [set_mctable()].
 #' @param mc_names (character vector, optional). Node names to include. If
-#'   `NULL`, all nodes in `mctable$mcnode` are used.
+#' `NULL`, all nodes in `mctable$mcnode` are used.
 #' @param if_not_sampled (character). How to handle nodes not listed in
-#'   `mc_names` (and nodes with missing or empty `sample_space`):
-#'   `"exclude"`, `"median"`, `"mean"`, `"max"`, or `"min"`.
-#'   Default: `"exclude"`.
+#' `mc_names` (and nodes with missing or empty `sample_space`):
+#' `"exclude"`, `"median"`, `"mean"`, `"max"`, or `"min"`.
+#' Default: `"exclude"`.
 #' @param transformation (logical). Whether to apply `transformation` rules.
-#'   Default: `TRUE`.
+#' Default: `TRUE`.
 #' @param n_probe (integer). Number of probe draws used to approximate bounds
-#'   when `transformation = TRUE`. Default: 1000.
+#' when `transformation = TRUE`. Default: 1000.
+#' @param drop_constant (logical). If `TRUE`, drop factors whose lower and
+#' upper bounds are equal. Dropped factors are listed in `dropped` and, when
+#' `if_not_sampled != "exclude"`, added to `fixed` with their constant value.
+#' Default: `FALSE`.
 #'
 #' @return A list `bounds` with:
-#'   \itemize{
-#'     \item `binf` numeric vector of lower bounds (same order as `factors`).
-#'     \item `bsup` numeric vector of upper bounds (same order as `factors`).
-#'     \item `factors` character vector of factor names.
-#'     \item `fixed` named numeric vector with fixed values for non-sampled
-#'       factors when `if_not_sampled != "exclude"`.
-#'   }
+#' \itemize{
+#' \item `binf` numeric vector of lower bounds (same order as `factors`).
+#' \item `bsup` numeric vector of upper bounds (same order as `factors`).
+#' \item `factors` character vector of factor names.
+#' \item `fixed` named numeric vector with fixed values for non-sampled
+#' factors when `if_not_sampled != "exclude"`.
+#' \item `dropped` character vector of factors removed by `drop_constant`.
+#' }
 #'
 #' @export
 mctable_bounds <- function(
-  mctable = set_mctable(),
-  mc_names = NULL,
-  if_not_sampled = c("exclude", "median", "mean", "max", "min"),
-  transformation = TRUE,
-  n_probe = 1000
+    mctable = set_mctable(),
+    mc_names = NULL,
+    if_not_sampled = c("exclude", "median", "mean", "max", "min"),
+    transformation = TRUE,
+    n_probe = 1000,
+    drop_constant = FALSE
 ) {
   if_not_sampled <- match.arg(if_not_sampled)
 
@@ -292,25 +317,22 @@ mctable_bounds <- function(
   factors <- as.character(mctable_in$mcnode)
   sample_space <- as.character(mctable_in$sample_space)
 
+  use_transformation <- isTRUE(transformation) &&
+    "transformation" %in% names(mctable)
+
   # Apply transformations by probing and updating bounds on the transformed scale.
-  if (isTRUE(transformation) && "transformation" %in% names(mctable)) {
+  if (use_transformation) {
     transformations <- as.character(mctable_in$transformation)
 
     for (i in seq_along(factors)) {
       transform_i <- transformations[i]
       if (!is.na(transform_i) && nzchar(trimws(transform_i))) {
         probe_vals <- sample_from_space(sample_space[i], n_probe)
-        transformed_vals <- eval(
-          parse(text = transform_i),
-          envir = list2env(list(value = probe_vals), parent = baseenv())
-        )
+        transformed_vals <- apply_value_transformation(probe_vals, transform_i)
 
-        if (is.logical(transformed_vals)) {
-          transformed_vals <- as.numeric(transformed_vals)
-        }
-
+        # %.15g (not %g) to avoid rounding distinct bounds to the same value
         sample_space[i] <- sprintf(
-          "min = %g, max = %g",
+          "min = %.15g, max = %.15g",
           min(transformed_vals, na.rm = TRUE),
           max(transformed_vals, na.rm = TRUE)
         )
@@ -326,6 +348,33 @@ mctable_bounds <- function(
     bsup[i] <- b[["max"]]
   }
 
+  # Drop factors with no variation (binf == bsup)
+  dropped <- character(0)
+  dropped_vals <- numeric(0)
+  if (isTRUE(drop_constant) && length(factors) > 0) {
+    is_constant <- !is.na(binf) & !is.na(bsup) & binf == bsup
+    if (any(is_constant)) {
+      dropped <- factors[is_constant]
+      dropped_vals <- stats::setNames(binf[is_constant], dropped)
+      factors <- factors[!is_constant]
+      binf <- binf[!is_constant]
+      bsup <- bsup[!is_constant]
+
+      message(sprintf(
+        "Dropped %d input(s) with no variation (binf == bsup): %s",
+        length(dropped),
+        paste(dropped, collapse = ", ")
+      ))
+
+      if (length(factors) == 0) {
+        warning(
+          "All sampled inputs were dropped by drop_constant; no factors remain",
+          call. = FALSE
+        )
+      }
+    }
+  }
+
   fixed <- numeric(0)
   if (nrow(mctable_out) > 0 && if_not_sampled != "exclude") {
     for (i in seq_len(nrow(mctable_out))) {
@@ -333,21 +382,29 @@ mctable_bounds <- function(
       bounds_i <- parse_sample_space_bounds(mctable_out$sample_space[i])
       fixed_val <- fixed_from_bounds(bounds_i, if_not_sampled)
 
-      if (isTRUE(transformation) && "transformation" %in% names(mctable_out)) {
-        transform_val <- as.character(mctable_out$transformation[i])
-        if (!is.na(transform_val) && nzchar(trimws(transform_val))) {
-          fixed_val <- as.numeric(eval(
-            parse(text = trimws(transform_val)),
-            envir = list2env(list(value = fixed_val), parent = baseenv())
-          ))
-        }
+      if (use_transformation) {
+        fixed_val <- apply_value_transformation(
+          fixed_val,
+          mctable_out$transformation[i]
+        )
       }
 
       fixed[[node_name]] <- fixed_val
     }
   }
 
-  list(binf = binf, bsup = bsup, factors = factors, fixed = fixed)
+  # Constant factors are already on the transformed scale
+  if (length(dropped_vals) > 0 && if_not_sampled != "exclude") {
+    fixed <- c(fixed, dropped_vals)
+  }
+
+  list(
+    binf = binf,
+    bsup = bsup,
+    factors = factors,
+    fixed = fixed,
+    dropped = dropped
+  )
 }
 
 #' Sobol sampling matrices from an mctable
