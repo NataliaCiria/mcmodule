@@ -2,19 +2,23 @@
 % Please edit documentation in R/sample_design.R
 \name{mctable_bounds}
 \alias{mctable_bounds}
-\title{Extract Morris Bounds From mctable}
+\title{Extract Sample Space Bounds From mctable}
 \usage{
 mctable_bounds(
   mctable = set_mctable(),
   mc_names = NULL,
   if_not_sampled = c("exclude", "median", "mean", "max", "min"),
   transformation = TRUE,
-  n_probe = 1000
+  n_probe = 1000,
+  drop_constant = TRUE
 )
 }
 \arguments{
 \item{mctable}{(data frame). Table containing at least \code{mcnode} and
-\code{sample_space}; may also contain \code{transformation}. Default: \code{\link[=set_mctable]{set_mctable()}}.}
+\code{sample_space}; may also contain \code{transformation} and \code{mc_func} (used to
+probe transformations). \code{sample_space} bounds can be given as
+\verb{min = X, max = Y} or \code{c(X, Y)}; a single numeric value (e.g. \code{1}, \code{c(1)}
+or \code{value = 1}) is treated as \code{min = max}. Default: \code{\link[=set_mctable]{set_mctable()}}.}
 
 \item{mc_names}{(character vector, optional). Node names to include. If
 \code{NULL}, all nodes in \code{mctable$mcnode} are used.}
@@ -27,8 +31,18 @@ Default: \code{"exclude"}.}
 \item{transformation}{(logical). Whether to apply \code{transformation} rules.
 Default: \code{TRUE}.}
 
-\item{n_probe}{(integer). Number of probe draws used to approximate bounds
-when \code{transformation = TRUE}. Default: 1000.}
+\item{n_probe}{(integer). Number of grid points used to probe the
+transformed range when \code{transformation = TRUE}. Probes are an evenly spaced
+grid of probabilities in [0, 1] mapped through the distribution defined by
+\code{sample_space} and \code{mc_func} (uniform, \code{rnorm}, \code{rpert} or categorical), so
+results are reproducible and do not affect the random number stream.
+Default: 1000.}
+
+\item{drop_constant}{(logical). If \code{TRUE}, drop factors whose lower and
+upper bounds are equal (after any transformation). Dropped factors are listed in \code{dropped} and, when
+\code{if_not_sampled != "exclude"}, added to \code{fixed} with their constant value.
+Dropped inputs are created as fixed nodes by \code{\link[=eval_module]{eval_module()}} and
+\code{\link[=trial_totals]{trial_totals()}} when missing from \code{sample_design}. Default: \code{TRUE}.}
 }
 \value{
 A list \code{bounds} with:
@@ -38,10 +52,12 @@ A list \code{bounds} with:
 \item \code{factors} character vector of factor names.
 \item \code{fixed} named numeric vector with fixed values for non-sampled
 factors when \code{if_not_sampled != "exclude"}.
+\item \code{dropped} character vector of factors removed by \code{drop_constant}.
 }
 }
 \description{
-Extract the bounds required by \code{\link[sensitivity:morris]{sensitivity::morris()}} from an \code{mctable}.
+Extract the bounds required by \code{\link[sensitivity:morris]{sensitivity::morris()}} and other sampling
+design functions from an \code{mctable}.
 }
 \details{
 Supports sampling only a subset of nodes via \code{mc_names} and controls how

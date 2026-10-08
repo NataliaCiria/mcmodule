@@ -487,6 +487,8 @@ agg_variates <- function(
     # Return original node with new type and summary
     total_agg <- mcnode
     mcmodule$node_list[[agg_mc_name]][["from_sample_design"]] <- TRUE
+    mcmodule$node_list[[agg_mc_name]][["from_sample_design_fixed"]] <-
+      isTRUE(mcmodule$node_list[[mc_name]][["from_sample_design_fixed"]])
   } else {
     # Extract variates
     variates_list <- list()
@@ -701,10 +703,12 @@ agg_totals <- function(
 #' @param mctable (data frame, optional). Monte Carlo node definitions.
 #'   Default: set_mctable().
 #' @param sample_design (matrix, data frame, or list, optional). Sampling
-#'   design used to create missing input nodes via [matrix_to_mcnodes()].
-#'   Accepts a matrix/data frame (for example from
-#'   [sensobol::sobol_matrices()]) or a list with element `X` (for example,
-#'   output from [sensitivity::morris()]). Defaults to [set_sample_design()].
+#' design used to create missing input nodes via [matrix_to_mcnodes()].
+#' Accepts a matrix/data frame (for example from
+#' [sensobol::sobol_matrices()]) or a list with element `X` (for example,
+#' output from [sensitivity::morris()]). Nodes defined in `mctable` but absent
+#' from both `sample_design` and module data are created as fixed nodes at the
+#' median of their `sample_space` bounds. Defaults to [set_sample_design()].
 #' @param agg_keys (character vector, optional). Column names for aggregation.
 #'   Default: NULL.
 #' @param agg_suffix (character). Suffix for aggregated node names. Default: "hag".
@@ -713,6 +717,11 @@ agg_totals <- function(
 #' @param summary (logical). If TRUE, include summary statistics. Default: TRUE.
 #' @param data_name (character, optional). Data name used to create trials_n,
 #'   subsets_n and subsets_p nodes if they don't exist in mcmodule. Default: NULL.
+#' @param if_not_sampled (character). How to compute the fixed value of
+#'   trials_n, subsets_n or subsets_p nodes that are defined in `mctable` but
+#'   missing from both `sample_design` and module data: `"median"` (default),
+#'   `"mean"`, `"max"`, or `"min"` of their `sample_space` bounds (as in
+#'   [eval_module()]).
 #'
 #' @return Updated mcmodule object containing combined node probabilities and
 #'   probabilities/counts at trial, subset, and set levels.
@@ -756,9 +765,11 @@ trial_totals <- function(
     agg_suffix = NULL,
     keep_variates = FALSE,
     summary = TRUE,
-    data_name = NULL
+    data_name = NULL,
+    if_not_sampled = c("median", "mean", "max", "min")
 ) {
   module_name <- deparse(substitute(mcmodule))
+  if_not_sampled <- match.arg(if_not_sampled)
 
   if (length(mc_names) == 0) {
     stop("mc_names must contain at least one node name")
@@ -1084,6 +1095,7 @@ trial_totals <- function(
         !is.null(sample_design_data) &&
           mc_name %in% colnames(sample_design_data)
       )
+      from_sample_design_fixed <- FALSE
 
       mc_row <- if (mc_name %in% mctable$mcnode) {
         mctable[mctable$mcnode == mc_name, , drop = FALSE]
@@ -1099,23 +1111,49 @@ trial_totals <- function(
           envir = environment()
         )
 
-        mc_node <- get(mc_name)
+        mc_node <- get(mc_name, envir = environment(), inherits = FALSE)
 
       } else if (!is.null(mc_row) && nrow(mc_row) > 0) {
-        # mctable may map mc_name to source columns such as sites_n_min/sites_n_max
-        if (is.null(data)) {
-          stop(sprintf(
-            "data is NULL and '%s' is not present in sample_design",
+        if (!is.null(data)) {
+          # mctable may map mc_name to source columns such as sites_n_min/sites_n_max
+          create_mcnodes(
+            data = data,
+            mctable = mc_row
+          )
+
+          mc_node <- get(mc_name, envir = environment(), inherits = FALSE)
+
+        } else {
+          # No module data and node not in sample_design (e.g. dropped as
+          # constant): fix it from its sample_space bounds (on the transformed
+          # scale) and replicate across the design rows.
+          fixed_val <- fixed_value_for_node(
+            mc_row,
+            mc_name,
+            if_not_sampled = if_not_sampled
+          )
+
+          fixed_X <- stats::setNames(
+            data.frame(rep(fixed_val, nrow(sample_design_data))),
             mc_name
+          )
+          matrix_to_mcnodes(X = fixed_X, envir = environment())
+          mc_node <- get(mc_name, envir = environment(), inherits = FALSE)
+
+          from_sample_design <- TRUE
+          from_sample_design_fixed <- TRUE
+
+          message(sprintf(
+            paste0(
+              "'%s' not found in sample_design; using fixed value %g ",
+              "(%s of sample_space) for all %d design rows"
+            ),
+            mc_name,
+            fixed_val,
+            if_not_sampled,
+            nrow(sample_design_data)
           ))
         }
-
-        create_mcnodes(
-          data = data,
-          mctable = mc_row
-        )
-
-        mc_node <- get(mc_name)
 
       } else {
         # the node is absent from mctable but may exist directly as a column in the module data
@@ -1216,7 +1254,10 @@ trial_totals <- function(
 
       if (from_sample_design) {
         mcmodule$node_list[[mc_name]][["from_sample_design"]] <- TRUE
+        mcmodule$node_list[[mc_name]][["from_sample_design_fixed"]] <-
+          from_sample_design_fixed
       }
+
     }
 
     if (!is.null(agg_keys)) {

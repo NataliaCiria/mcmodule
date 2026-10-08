@@ -12,6 +12,12 @@
 
 * Added `data-raw/water_example.R`, which generates the water-supply quantitative microbial risk assessment example data, node specifications, data keys, and pathway expressions.
 
+* `mctable_bounds()` gains `drop_constant`, which drops inputs whose bounds do not vary (`binf == bsup`), including inputs made constant by a transformation. It defaults to `TRUE`. Dropped inputs are returned in the new `dropped` element, added to `fixed` when `if_not_sampled != "exclude"`, and created as fixed nodes by `eval_module()` and `trial_totals()` (#106).
+
+* `mctable_sobol_matrices()` gains `transformation` and `drop_constant` arguments. Mapped values are now transformed with `mctable$transformation` by default, matching `mctable_bounds()`, which also enables categorical `sample_space` definitions. Constant inputs are dropped by default before the matrices are built and their names are stored in `attr(X, "dropped")`.
+
+* `trial_totals()` now creates `trials_n`, `subsets_n` and `subsets_p` nodes that are defined in `mctable` but missing from both `sample_design` and module data as fixed nodes, flagged with `from_sample_design_fixed` (#106). The new `if_not_sampled` argument controls the fixed value, as in `eval_module().
+
 ## Bug fixes and improvements
 
 * `at_least_one()` now combines nodes directly when every input comes from `sample_design`, avoiding unnecessary key matching (#96).
@@ -30,9 +36,27 @@
 
 * `mc_summary()` now returns summaries with sequential row names (#94).
 
+* `mcmodule_tornado()` now shows more tics on the x scale for better interpretation (#101).
+
 * `trial_totals()` now creates non-sampled input nodes from `mctable` or module data when `sample_design` is supplied (#95).
 
 * Added `data-raw/imports_example.R` to document and standardise generation of the existing imports example datasets and related package objects.
+* `mctable_bounds()` now probes transformations with a deterministic grid mapped through the distribution in `mc_func`, instead of random draws. Bounds are reproducible, include the exact endpoints of bounded distributions, and no longer consume the random number stream. Previously, `rnorm` inputs defined by `mean` and `sd` were probed as if `mean` and `sd` were the only possible values.
+
+* `mctable_bounds()` no longer rounds transformed bounds to six significant digits, which could make distinct bounds appear equal.
+
+* `eval_module()` now applies `mctable$transformation` to fixed values of non-sampled inputs, so they are on the same scale as the sampled values.
+
+* `mctable_bounds()`, `mctable_sobol_matrices()`, `eval_module()` and `trial_totals()` now skip a transformation that returns only `NA` for the `sample_space` values, with a message, assuming `sample_space` is already on the model scale (as for `test_origin` in `imports_mctable`).
+
+* `mctable_sobol_matrices()` now accepts namespace-qualified distribution functions (e.g. `mc2d::rpert`), as `create_mcnodes()` does.
+
+* `agg_variates()` now keeps `from_sample_design_fixed` when aggregating sample-design nodes, and `trial_totals()` sets it to `FALSE` for inputs taken from `sample_design`, consistent with `eval_module()`.
+
+* `sample_space` now accepts a single numeric value (e.g. `"1"`, `"c(1)"`, `"c('1')"` or `"value = 1"`) as a constant input, equivalent to `"min = 1, max = 1"`, and `check_mctable()` accepts bare numeric values.
+
+* `eval_module()` no longer fails when a multi-line quoted expression is passed directly to `exp`. The expression is named `"exp"` and the existing warning recommends naming it explicitly.
+
 
 # mcmodule 1.3.1
 

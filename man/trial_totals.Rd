@@ -21,7 +21,8 @@ trial_totals(
   agg_suffix = NULL,
   keep_variates = FALSE,
   summary = TRUE,
-  data_name = NULL
+  data_name = NULL,
+  if_not_sampled = c("median", "mean", "max", "min")
 )
 }
 \arguments{
@@ -54,7 +55,9 @@ Default: set_mctable().}
 design used to create missing input nodes via \code{\link[=matrix_to_mcnodes]{matrix_to_mcnodes()}}.
 Accepts a matrix/data frame (for example from
 \code{\link[sensobol:sobol_matrices]{sensobol::sobol_matrices()}}) or a list with element \code{X} (for example,
-output from \code{\link[sensitivity:morris]{sensitivity::morris()}}). Defaults to \code{\link[=set_sample_design]{set_sample_design()}}.}
+output from \code{\link[sensitivity:morris]{sensitivity::morris()}}). Nodes defined in \code{mctable} but absent
+from both \code{sample_design} and module data are created as fixed nodes at the
+median of their \code{sample_space} bounds. Defaults to \code{\link[=set_sample_design]{set_sample_design()}}.}
 
 \item{agg_keys}{(character vector, optional). Column names for aggregation.
 Default: NULL.}
@@ -68,6 +71,12 @@ Default: FALSE.}
 
 \item{data_name}{(character, optional). Data name used to create trials_n,
 subsets_n and subsets_p nodes if they don't exist in mcmodule. Default: NULL.}
+
+\item{if_not_sampled}{(character). How to compute the fixed value of
+trials_n, subsets_n or subsets_p nodes that are defined in \code{mctable} but
+missing from both \code{sample_design} and module data: \code{"median"} (default),
+\code{"mean"}, \code{"max"}, or \code{"min"} of their \code{sample_space} bounds (as in
+\code{\link[=eval_module]{eval_module()}}).}
 }
 \value{
 Updated mcmodule object containing combined node probabilities and
