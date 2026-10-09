@@ -175,6 +175,7 @@ suppressMessages({
     expect_equal(ncol(result), 1) # Only scenario_id
     expect_true(all(result$scenario_id == "0"))
   })
+
   test_that("mc_keys works for output nodes created with input nodes from sample design", {
     # Evaluate module with sample design node and output node
     reset_mctable()
@@ -214,6 +215,69 @@ suppressMessages({
     expect_equal(nrow(result), 1) # Only one variate
     expect_equal(ncol(result), 1) # Only scenario_id
     expect_true(all(result$scenario_id == "0"))
+  })
+
+  make_key_module <- function() {
+    list(
+      node_list = list(p = list(
+        mcnode = mc2d::mcdata(c(0.1, 0.2), type = "0", nvariates = 2),
+        data_name = "source",
+        keys = "group"
+      )),
+      data = list(source = data.frame(group = c("A", "B", "C")))
+    )
+  }
+
+  test_that("mc_keys checks row counts only when mcnode dimensions are available", {
+    module <- make_key_module()
+    expect_error(mc_keys(module, "p"), "Key row mismatch for node 'p'")
+    expect_error(mc_keys(module, "p"), "3 rows but mcnode has 2 variates")
+    expect_error(mc_keys(module, "p"), "check agg_keys and keep_variates")
+
+    # Existing metadata-only fixtures remain supported.
+    module$node_list$p$mcnode <- NULL
+    expect_equal(nrow(mc_keys(module, "p")), 3L)
+  })
+
+  test_that("mc_keys uses compatible summary keys when single-source data are incompatible", {
+    module <- make_key_module()
+    module$node_list$p$summary <- data.frame(group = c("X", "Y"))
+    expect_message(keys <- mc_keys(module, "p"), "using summary for mc_keys")
+    expect_equal(keys$group, c("X", "Y"))
+    expect_equal(nrow(keys), 2L)
+
+    module$data$source <- data.frame(other = c(1, 2))
+    expect_message(keys <- mc_keys(module, "p"), "using summary for mc_keys")
+    expect_equal(keys$group, c("X", "Y"))
+
+    # A compatible source remains preferred over a stored summary.
+    module$data$source <- data.frame(group = c("A", "B"))
+    expect_equal(mc_keys(module, "p")$group, c("A", "B"))
+
+    # A fallback with the wrong row count must not be accepted.
+    module$data$source <- data.frame(group = c("A", "B", "C"))
+    module$node_list$p$summary <- data.frame(group = c("X", "Y", "Z"))
+    expect_error(mc_keys(module, "p"), "3 rows but mcnode has 2 variates")
+  })
+
+  test_that("mc_keys requires correctly sized summaries for collapsed and filtered nodes", {
+    for (kind in c("aggregated", "filtered")) {
+      module <- make_key_module()
+      if (kind == "aggregated") {
+        module$node_list$p$agg_keys <- "group"
+        module$node_list$p$keep_variates <- FALSE
+      } else {
+        module$node_list$p$type <- "filter"
+      }
+      module$node_list$p$agg_data <- c("X", "Y")
+      expect_error(mc_keys(module, "p"), paste("summary is needed for", kind))
+
+      module$node_list$p$summary <- data.frame(group = c("X", "Y", "Z"))
+      expect_error(mc_keys(module, "p"), "3 rows but mcnode has 2 variates")
+
+      module$node_list$p$summary <- data.frame(group = c("Y", "X"))
+      expect_equal(mc_keys(module, "p")$group, c("Y", "X"))
+    }
   })
 
   test_that("mc_match group matching works", {

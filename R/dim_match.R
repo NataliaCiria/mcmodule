@@ -135,12 +135,43 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
     }
   } else {
     # Case 3: Single data_name
-    mcmodule$data[[node[["data_name"]]]]
+    source_data <- mcmodule$data[[node[["data_name"]]]]
+    summary_data <- node[["summary"]]
+    node_dim <- dim(node[["mcnode"]])
+
+    # Fall back only if the source is incompatible and summary keys match
+    # the mcnode variates. Prefer source data when it is already compatible.
+    if (
+      length(node_dim) == 3L &&
+      is.data.frame(summary_data) &&
+      all(keys_names %in% names(summary_data)) &&
+      nrow(summary_data) == node_dim[3] &&
+      (
+        !is.data.frame(source_data) ||
+        !all(keys_names %in% names(source_data)) ||
+        nrow(source_data) != node_dim[3]
+      )
+    ) {
+      message(sprintf(
+        "%s: source data are incompatible with the mcnode; using summary for mc_keys",
+        mc_name
+      ))
+      summary_data
+    } else {
+      source_data
+    }
+  }
+
+  if (!is.data.frame(data)) {
+    stop(sprintf(
+      "Key data are unavailable for node '%s'. Check data_name and summary key columns.",
+      mc_name
+    ), call. = FALSE)
   }
 
   # Add scenario_id column if missing
   if (!"scenario_id" %in% names(data)) {
-    data$scenario_id <- "0"
+    data$scenario_id <- rep("0", nrow(data))
   }
 
   # Validate all requested keys exist
@@ -153,6 +184,25 @@ mc_keys <- function(mcmodule, mc_name, keys_names = NULL) {
         mc_name
       )
     )
+  }
+
+  # Check that key rows match variates when mcnode dimensions are available.
+  # Metadata-only nodes retain the existing key-extraction behaviour.
+  node_dim <- dim(node[["mcnode"]])
+  if (length(node_dim) == 3L && nrow(data) != node_dim[3]) {
+    stop(sprintf(
+      paste0(
+        "Key row mismatch for node '%s': key data have %d rows but mcnode has %d variates. ",
+        "Check that data_name points to the correct data table and that summary ",
+        "contains one key row per variate in the same order. ",
+        "For aggregated nodes, check agg_keys and keep_variates; ",
+        "missing agg_keys can cause original data rows to be used. ",
+        "agg_data group labels are not used as a key fallback."
+      ),
+      mc_name,
+      nrow(data),
+      node_dim[3]
+    ), call. = FALSE)
   }
 
   # Check for duplicates in baseline scenario
