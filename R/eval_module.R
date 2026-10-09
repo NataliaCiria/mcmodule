@@ -786,8 +786,20 @@ eval_module <- function(
       }
     }
 
-    # Combine node lists
-    node_list <- c(node_list, node_list_i)
+    # Combine node lists without duplicating existing node names.
+    for (mc_name in names(node_list_i)) {
+      current_node <- node_list_i[[mc_name]]
+      node_exists <- mc_name %in% names(node_list)
+
+      # Repeated inputs and references reuse the existing metadata.
+      # New definitions, including output reassignments, replace it.
+      if (
+        !node_exists ||
+        !current_node[["type"]] %in% c("in_node", "prev_node")
+      ) {
+        node_list[[mc_name]] <- current_node
+      }
+    }
 
     # Update parameter names
     new_param_names <- if (exists("prev_param_names")) {

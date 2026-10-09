@@ -26,6 +26,8 @@
 
 * `eval_module()` now reports clearer errors for unnamed or duplicated expression blocks and unsupported expression statements.
 
+* `eval_module()` no longer creates duplicate node entries across expressions. Repeated inputs and references reuse existing entries, and reassigned outputs retain their final definition and value.
+
 * Input nodes that match columns in multiple datasets now produce an informative error instead of being assigned to a dataset implicitly.
 
 * `mc_filter()` and `mc_compare()` now use `name` exactly as supplied. `suffix` is appended only when a name is generated automatically from `mc_name` (#93).
