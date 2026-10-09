@@ -1329,4 +1329,72 @@ suppressMessages({
       c(1.1, 2.2)
     )
   })
+
+  test_that("eval_module reuses inputs and retains the final output definition", {
+    data <- data.frame(
+      id = 1:2,
+      a = c(0.1, 0.2),
+      b = c(0.3, 0.4)
+    )
+    mctable <- data.frame(
+      mcnode = c("a", "b"),
+      mc_func = NA_character_
+    )
+
+    module <- suppressMessages(eval_module(
+      exp = list(
+        first = quote({
+          output <- a
+        }),
+        second = quote({
+          output <- a + b
+        }),
+        final = quote({
+          output <- a * b
+        })
+      ),
+      data = data,
+      keys = "id",
+      mctable = mctable,
+      data_keys = NULL,
+      sample_design = NULL
+    ))
+
+    # Repeated inputs and reassigned outputs have one complete entry each.
+    node_names <- names(module$node_list)
+    expect_identical(anyDuplicated(node_names), 0L)
+    expect_setequal(node_names, c("a", "b", "output"))
+    expect_true(all(vapply(
+      module$node_list,
+      function(node) inherits(node$mcnode, "mcnode"),
+      logical(1)
+    )))
+
+    # Both the value and metadata describe the final output assignment.
+    output <- module$node_list$output
+    expect_equal(as.numeric(output$mcnode), data$a * data$b)
+    expect_identical(output$type, "out_node")
+    expect_identical(output$node_exp, "a * b")
+    expect_setequal(output$inputs, c("a", "b"))
+    expect_identical(output$exp_name, "final")
+
+    # The resulting module can be reused without duplicate-name errors.
+    downstream <- suppressMessages(eval_module(
+      exp = list(next_stage = quote({
+        result <- output * 2
+      })),
+      prev_mcmodule = module,
+      data = data,
+      keys = "id",
+      mctable = mctable,
+      data_keys = NULL,
+      sample_design = NULL
+    ))
+
+    expect_equal(
+      as.numeric(downstream$node_list$result$mcnode),
+      2 * data$a * data$b
+    )
+    expect_identical(anyDuplicated(names(downstream$node_list)), 0L)
+  })
 })
