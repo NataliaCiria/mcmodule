@@ -40,6 +40,10 @@
 
 * `trial_totals()` now creates non-sampled input nodes from `mctable` or module data when `sample_design` is supplied (#95).
 
+* `trial_totals()` now preserves aggregation metadata on all derived trial totals, and includes some more complex cases tests (#109).
+
+* `mc_keys()` now validates that it returns one key row per node variate, and throws more clear warnings and error messages (#109).
+
 * Added `data-raw/imports_example.R` to document and standardise generation of the existing imports example datasets and related package objects.
 * `mctable_bounds()` now probes transformations with a deterministic grid mapped through the distribution in `mc_func`, instead of random draws. Bounds are reproducible, include the exact endpoints of bounded distributions, and no longer consume the random number stream. Previously, `rnorm` inputs defined by `mean` and `sd` were probed as if `mean` and `sd` were the only possible values.
 
