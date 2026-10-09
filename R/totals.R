@@ -1431,6 +1431,12 @@ trial_totals <- function(
       total_type = total_type
     )
 
+    # Preserve aggregation metadata on all derived trial totals.
+    if (!is.null(agg_keys)) {
+      node_list[[name]][["agg_keys"]] <- agg_keys
+      node_list[[name]][["keep_variates"]] <- keep_variates
+    }
+
     params_for_flag <- setdiff(params, "1")
 
     if (

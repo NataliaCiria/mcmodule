@@ -487,6 +487,192 @@ suppressMessages({
     reset_mctable()
   })
 
+  local({
+    # Helpers are local to this block, avoiding global test-state changes.
+    make_grouped_module <- function(order = seq_len(5L)) {
+      data <- data.frame(
+        scenario_id = rep("0", 5L),
+        mov_id = c("m1", "m1", "m1", "m2", "m2"),
+        health_id = c("h1", "h1", "h2", "h3", "h3"),
+        animal_category = c("calf", "cow", "calf", "calf", "cow"),
+        p_a = c(0.1, 0.2, 0.3, 0.4, 0.5),
+        p_b = c(0.02, 0.04, 0.06, 0.08, 0.10),
+        animals_n = c(3, 5, 2, 4, 1),
+        herds_n = rep(1, 5L),
+        herd_p = c(0.25, 0.25, 0.35, 0.45, 0.45),
+        stringsAsFactors = FALSE
+      )
+      data <- data[order, , drop = FALSE]
+      rownames(data) <- NULL
+
+      keys <- c("scenario_id", "mov_id", "health_id", "animal_category")
+      inputs <- c("p_a", "p_b", "animals_n", "herds_n", "herd_p")
+
+      nodes <- lapply(inputs, function(input) {
+        list(
+          mcnode = mc2d::mcdata(
+            data[[input]],
+            type = "0",
+            nvariates = nrow(data)
+          ),
+          data_name = "animals",
+          keys = keys,
+          type = "in_node"
+        )
+      })
+      names(nodes) <- inputs
+
+      list(node_list = nodes, data = list(animals = data))
+    }
+
+    grouped_trial_totals <- function(module, combine_prob = TRUE,
+                                     keep_variates = FALSE) {
+      suppressMessages(trial_totals(
+        mcmodule = module,
+        mc_names = c("p_a", "p_b"),
+        trials_n = "animals_n",
+        subsets_n = "herds_n",
+        subsets_p = "herd_p",
+        combine_prob = combine_prob,
+        agg_keys = c("scenario_id", "mov_id", "health_id"),
+        keep_variates = keep_variates,
+        level_suffix = c(
+          trial = "oneanimal",
+          subset = "oneherd",
+          set = "allherds"
+        ),
+        mctable = data.frame(mcnode = character()),
+        sample_design = NULL
+      ))
+    }
+
+    without_rownames <- function(data) {
+      rownames(data) <- NULL
+      data
+    }
+
+    test_that("trial_totals preserves aggregation metadata and derived key alignment", {
+      module <- make_grouped_module()
+      agg_keys <- c("scenario_id", "mov_id", "health_id")
+      original_keys <- module$node_list$p_a$keys
+
+      for (combine_prob in c(TRUE, FALSE)) {
+        for (keep_variates in c(FALSE, TRUE)) {
+          result <- grouped_trial_totals(
+            module,
+            combine_prob = combine_prob,
+            keep_variates = keep_variates
+          )
+
+          derived <- names(Filter(
+            function(node) !is.null(node$total_type),
+            result$node_list
+          ))
+
+          # Per input: trial probability, subset probability/count,
+          # and set probability/count. Combination adds a third input.
+          expect_length(derived, if (combine_prob) 15L else 10L)
+
+          expected_keys <- if (keep_variates) {
+            module$data$animals[original_keys]
+          } else {
+            unique(module$data$animals[agg_keys])
+          }
+          expected_keys <- without_rownames(expected_keys)
+
+          for (name in derived) {
+            node <- result$node_list[[name]]
+            info <- paste(
+              name,
+              "combine_prob =", combine_prob,
+              "keep_variates =", keep_variates
+            )
+
+            expect_identical(node$agg_keys, agg_keys, info = info)
+            expect_identical(node$keep_variates, keep_variates, info = info)
+            expect_equal(
+              dim(node$mcnode)[3],
+              nrow(expected_keys),
+              info = info
+            )
+            expect_equal(
+              nrow(node$summary),
+              nrow(expected_keys),
+              info = info
+            )
+            expect_equal(
+              without_rownames(mc_keys(result, name)),
+              expected_keys,
+              info = info
+            )
+          }
+        }
+      }
+    })
+
+    test_that("trial_totals aggregated descendants can be reaggregated", {
+      # First appearance order is h3, h1, h2, rather than sorted herd order.
+      module <- make_grouped_module(c(4L, 1L, 3L, 5L, 2L))
+      result <- grouped_trial_totals(module)
+      herd_name <- "p_all_hag_allherds"
+      data <- module$data$animals
+
+      herd_keys <- without_rownames(unique(
+        data[c("scenario_id", "mov_id", "health_id")]
+      ))
+
+      # Independent numeric reference using base R, not agg_variates().
+      expected_herd <- vapply(seq_len(nrow(herd_keys)), function(i) {
+        rows <- data$scenario_id == herd_keys$scenario_id[i] &
+          data$mov_id == herd_keys$mov_id[i] &
+          data$health_id == herd_keys$health_id[i]
+
+        p_combined <- 1 - (1 - data$p_a[rows]) * (1 - data$p_b[rows])
+        p_group <- 1 - prod(1 - p_combined)
+
+        1 - (1 - mean(data$herd_p[rows]) *
+               (1 - (1 - p_group)^sum(data$animals_n[rows])))^
+          mean(data$herds_n[rows])
+      }, numeric(1))
+
+      expect_equal(
+        as.numeric(result$node_list[[herd_name]]$mcnode),
+        expected_herd
+      )
+      expect_equal(
+        without_rownames(mc_keys(result, herd_name)),
+        herd_keys
+      )
+
+      movement_keys <- c("scenario_id", "mov_id")
+      expected_keys <- without_rownames(unique(herd_keys[movement_keys]))
+
+      expected_movement <- vapply(seq_len(nrow(expected_keys)), function(i) {
+        rows <- herd_keys$scenario_id == expected_keys$scenario_id[i] &
+          herd_keys$mov_id == expected_keys$mov_id[i]
+        1 - prod(1 - expected_herd[rows])
+      }, numeric(1))
+
+      result <- suppressMessages(agg_variates(
+        mcmodule = result,
+        mc_name = herd_name,
+        agg_keys = movement_keys,
+        agg_suffix = "mov"
+      ))
+
+      movement_name <- paste0(herd_name, "_mov")
+      node <- result$node_list[[movement_name]]
+
+      expect_s3_class(node$mcnode, "mcnode")
+      expect_equal(dim(node$mcnode)[3], 2L)
+      expect_equal(as.numeric(node$mcnode), expected_movement)
+      expect_equal(
+        without_rownames(mc_keys(result, movement_name)),
+        expected_keys
+      )
+    })
+  })
+
   test_that("trial_totals works with sampling design", {
     # Create a test module with mock data
     X <- mctable_sobol_matrices(imports_mctable, N = 1000)
