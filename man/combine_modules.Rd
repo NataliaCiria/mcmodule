@@ -16,7 +16,7 @@ An mcmodule object with combined data and node lists.
 }
 \description{
 Combines two mcmodule objects into a single mcmodule by merging their
-data and node lists.
+data and node lists. Identical same-named nodes are retained once.
 }
 \examples{
 module_x <- list(

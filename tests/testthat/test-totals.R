@@ -1246,12 +1246,26 @@ suppressMessages({
 
     test_module_2 <- setup_test_mcmodule()
 
+    # Prefix the second module's node names to avoid conflicts
+    names(test_module_2$node_list) <- paste0(
+      "test_module_2_",
+      names(test_module_2$node_list)
+    )
+
     test_module <- combine_modules(test_module_1, test_module_2)
+
+    # Check that the distinct trial nodes retain their data sources
+    expect_identical(anyDuplicated(names(test_module$node_list)), 0L)
+    expect_identical(test_module$node_list$times_n$data_name, "data_x")
+    expect_identical(
+      test_module$node_list$test_module_2_times_n$data_name,
+      "test_data"
+    )
 
     # At least one with agg mcmodules
     test_module <- at_least_one(
       test_module,
-      c("p_a", "p_2"),
+      c("p_a", "test_module_2_p_2"),
       name = "p_combined_1"
     )
 
