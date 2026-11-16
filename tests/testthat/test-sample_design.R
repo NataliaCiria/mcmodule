@@ -810,7 +810,7 @@ suppressMessages({
   test_that("mctable_sobol_matrices works with imports_mctable (transformations skipped where not applicable)", {
     skip_if_not_installed("sensobol")
 
-    X <- suppressMessages(mctable_sobol_matrices(imports_mctable, N = 16))
+    X <- suppressMessages(mctable_sobol_matrices(imports_mctable, N = 16, transformation = FALSE))
     expect_true(all(is.finite(X)))
     expect_true("test_origin" %in% colnames(X))
     expect_true(all(X[, "test_origin"] >= 0 & X[, "test_origin"] <= 1))

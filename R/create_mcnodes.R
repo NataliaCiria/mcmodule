@@ -117,6 +117,29 @@ create_mcnodes <- function(
           next
         }
 
+
+        # Verify NAs an throw warnings
+        if (any(!is.finite(data[[mc_inputs[j]]]))) {
+          if (is.na(mcrow$mc_func)) {
+            warning(
+              sprintf(
+                "%s contains NA, NaN, or infinite values; they will be replaced with 0",
+                mc_inputs[j]
+              ),
+              call. = FALSE
+            )
+          } else {
+            warning(
+              sprintf(
+                "%s contains NA, NaN, or infinite values; check inputs for %s",
+                mc_inputs[j],
+                mc_name
+              ),
+              call. = FALSE
+            )
+          }
+        }
+
         #### CREATE MONTE CARLO DATA OBJECTS ####
         input_mcnode <- mcdata(
           data = data[[mc_inputs[j]]],
