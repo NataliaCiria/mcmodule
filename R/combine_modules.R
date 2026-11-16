@@ -1,7 +1,7 @@
 #' Combine Two mcmodule Objects
 #'
 #' Combines two mcmodule objects into a single mcmodule by merging their
-#' data and node lists.
+#' data and node lists. Identical same-named nodes are retained once.
 #'
 #' @param mcmodule_x (mcmodule object). First module.
 #' @param mcmodule_y (mcmodule object). Second module.
@@ -39,6 +39,27 @@ combine_modules <- function(mcmodule_x, mcmodule_y) {
   name_x <- deparse(substitute(mcmodule_x))
   name_y <- deparse(substitute(mcmodule_y))
 
+  # Compare nodes before assigning missing module metadata
+  combined_nodes <- c(mcmodule_x$node_list, mcmodule_y$node_list)
+  node_names <- names(combined_nodes)
+  duplicate_indices <- which(duplicated(node_names))
+
+  if (length(duplicate_indices) > 0) {
+    conflicts <- unique(node_names[duplicate_indices[
+      !vapply(duplicate_indices, function(i) {
+        first_index <- match(node_names[i], node_names)
+        identical(combined_nodes[[i]], combined_nodes[[first_index]])
+      }, logical(1))
+    ]])
+
+    if (length(conflicts) > 0) {
+      stop(sprintf(
+        "Modules contain conflicting node names: %s. Rename or prefix conflicting nodes before calling combine_modules().",
+        paste(conflicts, collapse = ", ")
+      ))
+    }
+  }
+
   # Combine data based on structure
   if (identical(mcmodule_x$data, mcmodule_y$data)) {
     mcmodule$data <- mcmodule_x$data
@@ -70,6 +91,9 @@ combine_modules <- function(mcmodule_x, mcmodule_y) {
 
   # Combine node lists and modules
   mcmodule$node_list <- c(mcmodule_x$node_list, mcmodule_y$node_list)
+  if (length(duplicate_indices) > 0) {
+    mcmodule$node_list <- mcmodule$node_list[-duplicate_indices]
+  }
 
   # Set class and return
   class(mcmodule) <- "mcmodule"

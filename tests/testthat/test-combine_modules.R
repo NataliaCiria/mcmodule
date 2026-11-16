@@ -150,3 +150,128 @@ test_that("mcmodule_info handles combined modules", {
     expect_true(all(det$node_counts$module %in% det$module_names))
   }
 })
+
+
+test_that("combine_modules retains one copy of identical shared nodes", {
+  shared_node <- list(
+    type = "out_node",
+    module = "origin",
+    exp_name = "origin_exp",
+    data_name = "shared_data",
+    mcnode = c(0.1, 0.2)
+  )
+  module_first <- list(
+    data = list(shared_data = data.frame(id = 1:2)),
+    exp = list(first = quote({ first <- shared_node })),
+    node_list = list(
+      shared_node = shared_node,
+      first = list(type = "out_node", module = "first")
+    )
+  )
+  module_second <- list(
+    data = module_first$data,
+    exp = list(second = quote({ second <- shared_node })),
+    node_list = list(
+      shared_node = shared_node,
+      second = list(type = "out_node", module = "second")
+    )
+  )
+
+  result <- combine_modules(module_first, module_second)
+
+  expect_identical(names(result$node_list), c("shared_node", "first", "second"))
+  expect_identical(result$node_list$shared_node, shared_node)
+  expect_identical(result$data, module_first$data)
+  expect_identical(result$exp, list(
+    module_first = module_first$exp,
+    module_second = module_second$exp
+  ))
+  expect_identical(anyDuplicated(names(result$node_list)), 0L)
+})
+
+test_that("identical nodes are compared before assigning module metadata", {
+  shared_node <- list(type = "out_node", mcnode = 1)
+  module_x <- list(
+    data = list(), exp = list(), node_list = list(shared = shared_node)
+  )
+  module_y <- list(
+    data = list(), exp = list(), node_list = list(shared = shared_node)
+  )
+
+  result <- combine_modules(module_x, module_y)
+
+  expect_identical(names(result$node_list), "shared")
+  expect_identical(result$node_list$shared$module, "module_x")
+  expect_null(module_x$node_list$shared$module)
+  expect_null(module_y$node_list$shared$module)
+})
+
+test_that("combine_modules rejects non-identical same-named nodes", {
+  module_x <- list(
+    data = list(), exp = list(),
+    node_list = list(shared = list(type = "out_node", mcnode = c(1, 2)))
+  )
+  module_y <- module_x
+  module_y$node_list$shared$mcnode <- c(1, 3)
+
+  expect_error(
+    combine_modules(module_x, module_y),
+    "Modules contain conflicting node names: shared"
+  )
+
+  # Different metadata is also a conflict, even when values match.
+  module_y <- module_x
+  module_y$node_list$shared$data_name <- "other_data"
+  expect_error(
+    combine_modules(module_x, module_y),
+    "Modules contain conflicting node names: shared"
+  )
+})
+
+test_that("combine_modules checks repeated names within an input module", {
+  shared_node <- list(type = "out_node", module = "origin", mcnode = 1)
+  module_x <- list(
+    data = list(), exp = list(),
+    node_list = list(shared = shared_node, shared = shared_node)
+  )
+  module_y <- list(data = list(), exp = list(), node_list = list())
+
+  result <- combine_modules(module_x, module_y)
+  expect_identical(names(result$node_list), "shared")
+  expect_identical(result$node_list$shared, shared_node)
+
+  module_x$node_list[[2]]$mcnode <- 2
+  expect_error(
+    combine_modules(module_x, module_y),
+    "Modules contain conflicting node names: shared"
+  )
+})
+
+test_that("combined identical nodes can be used in a later eval_module", {
+  previous_data <- data.frame(id = 1:2, base_value = c(1, 2))
+  previous_module <- suppressMessages(eval_module(
+    exp = list(previous = quote({ shared_node <- base_value * 2 })),
+    data = previous_data,
+    keys = "id",
+    mctable = data.frame(mcnode = "base_value", mc_func = NA),
+    data_keys = NULL,
+    sample_design = NULL
+  ))
+  copied_module <- previous_module
+  combined <- combine_modules(previous_module, copied_module)
+
+  expect_identical(anyDuplicated(names(combined$node_list)), 0L)
+  expect_equal(sum(names(combined$node_list) == "shared_node"), 1L)
+
+  result <- suppressMessages(eval_module(
+    exp = list(current = quote({ result <- shared_node * 2 })),
+    prev_mcmodule = combined,
+    data = previous_data,
+    keys = "id",
+    mctable = NULL,
+    data_keys = NULL,
+    sample_design = NULL
+  ))
+
+  expect_equal(as.numeric(result$node_list$result$mcnode), c(4, 8))
+})
