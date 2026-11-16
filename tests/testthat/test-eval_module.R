@@ -367,24 +367,38 @@ suppressMessages({
       introduction_risk <- no_detect * contaminated
     })
 
-    # Evaluate module with previous module
-    result_default <- eval_module(
-      exp = c(contamination = contamination_exp),
-      data = contamination_data,
-      mctable = contamination_mctable,
-      data_keys = contamination_data_keys,
-      prev_mcmodule = imports_mcmodule
+    expect_warning(
+      result_default <- eval_module(
+        exp = c(contamination = contamination_exp),
+        data = contamination_data,
+        mctable = contamination_mctable,
+        data_keys = contamination_data_keys,
+        prev_mcmodule = imports_mcmodule
+      ),
+      "contaminated contains NA, NaN, or infinite values"
     )
 
-    # Evaluate module with previous module with CUSTOM MATCH KEYS
-    result_custom <- eval_module(
-      exp = c(contamination = contamination_exp),
-      data = contamination_data,
-      mctable = contamination_mctable,
-      data_keys = contamination_data_keys,
-      prev_mcmodule = imports_mcmodule,
-      match_keys = c("pathogen")
+    # Verify unmatched contamination values were replaced with zero
+    missing_rows <- which(is.na(
+      result_default$data$contamination_data$contaminated
+    ))
+    expect_length(missing_rows, 4)
+    expect_true(all(
+      as.numeric(result_default$node_list$contaminated$mcnode)[missing_rows] == 0
+    ))
+
+    # Custom match keys do not produce missing contamination values
+    expect_no_warning(
+      result_custom <- eval_module(
+        exp = c(contamination = contamination_exp),
+        data = contamination_data,
+        mctable = contamination_mctable,
+        data_keys = contamination_data_keys,
+        prev_mcmodule = imports_mcmodule,
+        match_keys = c("pathogen")
+      )
     )
+    expect_false(anyNA(result_custom$data$contamination_data$contaminated))
 
     # Verify dimensions
     expect_equal(dim(result_default$node_list$introduction_risk$mcnode)[3], 8)
@@ -1396,5 +1410,46 @@ suppressMessages({
       2 * data$a * data$b
     )
     expect_identical(anyDuplicated(names(downstream$node_list)), 0L)
+  })
+
+  test_that("eval_module warns when an output node contains NA or NaN", {
+    test_data <- data.frame(x = c(0, 1))
+    test_mctable <- data.frame(mcnode = "x", mc_func = NA_character_)
+    test_exp <- quote({
+      result <- x / x
+    })
+
+    expect_warning(
+      result_module <- eval_module(
+        exp = list(test = test_exp),
+        data = test_data,
+        mctable = test_mctable,
+        data_keys = list(),
+        sample_design = NULL
+      ),
+      "Expression 'test' produced nodes containing NA or NaN: result"
+    )
+
+    expect_true(anyNA(result_module$node_list$result$mcnode))
+  })
+
+  test_that("eval_module does not warn when an output is explicitly cleaned", {
+    test_data <- data.frame(x = c(0, 1))
+    test_mctable <- data.frame(mcnode = "x", mc_func = NA_character_)
+    test_exp <- quote({
+      result <- mcnode_na_rm(x / x)
+    })
+
+    expect_no_warning(
+      result_module <- eval_module(
+        exp = list(test = test_exp),
+        data = test_data,
+        mctable = test_mctable,
+        data_keys = list(),
+        sample_design = NULL
+      )
+    )
+
+    expect_false(anyNA(result_module$node_list$result$mcnode))
   })
 })

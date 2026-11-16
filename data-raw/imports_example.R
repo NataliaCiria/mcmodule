@@ -138,7 +138,7 @@ imports_mctable <- data.frame(
     paste0(
       "ifelse(value == 'always', 1, ",
       "ifelse(value == 'sometimes', 0.5, ",
-      "ifelse(value == 'never', 0, NA)))"
+      "ifelse(value == 'never', 0, 0)))"
     )
   ),
   sensi_variation = c(
@@ -156,7 +156,7 @@ imports_mctable <- data.frame(
     "min = 0.8, mode = 0.875, max = 0.91",
     "min = 5, max = 10",
     "min = 82, max = 176",
-    NA,
+    "min = 0, max = 1",
     "min = 0, max = 1"
   ),
   stringsAsFactors = FALSE

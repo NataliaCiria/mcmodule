@@ -281,14 +281,44 @@ suppressMessages({
     )
     test_env <- new.env()
 
-    expect_no_error(
+    expect_warning(
       create_mcnodes(
         data = test_data,
         mctable = test_mctable,
         envir = test_env
-      )
+      ),"probability_min contains NA, NaN, or infinite values"
     )
     expect_true(exists("probability", envir = test_env))
     expect_false(any(is.na(test_env$probability)))
+  })
+
+  test_that("create_mcnodes warns before replacing non-finite input values", {
+    test_data <- data.frame(x = c(0.5, NA, Inf))
+    test_mctable <- data.frame(mcnode = "x", mc_func = NA_character_)
+    test_env <- new.env()
+
+    expect_warning(
+      create_mcnodes(
+        data = test_data,
+        mctable = test_mctable,
+        envir = test_env
+      ),
+      "x contains NA, NaN, or infinite values; they will be replaced with 0"
+    )
+
+    expect_equal(as.numeric(test_env$x), c(0.5, 0, 0))
+  })
+
+  test_that("create_mcnodes does not warn for finite input values", {
+    test_data <- data.frame(x = c(0.5, 0.2))
+    test_mctable <- data.frame(mcnode = "x", mc_func = NA_character_)
+
+    expect_no_warning(
+      create_mcnodes(
+        data = test_data,
+        mctable = test_mctable,
+        envir = new.env()
+      )
+    )
   })
 })
